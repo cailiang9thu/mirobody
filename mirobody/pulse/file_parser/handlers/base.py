@@ -603,7 +603,19 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
                     except Exception:
                         formatted_raw = original_text
             except Exception as e:
-                logger.warning(f"Async indicator extraction failed for {file_type}: {file_key}, error: {e}")
+                # The fourth kind of "zero indicators", and the one that got
+                # away: extraction RAISED. `extraction_failed_reason` was left
+                # empty here, so the row below was written `status: completed`
+                # with `indicators_count: 0` — a green file over an empty list,
+                # cause visible only in this warning. That is exactly how the
+                # bytearray bug (#B-1) stayed invisible: every PDF uploaded
+                # through the web client raised `TypeError: Invalid input type
+                # 'bytearray'` right here and was then reported as processed.
+                extraction_failed_reason = (
+                    f"indicator extraction failed: {type(e).__name__}: {e} "
+                    f"(see the server log for the full traceback)"
+                )
+                logger.warning(f"Async indicator extraction failed for {file_type}: {file_key}, error: {e}")  # phi: ok an extraction error, not document contents
 
             # Update th_files with indicator results
             await self._update_file_indicators(

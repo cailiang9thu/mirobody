@@ -201,7 +201,11 @@ class FileAbstractExtractor:
                 result["file_abstract"] = self._truncate_abstract(result["file_abstract"])
             return result
         except Exception as e:
-            logger.error("PDF abstract extraction failed: %s", type(e).__name__)
+            # The message too, not just the class: a bare `TypeError` next to a
+            # fallback abstract that reads like a success is what made the
+            # bytearray bug (#B-1) invisible for as long as it was.
+            error_type, reason = type(e).__name__, str(e)
+            logger.error("PDF abstract extraction failed: %s: %s", error_type, reason, exc_info=True)  # phi: ok a parser error, not document contents
             return self._create_fallback_abstract(filename, "pdf")
 
     async def _extract_image_abstract(self, file_content: bytes, filename: str) -> dict[str, str]:
@@ -481,16 +485,18 @@ Please return strictly in JSON format, do not include any markdown code block ma
             )
             
             # Create abstract based on template
+            # Each placeholder is a complete noun phrase, because the template
+            # no longer supplies the unit word after it.
             if file_type == "pdf":
-                abstract = template.format(filename=filename, page_count="unknown pages")
+                abstract = template.format(filename=filename, page_count="page count unknown")
             elif file_type == "image":
-                abstract = template.format(filename=filename, resolution="unknown resolution")
+                abstract = template.format(filename=filename, resolution="resolution unknown")
             elif file_type == "excel":
-                abstract = template.format(filename=filename, sheet_count="unknown")
+                abstract = template.format(filename=filename, sheet_count="sheet count unknown")
             elif file_type == "genetic":
-                abstract = template.format(filename=filename, file_size="unknown size")
+                abstract = template.format(filename=filename, file_size="size unknown")
             elif file_type == "text":
-                abstract = template.format(filename=filename, word_count="unknown")
+                abstract = template.format(filename=filename, word_count="length unknown")
             else:
                 abstract = template.format(file_type=file_type.upper(), filename=filename)
                 

@@ -335,6 +335,17 @@ async def extract_text(
     that cost a parser or a model call — never for plain text. The PDF knobs
     (scan threshold, render DPI, OCR concurrency) pass through to `pdf_text`.
     """
+    # The WebSocket upload — the only path the web client uses — accumulates
+    # chunks into a `bytearray` (`file_upload_manager`), and pypdfium2 answers
+    # `TypeError: Invalid input type 'bytearray'`, so EVERY PDF uploaded through
+    # the product failed to extract, on every key. Normalised here because this
+    # is the one entry every `kind` goes through; the storage backends
+    # (`utils/config/storage/local.py`, `aliyun.py`) each already do the same
+    # conversion for their own consumer, which is how the type was known and
+    # this door still missed.
+    if isinstance(data, (bytearray, memoryview)):
+        data = bytes(data)
+
     which = detect.kind(filename, content_type, data)
     if which is None or (kinds is not None and which not in kinds):
         return ""
