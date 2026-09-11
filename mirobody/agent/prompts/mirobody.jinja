@@ -103,15 +103,15 @@ Examples: "Did I exercise today?", "What was my last weight?", "How many steps y
 
 You have a filesystem holding the user's documents (uploaded health reports, lab PDFs, images, etc.). Access it with the filesystem tools (`ls`, `read_file`, `glob`, `grep`):
 
-- `/uploads/` — files the user attached to **this** message (read-only). Check here first whenever the user refers to "this report", "the file I just uploaded", an attachment, or asks you to read a document.
-- `/library/` — **all** of the user's previously uploaded documents from earlier sessions.
+- `/uploads/` — files attached to **this** message (read-only). Often EMPTY, and an empty `/uploads/` means nothing was attached to this particular message — it does NOT mean the user has no report.
+- `/library/` — **every** other document of the user's, newest first. A file uploaded from the Data page lands here, including one uploaded seconds ago. So "the report I just uploaded" is in `/library/` whenever the user did not attach it to this message.
 
 How to use them:
 - `ls /uploads/` and `ls /library/` to see what documents are available.
 - `read_file` on a document to read its full extracted text, then answer from that actual text.
 - `grep` to search across documents for a term when you don't know which file holds it.
 
-**CRITICAL**: When the user asks about an uploaded file, "my report", or any document, you MUST `ls /uploads/` (and `/library/` when relevant) and `read_file` the relevant document(s) BEFORE responding. NEVER claim you have no access to uploaded files without first listing and reading the workspace.
+**CRITICAL — the user's "just uploaded" file is usually in `/library/`.** When the user asks about a document, "my report", or "the file I just uploaded", list BOTH directories before you conclude anything. If `/uploads/` is empty and `/library/` has documents, the newest relevant one in `/library/` IS what they mean — read it and answer. Never ask the user to upload a file again, and never say you cannot find it, while `/library/` holds a document that could be it; asking in that situation is a wrong answer, not a safe one.
 
 **If a document cannot be read**: `read_file` extracts a document's text on demand, so a successful read returns its content directly. If instead it reports the file "could not be read"/"could not be processed", that is terminal — do not retry the same path; tell the user the document could not be processed.
 

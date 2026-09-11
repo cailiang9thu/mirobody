@@ -376,29 +376,78 @@ class MirobodyAgent:
 
         return llm_client, model_name, (fallback_msg if fallback_used else None), loaded_tools, system_prompt
 
+    #: Which LangChain transport package carries a non-text content block
+    #: inside a ``ToolMessage`` — the only shape ``read_file`` can deliver a
+    #: PDF in. Keyed by module root, so it covers every client a package
+    #: builds: ``langchain_openai`` is ChatOpenAI, AzureChatOpenAI, the
+    #: OpenRouter client (ChatOpenAI + base_url) and our ReasoningChatOpenAI
+    #: subclass alike, because they all speak Chat Completions.
+    _TOOL_MESSAGE_CARRIES_FILES = {
+        "langchain_anthropic": True,        # document block inside tool_result
+        "langchain_google_genai": True,     # inline_data Part
+        "langchain_google_vertexai": True,
+        "langchain_openai": False,          # Chat Completions, see below
+    }
+
     def _supports_file_block(self, llm_client: Any) -> bool:
-        """Whether the bound model accepts a native PDF content block.
+        """Whether THIS TRANSPORT can carry a PDF inside a ``ToolMessage``.
 
-        Single source of truth is LangChain's normalized ``model.profile``
-        (a ``ModelProfile``, populated by the partner package from models.dev and
-        **overridable per-provider in the MODELS config via a ``profile:``
-        merge** — see ``load_llm_clients``). This replaces any hand-maintained
-        provider allow-list: capability now travels with the model.
+        Not "can this model read a PDF". That is what ``model.profile``
+        (``pdf_tool_message`` / ``pdf_inputs``) answers, and it is the wrong
+        question — the two are independent, and asking the model is what
+        produced these, measured 2026-09-10 with a PDF attached to a question:
 
-        ``read_file`` delivers the PDF inside a ``ToolMessage``, so the precise
-        capability is ``pdf_tool_message``. Fall back to ``pdf_inputs`` when the
-        profile omits the tool-message datum (e.g. Gemini reports ``pdf_inputs``
-        but not ``pdf_tool_message``), and to ``False`` when there is no profile
-        at all (e.g. an openai-compatible qwen/deepseek endpoint whose profile is
-        ``None`` — unless the config explicitly overrides it).
+            claude-sonnet via OpenRouter → 400 tool messages must include a
+                                               non-empty string tool_call_id
+            gpt-5.6-terra via OpenAI     → 400 Invalid value: 'file'. Supported
+                                               values are: 'text', 'refusal',
+                                               'image_url', and 'input_audio'
+
+        Both models genuinely read PDFs — one over Anthropic's native API, the
+        other over the Responses API — and neither of those is the endpoint
+        this client is talking to. Meanwhile qwen and deepseek were fine, for
+        the accidental reason that their profile is ``None``: they took the
+        extracted-text path, which works. So the profile got the answer wrong
+        in both directions, and the price was a 400 shown to a user who had
+        simply attached a report.
+
+        The transport is decided by the client's class, which is what
+        ``build_chat_model`` picks from ``llm_type`` — so this reads the same
+        configuration, one step later and without a second table to keep in
+        step.
+
+        **A profile may only narrow, never widen.** The first version of this
+        let a non-None ``profile["pdf_tool_message"]`` answer outright, as an
+        escape hatch for a gateway that does accept the block — and the 400 it
+        was written to end came straight back, because that merged dict has
+        three origins and two of them are statements about the MODEL:
+
+        * LangChain's own bundled profile (models.dev). `gpt-5.6-terra` carries
+          ``pdf_tool_message: True`` there and still answers `400 Invalid
+          value: 'file'` on Chat Completions;
+        * the entry's ``supports_pdf`` boolean, which used to write this field
+          too (`clients._profile_override` — fixed there as well);
+        * an explicit ``profile:`` dict, the only one of the three that is
+          about the wire.
+
+        Nothing here can tell them apart, so none of them may GRANT. A ``False``
+        may still veto, because being wrong in that direction costs a PDF read
+        as extracted text — which works — instead of a 400 shown to a user who
+        attached a report. A gateway that genuinely carries the block is a fact
+        about a TRANSPORT, so it belongs in ``_TOOL_MESSAGE_CARRIES_FILES``.
         """
-        profile = getattr(llm_client, "profile", None) or {}
-        supported = profile.get("pdf_tool_message")
-        if supported is None:
-            supported = profile.get("pdf_inputs")
-        supported = bool(supported)
-        logger.info(f"file-block support: pdf={supported} (profile_present={bool(profile)})")
-        return supported
+        vetoed = (getattr(llm_client, "profile", None) or {}).get("pdf_tool_message") is False
+
+        roots = {base.__module__.split(".")[0] for base in type(llm_client).__mro__}
+        for package, carries in self._TOOL_MESSAGE_CARRIES_FILES.items():
+            if package in roots:
+                carries = carries and not vetoed
+                logger.info(f"file-block support: pdf={carries} (transport={package})")  # phi: ok a bool and a package name
+                return carries
+        # An unrecognised transport serves extracted text: a PDF that reads as
+        # text is worse than a native file block, and better than a 400.
+        logger.info(f"file-block support: pdf=False (unrecognised transport {type(llm_client).__name__})")
+        return False
 
     # Native tools this agent must not offer the model, hidden via the harness
     # profile's ``excluded_tools`` (deepagents appends a ``_ToolExclusionMiddleware``

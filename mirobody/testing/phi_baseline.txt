@@ -1,10 +1,8 @@
 mirobody/agent/agent.py	interpolation	attr_error
-mirobody/agent/agent.py	interpolation	bool(profile)
 mirobody/agent/agent.py	interpolation	default_provider
 mirobody/agent/agent.py	interpolation	e
 mirobody/agent/agent.py	interpolation	original_provider
 mirobody/agent/agent.py	interpolation	str(e)
-mirobody/agent/agent.py	interpolation	supported
 mirobody/agent/chat/adapters/base.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/agent/chat/adapters/base.py	interpolation	denied
 mirobody/agent/chat/adapters/base.py	interpolation	e

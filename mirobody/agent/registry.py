@@ -199,14 +199,25 @@ def available_models() -> list[str]:
     """
     if not _llm_clients:
         return []
-    from ..utils.config import safe_read_cfg
+    from ..utils.config.llm import read_api_key
 
     cfg = global_config()
     providers = (cfg.get_agent_settings() or {}).get("providers") or {} if cfg else {}
     names = []
-    for name in _llm_clients:
+    for name in providers:
+        if name not in _llm_clients:
+            continue
+        # `read_api_key`, which `config.llm` calls THE admission function, and
+        # not `safe_read_cfg`: the vendor-documented aliases live in it. With
+        # `GEMINI_API_KEY` set and `GOOGLE_API_KEY` unset, the router resolved
+        # the key and built a real client while this returned [] — an empty
+        # picker over a chat surface `mirobody doctor` called healthy. One key,
+        # two answers, twice now.
         key_name = (providers.get(name) or {}).get("api_key", "")
-        if key_name and not safe_read_cfg(key_name):
+        if key_name and not read_api_key(key_name):
             continue
         names.append(name)
-    return sorted(names)
+    # Config order, not sorted(): `config.llm.yaml` says "in this order; the
+    # FIRST is the default", and `chat_default()` reads it that way. Sorting
+    # here made the picker's first entry disagree with the server's default.
+    return names

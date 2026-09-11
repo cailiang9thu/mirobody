@@ -381,20 +381,29 @@ def _profile_override(entry: dict) -> dict[str, Any]:
         supports_pdf:   true   # accepts a native PDF block (read_file)
         supports_image: true   # accepts a native image block
 
-    ``supports_pdf`` sets both ``pdf_inputs`` and ``pdf_tool_message`` (files
-    arrive inside a ToolMessage); ``supports_image`` likewise. An advanced
-    ``profile:`` dict of raw ModelProfile fields wins over the booleans.
-    ``{}`` when nothing is declared, so the model's own profile stands.
+    These booleans state what the MODEL accepts, so they set the ``*_inputs``
+    fields only. They deliberately do NOT set ``pdf_tool_message`` /
+    ``image_tool_message``, which are about what the WIRE carries inside a
+    ToolMessage — a different question with a different answer: `claude-sonnet`
+    reads PDFs and reaches us over OpenRouter's Chat Completions endpoint,
+    which answers `400 tool messages must include a non-empty string
+    tool_call_id` for a file block. Writing the model's answer into the wire's
+    field is how that 400 survived the fix that was meant to end it.
+
+    Dropping them changes nothing downstream, both halves verified against
+    `deepagents.middleware.filesystem._multimodal_block_supported`: a `True`
+    was already a no-op there ("Only an explicit `False` rejects a block
+    type"), and a `False` veto still lands, because that function falls through
+    to `profile.get("pdf_inputs") is not False`, which these booleans do set.
+
+    An advanced ``profile:`` dict of raw ModelProfile fields still wins over
+    them. ``{}`` when nothing is declared, so the model's own profile stands.
     """
     override: dict[str, Any] = {}
     if "supports_pdf" in entry:
-        flag = _coerce_flag(entry["supports_pdf"])
-        override["pdf_inputs"] = flag
-        override["pdf_tool_message"] = flag
+        override["pdf_inputs"] = _coerce_flag(entry["supports_pdf"])
     if "supports_image" in entry:
-        flag = _coerce_flag(entry["supports_image"])
-        override["image_inputs"] = flag
-        override["image_tool_message"] = flag
+        override["image_inputs"] = _coerce_flag(entry["supports_image"])
     raw = entry.get("profile")
     if isinstance(raw, dict):
         override.update(raw)
