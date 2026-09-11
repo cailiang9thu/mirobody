@@ -43,6 +43,11 @@ def _api_params(spec: RouteSpec, messages: list[dict], json_mode: bool) -> dict[
     params: dict[str, Any] = {"model": spec.model, "messages": messages}
     if spec.extra_body:
         params["extra_body"] = dict(spec.extra_body)
+    if spec.reasoning_effort:
+        # Declared on the entry, so it reaches the vision surface too — this is
+        # the parameter `openai-utils` needs, and it was being dropped here as
+        # well as on the text path.
+        params["reasoning_effort"] = spec.reasoning_effort
     if json_mode and spec.takes_json_object:
         # An entry that says `response_format: none` gets the JSON instruction
         # from the prompt only — Anthropic's compatibility endpoint answers

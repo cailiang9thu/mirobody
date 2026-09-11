@@ -133,11 +133,13 @@ parse = [
     # `_build_anthropic` did a bare `import anthropic` that only resolved
     # because langchain-anthropic dragged it in, so configuring an Anthropic key
     # without the agent layer failed at client construction.
-    # Floor at 0.121: `utils/llm/backends_anthropic` needs `output_config` on
-    # `messages.create` and the `transform_schema` helper. Both verified against
-    # the live API on 0.121.0 and on 1.4.0 (what a clean install resolves), which
-    # produce byte-identical transformed schemas — so no upper cap.
-    "anthropic>=0.121",
+    # Floor at 1.5, and deliberately no upper cap: the newest SDK is where the
+    # newest models are supported. 1.x REMOVED `temperature`, `top_p` and
+    # `top_k` from the messages API, which turned every extraction call into a
+    # TypeError before a request was built — so `backends_anthropic` filters
+    # parameters against the installed signature rather than a hardcoded list,
+    # and the next removal costs a DEBUG line instead of an outage.
+    "anthropic>=1.5",
     # Floor at 2.0: the Interactions API server dropped the legacy turn-list
     # schema (breaking change, May 2026) and now requires the 2.x 'steps' schema,
     # which only the >=2.0 SDK can send/parse. No upper cap.
@@ -194,7 +196,12 @@ agent = [
     "langchain-openai>=1.4.3",
     # 4.2.4 relaxed its google-genai cap to <3.0.0 (earlier 4.x pinned <2.0.0,
     # which would block the google-genai>=2.0 required by [parse]).
-    "langchain-google-genai>=4.2.4",
+    # 4.4.0 is the version verified to round-trip Gemini 3.x's
+    # `thought_signature` through a tool loop (see `gemini-flash` in
+    # config.llm.yaml). No upper cap: newer packages support newer models, and
+    # the one time a floor without a verified lower bound bit us, `anthropic`
+    # 1.x had silently removed `temperature` from `messages.create`.
+    "langchain-google-genai>=4.4.0",
     # Floor at 0.7.5. 0.7 is where the BackendProtocol settled: the deprecated
     # `*_info` / `grep_raw` shims are gone (we never used them), `glob`/`grep`
     # take `path: str | None`, `grep` gained a `max_count` cap that

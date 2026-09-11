@@ -187,6 +187,7 @@ class RouteSpec:
     supports_image: bool | None = None   # None = the entry does not say
     supports_pdf: bool | None = None
     response_format: str = "json_schema"   # what this endpoint accepts; see RESPONSE_FORMATS
+    reasoning_effort: str | None = None    # sent only when the entry declares it
     extra_body: dict[str, Any] = field(default_factory=dict)
     temperature: float | None = None
     embedding: str | None = None   # the vector-column family an embedding entry writes
@@ -273,6 +274,7 @@ def _spec_from_mapping(alias: str, entry: dict[str, Any]) -> RouteSpec | None:
         alias=alias, model=model, api_key_env=api_key_env, base_url=base_url, llm_type=llm_type,
         supports_image=_flag(entry.get("supports_image")), supports_pdf=_flag(entry.get("supports_pdf")),
         response_format=_response_format(alias, entry.get("response_format")),
+        reasoning_effort=(str(entry["reasoning_effort"]).strip() or None) if entry.get("reasoning_effort") else None,
         extra_body=dict(entry.get("extra_body") or {}),
         temperature=float(temperature) if isinstance(temperature, (int, float)) else None,
         embedding=embedding,
@@ -311,6 +313,34 @@ def _spec_from_string(value: str, entries: dict[str, dict], surface: str = "") -
                 llm_type="anthropic" if name == "anthropic" else "openai",
             )
     return None
+
+
+#: Entry keys something actually reads. `RouteSpec` is a whitelist — a key it
+#: does not name is dropped on the floor, silently, which is how `openai-utils`
+#: came to declare `reasoning_effort: none` (REQUIRED there: without it
+#: gpt-5.6-terra keeps reasoning on and then refuses the extraction callers'
+#: `temperature: 0`) and have it read by nobody. `unread_entry_keys` turns that
+#: into a line at boot instead of zero indicators over a successful upload.
+KNOWN_ENTRY_KEYS: frozenset[str] = frozenset({
+    # read here, into a RouteSpec
+    "llm_type", "api_key", "base_url", "model", "temperature",
+    "supports_image", "supports_pdf", "response_format", "reasoning_effort",
+    "extra_body", "embedding", "chat",
+    # read by the agent's client builder (`agent/models/clients.py`)
+    "profile", "thinking_style", "auth_type", "prompt_cache", "response_with_tools",
+    "project", "location", "reasoning", "max_tokens", "max_output_tokens",
+    "streaming", "stream_usage", "model_kwargs", "output_config",
+})
+
+
+def unread_entry_keys() -> dict[str, list[str]]:
+    """`{entry alias: keys nothing reads}` — dead configuration, by name."""
+    out: dict[str, list[str]] = {}
+    for alias, entry in model_entries().items():
+        unknown = sorted(k for k in (entry or {}) if k not in KNOWN_ENTRY_KEYS)
+        if unknown:
+            out[alias] = unknown
+    return out
 
 
 def model_entries() -> dict[str, dict[str, Any]]:

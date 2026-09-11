@@ -34,6 +34,7 @@ import json
 import logging
 import pathlib
 import time
+from functools import lru_cache
 from typing import Any
 
 from ..config.llm import RouteSpec
@@ -82,8 +83,32 @@ def _split_system(messages: list[dict]) -> tuple[str, list[dict]]:
     return "\n\n".join(s for s in system if s), rest
 
 
+@lru_cache(maxsize=1)
+def _accepted_params() -> frozenset[str]:
+    """What THIS installed SDK's `messages.stream` takes — the call `_create`
+    actually makes.
+
+    Not a hardcoded allow-list, because the parameter set moves: 1.5.0 has no
+    `temperature`, `top_p` or `top_k` at all — they were removed, and passing
+    one raises `TypeError` before a request is built. Every caller in this
+    repository still hands us `temperature=0` (`indicator_extractor`,
+    `handlers/base`, `summary`, `profile`), which is how an ANTHROPIC_API_KEY
+    deployment extracted zero indicators out of a report it had just accepted.
+
+    Reading the signature means the next removal costs a DEBUG line rather than
+    an outage, and it lets the project follow the newest SDK — which is where
+    the newest models are supported.
+    """
+    import inspect
+
+    from anthropic.resources.messages import AsyncMessages
+
+    return frozenset(inspect.signature(AsyncMessages.stream).parameters) - {"self"}
+
+
 def _request_params(spec: RouteSpec, kwargs: dict[str, Any]) -> dict[str, Any]:
-    """The per-call parameters: the entry's own, then the caller's.
+    """The per-call parameters: the entry's own, then the caller's, minus
+    anything this SDK will not take.
 
     An `extra_body` on an `llm_type: anthropic` entry holds NATIVE top-level
     parameters (`thinking`, `output_config`, …) — which is what `extra_body`
@@ -95,7 +120,32 @@ def _request_params(spec: RouteSpec, kwargs: dict[str, Any]) -> dict[str, Any]:
     out.update(kwargs)
     max_tokens = out.pop("max_completion_tokens", None) or out.pop("max_tokens", None)
     out["max_tokens"] = int(max_tokens or DEFAULT_MAX_TOKENS)
+
+    accepted = _accepted_params()
+    dropped = sorted(k for k in out if k not in accepted)
+    for key in dropped:
+        del out[key]
+    if dropped:
+        # DEBUG, not WARNING: a caller asking for `temperature=0` on a model
+        # that has no temperature is expressing an intent the endpoint already
+        # honours, not making a mistake worth a line per request.
+        logger.debug("anthropic: dropped %s (not in this SDK's messages.stream)", ", ".join(dropped))  # phi: ok parameter names
     return out
+
+
+async def _create(spec: RouteSpec, **params):
+    """One request, always through the streaming helper.
+
+    Not `messages.create(...)`: the non-streaming call refuses a `max_tokens`
+    large enough that the request "may take longer than 10 minutes" — measured
+    on claude-haiku-4-5, 20000 passes and 32000 raises — and the extraction
+    callers ask for 32000 (`indicator_extractor`, `handlers/base`). Clamping
+    would silently truncate a long report into invalid JSON under a
+    constrained grammar; streaming removes the ceiling instead, and
+    `get_final_message()` hands back the same Message object either way.
+    """
+    async with client_for(spec).messages.stream(**params) as stream:
+        return await stream.get_final_message()
 
 
 def _text_of(response) -> str:
@@ -122,9 +172,8 @@ async def structured_output(spec: RouteSpec, messages: list[dict], schema: dict 
     if schema:
         params.setdefault("output_config", {"format": {"type": "json_schema", "schema": transform_schema(schema)}})
     try:
-        response = await client_for(spec).messages.create(
-            model=spec.model, messages=converted, **({"system": system} if system else {}), **params,
-        )
+        response = await _create(spec, model=spec.model, messages=converted,
+                                 **({"system": system} if system else {}), **params)
         content = _text_of(response)
         if not content.strip():
             # `max_tokens` reached before any text, or a refusal: either way
@@ -149,10 +198,9 @@ async def text_completion(spec: RouteSpec, messages: list[dict], **kwargs) -> st
     start = time.time()
     system, converted = _split_system(messages)
     try:
-        response = await client_for(spec).messages.create(
-            model=spec.model, messages=converted,
-            **({"system": system} if system else {}), **_request_params(spec, kwargs),
-        )
+        response = await _create(spec, model=spec.model, messages=converted,
+                                 **({"system": system} if system else {}),
+                                 **_request_params(spec, kwargs))
         duration = time.time() - start
         logger.info(f"{provider_name} text generation completed, duration: {duration:.3f}s")
         return _text_of(response)
@@ -175,9 +223,7 @@ async def _one_image(spec: RouteSpec, base64_jpeg: str, prompt: str, schema: dic
         from anthropic import transform_schema
 
         params.setdefault("output_config", {"format": {"type": "json_schema", "schema": transform_schema(schema)}})
-    response = await client_for(spec).messages.create(
-        model=spec.model, messages=_image_message(base64_jpeg, prompt), **params,
-    )
+    response = await _create(spec, model=spec.model, messages=_image_message(base64_jpeg, prompt), **params)
     return _text_of(response)
 
 

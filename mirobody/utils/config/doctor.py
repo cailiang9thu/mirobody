@@ -28,6 +28,7 @@ from .llm import (
     resolve_route,
     retired_model_keys,
     route_candidates,
+    unread_entry_keys,
 )
 
 #: surface → what a person loses without it.
@@ -111,6 +112,12 @@ def format_report(rows: list[SurfaceStatus]) -> str:
     if retired:
         lines.append("")
         lines.append("retired keys   : " + ", ".join(retired) + " — no longer read; a model belongs to a MODELS entry, a surface to UTILS_*")
+    unread = unread_entry_keys()
+    if unread:
+        lines.append("")
+        lines.append("unread fields  : nothing in mirobody reads these — check the spelling")
+        for alias, fields in unread.items():
+            lines.append(f"  {alias}: {', '.join(fields)}")
     lines.append("-" * 72)
     return "\n".join(lines)
 
@@ -132,6 +139,15 @@ def log_report(rows: list[SurfaceStatus], log: logging.Logger) -> None:
         surface_type = r.surface
         reason = f"{r.what} — {r.hint}"
         log.warning("no LLM model for %s: %s", surface_type, reason)
+    for alias, fields in unread_entry_keys().items():
+        # `openai-utils` declared `reasoning_effort: none`, nothing read it, and
+        # the deployment extracted zero indicators from every report — the
+        # field was right and invisible. A declaration no code consumes is
+        # worth one line at boot, named.
+        # Bound to names `phi_lint` recognises, like the retired-key line above:
+        # both are config identifiers out of config.llm.yaml, never a value.
+        entry_slug, unread_kind = alias, ", ".join(fields)
+        log.warning("MODELS entry %s declares fields nothing reads: %s", entry_slug, unread_kind)
     ok = ", ".join(f"{r.surface}={r.provider}" for r in rows if r.provider)
     log.info("LLM models by surface: %s (`mirobody doctor` for the table)", ok)
 
