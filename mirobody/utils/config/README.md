@@ -121,12 +121,19 @@ MODELS:
     model: anthropic/claude-sonnet-5
     supports_image: true
   gemini-flash:
-    llm_type: openai            # Google's OpenAI-compatible endpoint
+    llm_type: google-genai      # NOT the OpenAI-compatible endpoint — see below
     api_key: GOOGLE_API_KEY
-    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
     model: gemini-3.8-flash
     supports_image: true
 ```
+
+Gemini's chat entry is the one exception to "every vendor is an
+OpenAI-compatible endpoint", and the reason is the tool loop: Gemini 3.x
+attaches a `thought_signature` to every function call and requires it back
+verbatim on the next turn, which the compatibility endpoint has nowhere to
+carry. An agent on that path cannot complete a single tool call. Extraction is
+unaffected and stays on the compatibility endpoint (`gemini-utils`) — one call,
+no second turn, nothing to return.
 
 `DEFAULT_MODEL` names the entry a chat uses when the client sends none;
 unset, the default is the **first entry (in file order) whose key is present** —
@@ -144,6 +151,16 @@ pages) vs. needing pre-extracted text is auto-detected from LangChain's
 normalized [model profile](https://docs.langchain.com/oss/python/langchain/models#model-profiles) —
 so for first-party models (Gemini, OpenAI, Anthropic, Vertex) you configure
 **nothing**.
+
+**A PDF is a second question, and the transport answers it.** `read_file`
+delivers a document inside a tool message, and only the native `anthropic` and
+`google-genai` clients accept a non-text block there. Every OpenAI-compatible
+endpoint refuses one — `400 tool messages must include a non-empty string
+tool_call_id` on OpenRouter, `400 Invalid value: 'file'` on OpenAI — including
+for models that genuinely read PDFs over their own vendor API. So on
+`llm_type: openai` a PDF is always served as extracted text, whatever the model
+profile or `supports_pdf` says. That is a full answer, not a degraded one: the
+text path is what qwen and deepseek have always used.
 
 Declare it only for **OpenAI-compatible endpoints** whose profile is unknown
 (DashScope, Volcengine, OpenRouter-proxied models, …):
@@ -167,7 +184,7 @@ MODELS:
 
 | Flag | Effect when `true` | When unset / `false` |
 | --- | --- | --- |
-| `supports_pdf` | PDFs sent as a native file block | PDF served as pre-extracted text (works on any text model) |
+| `supports_pdf` | the model reads PDFs — a native file block IF the transport also carries one (above) | PDF served as pre-extracted text (works on any text model) |
 | `supports_image` | images sent as a native image block | image served as a native block only if the model's profile already allows it |
 
 Notes:

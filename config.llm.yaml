@@ -38,7 +38,16 @@
 #                   somewhere — `mirobody doctor` prints the endpoint each surface resolved.
 #   supports_image  true = reads images. REQUIRED for anything UTILS_VISION_MODEL names:
 #                   report photos and scanned pages are images.
-#   supports_pdf    true = takes a PDF natively in chat
+#   supports_pdf    true = the MODEL reads a PDF natively. Whether one actually
+#                   travels as a file block is a separate question the TRANSPORT
+#                   answers: only the native anthropic / google-genai clients
+#                   carry a file block inside a tool message, so on any
+#                   OpenAI-compatible endpoint a PDF is served as extracted text
+#                   no matter what this says (measured — claude-sonnet over
+#                   OpenRouter answers 400 to the block, and reads the text fine)
+#   reasoning_effort sent only when declared. `none` is how a reasoning model is
+#                   told to stop reasoning — required on gpt-5.6-terra, which
+#                   otherwise refuses the `temperature: 0` extraction sends
 #   response_format json_schema (default) | json_object | none — what the endpoint
 #                   accepts. Below json_schema the schema is written into the prompt
 #   chat            false = utility surfaces only, hidden from the chat picker
