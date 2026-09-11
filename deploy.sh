@@ -52,6 +52,29 @@ LOG_ENCRYPTION_KEY=${LOG_ENCRYPTION_KEY:-$(generate_random_string 32)}
     echo "Configure file '.env' has been created — put ONE LLM API key in it."
 fi
 
+# The three settings above used to be written ONLY when this script created
+# `.env` itself. The common way a key reaches a machine is someone dropping in
+# a `.env` that holds just the key — and then this script left it alone, so
+# every compose command warned `The "ENV" variable is not set`,
+# `config.${ENV}.yaml` (which holds the generated JWT_KEY) never loaded, and
+# both encryption keys were missing, printing two ERROR lines at every boot.
+# Append what is absent; never touch a value that is already there.
+ensure_env_setting() {
+    local name=$1 value=$2 comment=$3
+    if grep -qE "^[[:space:]]*${name}=" ".env"; then
+        return 0
+    fi
+    printf '\n# %s\n%s=%s\n' "${comment}" "${name}" "${value}" >> ".env"
+    echo "Added missing ${name} to .env"
+}
+
+ensure_env_setting "ENV" "${local_env}" \
+    "Which config.\${ENV}.yaml overlay loads on top of config.yaml. No behaviour of its own."
+ensure_env_setting "CONFIG_ENCRYPTION_KEY" "${CONFIG_ENCRYPTION_KEY:-$(generate_random_string 32)}" \
+    "Encryption of sensitive configuration values."
+ensure_env_setting "LOG_ENCRYPTION_KEY" "${LOG_ENCRYPTION_KEY:-$(generate_random_string 32)}" \
+    "Encryption of sensitive fields in log records."
+
 # Check the config.{local_env}.yaml file.
 config_filename="config.${local_env}.yaml"
 if [ ! -f "${config_filename}" ]; then
@@ -126,39 +149,45 @@ fi
 #-----------------------------------------------------------------------------
 # Determine docker mirror.
 
-check_connection_by_hostname() {
-    local host=$1
-    local timeout=3
-    local http_status=0
-    if command -v curl &>/dev/null; then
-        echo "Checking '${host}' via curl ..."
-        http_status=$(curl --connect-timeout ${timeout} -o /dev/null -s -w "%{http_code}" https://${host})
-    elif command -v wget &>/dev/null; then
-        echo "Checking '${host}' via wget ..."
-        http_status=$(wget -T 3 --spider --tries=1 --server-response "${host}" 2>&1 | grep "HTTP/" | awk '{print $2}' | tail -n 1)
-    else
-        echo "Checking '${host}' via ping ..."
-        if ping -c 3 ${host} &> /dev/null; then
-            return 0
-        fi
-    fi
-    case "${http_status}" in
-        200|301|302)
-            return 0
-            ;;
-    esac
-    return 1
+# Ask the process that actually pulls images.
+#
+# This used to be a `curl https://hub.docker.com` from THIS SHELL, and it was
+# wrong twice over:
+#
+#   1. the shell has `http_proxy`/`https_proxy`; the daemon does not inherit
+#      them. On a proxied machine curl returned 200, no mirror was selected,
+#      and `compose up` then died inside the daemon with
+#      `Get "https://registry-1.docker.io/v2/": ... Client.Timeout`. The
+#      fallback failed in exactly the networks that need it.
+#   2. `hub.docker.com` is the WEBSITE. Images come from
+#      `registry-1.docker.io`, a different host that can be blocked on its own.
+#
+# So pull the smallest real image there is (~20 kB) through the daemon. It
+# costs one round trip on a healthy network and is the only answer that
+# predicts what `docker compose up` is about to do.
+check_registry_through_daemon() {
+    local prefix=$1 label=$2
+    echo "Checking ${label} by pulling through the docker daemon (this is the check that counts) ..."
+    docker pull --quiet "${prefix}library/hello-world:latest" &>/dev/null
 }
 
 docker_host=""
-if ! check_connection_by_hostname "hub.docker.com"; then
+if ! check_registry_through_daemon "" "Docker Hub"; then
+    echo "The docker daemon cannot reach Docker Hub. Trying the mirrors ..."
     for host in "${DOCKER_MIRRORS[@]}"; do
-        if check_connection_by_hostname "${host}"; then
+        if check_registry_through_daemon "${host}/" "mirror ${host}"; then
             echo "Using docker mirror: ${host}"
             docker_host="${host}/"
             break
         fi
     done
+    if [[ -z "${docker_host}" ]]; then
+        echo "WARNING: neither Docker Hub nor any mirror answered the daemon." >&2
+        echo "         The build below will most likely fail on the first pull." >&2
+        echo "         If this machine reaches the internet through a proxy, the DAEMON" >&2
+        echo "         needs it too — on Docker Desktop that is Settings > Resources >" >&2
+        echo "         Proxies; with systemd it is a drop-in for docker.service." >&2
+    fi
 fi
 
 #-----------------------------------------------------------------------------
@@ -281,7 +310,7 @@ check_subnet_free
 docker compose -f ${DOCKER_COMPOSE_FILE} up -d --remove-orphans
 echo ""
 echo "Up. Open http://localhost:18060 and sign in as caregiver@mirobody.ai / 111111."
-echo "The boot log below ends with 'LLM providers by surface': if a surface reads '--',"
+echo "The boot log below ends with 'LLM models by surface': if a surface reads '--',"
 echo "put ONE LLM API key in .env (the names are listed there) and run:"
 echo "    docker compose restart"
 echo "Details any time:  docker compose exec mirobody python -m mirobody doctor"
