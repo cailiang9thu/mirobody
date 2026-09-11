@@ -640,4 +640,3 @@ def _patch_deepagents_multimodal_exts() -> None:
 _patch_deepagents_multimodal_exts()
 
 
-_patch_deepagents_multimodal_exts()

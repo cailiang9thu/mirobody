@@ -1,41 +1,216 @@
 # Changelog
 
-## Unreleased
+## 1.4.1
+
+One key, every surface — decided in YAML, not in Python; and the failures that
+used to be silent, said out loud. No answer changes: the resolver evaluation is
+untouched.
+
+### Breaking
+
+- **`<PREFIX>_MODEL`, `<PREFIX>_VISION_MODEL` and `<PREFIX>_EMBEDDING_MODEL` are
+  no longer read.** They chose a model per KEY, which presupposed a model table
+  in Python to override. A model belongs to a `MODELS` entry now, and a
+  surface's choice to `UTILS_VISION_MODEL` / `UTILS_TEXT_MODEL` /
+  `UTILS_EMBEDDING_MODEL`. Setting one gets a WARNING naming where its value
+  goes. `<PREFIX>_BASE_URL` stays, and now reaches chat entries too.
+- **`PROVIDERS` is `MODELS`, `DEFAULT_PROVIDER` is `DEFAULT_MODEL`,
+  `EMBEDDING_PROVIDER` is `UTILS_EMBEDDING_MODEL`.** In this project a
+  *provider* is a device (`PROVIDER_DIRS`); the model table had borrowed the
+  word. Old spellings are aliased at load time with one WARNING. `EMBEDDING_MODELS`
+  is gone — an embedding model is a `MODELS` entry tagged with the vector-column
+  family it writes, and a family name still resolves (`UTILS_EMBEDDING_MODEL: qwen`).
+- **The Gemini SDK path is gone from the EXTRACTION surfaces**, which use the
+  OpenAI-compatible endpoint like every other vendor; PDFs are rendered page by
+  page there, since no compatibility endpoint takes a PDF part. The embedding
+  entry stays on the REST API, the only one that takes `output_dimensionality`.
+  `AIConfig`, `VisionProviderConfig`, `gemini_file_extract` and the
+  doubao/zhipu/moonshot tier go with it (no caller, an SDK never installed).
+  Chat entries may still be `google-genai` / `anthropic` / `google_anthropic_vertex`,
+  and the shipped `gemini-flash` and `claude` are — each for a reason under Fixed.
+- **`resolve_embedding_provider()` answers `""` with no usable key** rather than
+  `"openrouter"`; the vector-column resolvers raise the sentence that fixes it
+  instead of a 401 from a gateway nobody chose.
+- **The `mirobody_pgsql` pull provider is removed.** It copied readings from a
+  second PostgreSQL — a migration tool for one deployment, shipped as a device.
+- **Firebase login is removed.** The seven `FIREBASE_*` settings, the web-config
+  keys and the `/__/` helper routes are gone. Google and Apple sign-in stay,
+  verified server-side against `GOOGLE_CLIENT_ID` and the `APPLE_*` keys. A web
+  client still getting its tokens through Firebase shows neither button until it
+  moves to Google Identity Services / Sign in with Apple JS.
+- **Audio uploads are no longer accepted.** The handler was a stub — speech-to-text
+  was never wired, so every audio file stored bytes and produced an empty summary.
+  `tinytag` leaves `[parse]`. Stored objects still serve.
 
 ### Fixed
 
+- **A `DEEPSEEK_API_KEY`-only deployment uploaded reports into silence**
+  ([#68](https://github.com/thetahealth/mirobody/issues/68)). Five Python tables
+  decided which provider a surface used; one knew the key and four did not, and
+  whether a provider could read an image was recorded nowhere.
+
+  Every such decision is in [`config.llm.yaml`](config.llm.yaml) now: `MODELS` is
+  one table of entries (`llm_type`, `api_key` NAME, `base_url`, `model`,
+  `supports_image`/`supports_pdf`, `response_format`, `reasoning_effort`, `chat`,
+  `embedding`, `extra_body`), the picker lists entries whose key is present with
+  the first as default, and the three `UTILS_*_MODEL` keys name what each surface
+  may use — a list, so any ONE of six keys runs everything. Utility entries
+  (`*-utils`, `chat: false`) are multimodal with thinking off: a text-only model
+  on the vision surface is exactly #68. Python holds no model name;
+  `test_one_key_defaults.py` pins the table to the entries below it.
+
+- **Six keys now, and the three that only looked like they worked.**
+  `ANTHROPIC_API_KEY` joins as the sixth. Measured against each live vendor:
+
+  * `OPENROUTER_API_KEY`, the recommended key, could not read a report —
+    `reasoning: {enabled: false}` answers `400 Reasoning is mandatory for this
+    endpoint`. Now `{effort: minimal, exclude: true}`.
+  * `OPENAI_API_KEY` could not call a tool — `gpt-5.6-terra` needs
+    `reasoning_effort: none`, and with reasoning on it also rejects `temperature`.
+  * `GEMINI_API_KEY` left the picker empty while `doctor` called chat healthy:
+    the router knew the vendor's key aliases and the agent's resolver did not.
+
+- **Anthropic uses the vendor's own API, not the compatibility layer.** There
+  `response_format: {"type": "json_object"}` is REFUSED (400, "Input should be
+  'json_schema'" — the compatibility page says it is ignored, and it is not), and
+  a schema is taken only in OpenAI strict mode, which our extraction schemas do
+  not carry. The native API constrains decoding with `output_config.format`, so
+  the answer IS the document. An entry's `response_format`
+  (`json_schema`|`json_object`|`none`) replaces the old boolean, because "what
+  this endpoint takes" turned out to be three answers.
+
+- **Every PDF uploaded through the web client extracted nothing, on every key.**
+  The WebSocket upload buffers chunks into a `bytearray` and pypdfium2 refuses
+  it, so the text layer came back empty and every model call after it was handed
+  an empty string — while the upload reported success. `extract_text` normalises
+  at the door, the one place every document kind passes through.
+
+- **What an entry declares is now what gets sent.** `openai-utils` declared
+  `reasoning_effort: none` and `RouteSpec` had no such field, so an
+  `OPENAI_API_KEY`-only deployment extracted zero indicators. `unread_entry_keys()`
+  now names any entry key no code path consumes, at boot — the class, not the
+  instance.
+
+- **Anthropic extraction returned nothing on a fresh install.** `anthropic` 1.x
+  removed `temperature`/`top_p`/`top_k` and the floor was uncapped, so every call
+  raised `TypeError`. The backend reads what the installed SDK's signature
+  accepts and drops the rest. Behind it: the blocking call refuses a `max_tokens`
+  large enough for a long report (claude-haiku-4-5 — 20000 passes, 32000 raises),
+  and extraction asks for 32000, so every request streams. Floors are
+  `anthropic>=1.5` and `langchain-google-genai>=4.4.0`, uncapped.
+
+- **A `GEMINI_API_KEY` agent could not finish one tool call.** Gemini 3.x attaches
+  a `thought_signature` to every function call and requires it back verbatim; the
+  compatibility endpoint cannot carry it, and no switch on that path recovers it.
+  `gemini-flash` is `llm_type: google-genai` — the one chat entry that is not
+  OpenAI-compatible. Extraction is unaffected: one call, no second turn.
+
+- **A PDF attached to a question 400'd, on the default chat model of the
+  recommended key.** `read_file` delivers it inside a `ToolMessage`, and whether
+  that is accepted is a property of the TRANSPORT: OpenRouter answers `400 tool
+  messages must include a non-empty string tool_call_id`, OpenAI `400 Invalid
+  value: 'file'` — both for models that genuinely read PDFs over their own vendor
+  API. The transport decides now, and a profile may only narrow, never widen:
+  that field has three origins and two describe the model. On an
+  OpenAI-compatible endpoint a PDF is served as extracted text, which works.
+
+- **Zero indicators now says why.** Four states rendered identically: no provider
+  configured; a provider that failed every call; an extraction that raised; a
+  document with genuinely none. The first three now mark the file failed with the
+  sentence that fixes it — the third used to be written `complete` with
+  `error: ""`, under a placeholder abstract reading "uploaded successfully".
+  Underneath, the vision path caught every exception and returned `""`, so a
+  `400 This model does not support image` looked exactly like a blank page.
+  Selection happens once; a call that then fails is a failure, not a reason to
+  try the next entry. Server and worker log one WARNING per surface without a
+  provider, and an ERROR when there is none. The files API exposes the row's
+  `error`, which it had withheld while the fix sat in the database.
+
+- **The indicator sync sweep died without an embedding key.** `embed()` raises on
+  a misconfigured `UTILS_EMBEDDING_MODEL` — correct for a direct caller — and the
+  sweep let it reach the consumer loop, so an Anthropic- or DeepSeek-only
+  deployment saw a traceback per signal instead of the documented fallback. The
+  step is skipped with one warning and the sweep finishes.
+
+- **The agent told users to re-upload a report it could see.** The prompt said
+  `/uploads/` holds "the file I just uploaded", but that mount is only the
+  current message's attachments; a Data-page upload lands in `/library/`.
+
+- **An entry's thinking configuration was overwritten**
+  ([#70](https://github.com/thetahealth/mirobody/issues/70)).
+  `_vertex_anthropic_kwargs` assigned `model_kwargs["thinking"]` unconditionally,
+  so an entry declaring the adaptive shape for Claude Opus 4.7+ had it replaced
+  by a budget shape those models reject. On the OpenAI path an entry carrying a
+  `reasoning` dict also received `reasoning_effort`, which `Responses.create()`
+  rejects before any request. What an entry declares now stands.
+
 - **The Indicators tab listed nothing, against a healthy endpoint**
-  ([#62](https://github.com/thetahealth/mirobody/issues/62)). `c470b3d`
-  reshaped `GET /api/v1/health-indicators` around one envelope on 2026-09-07;
-  the shipped bundle was built on 09-04 and read `catalog` / `indicators`, keys
-  the route has never sent. It rendered "No indicators yet" over an account
-  with data, while the Files tab, the tab badges and the chat beside it worked.
-  Client-side only — the endpoint is unchanged.
+  ([#62](https://github.com/thetahealth/mirobody/issues/62)). The shipped bundle
+  predated the route's reshape and read keys it never sends. Three reads were
+  wrong, not the one reported — the list, the readings drawer, and the
+  **per-reading edit and delete buttons**, whose key is `row_id` where the client
+  looked for `id`, so owner-only correction had disappeared from every row.
+  Client-side only. `test_indicator_contract.py` pins the key sets here.
 
-  Three reads were wrong, not the one reported: the list, the readings drawer
-  (`indicators[0].readings`, now `rows`), and the per-reading **edit and delete
-  buttons — a reading's key is `row_id` and the client looked for `id`, so
-  owner-only correction had quietly disappeared from every row**. The client
-  repo pins each mapping against fixtures copied from `_catalog_row` /
-  `_reading_row`, and `mirobody/server/routers/test_indicator_contract.py` pins
-  the same key sets here, so the next reshape fails a test rather than a page.
+- **`./deploy.sh` picked a Docker mirror by asking the wrong process.** The probe
+  was a `curl` from the shell, which has `http_proxy`; the daemon that pulls does
+  not inherit it, and the probe hit the website rather than the registry. It pulls
+  the smallest real image through the daemon now. Separately, `ENV` and the two
+  encryption keys were written only into a `.env` the script created itself —
+  dropping in one that holds just an API key left every boot missing them.
 
-  Two traps for anyone changing that route. It answers in two grains from one
-  path — catalog without `keywords`/`indicators`, readings with them — and a
-  search matching nothing answers with the CATALOG, so a client cannot infer
-  the grain from its own request. And `truncated` arrives `true` on a COMPLETE
-  catalog, because `_per_indicator_truncated` compares each row's `total` (the
-  count over that indicator's whole series) against the one row carrying it, so
-  it is not on its own a statement that anything was left out.
+- **Two gates that were missing, both key-free and on every PR.**
+  `test_upload_smoke.py` puts a real PDF through the real upload path;
+  `test_file_block_transport.py` pins the transport rule in both directions.
+  Three defects above were invisible for a release because nothing did this.
 
-  `frontend/` is build output and this replaces the directory with a fresh
-  build, so the bundle also carries two changes that are not this issue: the
-  model picker stops splitting `/api/models` provider names into bogus "Agent"
-  tabs, and the care-circle list reads `data.members`. The second needs a
-  server fix that is not in this branch — `POST /invitation/shared-by-me/list`
-  hands a bare list to a `dict`-typed envelope and answers `code: -1` on every
-  call — which changes nothing for a reader, since that route has never
-  returned a usable answer.
+### Changed
+
+- **The bundled web client is half its size**, 7.0 MB in 59 files to 3.7 MB in 42.
+  The Vite legacy plugin emitted a second transpiled copy of every bundle for
+  browsers that could not render the app anyway: it transpiles JavaScript only,
+  and the stylesheet needs `@property`, `color-mix()`, `@layer` and `oklch()` —
+  Tailwind v4's floor of Chrome 111 / Safari 16.4 / Firefox 128. Those targets
+  were getting a working script and an unstyled page. Nothing changes for a
+  browser that runs the app today; the floor is written down in `browserslist`
+  and [`docs/frontend.md`](docs/frontend.md).
+
+- **A `git clone` is half the size.** Deleting code does not shrink a repository —
+  every blob stays in the pack. What a clone pays is 29 MB of git objects plus
+  69 MB of Git LFS, and the LFS half is the slow one. Three LFS files no runtime
+  reads (`scripts/check_wheel_data.py` has forbidden all three since 1.3.0) are
+  release assets now, listed with checksums in
+  [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv) and fetched by
+  `scripts/fetch_data.sh`, which `./deploy.sh` and CI call. This works without
+  rewriting history, because git-lfs only fetches the checked-out commit's
+  objects: with `--depth 1` a clone goes from **~98 MB to ~48 MB**. Semantic
+  indicator search degrades to the lexical index when the concept graph is
+  absent, exactly as it already did on a `pip install`.
+
+- **The configuration is split by concern.** `config.yaml` keeps what the
+  containers wire; `config.llm.yaml` is the file to open; `config.devices.yaml`
+  holds Garmin/Oura/Whoop and the mobile sign-in block. An `INCLUDE` list at the
+  top of `config.yaml` names them, and they load before your `config.{ENV}.yaml`.
+  Gone with the move: `FRONTIERX_*`, `JINA_API_KEY`, a duplicate
+  `DASHSCOPE_API_KEY`, and the `*_API_KEY: ""` lines that read as "put the key
+  here" when the key goes in `.env`.
+
+- **`.env` is where the key goes, and the boot log answers whether it worked.**
+  `./deploy.sh` writes the key names into `.env` and no longer lists them in the
+  generated overlay — there were two places to put a key, and #68's reporter
+  chose the other. The boot banner ends with the table `mirobody doctor` prints:
+  what each surface selected, and the fix where one has nothing.
+
+- Model ids verified against each vendor's live catalogue on 2026-09-10:
+  `gemini-3.8-flash`, `gpt-5.6-terra`, `anthropic/claude-sonnet-5`,
+  `qwen3.8-flash`, `deepseek-flash`, `claude-haiku-4-5`. Network wording names
+  the condition (openrouter.ai unreachable), never a region.
+
+- **A dead-code sweep**: 52 files, +245 / −1,978 lines. Everything with zero
+  callers here, downstream and in the tests — `utils/s3.py`, `utils/truncate.py`
+  and with it the `tiktoken` dependency, `utils/data.py`, the sync
+  PostgreSQL/Redis paths, the storage backends' `get_file_info`, the scheduler's
+  unwired stop/status methods, and a dozen pulse service methods.
 
 ## 1.4.0
 

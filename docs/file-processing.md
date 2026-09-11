@@ -28,7 +28,7 @@ This module provides comprehensive health data file processing capabilities, inc
 - ✅ **Real-time Progress Feedback**: WebSocket connections provide real-time progress updates for file upload and processing
 - ✅ **Smart File Recognition**: Automatically identifies file types and selects the appropriate handler
 - ✅ **Health Indicator Extraction**: Uses LLM to automatically extract health indicator data from medical reports
-- ✅ **Multi-format Support**: Supports PDF, images, audio, genetic data and more
+- ✅ **Multi-format Support**: Supports PDF, images, Office documents, text, genetic data and more
 - ✅ **PDF Parallel Processing**: Multi-page PDFs are processed in parallel for improved efficiency
 - ✅ **File Summary Generation**: Automatically generates file content summaries
 - ✅ **Cascade Deletion**: Automatically cleans up associated health data when files are deleted
@@ -41,7 +41,6 @@ This module provides comprehensive health data file processing capabilities, inc
 |-----------|-----------|---------|-------------|
 | PDF | `application/pdf` | `PDFHandler` | Multi-page parallel processing with automatic health indicator extraction |
 | Images | `image/*` | `ImageHandler` | Supports JPEG, PNG, GIF, WebP; recognizes health reports and extracts indicators |
-| Audio | `audio/*` | `AudioHandler` | Speech-to-text conversion for extracting verbal health information |
 | Genetic Data | Specific formats | `GeneticHandler` | Genetic test report parsing |
 | Text | `text/*` | `TextHandler` | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.html`, `.log` — decoded directly, same extraction path as PDF |
 | Excel | OOXML | `ExcelHandler` | `.xlsx`, `.xlsm` read with openpyxl as markdown tables under a row budget; the pre-2007 binary `.xls` is not read |
@@ -92,8 +91,16 @@ sequenceDiagram
     end
     Server->>Client: file_received (file reception complete)
     Server->>Client: upload_progress (processing progress)
-    Server->>Client: upload_completed (processing complete)
+    Server->>Client: upload_completed (the FILE is stored)
+    Server->>Client: report_date_detected (the report's own date, if any)
+    Server->>Client: extraction_completed (indicator count, and whether it failed)
 ```
+
+`upload_completed` and `extraction_completed` answer different questions, and a
+client needs both: the first says the file arrived and is readable, the second
+says whether anything could be extracted from it. Extraction runs after the
+upload has already completed, so a client that stops listening at
+`upload_completed` will render a stored file as a finished one.
 
 #### Message Types
 
@@ -231,7 +238,54 @@ Server response:
 }
 ```
 
-##### 6. Heartbeat (ping/pong)
+##### 6. Report Date Detected (report_date_detected)
+
+Sent as soon as the report's own date has been probed — seconds after upload,
+while the 15-25 s indicator extraction is still running — so the client can ask
+about a missing date without waiting for the whole extraction.
+
+```json
+{
+    "type": "report_date_detected",
+    "file_key": "uploads/xxx.pdf",
+    "file_name": "2024 Annual Health Report",
+    "report_date": "2024-03-29 00:00:00",
+    "date_source": "document"
+}
+```
+
+`date_source` is `document` when the date was read off the report itself, and
+`upload` when none was found and the upload time is standing in as a
+placeholder. A client should offer to correct the second case.
+
+##### 7. Extraction Completed (extraction_completed)
+
+**This is the event that says whether extraction worked**, and the only one
+that does. `upload_completed` above reports that the FILE arrived and is
+stored — it says `1 files successful` even when every model call failed, because
+the file is genuinely stored and readable either way.
+
+```json
+{
+    "type": "extraction_completed",
+    "file_key": "uploads/xxx.pdf",
+    "file_name": "2024 Annual Health Report",
+    "indicators_count": 145,
+    "failed": false,
+    "report_date": "2024-03-29 00:00:00",
+    "date_source": "document"
+}
+```
+
+`failed: true` means extraction could not run — no provider is configured, or
+every call to the configured one errored. The sentence explaining which is on
+the file row (`error`, from `GET /api/v1/health-indicators/files`); the file
+itself is stored and readable. `failed: false` with `indicators_count: 0` is a
+different and ordinary outcome: a document that genuinely has no indicators in
+it. A client must not render the first two like the third — that is what made a
+green row over an empty list, with the cause visible only in server logs.
+
+##### 8. Heartbeat (ping/pong)
 
 Client sends:
 ```json
@@ -327,7 +381,7 @@ Authorization: Bearer <token>
 │         ┌──────────────────┼──────────────────┐                │
 │         ▼                  ▼                  ▼                │
 │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐          │
-│  │ PDFHandler  │   │ImageHandler │   │AudioHandler │   ...    │
+│  │ PDFHandler  │   │ImageHandler │   │ TextHandler │   ...    │
 │  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘          │
 │         │                  │                  │                │
 │         └──────────────────┼──────────────────┘                │
@@ -362,7 +416,6 @@ The system automatically identifies file types via `FileHandlerFactory`:
 1. GeneticHandler  - Genetic data files
 2. ImageHandler    - Image files (image/*)
 3. PDFHandler      - PDF documents
-4. AudioHandler    - Audio files (audio/*)
 ```
 
 #### 3. Content Processing Phase (35-90%)
@@ -610,7 +663,6 @@ interface FileUploadData {
     file_size: number;     // File size in bytes
     file_type: string;     // MIME type
     upload_time: string;   // Upload timestamp
-    duration?: number;     // Audio duration in ms (audio files only)
 }
 ```
 
@@ -629,7 +681,7 @@ interface FileDeleteRequest {
 interface FileProcessingResult {
     success: boolean;
     message: string;
-    type: string;              // File type: pdf, image, audio, etc.
+    type: string;              // File type: pdf, image, etc.
     filename: string;          // Original filename
     full_url: string;          // Full access URL
     file_key: string;          // Storage key

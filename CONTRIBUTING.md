@@ -48,7 +48,14 @@ the mail client.
     ```bash
     git clone https://github.com/YOUR_USERNAME/mirobody.git
     cd mirobody
+    git lfs install && git lfs pull      # the resolver's LOINC bundle (40 MB)
+    ./scripts/fetch_data.sh --all        # the terminology data that is not tracked here
     ```
+    The second command is not optional if you intend to run the tests: without
+    the concept graph, `mirobody/test_readme_numbers.py` skips rather than
+    holding the README's numbers to the artifacts they come from. What it
+    fetches, and why those files are not in the repository, is
+    [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv).
 
 3.  **Create a Branch**
     Create a new branch for your feature or fix:

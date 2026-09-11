@@ -62,6 +62,19 @@ that already carries `Cache-Control` (streaming endpoints do) is left alone.
 | `/assets/*` (hashed filenames), status 200 | `public, max-age=31536000, immutable` |
 | `text/html` responses, and `/mirobody.json` | `no-cache` |
 
+## Which browsers the bundled client needs
+
+Chrome 111, Edge 111, Firefox 128, Safari / iOS Safari 16.4 — the floor
+Tailwind v4 sets, and a CSS one: the stylesheet uses `@property`,
+`color-mix()`, `@layer` and `oklch()`, which nothing can polyfill away.
+
+The build used to also emit a `nomodule` copy of every bundle for older
+browsers, doubling the output. It was removed once the two floors were
+compared: JavaScript transpilation cannot lift a CSS requirement, so the six
+targets that copy existed for (chrome 109, QQ browser, UC browser, KaiOS,
+Opera Mini, Opera Mobile 80) received a working script and an unstyled page.
+Supporting them again means moving off Tailwind v4, not restoring the plugin.
+
 ## Replacing the client
 
 Point `frontend/` at your own build output. The requirements are only:

@@ -66,6 +66,8 @@ _HAS_PARSE = _installed("dotenv", "ruamel.yaml", "pypdfium2")
 # exists to prevent. A glob that matches nothing fails silently, so when a
 # test moves, grep this list.
 _AGENT_ONLY = [
+    "mirobody/agent/*",
+    "mirobody/agent/**/*",
     "tests/agent/*",
     "tests/agent/**/*",
     "tests/test_plugin_entry_points.py",

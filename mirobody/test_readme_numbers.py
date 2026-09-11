@@ -63,7 +63,21 @@ def live() -> dict[str, int]:
     from mirobody.pulse.standardize import StandardIndicator
     from mirobody.test_engine_coverage import CASES, MUST_NOT_RESOLVE
 
-    graph = ConceptGraph.get(str(_ROOT / "mirobody" / "res" / "fhir_concept_graph.bin")).stats()
+    # The graph is an optional download (`mirobody/res/EXTERNAL.tsv`), so a
+    # plain checkout does not have it. Skipping is right for a contributor and
+    # WRONG for CI, which is why both workflows run `scripts/fetch_data.sh`
+    # before pytest: these numbers are what hold the README to the artifacts
+    # it quotes, and a gate that quietly stops running is worse than no gate.
+    graph_bin = _ROOT / "mirobody" / "res" / "fhir_concept_graph.bin"
+    if not graph_bin.is_file():
+        # Inside a fixture, so a plain skip — it propagates to every test that
+        # asks for `live`, which is exactly the set that needs the graph.
+        pytest.skip(
+            f"{graph_bin.name} is not in the checkout — run scripts/fetch_data.sh "
+            f"(CI does, so these numbers stay guarded there)"
+        )
+
+    graph = ConceptGraph.get(str(graph_bin)).stats()
 
     # `res/aliases_src/{lang}.tsv`, not the bundle: the byte-identical
     # `aliases/{lang}.tsv` members are gone (they had drifted from the curated

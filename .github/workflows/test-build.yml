@@ -61,6 +61,13 @@ jobs:
     # `[test]` alone here on purpose, NOT `[app,test]`: this job is the
     # closest thing to a fresh contributor's machine, and it is where a missing
     # or newly-eager dependency shows up. The full run happens below.
+    # The terminology data that is NOT in the checkout (mirobody/res/EXTERNAL.tsv).
+    # Without it `test_readme_numbers.py` skips — and that test is what holds
+    # the resolver numbers the README prints to the artifact they come from, so
+    # CI is exactly where it must NOT skip.
+    - name: Fetch the out-of-tree terminology data
+      run: ./scripts/fetch_data.sh --all
+
     - name: Engine tests on a minimal install
       run: |
         pip install -e '.[test]'

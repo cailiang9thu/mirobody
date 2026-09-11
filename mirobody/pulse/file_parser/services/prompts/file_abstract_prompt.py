@@ -89,10 +89,16 @@ FILE_ABSTRACT_PROMPT = """Please generate a detailed abstract and filename for t
 Please generate a JSON format response based on the file content:"""
 
 FALLBACK_ABSTRACT_TEMPLATES = {
-    "pdf": "PDF document: {filename} - Document uploaded successfully, contains {page_count} pages",
-    "image": "Image file: {filename} - Image uploaded successfully, resolution {resolution}",
-    "excel": "Excel file: {filename} - Spreadsheet uploaded successfully, contains {sheet_count} sheets",
-    "genetic": "Genetic data file: {filename} - Genetic test data uploaded successfully ({file_size}), processing in background",
-    "text": "Text file: {filename} - Text content uploaded successfully, contains {word_count} characters",
-    "default": "{file_type} file: {filename} - File uploaded successfully and ready for viewing"
+    # These are what a reader sees when summarisation FAILED, so they say so.
+    # They used to read "uploaded successfully, contains {page_count} pages"
+    # and were filled with `page_count="unknown pages"` — rendering "contains
+    # unknown pages pages", a doubled word inside a sentence claiming success
+    # over a document nothing had managed to read. The file IS stored; it is
+    # the summary that is missing, and only that.
+    "pdf": "PDF document: {filename} - stored, but no summary could be generated ({page_count})",
+    "image": "Image file: {filename} - stored, but no summary could be generated ({resolution})",
+    "excel": "Excel file: {filename} - stored, but no summary could be generated ({sheet_count})",
+    "genetic": "Genetic data file: {filename} - stored ({file_size}); genetic processing continues in the background",
+    "text": "Text file: {filename} - stored, but no summary could be generated ({word_count})",
+    "default": "{file_type} file: {filename} - stored, but no summary could be generated"
 }
