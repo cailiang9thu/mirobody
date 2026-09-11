@@ -247,6 +247,20 @@ evaluation is untouched.
 
 ### Changed
 
+- **The bundled web client is half its size, and states the browsers it
+  needs.** `frontend/` goes from 7.0 MB in 59 files to 3.7 MB in 42: the
+  Vite legacy plugin was emitting a second, transpiled `nomodule` copy of
+  every bundle for browsers that could not render the app anyway. It
+  transpiles JavaScript only, and the stylesheet needs `@property`,
+  `color-mix()`, `@layer` and `oklch()` — Tailwind v4's floor of Chrome 111 /
+  Safari 16.4 / Firefox 128, which no polyfill reaches. The six targets below
+  that floor (chrome 109, QQ browser, UC browser, KaiOS, Opera Mini, Opera
+  Mobile 80) were getting a working script and an unstyled page, so the copy
+  was not supporting them — it was hiding that they are unsupported. Nothing
+  changes for a browser that can run the app today: `nomodule` chunks were
+  never downloaded by one. The floor is now written down, in the client's
+  `browserslist` and in [`docs/frontend.md`](docs/frontend.md).
+
 - **A `git clone` is half the size, and the reason it was not is measured.**
   Deleting code does not shrink a git repository — every blob stays in the
   pack — which is why a large sweep changed nothing about clone time. What a
