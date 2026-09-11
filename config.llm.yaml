@@ -65,9 +65,25 @@ MODELS:
     temperature: 0.1
     supports_image: true
   gemini-flash:
-    llm_type: openai              # Google's OpenAI-compatible endpoint (images yes, PDF parts no)
+    # The ONE chat entry that is not an OpenAI-compatible endpoint, and the
+    # reason is the tool loop. Gemini 3.x attaches a `thought_signature` to
+    # every functionCall part and REQUIRES it back verbatim on the next turn;
+    # the OpenAI-compatible endpoint has nowhere to carry it, so the signature
+    # is lost in LangChain's round trip and the second turn is:
+    #     400 Function call is missing a thought_signature in functionCall
+    #         parts. … function call `default_api:ls`, position 2
+    # Measured 2026-09-10: bare HTTP non-streaming (echoing the vendor's own
+    # assistant message back) works; every streaming shape 400s, and no config
+    # switch on the compat path recovers it — `disable_streaming` included.
+    # `langchain-google-genai` carries the signature explicitly (its
+    # `__gemini_function_call_thought_signatures__`), which is why the floor
+    # below it in pyproject.toml is pinned.
+    #
+    # Extraction is NOT affected and stays on the compat endpoint
+    # (`gemini-utils`): it is a single call with no second turn, so there is no
+    # signature to return. One vendor, two transports, for that one reason.
+    llm_type: google-genai
     api_key: GOOGLE_API_KEY
-    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
     model: gemini-3.8-flash
     temperature: 1.0
     supports_image: true
