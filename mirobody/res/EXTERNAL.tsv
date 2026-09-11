@@ -1,0 +1,27 @@
+# Terminology data that is NOT in the git checkout, and where to get it.
+#
+# These three used to be tracked here through Git LFS. Nothing the wheel ships
+# reads them — `scripts/check_wheel_data.py` has forbidden all three since
+# 1.3.0 — and together they were 29 MB that every `git clone` paid for over
+# LFS, which is the slow half of cloning this repository.
+#
+# `scripts/fetch_data.sh` reads this file. `./deploy.sh` calls it for the
+# `runtime` rows; pass `--all` for the `build` rows too.
+#
+# The checksum is each file's Git LFS object id, because git-lfs names objects
+# by their sha256 — so a download can be checked against the history the file
+# came from, not just against this table.
+#
+# To publish a new version: upload to a new `data-YYYY-MM-DD` release, then
+# change RELEASE and the rows below in one commit. Old deployments keep
+# working; they pin the tag they were checked out with.
+#
+# columns: name <TAB> sha256 <TAB> bytes <TAB> need <TAB> what reads it
+#   need = runtime  a deployment wants it; deploy.sh fetches it
+#   need = build    only the bundle-build passes read it (docs/vocabulary-build.md)
+
+RELEASE	data-2026-09-10
+
+fhir_concept_graph.bin	0779ade751bd2a4ecedfe693cd7150628fc31bf75845298f6f50e0c3d6912ddb	22445042	runtime	semantic recall (indicator.search -> FhirAdapter.expand); absent, search falls back to the lexical index
+fhir_meta.csv.gz	3aeb649100dcd7b2d29d2947a34443cb943c4669a15dd953c789a8e9adb89d57	6899326	build	bundle build passes; superseded at runtime by corpus_names.bin inside the LOINC bundle since 1.3.0
+fhir_snomed_ct_bundle.tar.gz	e287f202dff8634bbf746d6bd58335645d19467de850718a8dafd0c19247c250	137700	build	bundle build passes only

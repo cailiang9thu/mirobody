@@ -47,6 +47,12 @@ EMBEDDING_DIM = 1024
 # graphs after their own content scheme.
 FHIR_GRAPH_BIN = "fhir_concept_graph.bin"
 
+#: Point this at a concept graph anywhere on disk. Named like
+#: ``MIROBODY_SEMANTIC_INDEX``, and for the same reason: the file is an
+#: optional download (``mirobody/res/EXTERNAL.tsv``), so a deployment needs a
+#: way to say where its copy lives without moving it into the package.
+GRAPH_ENV_VAR = "MIROBODY_CONCEPT_GRAPH"
+
 
 # ─── Embedding provider → fhir_indicators column ────────────────────
 

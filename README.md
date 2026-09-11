@@ -120,10 +120,16 @@ a deployment with synthetic, PHI-free trajectories.
 ## 🚀 Run the whole thing
 
 ```bash
-git clone https://github.com/thetahealth/mirobody.git && cd mirobody
-git lfs install && git lfs pull   # the engine's data bundles; a fresh clone holds pointer stubs until you do
+git clone --depth 1 https://github.com/thetahealth/mirobody.git && cd mirobody
+git lfs install && git lfs pull   # the resolver's LOINC bundle; a fresh clone holds a pointer stub until you do
 ./deploy.sh                       # Postgres + pgvector, Redis, server, worker → http://localhost:18060
 ```
+
+`--depth 1` because the history is mostly superseded frontend builds and you
+almost certainly do not want it: it takes the clone from ~98 MB to ~48 MB.
+Drop the flag if you plan to send a pull request. `./deploy.sh` also fetches
+the 22 MB concept graph behind semantic indicator search, which is a release
+asset rather than a tracked file — see [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv).
 
 Sign in as `caregiver@mirobody.ai`, code `111111`. No mail provider needed: the
 sign-in page opens on password, and an account of your own is one request away:

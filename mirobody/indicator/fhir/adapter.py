@@ -22,6 +22,7 @@ from .common import (
     resolve_dim_embedding_column,
     resolve_fhir_embedding_column,
 )
+from .common import GRAPH_ENV_VAR
 from .index import RES_DIR as _RES_DIR, load as _load_local_fhir_cache
 
 log = logging.getLogger(__name__)
@@ -121,13 +122,34 @@ class FhirAdapter(DomainAdapter):
         self._loinc_table_csv = loinc_table_csv
 
     def _graph(self) -> ConceptGraph:
-        """Lazy-load the FHIR concept graph. Looked up under
-        ``bundle_dir`` first (so external mounts can ship a custom
-        graph alongside their embeddings), then under the pip-bundled
-        ``mirobody/res/`` — the bin is small (~9 MB) and stays in the
-        wheel by default, so the bundled fallback is the normal path.
+        """Lazy-load the FHIR concept graph, from the first place that has it:
+        ``MIROBODY_CONCEPT_GRAPH``, then ``bundle_dir`` (so an external mount
+        can ship a custom graph beside its embeddings), then
+        ``mirobody/res/``.
+
+        The graph is NOT in the wheel and NOT in the git checkout — 22 MB that
+        `scripts/check_wheel_data.py` has forbidden in the artifact since
+        1.3.0, and that left the repository so `git clone` stops paying for it
+        over Git LFS. `./deploy.sh` and `scripts/fetch_data.sh` fetch it into
+        ``mirobody/res/`` from the release named in ``res/EXTERNAL.tsv``.
+
+        Absent, this raises, and `pulse/query.py` turns that into one warning
+        and a lexical answer — the documented degradation, not an outage.
+        (This docstring used to say the bin was "~9 MB" and "stays in the
+        wheel by default". Both stopped being true and nothing caught it,
+        which is the argument for naming the fetch path here.)
         """
         candidates = []
+        explicit = os.environ.get(GRAPH_ENV_VAR)
+        if not explicit:
+            try:
+                from ...utils.config import safe_read_cfg
+
+                explicit = safe_read_cfg(GRAPH_ENV_VAR, "")
+            except Exception:
+                explicit = ""
+        if explicit:
+            candidates.append(explicit)
         if self._bundle_dir:
             candidates.append(os.path.join(self._bundle_dir, FHIR_GRAPH_BIN))
         candidates.append(os.path.join(_RES_DIR, FHIR_GRAPH_BIN))
@@ -136,8 +158,9 @@ class FhirAdapter(DomainAdapter):
                 return ConceptGraph.get(p)
         # Surface the most informative path so misconfigurations are obvious.
         raise FileNotFoundError(
-            f"{FHIR_GRAPH_BIN} not found under bundle_dir or RES_DIR; "
-            f"tried: {candidates}"
+            f"{FHIR_GRAPH_BIN} not found; tried: {candidates}. "
+            f"It is not in the checkout — run scripts/fetch_data.sh, or set "
+            f"{GRAPH_ENV_VAR} to a copy (see mirobody/res/EXTERNAL.tsv)."
         )
 
     async def expand(self, top_ids: list[int]) -> list[int]:

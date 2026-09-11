@@ -110,10 +110,15 @@ agent 评测——100 个合成用户、10,000 个问题，[arXiv:2604.02834](ht
 ## 🚀 跑起整套系统
 
 ```bash
-git clone https://github.com/thetahealth/mirobody.git && cd mirobody
-git lfs install && git lfs pull   # 引擎的数据包；不执行的话新克隆里只有 LFS 指针
+git clone --depth 1 https://github.com/thetahealth/mirobody.git && cd mirobody
+git lfs install && git lfs pull   # 解析器的 LOINC 数据包；不执行的话新克隆里只有 LFS 指针
 ./deploy.sh                       # Postgres + pgvector、Redis、服务、worker → http://localhost:18060
 ```
+
+用 `--depth 1` 是因为历史里大半是已被取代的前端构建产物，你多半不需要：克隆体积
+从约 98 MB 降到约 48 MB。打算提 PR 的话去掉这个参数。`./deploy.sh` 还会取回语义
+指标检索所需的 22 MB 概念图谱——它是 release 附件而不是仓库文件，见
+[`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv)。
 
 用 `caregiver@mirobody.ai`、验证码 `111111` 登录。不需要邮件服务：登录页默认是密码登录，
 一条请求就能创建你自己的账号：

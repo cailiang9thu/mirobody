@@ -247,6 +247,44 @@ evaluation is untouched.
 
 ### Changed
 
+- **A `git clone` is half the size, and the reason it was not is measured.**
+  Deleting code does not shrink a git repository — every blob stays in the
+  pack — which is why a large sweep changed nothing about clone time. What a
+  clone actually pays is 29 MB of git objects plus **69 MB of Git LFS**, and
+  the LFS half is both the bigger one and the slow one.
+
+  Three of the four LFS files are gone from the checkout:
+  `fhir_concept_graph.bin` (22 MB), `fhir_meta.csv.gz` (6.9 MB) and
+  `fhir_snomed_ct_bundle.tar.gz` (138 KB). None is read by the runtime the
+  wheel ships — `scripts/check_wheel_data.py` has FORBIDDEN all three since
+  1.3.0 — so every clone was paying for artifacts the published package
+  deliberately excludes. They are release assets now
+  (`data-2026-09-10`), listed with their checksums in
+  [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv) and fetched by
+  `scripts/fetch_data.sh`, which `./deploy.sh` and both CI workflows call.
+  The checksum in that table is each file's Git LFS object id, because
+  git-lfs names objects by their sha256 — so a download verifies against the
+  history it came from.
+
+  Unlike deleting a normal file, this works immediately and without rewriting
+  history: git-lfs only fetches the objects the CHECKED-OUT commit references.
+  With `--depth 1`, now in the README, a clone goes from **~98 MB to ~48 MB**;
+  the 40 MB LOINC bundle stays and is the floor.
+
+  The one of the three with a runtime caller is the concept graph, behind
+  semantic indicator search (`pulse/query.py` → `indicator.search` →
+  `FhirAdapter.expand`). `./deploy.sh` fetches it, so a Docker deployment
+  loses nothing; anywhere else it degrades exactly as it already did on a
+  `pip install` — one warning, and answers from the lexical index.
+  `MIROBODY_CONCEPT_GRAPH` points at a copy elsewhere, spelled like
+  `MIROBODY_SEMANTIC_INDEX` and for the same reason.
+
+  No history was rewritten. Dropping the two dead frontend directories
+  (`htdoc/`, `mirobody/pub/htdoc/` — 10.3 MB of blobs for paths that no longer
+  exist) would need `git filter-repo`, which changes every commit hash and
+  breaks all 226 forks and every open PR, to save 10 MB on a 29 MB pack that
+  `--depth 1` already reduces to 8.4 MB. Not worth it.
+
 - **The configuration is split by concern, and `config.yaml` names its
   siblings.** `config.yaml` keeps what the containers wire (server, database,
   login); `config.llm.yaml` is the file to open — the one-key table, `MODELS`

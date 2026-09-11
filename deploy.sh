@@ -265,6 +265,15 @@ check_subnet_free() {
 # mirror failed pulling pg/redis from the unreachable hub.
 export DOCKER_MIRROR="${docker_host}"
 
+# The terminology data that is not in the checkout. 22 MB, once: it is the
+# concept graph behind semantic indicator search, and it left the repository
+# so that `git clone` stops paying 29 MB of Git LFS for files the wheel has
+# forbidden since 1.3.0. Never fatal — without it, search answers from the
+# lexical index and says so.
+if [[ -x "$(dirname "$0")/scripts/fetch_data.sh" ]]; then
+    "$(dirname "$0")/scripts/fetch_data.sh"
+fi
+
 docker compose -f ${DOCKER_COMPOSE_FILE} down
 check_ports_free 18060 18062 18069
 check_subnet_free
