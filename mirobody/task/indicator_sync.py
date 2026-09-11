@@ -92,13 +92,37 @@ class IndicatorSyncTask(BaseRedisTask):
         except Exception as e:
             logger.error(f"{cls.__name__}.enqueue failed: {e}")
 
+    #: Set once the embedding step has been reported as unconfigured, so a
+    #: deployment that will never have an embedding key does not print the same
+    #: warning on every signal for the life of the worker.
+    _embed_misconfig_logged = False
+
     async def consume(self, messages: list[str]) -> None:
         logger.info(f"indicator_sync starting: {len(messages)} signal(s)")
         await self.backfill_from_registry()
         await self.backfill_from_history()
         await self.backfill_from_dominant()
         await self.insert()
-        await self.embed()
+        try:
+            await self.embed()
+        except ValueError as e:
+            # `embed` raises on a misconfigured `UTILS_EMBEDDING_MODEL` — no
+            # provider at all, or one with no `th_series_dim` vector column —
+            # and that raise is right for a direct caller (see its docstring).
+            # Here it used to leave the sweep half-done and unfinished: the
+            # four backfills above HAD written their rows, but the exception
+            # reached `TaskBase.run`, which logs "loop error" with a stack
+            # trace and sleeps, so a deployment with no embedding key saw a
+            # traceback per signal and never the line saying the mapping work
+            # succeeded. Semantic search degrades to the lexical index; the
+            # rest of the funnel is unaffected, so the sweep finishes.
+            if not type(self)._embed_misconfig_logged:
+                type(self)._embed_misconfig_logged = True
+                logger.warning(
+                    f"indicator_sync: skipping the embedding step — {e} "
+                    f"(indicator search falls back to the lexical index; "
+                    f"this is logged once per process)"
+                )
         logger.info("indicator_sync done")
 
     #-------------------------------------------------------------------------
