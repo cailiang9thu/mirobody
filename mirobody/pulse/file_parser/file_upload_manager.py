@@ -373,7 +373,7 @@ class WebSocketFileUploadManager:
                 )
                 return False
 
-            logger.info(f"filename: {filename}, chunk_index: {chunk_index}, total_chunks: {total_chunks}")
+            logger.debug(f"upload {message_id}: chunk {chunk_index}/{total_chunks}")  # phi: ok a session id and two counters
             # Check if data for this file already exists
             existing_file = None
             for uploaded_file in session["uploaded_files"]:
@@ -444,7 +444,7 @@ class WebSocketFileUploadManager:
                     },
                 )
 
-                logger.info(f"File received successfully: {filename}, actual size: {actual_file_size} bytes")
+                logger.info(f"upload {message_id}: received, {actual_file_size} bytes")  # phi: ok a session id and a size
 
             # Check if all files have been received
             all_files_received = all(f["received_chunks"] == f["total_chunks"] for f in session["uploaded_files"])
@@ -547,7 +547,7 @@ class WebSocketFileUploadManager:
                     file_start_progress = base_progress + (i * progress_per_file)
                     file_end_progress = min(base_progress + ((i + 1) * progress_per_file), max_progress)
 
-                    logger.info(f"File {i + 1}/{total_files} ({file_data['filename']}): progress range {file_start_progress}%-{file_end_progress}%")
+                    logger.info(f"File {i + 1}/{total_files} of {message_id}: progress range {file_start_progress}%-{file_end_progress}%")
 
                     # Create progress callback for current file (use connection_id for WebSocket communication)
                     current_file_callback = self._create_progress_callback(
@@ -579,7 +579,7 @@ class WebSocketFileUploadManager:
                         type_list.append(result.get("type", "file"))
                         raws.append(self._normalize_raw_data(result.get("raw", "")))
 
-                        logger.info(f"File {i + 1} ({file_data['filename']}) processed successfully")
+                        logger.info(f"File {i + 1} of {message_id} processed successfully")
                     else:
                         # Collect failed file info including file_key if available
                         error_message = result.get("message", "File processing failed") if result else "File processing failed"
@@ -899,7 +899,11 @@ class WebSocketFileUploadManager:
                 progress_ratio = (progress - 30) / 70
                 mapped_progress = start_prog + int(progress_ratio * (end_prog - start_prog))
 
-            logger.info(f"File{file_index} ({file_name}): internal progress {progress}% -> mapped progress {mapped_progress}% | {message}")
+            # The upload SESSION, not the file name: a check-up report is named
+            # for the person it is about, and this callback fires roughly seven
+            # times per file. 1.4.2 moved two statements off the name and left
+            # this one, which was the "seven times" the entry was written about.
+            logger.info(f"File{file_index} of {message_id}: internal progress {progress}% -> mapped progress {mapped_progress}% | {message}")
             await self.update_progress(
                 user_id,
                 message_id,
@@ -1207,7 +1211,7 @@ class WebSocketFileUploadManager:
                             from mirobody.pulse.file_parser.services.file_abstract_extractor import FileAbstractExtractor
                             extractor = FileAbstractExtractor()
                             
-                            logger.info(f"[WebSocket] Generating file abstract for {uploaded_files[i]['filename']}, type: {file_type}")
+                            logger.info(f"[WebSocket] Generating file abstract for file {i + 1} of {message_id}, type: {file_type}")
                             
                             result_data = await extractor.extract_file_abstract(
                                 file_content=uploaded_files[i]["content"],
@@ -1220,10 +1224,10 @@ class WebSocketFileUploadManager:
                             if generated_name and file_type in ["pdf", "image"]:
                                 file_name = generated_name
                             
-                            logger.info(f"[WebSocket] Generated file abstract for {uploaded_files[i]['filename']}: '{file_abstract[:50]}...', file_name: '{file_name}'")
+                            logger.info(f"[WebSocket] Generated file abstract for file {i + 1} of {message_id}, {len(file_abstract)} chars")
                             
                         except Exception as abstract_error:
-                            logger.warning(f"[WebSocket] File abstract generation failed for {uploaded_files[i]['filename']}: {str(abstract_error)}")
+                            logger.warning(f"[WebSocket] File abstract generation failed for file {i + 1} of {message_id}: {str(abstract_error)}")
                             file_abstract = f"File: {uploaded_files[i]['filename']} - File uploaded successfully"
 
                     file_entry = {

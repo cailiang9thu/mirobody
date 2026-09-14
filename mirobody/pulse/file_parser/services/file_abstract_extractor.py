@@ -241,7 +241,11 @@ class FileAbstractExtractor:
                 result["file_abstract"] = self._truncate_abstract(result["file_abstract"])
             return result
         except Exception as e:
-            logger.error("Image abstract extraction failed: %s", type(e).__name__)
+            # The message and the stack, like the PDF branch above: the fallback
+            # abstract reads like a success, so a bare class name leaves no way to
+            # tell a vendor hiccup from a bug in our own call.
+            logger.error(  # phi: ok a parser error, not document contents
+                "Image abstract extraction failed: %s: %s", type(e).__name__, e, exc_info=True)
             return self._create_fallback_abstract(filename, "image")
 
     async def _extract_excel_abstract(self, file_content: bytes, filename: str) -> dict[str, str]:
@@ -290,7 +294,11 @@ class FileAbstractExtractor:
 
             return {"file_name": "", "file_abstract": self._truncate_abstract(abstract)}
         except Exception as e:
-            logger.error("Excel abstract extraction failed: %s", type(e).__name__)
+            # The message and the stack, like the PDF branch above: the fallback
+            # abstract reads like a success, so a bare class name leaves no way to
+            # tell a vendor hiccup from a bug in our own call.
+            logger.error(  # phi: ok a parser error, not document contents
+                "Excel abstract extraction failed: %s: %s", type(e).__name__, e, exc_info=True)
             return {"file_name": "", "file_abstract": f"Excel file: {filename} - Spreadsheet uploaded, analyzing content in background"}
 
     async def _extract_generic_abstract(self, file_content: bytes, filename: str, file_type: str) -> dict[str, str]:

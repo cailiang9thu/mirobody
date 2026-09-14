@@ -95,7 +95,9 @@ class FileProcessor:
             target_user_id = query_user_id if query_user_id else user_id
             language = get_req_ctx("language", "en")
 
-            logger.info(f"Starting file processing: {file.filename}, operator_user_id: {user_id}, target_user_id: {target_user_id}, message_id: {message_id}")
+            # The message id identifies the upload; the file name identifies the
+            # PATIENT, because that is how a check-up report is named.
+            logger.info(f"Starting file processing: message_id: {message_id}, operator_user_id: {user_id}, target_user_id: {target_user_id}")
 
             # Initial progress: file upload completed
             if progress_callback:

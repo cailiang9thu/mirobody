@@ -194,7 +194,7 @@ class BaseFileHandler(abc.ABC):
             file_content = await ctx.file.read()
 
             if not file_content:
-                logger.warning(f"[BaseFileHandler] Empty file content: {ctx.filename}")
+                logger.warning(f"[BaseFileHandler] Empty file content: {ctx.message_id}")
                 return None, None
 
             content_hash = hashlib.sha256(file_content).hexdigest()
@@ -290,7 +290,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
             if result and isinstance(result, dict):
                 file_abstract = result.get("file_abstract", "")[:200]
                 file_name = result.get("file_name", "") or filename
-                logger.info(f"Abstract from text: {filename}, abstract_len={len(file_abstract)}")
+                logger.info(f"Abstract from text, abstract_len={len(file_abstract)}")
                 return file_abstract, file_name
             
             return "", filename
@@ -326,9 +326,9 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
             if extracted_name:
                 file_name = extracted_name
                 
-            logger.info(f"{simple_type} abstract extracted: {ctx.filename}, abstract length: {len(file_abstract)}")
+            logger.info(f"{simple_type} abstract extracted: {ctx.message_id}, abstract length: {len(file_abstract)}")
         except Exception as e:
-            logger.warning(f"Abstract extraction failed: {ctx.filename}, error: {e}")
+            logger.warning(f"Abstract extraction failed: {ctx.message_id}, error: {e}")
             # Fallback
             simple_type = self.get_type_name()
             fallback = self.abstract_extractor._create_fallback_abstract(ctx.filename, simple_type)
