@@ -172,7 +172,8 @@ def check(path: str) -> list[str]:
     # package tree; the build no longer prunes them, so this is the gate.
     test_stowaways = [
         name for name, _, _ in entries
-        if name.rsplit("/", 1)[-1].startswith("test_") or "/goldens/" in name or name.endswith("/conftest.py")
+        if name.rsplit("/", 1)[-1].startswith("test_") or "/goldens/" in name
+        or name.endswith("/conftest.py") or "/tests/" in name
     ]
     if test_stowaways:
         problems.append(

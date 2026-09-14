@@ -18,11 +18,16 @@ import re
 
 import pytest
 
-_ROOT = pathlib.Path(__file__).resolve().parent.parent
-_READMES = {
-    "README.md": None,
-    "README.zh-CN.md": "zh-CN",
-}
+import mirobody
+from mirobody.tests import LIVE_READMES
+
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+_PKG = pathlib.Path(mirobody.__file__).resolve().parent
+_ROOT = _PKG.parent
+_READMES = LIVE_READMES
 
 pytestmark = pytest.mark.skipif(
     not (_ROOT / "README.md").is_file(),

@@ -97,7 +97,7 @@ The engine does three things, and the codebase, the docs and
 | Aliases | 49,253 multilingual (中文 22,578 · 日本語 16,809 · de·es·fr·ko·ru); `hemoglobin`, `血红蛋白`, `血紅素` and `ヘモグロビン` all land on 718-7 |
 | Traditional Chinese | a shipped 3,336-character zh-Hant → zh-Hans fold table, plus curated Traditional rows — a curated row always beats a fold |
 | Units | ~310 UCUM families with dimensional analysis and a molar-mass bridge keyed by LOINC code; 305 standard pulse indicators |
-| Coverage | **211/211** on the panels an ordinary checkup prints, in English, Chinese (Simplified and Traditional) and Japanese ([`test_engine_coverage.py`](mirobody/test_engine_coverage.py)) |
+| Coverage | **213/213** on the panels an ordinary checkup prints, in English, Chinese (Simplified and Traditional) and Japanese ([`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)) |
 | Bundle | LOINC 2.82: `mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285` — release, cut date and a digest over the bundle's own members |
 | Install | `pip install mirobody` is **2 packages, 52 MB**, on numpy only |
 
@@ -229,7 +229,7 @@ The highest-leverage contribution is a term the resolver gets wrong. Run
 `mirobody resolve "<term>"`; if the answer is wrong or empty,
 [report it](https://github.com/thetahealth/mirobody/issues/new?template=wrong-term.yml)
 or add a row to [`resolver_overrides.tsv`](mirobody/res/resolver_overrides.tsv) plus a
-case to [`test_engine_coverage.py`](mirobody/test_engine_coverage.py) — the
+case to [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) — the
 coverage score is the review.
 
 ```bash

@@ -90,7 +90,7 @@ resolve("血脂").resolved                                 # False    类别，�
 | 别名 | 49,253 条多语言别名（中文 22,578 · 日本語 16,809 · 另有 de·es·fr·ko·ru）；`hemoglobin`、`血红蛋白`、`血紅素`、`ヘモグロビン` 都落到 718-7 |
 | 繁体中文 | 内置 3,336 字的繁→简折叠表，加上按繁体拼写单独维护的词条——人工词条永远优先于折叠 |
 | 单位 | 约 310 个 UCUM 单位族，带量纲分析和按 LOINC 码索引的摩尔质量桥；305 个标准 pulse 指标 |
-| 覆盖率 | **211/211**：一份普通体检会印出来的各类面板，按报告的原始写法，覆盖英文、中文（简繁）和日文（[`test_engine_coverage.py`](mirobody/test_engine_coverage.py)） |
+| 覆盖率 | **213/213**：一份普通体检会印出来的各类面板，按报告的原始写法，覆盖英文、中文（简繁）和日文（[`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)） |
 | 词表版本 | LOINC 2.82：`mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285`——版本号、切割日期和词表成员的摘要 |
 | 安装体积 | `pip install mirobody` 只有 **2 个包、52 MB**，仅依赖 numpy |
 
@@ -203,7 +203,7 @@ openrouter.ai 在你的网络不可达时用 DashScope 的 key；Google、[OpenA
 最高杠杆的贡献是一个解析错了的词。运行 `mirobody resolve "<那个词>"`，结果不对或为空，
 就[报一个](https://github.com/thetahealth/mirobody/issues/new?template=wrong-term.yml)，
 或者往 [`resolver_overrides.tsv`](mirobody/res/resolver_overrides.tsv) 加一行、往
-[`test_engine_coverage.py`](mirobody/test_engine_coverage.py) 加一个用例——覆盖率分数就是评审。
+[`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) 加一个用例——覆盖率分数就是评审。
 
 ```bash
 pip install -e '.[test]' && pytest -q && lint-imports

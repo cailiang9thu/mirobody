@@ -36,7 +36,13 @@ import re
 
 import pytest
 
-_BUNDLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mirobody", "res", "fhir_loinc_bundle.tar.gz")
+import mirobody
+
+#: The bundle inside the PACKAGE, found through `mirobody.__file__`: this
+#: module has moved once and a `dirname(dirname(__file__))` walk pointed
+#: at `mirobody/tests/res/` afterwards — every case then SKIPPED, green
+#: and meaningless.
+_BUNDLE = os.path.join(os.path.dirname(os.path.abspath(mirobody.__file__)), "res", "fhir_loinc_bundle.tar.gz")
 
 
 def _bundle_available() -> bool:
@@ -98,11 +104,17 @@ CASES: list[tuple[str, str, str]] = [
     ("glucose",                     r"glucose",                      r"tolerance|challenge"),
     ("fasting glucose",             r"^fasting glucose",             r"tolerance"),
     ("creatinine",                  r"creatinine",                   r"clearance|urine"),
+    # A printed English panel writes the specimen into the name. Both of these
+    # answered 44760-7 "Model for end-stage liver disease score" until
+    # 2026-09-14 — the MELD long name names creatinine, bilirubin and INR, so
+    # containment matched, and the two analytes MERGED onto one code.
+    ("Serum Creatinine",            r"creatinine",                   r"clearance|urine|end-stage"),
     ("blood urea nitrogen",         r"urea nitrogen",                r""),
     ("sodium",                      r"sodium",                       r""),
     ("potassium",                   r"potassium",                    r""),
     ("albumin",                     r"albumin",                      r"urine|globulin ratio"),
     ("total bilirubin",             r"bilirubin",                    r"direct|conjugated"),
+    ("Serum Total Bilirubin",       r"bilirubin",                    r"direct|conjugated|end-stage"),
     ("uric acid",                   r"urate|uric acid",              r""),
     # ── liver enzymes ────────────────────────────────────────────────────────
     ("ALT",                         r"alanine aminotransferase",     r""),
@@ -359,9 +371,9 @@ MUST_NOT_RESOLVE: list[tuple[str, str]] = [
     # as positive cases above.
     ("lipid panel", "four analytes, not one observation"),
     ("血脂", "the same lipid panel in Chinese"),
-    ("血脂肪", "the same lipid panel, 台灣 wording — needs its own refusal row: "
-               "the zh-Hant fold reaches nothing here, and without the row the "
-               "semantic tier would answer it"),
+    ("血脂肪", ("the same lipid panel, 台灣 wording — needs its own refusal row: "
+                "the zh-Hant fold reaches nothing here, and without the row the "
+                "semantic tier would answer it")),
     ("绝对不存在的指标名xyzzy", "pure nonsense must never resolve"),
     # "名称(缩写)" where the two halves mean DIFFERENT tests. The parenthetical
     # strip must not silently prefer the stem: filing an HbA1c reading into the

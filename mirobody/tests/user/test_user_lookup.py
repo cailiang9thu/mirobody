@@ -16,9 +16,14 @@ import re
 
 import pytest
 
+import mirobody
 from mirobody.user.user import get_user
 
-ROOT = pathlib.Path(__file__).resolve().parents[2] / "mirobody"
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+ROOT = pathlib.Path(mirobody.__file__).resolve().parent
 
 # The reads that legitimately do not go through get_user. Each entry is
 # (file suffix, a substring of the query itself) and each has a reason — an entry

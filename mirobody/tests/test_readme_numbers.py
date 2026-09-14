@@ -19,11 +19,14 @@ Deliberately not checked: the approximations ("~310 UCUM families", "4,000+",
 "two years", "50 pages"). They are round by intent, and pinning them would
 turn every rebuild into a README edit for no gain in truth.
 
-Also not checked, for a different reason: the install footprint (2 packages /
-49 MB for the library). The package COUNT is a property of this project's own
-metadata and would be worth gating, but the megabytes move with every upstream
-release and differ per platform and installer, so a gate on the pair would fail
-for reasons that have nothing to do with this repo.
+Also not checked, for a different reason: the install footprint's MEGABYTES.
+The package COUNT is a property of this project's own metadata and would be
+worth gating; the megabytes move with every upstream release and differ per
+platform — 52 MB on macOS against ~100 MB on Linux for the same two packages,
+because numpy bundles its own BLAS there (measured 2026-09-14, in a
+python:3.12-slim container). An outside regression run read the README's
+single figure on Linux and found it ~85 MB; the README now names both. A gate
+on the pair would fail for reasons that have nothing to do with this repo.
 """
 
 from __future__ import annotations
@@ -35,10 +38,18 @@ import re
 
 import pytest
 
+import mirobody
+from mirobody.tests import LIVE_READMES
+
 from ruamel.yaml import YAML
 
-_ROOT = pathlib.Path(__file__).resolve().parent.parent
-_READMES = ["README.md", "README.zh-CN.md"]  # the live editions; see archived/README.md
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+_PKG = pathlib.Path(mirobody.__file__).resolve().parent
+_ROOT = _PKG.parent
+_READMES = list(LIVE_READMES)
 
 
 def _text(name: str) -> str:
@@ -61,7 +72,7 @@ def live() -> dict[str, int]:
     from mirobody.indicator.concept_graph import ConceptGraph
     from mirobody.zh_fold import _TABLE
     from mirobody.pulse.standardize import StandardIndicator
-    from mirobody.test_engine_coverage import CASES, MUST_NOT_RESOLVE
+    from mirobody.tests.test_engine_coverage import CASES, MUST_NOT_RESOLVE
 
     # The graph is an optional download (`mirobody/res/EXTERNAL.tsv`), so a
     # plain checkout does not have it. Skipping is right for a contributor and
@@ -172,6 +183,43 @@ _EMAIL = re.compile(r"[\w.+-]+@mirobody\.ai")
 _VERSION_SENTINEL = re.compile(r'or "(\d+\.\d+\.\d+)"')
 
 
+def test_an_unreleased_heading_carries_no_version_number():
+    """The section above the last release must not read like a version.
+
+    `test_the_changelog_names_the_version_the_tree_calls_itself` finds the
+    FIRST `## X.Y.Z` and checks it against `__init__.py`. A heading such as
+    `## 1.4.1-fc` for work that is not released would hand that regex a number
+    from the UNRELEASED section — the one entry it exists to skip — and the
+    gate would go on passing while checking the wrong thing. The same string
+    is not a PEP 440 version either, so tagging it builds nothing:
+    `packaging.version.Version("1.4.1-fc")` raises, and the release workflow
+    takes the tag name verbatim (`VERSION=${GITHUB_REF#refs/tags/}`).
+
+    So an unreleased heading may say anything except start with digits.
+    """
+    changelog = (_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    headings = re.findall(r"^## (.+)$", changelog, re.M)
+    assert headings, "CHANGELOG has no sections"
+
+    first = headings[0]
+    if re.match(r"^\d", first):
+        # It claims to be a release, so it must be EXACTLY a version — the
+        # shipped headings are `1.4.1` and `1.2.1 — released 2026-08-23`. A
+        # suffixed one like `1.4.1-fc` is the hole this closes: the regex above
+        # reads `1.4.1` out of it, that happens to equal `__version__`, and the
+        # gate passes while validating an entry nothing will ship under.
+        assert re.match(r"^\d+\.\d+\.\d+( — .*)?$", first), (
+            f"top heading {first!r} starts like a version but is not one; "
+            "an unreleased section must not lead with digits"
+        )
+        return
+
+    assert not re.match(r"^\D*\d+\.\d+\.\d+", first.split("—")[0]), (
+        f"unreleased heading {first!r} leads with a version number; "
+        "the version-agreement gate would read it as the release being prepared"
+    )
+
+
 def test_the_changelog_names_the_version_the_tree_calls_itself():
     """The CHANGELOG's top entry names the release being prepared and
     `mirobody/__init__.py` carries the version the tree calls itself; they
@@ -180,7 +228,7 @@ def test_the_changelog_names_the_version_the_tree_calls_itself():
 
     This used to check a third place: the READMEs told readers to run from a
     source checkout "until 1.2.1 reaches PyPI", because the published 1.0.62
-    wheel was an empty shell. 1.2.1 published on 2026-08-23, the four READMEs
+    wheel was an empty shell. 1.2.1 published on 2026-08-23, the READMEs
     dropped the warning, and this half went with it — as the previous version
     of this docstring said it should."""
     src = (_ROOT / "mirobody" / "__init__.py").read_text(encoding="utf-8")
@@ -256,5 +304,5 @@ def test_the_readmes_print_the_real_bundle_version():
     for name in _READMES:
         assert mirobody.BUNDLE_VERSION in _text(name), (
             f"{name} does not print {mirobody.BUNDLE_VERSION!r}; "
-            "restamped the bundle? update the four READMEs"
+            "restamped the bundle? update the live READMEs"
         )

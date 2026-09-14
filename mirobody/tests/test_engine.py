@@ -9,7 +9,13 @@ import os
 
 import pytest
 
-_BUNDLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mirobody", "res", "fhir_loinc_bundle.tar.gz")
+import mirobody
+
+#: The bundle inside the PACKAGE, found through `mirobody.__file__`: this
+#: module has moved once and a `dirname(dirname(__file__))` walk pointed
+#: at `mirobody/tests/res/` afterwards — every case then SKIPPED, green
+#: and meaningless.
+_BUNDLE = os.path.join(os.path.dirname(os.path.abspath(mirobody.__file__)), "res", "fhir_loinc_bundle.tar.gz")
 
 
 def _bundle_available() -> bool:

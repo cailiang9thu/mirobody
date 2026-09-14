@@ -10,6 +10,9 @@ instead of a silent regression:
   off by three orders of magnitude.
 * **pick_display_unit** — the unit a merged series displays in: most readings
   wins, ties go to the latest measurement.
+* **canonicalize** — the comparison key: two spellings of one physical
+  quantity must land on one ``(value, unit)`` pair, and an unfoldable unit must
+  come back untouched rather than raise.
 * **Convergence guard** — ``pulse.standardize.units`` (device-side Collect)
   derives every constant it shares with this engine FROM this engine. The two
   tables had measurably drifted before they were converged: lb was 2.20462
@@ -25,6 +28,8 @@ from datetime import datetime, UTC
 import pytest
 
 from mirobody.units import (
+    canonical_unit,
+    canonicalize,
     conversion_factor,
     normalize_unit,
     parse_value_unit,
@@ -52,6 +57,77 @@ from mirobody.units.convert import MOLAR_MASS
 def test_parse_value_unit_golden(text, comparator, value, unit):
     got = parse_value_unit(text)
     assert (got.comparator, got.value, got.unit) == (comparator, value, unit)
+
+
+# ── canonicalize: one physical quantity, one (value, unit) pair ──────────────
+
+@pytest.mark.parametrize(
+    "left, right, code",
+    [
+        # T1, no code needed: the dimension alone decides.
+        ((100, "mg/dL"), (1, "g/L"), ""),
+        ((1000, "mm"), (1, "m"), ""),
+        ((5, "10*9/L"), (5000, "/uL"), ""),      # count scale vs prefix
+        ((90, "/min"), (1.5, "/s"), ""),
+        # T2: the molar bridge is what makes a Chinese report and a US one
+        # one series. 100 mg/dL glucose IS 5.55 mmol/L; without the code these
+        # two are g/L and mol/L and correctly do NOT meet.
+        ((100, "mg/dL"), (5.551, "mmol/L"), "2345-7"),
+        ((0.9, "mg/dL"), (79.56, "umol/L"), "2160-0"),   # creatinine
+        ((200, "mg/dL"), (5.172, "mmol/L"), "2093-3"),   # total cholesterol
+    ],
+)
+def test_canonicalize_agrees_on_one_quantity(left, right, code):
+    a = canonicalize(*left, loinc_code=code)
+    b = canonicalize(*right, loinc_code=code)
+    assert a.unit == b.unit
+    assert a.value == pytest.approx(b.value, rel=1e-3)
+
+
+def test_canonicalize_basis_depends_on_the_code_and_says_so():
+    """The unit rides along BECAUSE the basis is not a property of the input."""
+    bare = canonicalize(100, "mg/dL")
+    bridged = canonicalize(100, "mg/dL", loinc_code="2345-7")
+    assert bare == (1.0, "g/L")
+    assert bridged.unit == "mol/L"
+    # A caller comparing bare NUMBERS would call these the same reading in two
+    # units; comparing the pairs keeps the two bases apart, which is the point.
+    assert bare.unit != bridged.unit
+
+    # A code with no molar mass is not a bridge — no silent guess.
+    assert canonicalize(100, "mg/dL", loinc_code="718-7") == (1.0, "g/L")
+
+
+@pytest.mark.parametrize("unit", ["%", "mm[Hg]", "meq/L", "个/HP", "", None])
+def test_canonicalize_returns_atomic_units_untouched(unit):
+    """Declining is an answer: these are equal only to themselves."""
+    assert canonical_unit(unit) is None
+    got = canonicalize(120.0, unit)
+    assert got == (120.0, unit or "")
+
+
+def test_canonicalize_never_disagrees_with_convert_value():
+    """The fold and the T1/T2 conversion must not drift into two answers.
+
+    ``canonicalize`` reads ``scale``'s factor directly rather than routing
+    through :func:`conversion_factor`, so that a target like ``g/m2`` need not
+    itself be a known family key. That is one more place the same physical fact
+    is computed, and the drift this repo has already paid for once (see the
+    convergence guard below) is why it gets pinned rather than assumed.
+    """
+    checked = 0
+    for value, unit, code in [
+        (100, "mg/dL", ""), (5.6, "mmol/L", ""), (1000, "mm", ""),
+        (5, "10*9/L", ""), (90, "/min", ""), (150, "mg/dL", "2571-8"),
+        (0.9, "mg/dL", "2160-0"), (4.2, "mmol/L", "2093-3"),
+    ]:
+        got = canonicalize(value, unit, loinc_code=code)
+        factor = conversion_factor(unit, got.unit, loinc_code=code)
+        if factor is None:      # target is not a family key (g/m2, /s, ...)
+            continue
+        assert got.value == pytest.approx(value * factor, rel=1e-9), unit
+        checked += 1
+    assert checked >= 5, f"only {checked} units round-tripped through both paths"
 
 
 # ── pick_display_unit: majority, then recency ────────────────────────────────

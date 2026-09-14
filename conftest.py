@@ -14,9 +14,9 @@ Without this file, a contributor who ran the command CONTRIBUTING documents —
     E   ModuleNotFoundError: No module named 'langchain_core'
 
 and the whole run aborted, including the tests that had everything they needed.
-A module-level `pytest.importorskip` cannot fix that: importing the test module
-imports its parent package first, and that is what pulls in langchain. Deciding
-at COLLECTION time is the only thing early enough.
+A module-level `pytest.importorskip` cannot fix that: the import that fails is
+at the top of the test module, and by then the run has already aborted.
+Deciding at COLLECTION time is the only thing early enough.
 
 The server half of this was missed when the file was written, and an
 external reviewer found it the only way it can be found — in a CLEAN
@@ -27,10 +27,15 @@ environment, where `pip install -e '.[test]'` still aborted with
     ERROR mirobody/user/test_oauth_code.py
     E   ModuleNotFoundError: No module named 'mandrill'
 
-Same mechanism, different layer: `mirobody/server/__init__` imports the pool
-and `mirobody/user/__init__` imports mandrill, so importing ANY test module
-under those packages needs the server stack whether that test touches it or not.
-CI never caught it because CI never ran pytest at all.
+Same mechanism, different layer: `mirobody/server/__init__` imports the pool and
+`mirobody/user/__init__` imports mandrill, so a test that reaches into either
+package needs the server stack whether that test touches the pool or not. CI
+never caught it because CI never ran pytest at all.
+
+The gate suite used to sit beside the code it guards (`mirobody/server/test_*.py`),
+where the PARENT PACKAGE pulled the extra in before the module body ran. It now
+lives under `mirobody/tests/`, which imports nothing on its own — so the lists
+below are the module's own imports and nothing else.
 """
 
 from __future__ import annotations
@@ -66,8 +71,7 @@ _HAS_PARSE = _installed("dotenv", "ruamel.yaml", "pypdfium2")
 # exists to prevent. A glob that matches nothing fails silently, so when a
 # test moves, grep this list.
 _AGENT_ONLY = [
-    "mirobody/agent/*",
-    "mirobody/agent/**/*",
+    "mirobody/tests/agent/*",
     "tests/agent/*",
     "tests/agent/**/*",
     "tests/test_plugin_entry_points.py",
@@ -80,10 +84,8 @@ _AGENT_ONLY = [
 # needs the extra. `utils/test_db.py` needs sqlalchemy, which arrives with the
 # same extra.
 _SERVER_ONLY = [
-    "mirobody/server/*",
-    "mirobody/server/**/*",
-    "mirobody/user/*",
-    "mirobody/user/**/*",
+    "mirobody/tests/server/*",
+    "mirobody/tests/user/*",
     "tests/server/*",
     "tests/server/**/*",
     "tests/user/*",
@@ -100,11 +102,10 @@ _SERVER_ONLY = [
 # Found the only way this class is ever found — in a clean clone, not in a
 # long-lived venv that has everything.
 _PARSE_ONLY = [
-    "mirobody/pulse/file_parser/*",
-    "mirobody/pulse/file_parser/**/*",
-    "mirobody/utils/test_content_type.py",
-    "mirobody/test_one_key_defaults.py",
-    "mirobody/test_readme_numbers.py",
+    "mirobody/tests/pulse/*",
+    "mirobody/tests/utils/test_content_type.py",
+    "mirobody/tests/test_one_key_defaults.py",
+    "mirobody/tests/test_readme_numbers.py",
     "tests/pulse/file_parser/*",
     "tests/pulse/file_parser/**/*",
     "tests/pulse/aggregate/*",

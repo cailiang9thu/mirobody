@@ -16,7 +16,14 @@ import pathlib
 
 import pytest
 
-ROOT = pathlib.Path(__file__).resolve().parents[1] / "mirobody"
+import mirobody
+
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+_PKG = pathlib.Path(mirobody.__file__).resolve().parent
+ROOT = _PKG
 
 
 def _modules_with_all() -> list[tuple[str, list[str]]]:
