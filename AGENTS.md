@@ -106,7 +106,7 @@ wheel in the same venv — otherwise they pass vacuously.
   Guide: `docs/provider-guide.md`.
 - **Docs are code.** Rename a module → grep the `.md` files. The README ships
   in four languages; English first, then the other three, and say so if you
-  only changed English. `mirobody/tests/test_readme_*.py` checks them as a set.
+  only changed English. A gate checks the live editions as a set.
 
 ## Never commit
 

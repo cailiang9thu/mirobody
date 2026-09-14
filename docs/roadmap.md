@@ -471,8 +471,8 @@ read five different opinions on "which keys count" (#68). The DATA is one
 table now — `MODELS` in `config.llm.yaml`, with the per-surface routes
 (`UTILS_VISION_MODEL`, `UTILS_TEXT_MODEL`, `UTILS_EMBEDDING_MODEL`) next to it —
 and the vision dispatcher, the text surface, the embedding layer and the
-agent's default all read it; `mirobody/tests/test_one_key_defaults.py`
-pins that every surface covers the same set. What remains split, on purpose,
+agent's default all read it, and a gate pins that every surface covers the
+same set. What remains split, on purpose,
 is client CONSTRUCTION: `LLMConfig.get_async_client()` (the `Config` family,
 used by embeddings) and `client_manager` (the direct-SDK extraction paths).
 Both read the registry; merging the two construction paths is still a

@@ -52,8 +52,8 @@ the mail client.
     ./scripts/fetch_data.sh --all        # the terminology data that is not tracked here
     ```
     The second command is not optional if you intend to run the tests: without
-    the concept graph, `mirobody/tests/test_readme_numbers.py` skips rather than
-    holding the README's numbers to the artifacts they come from. What it
+    the concept graph the gate on the README's numbers skips rather than
+    holding them to the artifacts they come from. What it
     fetches, and why those files are not in the repository, is
     [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv).
 
@@ -221,8 +221,8 @@ while looking correct.
 UI strings are **not** in this repo. `frontend/` holds the built web client, not
 its source, so there is no `i18n/` here to edit. What is translatable here is the
 two live READMEs — `README.md` and `README.zh-CN.md` — and they are checked as a
-set by `mirobody/tests/test_readme_links.py`, `mirobody/tests/test_readme_numbers.py`,
-`mirobody/tests/test_readme_examples.py` and `mirobody/tests/test_readme_l10n.py`.
+set: links, figures, runnable examples and cross-edition parity all have to
+agree before a release goes out.
 Everything under `docs/` and every in-package `README.md` stays English.
 
 ### Commits
