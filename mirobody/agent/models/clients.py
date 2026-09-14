@@ -45,13 +45,16 @@ with a 400 — and no configuration could avoid it.
 
 from __future__ import annotations
 
+import inspect
 import logging
 import os
 import re
+from functools import lru_cache
 from collections.abc import Callable
 from typing import Any
 
 from ...utils.config import safe_read_cfg
+from ...utils.config.llm import vertex_host
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +129,7 @@ def thinking_dialect(entry: dict | None, model_name: str, base_url: str = "") ->
         return "qwen"
     if model.startswith("qwen") and not host:
         return "qwen"
-    if model.startswith("gpt-") or model.startswith(("o1", "o3", "o4")):
+    if model.startswith(("gpt-", "o1", "o3", "o4")):
         return "openai"
     return "none"
 
@@ -357,8 +360,13 @@ def is_routable(entry: Any, *, resolve: Resolver | None = None) -> bool:
     resolve = resolve or default_resolver
     family = _llm_type(entry)
     if family in OPENAI_COMPATIBLE_TYPES:
-        if str(entry.get("auth_type") or "").strip().lower() == "azure_wif":
+        auth = str(entry.get("auth_type") or "").strip().lower()
+        if auth == "azure_wif":
             return bool(os.environ.get("AZURE_FEDERATED_TOKEN_FILE"))
+        if auth == "gcp_adc":
+            # Vertex MaaS: the credential is ambient, so what has to resolve is
+            # the project the endpoint is built from.
+            return bool(_resolve_ref(entry.get("project"), resolve)) or bool(entry.get("base_url"))
         return not entry.get("api_key") or bool(resolve(entry["api_key"]))
     if family in ANTHROPIC_VERTEX_TYPES:
         return bool(_resolve_ref(entry.get("project"), resolve))
@@ -430,8 +438,11 @@ def _openai_kwargs(alias: str, entry: dict, thinking: str | None, resolve: Resol
         kwargs["base_url"] = base_url
     else:
         kwargs.pop("base_url", None)
-    if str(entry.get("auth_type") or "").strip().lower() == "azure_wif":
+    auth = str(entry.get("auth_type") or "").strip().lower()
+    if auth == "azure_wif":
         kwargs.update(_azure_wif_kwargs(alias, base_url))
+    elif auth == "gcp_adc":
+        kwargs.update(_vertex_maas_kwargs(alias, entry, base_url, resolve))
     else:
         key = _resolve_key(alias, entry, resolve)
         if key:
@@ -469,6 +480,101 @@ def _azure_wif_kwargs(alias: str, endpoint: Any) -> dict[str, Any]:
     }
 
 
+def _gcp_access_token_provider() -> Callable[[], str]:
+    """A callable returning a live GCP access token, for a client that wants a
+    bearer string rather than a credentials object.
+
+    `langchain-openai` accepts a callable `api_key` and calls it per request
+    (the same seam `_azure_wif_kwargs` uses for Entra), so the hour-long
+    lifetime of an ADC token is handled by refreshing here rather than by
+    rebuilding the client. One credentials object per provider entry: refresh
+    mutates it in place, and a second object would re-do the metadata-server
+    round trip on every call."""
+    import google.auth
+    import google.auth.transport.requests
+
+    credentials, _project = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    request = google.auth.transport.requests.Request()
+
+    def token() -> str:
+        # `valid` is False both when the token has expired and before the first
+        # fetch, which is exactly when a refresh is wanted.
+        if not credentials.valid:
+            credentials.refresh(request)
+        return str(credentials.token or "")
+
+    return token
+
+
+def _vertex_maas_kwargs(alias: str, entry: dict, base_url: Any, resolve: Resolver) -> dict[str, Any]:
+    """A Model-Garden partner model (xAI Grok, DeepSeek, Qwen, Llama, …) through
+    Vertex's OpenAI-compatible endpoint.
+
+    Two families of Vertex model, two protocols, and the split is not ours to
+    choose: Claude speaks Anthropic's native Messages API
+    (`_vertex_anthropic_kwargs`) and Gemini speaks Google's own
+    (`_gemini_kwargs`), while every OTHER Model Garden publisher is served
+    only over `/endpoints/openapi/chat/completions`. So a partner model rides
+    the ordinary OpenAI-compatible client and differs from it in exactly two
+    places — the base URL and where the bearer token comes from.
+
+    The endpoint is DERIVED from `project`/`location` rather than written down,
+    because a literal endpoint is the thing a redeploy to another region
+    silently gets wrong. `base_url` in the entry still wins, for a private or
+    self-deployed endpoint. The hostname has THREE shapes and `vertex_host`
+    owns all of them — this used to carry two, and the missing one was the
+    multi-regional `us` / `eu` pair a US-resident deployment has to use (#73).
+    """
+    if base_url:
+        endpoint = str(base_url).rstrip("/")
+    else:
+        project = _resolve_ref(entry.get("project"), resolve)
+        if not project:
+            raise RuntimeError(f"provider {alias!r}: auth_type gcp_adc needs a resolvable project (or a base_url)")
+        location = str(_resolve_ref(entry.get("location"), resolve) or "global")
+        endpoint = (f"https://{vertex_host(location)}/v1"
+                    f"/projects/{project}/locations/{location}/endpoints/openapi")
+    return {"base_url": endpoint, "api_key": _gcp_access_token_provider()}
+
+
+#: Sampling parameters that were parameters of the Anthropic messages API and
+#: are not any more. Asked of the INSTALLED SDK rather than hardcoded, the same
+#: shape `utils/llm/backends_anthropic._accepted_params` already uses on the
+#: extraction side: 1.x removed `temperature`, `top_p` and `top_k` and the
+#: signature has no `**kwargs`, so one of them reaching the client is a
+#: `TypeError` before a request is built — nothing in a provider log to read.
+@lru_cache(maxsize=1)
+def _anthropic_rejects() -> frozenset[str]:
+    try:
+        from anthropic.resources.messages import Messages
+        sig = inspect.signature(Messages.create).parameters
+    except Exception as e:                      # SDK absent or renamed the call
+        logger.debug(  # phi: ok an import error from the SDK, not a document
+            f"anthropic signature unavailable ({type(e).__name__}); assuming 1.x: {e}")
+        return frozenset({"temperature", "top_p", "top_k"})
+    if any(p.kind is p.VAR_KEYWORD for p in sig.values()):
+        return frozenset()                      # takes **kwargs: nothing to strip
+    return frozenset(f for f in ("temperature", "top_p", "top_k") if f not in sig)
+
+
+def _drop_rejected_sampling(kwargs: dict, alias: str) -> None:
+    """Strip sampling keys this SDK no longer takes, in place.
+
+    `_apply_anthropic_thinking` already popped them, but only on the branch
+    where an effort level was given: `thinking=None` or `"off"` returns early,
+    and that is the DEFAULT path. So the same entry failed or worked depending
+    on whether the caller happened to ask for thinking. Config gives almost
+    every entry a `temperature` and copying one into a Claude entry is the
+    natural thing to do. (#72)
+    """
+    for field in sorted(_anthropic_rejects() & kwargs.keys()):
+        kwargs.pop(field)
+        logger.warning(  # phi: ok a config entry name and a parameter name
+            f"provider {alias!r}: the installed anthropic SDK does not accept "
+            f"{field!r}; dropped. Sampling parameters left that API in 1.x."
+        )
+
+
 def _vertex_anthropic_kwargs(alias: str, entry: dict, thinking: str | None, resolve: Resolver) -> dict[str, Any]:
     """Claude on Vertex. Auth is ambient (the process's Google credentials):
     a named key that resolves is passed, one that does not is dropped rather
@@ -494,6 +600,7 @@ def _vertex_anthropic_kwargs(alias: str, entry: dict, thinking: str | None, reso
         # breakpoint Claude-on-Vertex runs with zero cache, every tool round.
         model_kwargs.setdefault("cache_control", {"type": "ephemeral", "ttl": "5m"})
     _apply_anthropic_thinking(kwargs, entry, str(entry["model"]), thinking, request=model_kwargs)
+    _drop_rejected_sampling(kwargs, alias)
     if model_kwargs:
         kwargs["model_kwargs"] = model_kwargs
     return kwargs
@@ -533,6 +640,7 @@ def _anthropic_kwargs(alias: str, entry: dict, thinking: str | None, resolve: Re
     `ChatAnthropic` parameters, so the request dict IS ``kwargs``."""
     kwargs = _generic_kwargs(alias, entry, resolve)
     _apply_anthropic_thinking(kwargs, entry, str(entry["model"]), thinking, request=kwargs)
+    _drop_rejected_sampling(kwargs, alias)
     return kwargs
 
 

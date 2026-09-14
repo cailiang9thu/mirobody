@@ -204,7 +204,7 @@ ALLOWED_TOOLS:
   - resolve_indicator
 
 DISALLOWED_TOOLS:
-  - get_genetic_data
+  - query_genetic_data
 ```
 
 ### 3. Prompts (`PROMPTS`)
@@ -557,7 +557,7 @@ ever defined, so `pytest -m mcp` reported *0 tests collected*. The
 ### What the Tests Cover
 
 For this module: config parsing, provider wiring and the one-key defaults —
-`mirobody/test_one_key_defaults.py`. The
+`mirobody/tests/test_one_key_defaults.py`. The
 agent's PostgreSQL-backed filesystem tools (`write_file` / `read_file` / `ls` /
 `glob` / `grep`) have no dedicated suite yet; the bullet list that used to sit
 here described upstream tests that never shipped with this repository.

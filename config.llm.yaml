@@ -21,7 +21,7 @@
 #   DEEPSEEK_API_KEY     deepseek        deepseek-utils          — (no embedding model: lexical search)
 #
 # `mirobody doctor` (and the boot log) prints what the current config selects.
-# mirobody/test_one_key_defaults.py checks this table against the entries below.
+# mirobody/tests/test_one_key_defaults.py checks this table against the entries below.
 # Model ids verified against each vendor's catalogue on 2026-09-10.
 
 #-----------------------------------------------------------------------------
@@ -115,8 +115,15 @@ MODELS:
     model: claude-sonnet-5
     supports_image: true
     supports_pdf: true
-    # No `temperature`: Claude Sonnet 5 answers 400 "`temperature` is
-    # deprecated for this model" (measured 2026-09-10).
+    # No sampling parameters on ANY `llm_type: anthropic` or
+    # `google_anthropic_vertex` entry. Two separate reasons, both measured:
+    # Claude Sonnet 5 answers 400 "`temperature` is deprecated for this model"
+    # (2026-09-10), and `anthropic` 1.x REMOVED `temperature` / `top_p` /
+    # `top_k` from the messages API altogether, with no `**kwargs` to absorb
+    # them — so one reaching the client is a TypeError before a request exists
+    # (#72). `clients._drop_rejected_sampling` strips them against the
+    # installed signature and warns; this note is so nobody adds one expecting
+    # it to work.
   deepseek:
     llm_type: openai
     api_key: DEEPSEEK_API_KEY
