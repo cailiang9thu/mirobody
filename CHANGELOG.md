@@ -1,5 +1,166 @@
 # Changelog
 
+## 1.4.2
+
+The genetic tool answers like its two siblings, a `(value, unit)` pair says when
+two readings are comparable, and six failures that used to be silent now say so.
+Four public names leave the package — a patch number rather than a minor because
+1.5.0 is spoken for by the corpus re-cut. The resolver evaluation is unmoved.
+
+### Breaking
+
+- **`get_genetic_data` is `query_genetic_data`, and it answers like its two
+  siblings.** It was the one data tool that had not been through the 1.4.0
+  tool-shell work: a hand-rolled signature instead of a declared schema, no
+  care-circle `member`, no envelope, and a bespoke compact payload
+  (`{"q": …, "n": …, "s": …, "_legend": …}`) the model had to learn a legend
+  for. It is now the same three steps as `query_health_indicators` and
+  `query_medications` — authorize, run, envelope — publishing
+  `genetic_service.TOOL_SCHEMA` verbatim to the MCP and chat surfaces and
+  rendering through the same `render_compact`, with the hits and their
+  neighbours as ONE table (`distance` and `near` say which query a neighbour
+  belongs to). The `rsid` parameter is `rsids`, an array like `indicators`,
+  and a call that names none is refused rather than answered.
+  What an answer says out loud, on every call: an rsID that is absent was not
+  typed, and a nearby variant is near by POSITION — proximity is not linkage.
+  `redirect_to_upload` is gone, and with it the branch in `mcp/service.py`
+  that let any tool result replace the whole reply with "open /drive and
+  upload": that redirect had one producer (this tool's no-rows path), and
+  `_DATA_GATED` already hides the tool from a user with no genetic rows — so
+  the only caller who could still see it was one who HAD uploaded a genotype
+  file and asked about rsIDs it does not carry, where "upload your data first"
+  is the wrong answer.
+- **`mcp.tool.global_tools` and `global_descriptions` are gone**; the
+  `get_global_tools()` / `get_global_descriptions()` accessors that already sat
+  beside them are the surface now, joined by `reset_global_tools()`. They were
+  module dicts that only ever grew, so one discovery leaked into the next and a
+  fresh process was the only isolation. `examples/04` was reaching into the
+  dicts and is the reason this is a visible break rather than an internal one.
+- **`POST /vital/generate-sign-in-token` is removed.** It called
+  `platform_manager.get_platform("vital")`, and no `vital` platform is
+  installed — the route could only ever answer 503, behind a JWT check. The
+  dead `VitalHealthRecord` model goes with it; `StandardPulseRecord` keeps its
+  field set, because rows in `th_series_data` were written against it.
+
+### Added
+
+- **`mirobody dev` runs the server in one process with no config file.** The
+  `[app]` extra and a key are still required; everything else is defaulted.
+- **A personal MCP URL can be revoked.** `DELETE /personal/mcp` retires one and
+  the next mint issues a fresh secret. `MCP_URL_TTL_DAYS` (default 30) replaces
+  a hardcoded 365-day expiry — that URL is the whole credential, carried in a
+  query path, so it reaches config files and screenshots.
+- **`canonicalize(value, unit, loinc_code=...)` folds a reading to base units**
+  and returns the `(value, unit)` pair. Store it beside the reading as recorded
+  and two readings are comparable when their pairs agree. With a LOINC code
+  `MOLAR_MASS` carries it crosses `mg/dL` ↔ `mmol/L`; without one it declines
+  rather than guesses, and `%` or `mm[Hg]` comes back untouched.
+
+### Fixed
+
+- **A `temperature` on a Claude entry was a `TypeError`, not a setting (#72).**
+  `anthropic` 1.x removed `temperature`, `top_p` and `top_k` from the messages
+  API and takes no `**kwargs`, so one reaching the client failed before a
+  request existed. The three are now stripped for the Anthropic families
+  against the installed SDK signature, with a warning — previously they were
+  only stripped when the caller asked for thinking, so the same entry worked or
+  failed depending on that.
+- **Vertex locations `us` and `eu` built a hostname that does not exist (#73).**
+  They are multi-regional and answer on `aiplatform.<loc>.rep.googleapis.com`;
+  both call sites carried only the `global` and `<region>-` forms, and one of
+  them got `global` wrong too. This is the value a US-data-residency deployment
+  must use, and the newest Claude and Gemini releases are often published there
+  only.
+- **A turn that produced no answer reported itself as a success.** Two vendors
+  spent an entire output budget on `thinking` and emitted no reply text,
+  finishing `stop` with no error, and the client drew an empty bubble under
+  "Answer Completed". Such a turn now says so, in the caller's language, and
+  reports `finish_reason: "empty"`.
+- **`deploy.sh` ignored `compose.override.yaml` and reported success anyway.**
+  Naming the compose file with `-f` turns off Compose's override pickup, while
+  the commands the script prints for the user load it — so a host whose
+  override replaces rejected named volumes got a failed `up` followed by "Up.
+  Open http://localhost:18060" and exit 0. The `-f` is gone and a failed `up`
+  now exits non-zero.
+- **Image and Excel abstract failures logged only the exception class.** The
+  PDF branch learned to log the message and the stack in 1.4.1; these two were
+  left behind, so a bare `TypeError` sat next to a fallback abstract that reads
+  like a success.
+- **An upload logged the filename once per chunk, at INFO.** A check-up report
+  is named for its subject, so a 1.5 MB file wrote the patient's name seven
+  times. Both statements key on the upload session id now, and the per-chunk
+  one is DEBUG.
+
+### Changed
+
+- **The first screen asks less of a visitor**: the opening command is
+  `uvx mirobody resolve …`, which installs nothing; the demo button points at
+  `/demo`, which answers over sample records with no account, where it used to
+  point at a page that sent the visitor to a sign-in form; and the language
+  switcher sits above the badges instead of below seven of them, for the 40% of
+  readers who come to `README.zh-CN.md`. The repository also gains a social
+  preview card (every share rendered GitHub's default before), `CITATION.cff`
+  for the ESL-Bench paper, a code of conduct, a pull-request template, and an
+  issue template for "uploaded, and no indicators came out" that asks for
+  `mirobody doctor` output — seven of the eight issues outsiders have filed are
+  that one failure, and it has several causes that look identical from the UI.
+- **`/api/v1/pulse/theta/indicators` published an empty catalogue** and
+  answered HTTP 200 while doing it: the category filter was spelled with
+  underscores and the data spells those labels with spaces, so all 296
+  indicators were dropped. It is the catalogue a device vendor integrates
+  against; six names now select 195 of them, and a test reads the filter out of
+  the source so a renamed category fails instead of emptying the route.
+- **`docker compose exec mirobody python …` did not work.** The image never put
+  its venv on PATH, so the command deploy.sh prints after every deploy — and
+  the one the new issue template asks for five times — answered
+  `python: command not found`. Also: a bind-mounted site-packages is not seeded
+  from the image, so on a host that cannot use named volumes the container
+  looped on `No module named pip`; `ensurepip` now runs first.
+- **An unauthenticated `POST`/`DELETE /personal/mcp` is 401**, not HTTP 200
+  with an error body. The envelope is unchanged and the credential never
+  leaked, but a client that keys on the status code read a refusal as success.
+  A care-circle refusal there is 403.
+- **Seven more copies of the patient's name left the logs.** 1.4.2 moved two
+  statements off the file name and left the progress callback, which fires
+  about seven times per file — the "seven times" the entry was about. Those and
+  six neighbours key on the upload's message id now; the PHI baseline shrinks
+  608 → 604.
+- **Two documented commands could not work as printed**: `examples/04` said
+  `pip install mirobody` and imports the `[agent]` extra, and
+  `scripts/e2e_health_data.py --user 1` always failed its PHI-canary check
+  because the canary rides on the member's record, not the Demo subject — a
+  permanent red for anyone who put it in CI as the document suggests.
+- **The README's two megabyte figures were wrong.** A `--depth 1` clone is
+  99 MB against 125 MB full, not 48 against 98; the library is 52 MB on macOS
+  but ~100 MB on Linux, where numpy bundles its own BLAS. Both are named now,
+  with the date they were measured. The package count, 2, is unchanged.
+- **`Serum Creatinine` and `Serum Total Bilirubin` answered "Model for
+  end-stage liver disease score".** Both landed on 44760-7, because the MELD
+  score's long name names all three of its inputs and containment matched — so
+  two different analytes MERGED onto one code and their readings into one
+  series. The 中文 forms of the same trap were fixed in 1.2.x; the English ones
+  were never swept, and a printed English panel writes the specimen into the
+  name. Coverage is 213/213 with the two cases that now pin them; the 7,354-case
+  evaluation is unmoved, which is how the pair survived — neither term is in it.
+- **The gate suite is one directory: `mirobody/tests/`.** Eleven `test_*.py`
+  sat in the package root and ten more beside the code they guard, which read
+  like project code to anyone opening `mirobody/` for the first time. Paths
+  that name them move with them — `pytest mirobody/tests/test_engine_coverage.py -s`
+  still prints the published score. Nothing else changes: same 333 tests in a
+  clone, same 0 test files in the wheel.
+- **Each README edition argues in its own voice.** The Chinese one had become a
+  sentence-for-sentence translation; both now open on the problem their own
+  reader has, and `docs/testing.md` describes the suite that exists rather than
+  the one that did before 1.4.0.
+- **Ruff enforces six more rule families** — `B`, `ISC`, `C4`, `PIE`, `PLE`,
+  `RUF100` — and `.pre-commit-config.yaml` carries ruff and `phi_lint`, the two
+  gates that run in under a second. `G004`, `DTZ` and `TID252` are declined in
+  `pyproject.toml` with the reason, so nobody re-litigates them.
+- **A credential slice left the logs.** `providers/platform/database_service.py`
+  logged the first 20 characters of a stored AES-GCM ciphertext on an
+  `InvalidTag`; it is `secret_fingerprint` now, the same digest handle the OAuth
+  paths use. The PHI baseline shrinks 616 → 608.
+
 ## 1.4.1
 
 One key, every surface — decided in YAML, not in Python; and the failures that
