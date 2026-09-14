@@ -160,17 +160,14 @@ def word_tokens(text: str) -> list[str]:
     return out
 
 
-# "Total Cholesterol-TC" -> "Total Cholesterol". The analyte and its
-# abbreviation joined by a hyphen, which is what `mirobody parse` emits: on the
-# shipped demo report, 12 of 12 extracted names carried this shape and 0 of 12
-# resolved. `engine._TRAILING_ACRONYM` already handles the space-separated form
-# ("Fasting plasma glucose FPG") but only on alias-table VALUES, never on the
-# incoming term.
-#
-# Bounded on both sides so it strips a suffix and not a word: at least three
-# characters before the hyphen, at most seven after, and the tail must start
-# with a letter or digit. "High-Density Lipoprotein" is untouched (the hyphen is
-# not final), and so is "25-Hydroxyvitamin D3".
+# "Total Cholesterol-TC" -> "Total Cholesterol": the analyte and its
+# abbreviation hyphen-joined, which is what `mirobody parse` emits. On the
+# shipped demo report 12 of 12 extracted names had this shape and 0 resolved;
+# `engine._TRAILING_ACRONYM` handles the space-separated form but only on
+# alias-table values. Bounded both sides so it strips a suffix and not a word:
+# three characters minimum before the hyphen, seven maximum after, tail
+# starting alphanumeric. "High-Density Lipoprotein" and "25-Hydroxyvitamin D3"
+# are untouched.
 _TRAILING_HYPHEN_ABBREV = re.compile(r"(?<=\w{3})-([A-Za-z][A-Za-z0-9]{0,6}|[0-9][A-Za-z0-9]{0,6})$")
 
 

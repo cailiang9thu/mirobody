@@ -558,16 +558,13 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
                 )
                 count = len(indicators) if indicators else 0
 
-                # Three kinds of "zero indicators", told apart (#68). The file is
-                # stored either way; what the UI must not do is render the first
-                # two like the third:
-                #   1. no provider can do structured extraction: configuration;
-                #   2. a provider exists and every call failed: the reason is
-                #      in the log, the file row says the call failed;
-                #   3. a model read the document and found no indicators: a
-                #      normal result.
-                # Reporting 1 and 2 as "complete" showed a green status over an
-                # empty list, with the cause visible only in server logs.
+                # Three kinds of "zero indicators", told apart (#68). The file
+                # is stored either way, but the UI must not render 1 and 2 like
+                # 3: reporting them as "complete" showed a green status over an
+                # empty list with the cause only in the server logs.
+                #   1. no provider can do structured extraction: configuration
+                #   2. a provider exists and every call failed: see the log
+                #   3. a model read the document and found none: normal
                 if count == 0 and llm_ret is None:
                     from mirobody.utils.config.llm import no_provider_message, resolve_route
 

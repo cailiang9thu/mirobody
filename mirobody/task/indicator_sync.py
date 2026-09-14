@@ -106,15 +106,12 @@ class IndicatorSyncTask(BaseRedisTask):
         try:
             await self.embed()
         except ValueError as e:
-            # `embed` raises on a misconfigured `UTILS_EMBEDDING_MODEL` (no
-            # provider at all, or one with no `th_series_dim` vector column) 
-            # and that raise is right for a direct caller (see its docstring).
-            # Here it used to leave the sweep half-done and unfinished: the
-            # four backfills above HAD written their rows, but the exception
-            # reached `TaskBase.run`, which logs "loop error" with a stack
-            # trace and sleeps, so a deployment with no embedding key saw a
-            # traceback per signal and never the line saying the mapping work
-            # succeeded. Semantic search degrades to the lexical index; the
+            # `embed` raises on a misconfigured `UTILS_EMBEDDING_MODEL`, which
+            # is right for a direct caller but left this sweep half-done: the
+            # four backfills above had written their rows, yet the exception
+            # reached `TaskBase.run`, so a deployment with no embedding key saw
+            # a traceback per signal and never the line saying the mapping work
+            # succeeded. Semantic search degrades to the lexical index and the
             # rest of the funnel is unaffected, so the sweep finishes.
             if not type(self)._embed_misconfig_logged:
                 type(self)._embed_misconfig_logged = True

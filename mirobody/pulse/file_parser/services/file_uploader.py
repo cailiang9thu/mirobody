@@ -29,17 +29,13 @@ logger = logging.getLogger(__name__)
 
 
 # Supported file extensions. This gate must match what the handler factory can
-# actually route, in BOTH directions, and it has been wrong both ways:
-#
-#   too narrow, it rejected .md while TextHandler happily parses it.
-#   too wide   .doc/.docx/.ppt/.pptx were accepted here with no handler in
-#                existence, so the picker let you choose one, the upload ran,
-#                and `file_processor` then answered "file not supported". They
-#                are removed until there is something that parses them, so the
-#                refusal happens at the gate with a list of what does work.
-#                (docs/roadmap.md carries this as a capability gap.)
-#
-# `handlers/test_factory_routing.py` fails if this set and the factory disagree.
+# route, in BOTH directions, and it has been wrong both ways: too narrow, it
+# rejected .md that TextHandler parses; too wide, it accepted .doc/.ppt with no
+# handler at all, so the upload ran and `file_processor` then answered "file
+# not supported". Those are out until something parses them, so the refusal
+# happens at the gate with a list of what does work (docs/roadmap.md carries
+# the gap). `handlers/test_factory_routing.py` fails if this set and the
+# factory disagree.
 SUPPORTED_EXTENSIONS = {
     # Images (ImageHandler takes any image/*; heic/heif come from iPhones)
     ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".svg",

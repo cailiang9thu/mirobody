@@ -241,19 +241,14 @@ class RouteSpec:
         return f"{self.alias} ({self.model})" if self.alias != self.model else self.model
 
 
-#: What an entry's `response_format` may say, and what each means at the call
-#: site. Not a capability ladder: measured behaviour, one vendor per value:
+#: What an entry's `response_format` may say. Measured behaviour, not a
+#: capability ladder, one vendor per value (measured 2026-09-10):
 #:
-#:   json_schema   OpenAI structured outputs (the default; OpenAI, OpenRouter,
-#:                 DashScope, Google's compatibility endpoint)
-#:   json_object   only the loose JSON mode. DeepSeek answers "This
-#:                 response_format type is unavailable now" to a schema.
-#:   none          the parameter cannot be sent at all, and the schema goes into
-#:                 the prompt. Anthropic's compatibility endpoint REJECTS
-#:                 `json_object` outright ("Input should be 'json_schema'") and
-#:                 takes a schema only in OpenAI strict mode: `strict: true`
-#:                 plus `additionalProperties: false` on every object, which the
-#:                 extraction schemas do not carry (measured 2026-09-10).
+#:   json_schema   OpenAI structured outputs; the default
+#:   json_object   loose JSON mode only. DeepSeek answers "This response_format
+#:                 type is unavailable now" to a schema.
+#:   none          the parameter cannot be sent; the schema goes in the prompt.
+#:                 Anthropic's compatibility endpoint rejects `json_object`.
 RESPONSE_FORMATS = ("json_schema", "json_object", "none")
 
 

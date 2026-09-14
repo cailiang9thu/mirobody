@@ -166,22 +166,14 @@ def scale(ucum: str | None) -> DimScale | None:
     return (signature, factor)
 
 
-#: Mass concentration (M/V) ↔ substance concentration (N/V), bridged by molar
-#: mass: LOINC code → (g_per_mol, basis, note).
-#:
-#: **Keyed by code, never by indicator name.** Three conventions that will be
-#: got wrong if they are not written down:
-#:
-#:   1. Triglyceride uses a CONVENTIONAL average molar mass (triolein ≈ 885.4),
-#:      not the mass of one determinate molecule. The 88.57 factor is an
-#:      industry convention, not something computed from a formula.
-#:   2. BUN is reported as NITROGEN, urea as the whole molecule: a factor of
-#:      ~2.14 apart. They get one row each and must never share.
-#:   3. Conversion happens only WITHIN one code. Across codes, however close
-#:      clinically, is concept mapping, and this table does not do that.
-#:
-#: A finite, checkable table of physical constants with a golden vector per row
-#:, not an open-ended correction KB.
+#: Mass concentration (M/V) to substance concentration (N/V), bridged by molar
+#: mass: LOINC code -> (g_per_mol, basis, note). Keyed by code, never by
+#: indicator name. Three conventions that get got wrong otherwise: triglyceride
+#: uses a conventional average molar mass (triolein ~885.4), so 88.57 is
+#: industry convention and not computed; BUN is reported as NITROGEN and urea
+#: as the whole molecule, ~2.14 apart, so they get a row each and never share;
+#: conversion happens only WITHIN one code, across codes being concept mapping,
+#: which this table does not do.
 MOLAR_MASS: dict[str, tuple[float, str, str]] = {
     # Glucose metabolism
     "1558-6": (180.16, "C6H12O6", "Fasting glucose; 1 mmol/L = 18.016 mg/dL"),

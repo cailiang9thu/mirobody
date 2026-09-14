@@ -131,17 +131,14 @@ def classify_value(value: str | None) -> str | None:
     return "nar"
 
 
-#: scale class -> the SCALE_TYP values that may ADMIT it. A different question
-#: from :data:`SCALE_COMPAT`, which ranks preferences for a reranker that can
-#: always fall back to cosine. This one is used as a hard filter, so being
-#: narrow is not conservative, it is wrong.
-#:
-#: The difference that forces two tables is ``nom``. LOINC is not consistent
-#: about how it scales a positive/negative result: a urine dipstick is ``Ord``
-#: (``Glucose [Presence] in Urine``, PROPERTY ``PrThr``, and urine glucose has
-#: NO ``Nom`` variant at all, so a Nom-only filter admits nothing and the gate
-#: starves), while a few interpretations are ``Nom``
-#: (``Choriogonadotropin [Interpretation]``). A consumer has to accept both.
+#: scale class -> the SCALE_TYP values that may ADMIT it. A hard filter, unlike
+#: :data:`SCALE_COMPAT`, which only ranks preferences for a reranker that can
+#: fall back to cosine; here being narrow is wrong, not conservative.
+#: ``nom`` is what forces two tables. LOINC is not consistent about scaling a
+#: positive/negative result: a urine dipstick is ``Ord`` and has no ``Nom``
+#: variant at all, so a Nom-only filter admits nothing and the gate starves,
+#: while a few interpretations are ``Nom``
+#: (``Choriogonadotropin [Interpretation]``). A consumer accepts both.
 GATE_SCALES: dict[str, tuple[str, ...]] = {
     "qn": ("Qn", "SemiQn", "OrdQn"),
     "ord": ("Ord", "OrdQn", "SemiQn"),

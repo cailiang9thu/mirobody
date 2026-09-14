@@ -296,32 +296,22 @@ def _comparator_and_value(raw_cmp: str, raw_num: str) -> tuple[str, float | None
     return raw_cmp, value
 
 
-# ``parse_value_unit`` expects a clean ``<value><unit>`` standalone
-# string; resolver / corpus-side users need to find ``75 g`` inside
-# longer text (LOINC names: ``--2 hours post 75 g glucose PO``). The
-# scanner below covers that use case.
-#
-# Restricting to dose-relevant families keeps the scanner from
-# colliding with axes the resolver already covers:
-#   - TIME_ASPCT axis handles ``2 hours`` / ``24 hour`` (Time family)
-#   - PROPERTY axis handles concentrations (MCnc/SCnc, e.g. ``mg/dL``)
-# Dose unit families are the gap, these encode challenge doses
-# (75 g, 100 g, 50 mL), body-weight-normalized variants
-# (1.75 g/kg pediatric OGTT), and biological-activity units
-# (``500 U penicillin``, ``5 IU insulin``) that no axis predicts.
-# Adding non-dose families here would double-fire with axis bonus
-# and over-promote.
+# ``parse_value_unit`` expects a clean ``<value><unit>``; resolver and corpus
+# users need ``75 g`` found inside longer text (``--2 hours post 75 g glucose
+# PO``), which the scanner below covers. Restricting it to dose-relevant
+# families keeps it off axes the resolver already has: TIME_ASPCT takes
+# ``2 hours``, PROPERTY takes concentrations. Doses are the gap: challenge
+# doses (75 g, 50 mL), body-weight variants (1.75 g/kg pediatric OGTT) and
+# activity units (``5 IU insulin``). A non-dose family added here would
+# double-fire with the axis bonus and over-promote.
 _DOSE_FAMILIES = frozenset({"Mass", "Vol", "CCnt", "MCnt", "Arb"})
 
-# Two-pass scan: one regex per script class.
-#
-# **Latin pass**: number then optional whitespace then a Latin /
-# micro-sign / degree-shaped token. Body allows letters, digits, and
-# UCUM compositors (``./*[]+-``) so compounds like ``g/kg`` and
-# ``10*9/L`` round-trip through ``_resolve_strict``; whitespace is
-# excluded so the body can't run across tokens. ``\b`` at the tail
-# rejects partial matches like ``75 grms`` (typo) by requiring a real
-# word boundary, but only Latin/digit-vs-non-Latin counts, which is
+# Two-pass scan, one regex per script class. Latin pass: number, optional
+# whitespace, then a Latin / micro-sign / degree-shaped token. The body allows
+# letters, digits and UCUM compositors (``./*[]+-``) so ``g/kg`` and ``10*9/L``
+# round-trip through ``_resolve_strict``, and excludes whitespace so it cannot
+# run across tokens. ``\b`` at the tail rejects partial matches like
+# ``75 grms``, but only Latin/digit-vs-non-Latin counts as a boundary, which is
 # why this pass alone misses compact CJK input.
 _LATIN_VALUE_UNIT_SCAN = re.compile(
     r"([0-9]+(?:[.,][0-9]+)?)"
@@ -453,15 +443,14 @@ def parse_value_unit(text: str | None) -> ParsedQuantity:
     if direct is not None:
         return ParsedQuantity("", None, direct)
 
-    # ── Path B0: respect an explicit whitespace boundary ─────────────
-    # ``_clean`` collapses internal whitespace, which GLUES a numeric value
-    # onto a digit-leading unit: ``240 10⁹/L`` → NFKC ⁹→9 → ``240109/L``,
-    # after which Path B's greedy digit match reads value=240109, unit=/L:
-    # a platelet count corrupted by three orders of magnitude. The author's
-    # own separator is the strongest split signal, so before collapsing it,
-    # try: first token ENTIRELY comparator+number, remainder a unit on its
-    # own. Digit-leading units (10*9/L, 10¹²/L, …) resolve via the alias
-    # table exactly like the bare-unit Path A always has.
+    # Path B0: respect an explicit whitespace boundary. ``_clean`` collapses
+    # internal whitespace, gluing a value onto a digit-leading unit:
+    # ``240 10⁹/L`` NFKC-folds to ``240109/L``, after which Path B's greedy
+    # digit match reads value=240109, unit=/L, a platelet count wrong by three
+    # orders of magnitude. The author's own separator is the strongest split
+    # signal, so before collapsing it: first token entirely comparator+number,
+    # remainder a unit on its own. Digit-leading units resolve via the alias
+    # table exactly as bare units do in Path A.
     parts = text.split()
     if len(parts) >= 2:
         m0 = _VALUE_PREFIX.fullmatch(_clean(parts[0]))

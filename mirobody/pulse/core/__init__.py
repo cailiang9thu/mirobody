@@ -22,14 +22,11 @@ from typing import TYPE_CHECKING
 
 # Lazy (PEP 562), matching `mirobody/pulse/__init__.py`,
 # `mirobody/agent/__init__.py` and `mirobody/pulse/providers/__init__.py`.
-#
 # Importing any submodule ran this __init__, which imported `.database` and
-# pulled SQLAlchemy and FastAPI into the process. That made the INDICATOR
-# CATALOGUE (pure data, no I/O) unusable without the server stack installed,
-# which is the opposite of the engine's premise.
-#
-# Every existing `from mirobody.pulse.core import X` keeps working unchanged; each export
-# simply pays its own import cost at first use.
+# pulled SQLAlchemy and FastAPI into the process, making the indicator
+# catalogue (pure data, no I/O) unusable without the server stack installed.
+# Every `from mirobody.pulse.core import X` keeps working; each export simply
+# pays its own import cost at first use.
 _EXPORTS = {
     'CacheConfig'             : 'constants',
     'LinkType'                : 'constants',

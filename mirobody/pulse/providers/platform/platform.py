@@ -83,17 +83,14 @@ class ProviderPlatform(Platform):
             logger.debug(f"No provider files found in {directory}")
             return providers
 
-        # Providers that ship INSIDE this package must be imported by their real
+        # Providers shipped INSIDE this package must be imported by their real
         # dotted path. The sys.path branch below makes `mirobody_oura` a
-        # TOP-LEVEL package, and a top-level package has no parent, so
-        # `provider_oura.py`'s `from ....utils.tasks import spawn` died with
-        # "attempted relative import beyond top-level package" and the loader
-        # swallowed it as a warning. All three packaged providers carry that
-        # import: the platform logged "loaded 0 providers" on every boot and
-        # the whole device-integration surface was silently absent.
-        #
-        # sys.path is still right for EXTERNAL `PROVIDER_DIRS`, those are not
-        # inside any package and have nothing to be relative to.
+        # top-level package, which has no parent, so `provider_oura.py`'s
+        # `from ....utils.tasks import spawn` died with "attempted relative
+        # import beyond top-level package" and the loader swallowed it as a
+        # warning: all three packaged providers carry that import, so the
+        # platform logged "loaded 0 providers" on every boot. sys.path is still
+        # right for EXTERNAL `PROVIDER_DIRS`, which are inside no package.
         packaged_dir = Path(__file__).resolve().parent.parent
         packaged_pkg = __package__.rsplit(".", 1)[0]  # mirobody.pulse.providers
         is_packaged = directory.resolve() == packaged_dir

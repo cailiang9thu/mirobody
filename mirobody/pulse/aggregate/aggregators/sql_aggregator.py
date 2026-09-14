@@ -343,29 +343,14 @@ class SQLAggregator:
         """
 
         try:
-            # Build query to get all data in the date range.
-            # user_id filter is only applied when user_id is not None.
-            # Use UNION to separate sleep data and normal data.
-            # Note: time field is stored as UTC timestamp, we explicitly specify 'UTC' first
-            #
-            # Two things here are not cosmetic:
-            #
-            # 1. `CAST(:user_id AS text)`. Written as a bare `(:user_id IS NULL OR
-            #    user_id = :user_id)` this raises
-            #    `psycopg.errors.AmbiguousParameter: could not determine data type of
-            #    parameter $1`: Postgres cannot infer a type for a parameter whose
-            #    only context is `IS NULL`. Reproduced against Postgres 15 through this
-            #    project's own driver, and it failed for a real user_id as well as for
-            #    None, so this function returned [] on EVERY call. The blanket
-            #    `except Exception` below turned that into an empty task list, which
-            #    `recalculate_date_range` reports as
-            #    {"status": "success", "summaries_created": 0}: a recalculation that
-            #    silently does nothing.
-            #
-            # 2. `time < :end_date`, not `<=`. Every other range in this file is
-            #    half-open [start, end); the callers pass a date-only end, so `<=`
-            #    matched only rows at exactly 00:00:00 on the last day and dropped the
-            #    rest of it.
+            # UNION separates sleep from normal data; `time` is stored UTC, so
+            # 'UTC' is named explicitly. Two things are load-bearing.
+            # `CAST(:user_id AS text)`: a bare `(:user_id IS NULL OR user_id =
+            # :user_id)` raises AmbiguousParameter on Postgres 15, since a
+            # parameter whose only context is `IS NULL` has no inferable type,
+            # and the blanket `except` below turned that into
+            # {"status": "success", "summaries_created": 0}. `time < :end_date`,
+            # not `<=`: callers pass a date-only end, which `<=` truncates.
             query = _union_over_windows(
                 """
                 SELECT
@@ -736,42 +721,14 @@ class SQLAggregator:
             pattern, alias, clause = parsed
             agg_clauses.append(clause)
 
-        # Build query
-        # IMPORTANT: Direct UTC time comparison - allows index usage!
-        # day_start/day_end are UTC times, can directly compare with time column (UTC)
-        #
-        # Source-id-level de-duplication (TH-422):
-        # For aggregator-hub sources like apple_health, the same physiological
-        # event can be recorded by multiple source_ids (Apple Watch UUID, Oura,
-        # Whoop, Pillow ...). The chosen_source_id CTE picks one source_id per
-        # (user, indicator, source) by priority; the outer query keeps only
-        # that source_id's rows for those sources.
-        #
-        # For NON-aggregator-hub sources (theta.*, vital.*, etc), multiple
-        # source_ids per (user, indicator) usually represent time-sliced
-        # incremental pulls (e.g. whoop_879_<timestamp>), NOT duplicate data.
-        # Filtering them would lose data, so those sources skip the JOIN
-        # entirely (the UNION ALL non-hub branch).
-        #
-        # PERFORMANCE NOTES (TH-422 hotfix after initial regression):
-        #
-        # 1. `WITH chosen_source_id AS MATERIALIZED (...)`: PG 12+ inlines
-        #    CTEs by default, which here turned the CTE into a correlated
-        #    subquery that ran once per outer row of series_data: 700+x
-        #    slowdown (165s vs 232ms on a 1-user/3-indicator/24h test).
-        #    Forcing MATERIALIZED keeps the CTE as a one-shot temp result.
-        #
-        # 2. UNION ALL split + INNER JOIN instead of `OR EXISTS`: lets the
-        #    planner use a Merge/Hash join (apple branch) and an index scan
-        #    (non-apple branch) rather than a correlated subplan. Measured
-        #    2.5x faster than MATERIALIZED-only on a 5-user/8-indicator/24h
-        #    batch (460ms vs 1144ms).
-        #
-        # 3. `c.source_id = sd.source_id` (`=`, not `IS NOT DISTINCT FROM`):
-        #    Apple-hub source rows always have a non-NULL source_id (set by
-        #    AppleProvider with `record.sourceId or "unknown"` fallback), so
-        #    `=` is safe AND lets PG pick a hash/merge join (IS NOT DISTINCT
-        #    FROM forces nested loop).
+        # Direct UTC comparison against the UTC `time` column keeps the index
+        # usable. TH-422: a hub source (apple_health) records one event under
+        # several source_ids, so chosen_source_id picks one per (user,
+        # indicator, source); other sources use source_id for time-sliced
+        # pulls where filtering loses data, hence the UNION ALL non-hub branch.
+        # MATERIALIZED because PG 12+ inlines a CTE into a per-row subquery
+        # (165s vs 232ms); UNION ALL + INNER JOIN beats `OR EXISTS` (460ms vs
+        # 1144ms); `=` beats `IS NOT DISTINCT FROM`, which forces a nested loop.
         priority_case_expr = build_apple_priority_case("source", "source_id")
         apple_sources_in = ",".join(f"'{s}'" for s in APPLE_SOURCES)
         # Inner subquery uses `sd.` table alias to disambiguate against the

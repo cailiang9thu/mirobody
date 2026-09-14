@@ -70,14 +70,12 @@ class ThFilesBackend(PgFilesystemBackend):
                          supports_file_block=supports_file_block)
         self._keys = [str(k) for k in (file_keys or [])][:_MAX_SESSION_FILES]
         # file_key -> the name THIS request attached the file under. `/uploads/`
-        # names a file by this rather than by `th_files.file_name`, which is not
-        # stable: the upload pass asks an LLM for a descriptive name and
-        # overwrites the column with it (`handlers/base.py::_extract_abstract`),
-        # and that write lands DURING the turn, concurrently with the agent. The
-        # column is the right name for `/library/`, where it is discovered by
-        # `ls`; it is the wrong one here, because `_attachment_reminder` has
-        # already told the model the request's name and a rename mid-turn turned
-        # that path into `file_not_found` (`ls` had listed it seconds earlier).
+        # uses it rather than `th_files.file_name`, which is not stable: the
+        # upload pass asks an LLM for a descriptive name and overwrites the
+        # column DURING the turn, concurrently with the agent. That column is
+        # the right name for `/library/`, discovered by `ls`, and the wrong one
+        # here: `_attachment_reminder` has already told the model the request's
+        # name, so a rename mid-turn turned that path into `file_not_found`.
         self._turn_names = {str(k): str(v) for k, v in (turn_names or {}).items() if v}
 
     # ── the projection ───────────────────────────────────────────────────────

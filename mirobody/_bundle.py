@@ -221,19 +221,13 @@ def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | Non
     return FieldTable(blob, off, AXIS_FIELDS), order_code, order_name
 
 
-# ── alias sources ────────────────────────────────────────────────────────────
-#
-# ``res/aliases_src/{lang}.tsv`` (LOINC LinguisticVariant-derived) and
-# ``{lang}_curated.tsv`` (hand-written corrections), plus
-# ``res/resolver_overrides.tsv``: loose files, not bundle members.
-#
-# They used to be BOTH: byte-identical copies also lived inside the tarball as
-# ``aliases/{lang}.tsv``, with the resolver reading the loose files and the
-# lexicon build reading the tarball copies. Two copies of one table is the
-# state that always ends the same way, and it already had: four rows added to
-# ``zh_curated.tsv`` (DPA, DGLA, AA/EPA ×2) were live for the resolver and
-# invisible to the build, because the tarball copy had not been re-cut since.
-# The tarball members are gone; this is the one reader.
+# Alias sources: ``res/aliases_src/{lang}.tsv`` (LOINC LinguisticVariant-
+# derived), ``{lang}_curated.tsv`` (hand-written corrections) and
+# ``res/resolver_overrides.tsv``, all loose files rather than bundle members.
+# Byte-identical copies used to live in the tarball too, read by the lexicon
+# build while the resolver read the loose files, and the two drifted: four rows
+# added to ``zh_curated.tsv`` were live for the resolver and invisible to the
+# build. The tarball members are gone; this is the one reader.
 
 #: The sibling bundle holding SNOMED CT-derived runtime data (the Body
 #: Structure subtree mask, the axis aliases). A separate file because the

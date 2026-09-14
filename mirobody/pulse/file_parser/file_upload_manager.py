@@ -210,15 +210,14 @@ class WebSocketFileUploadManager:
 
             logger.info(f"Starting file upload: connection_id={connection_id}, real_user_id={real_user_id}, message_id={message_id}, file_count={len(files_info)}, proxy_user_id={query_user_id}")
 
-            # AUTHORIZE a proxy upload before anything is written. `query_user_id`
-            # is client-supplied: without this gate any authenticated user could
-            # write a file into ANY user's record (even a non-existent id) by
-            # naming it here: the file lands under the victim's query_user_id,
-            # their agent's VFS reads it, and it never shows in the attacker's
-            # own file list. That is the prompt-injection delivery surface
-            # SECURITY.md warns about. Same check the proxy paths in
-            # public_router already use; write access is required because this
-            # WRITES to the subject's record.
+            # AUTHORIZE a proxy upload before anything is written.
+            # `query_user_id` is client-supplied: without this gate any
+            # authenticated user could write a file into ANY user's record by
+            # naming it here, where the victim's agent VFS reads it and the
+            # attacker's own file list never shows it. That is the
+            # prompt-injection delivery surface SECURITY.md warns about. Same
+            # check the proxy paths in public_router use; write access is
+            # required because this WRITES to the subject's record.
             if query_user_id and str(query_user_id) != str(real_user_id):
                 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
                 try:

@@ -22,16 +22,13 @@ from .tools import genetic_service as genetics
 
 logger = logging.getLogger(__name__)
 
-# Tool names reserved by the native deepagents harness. The agent gets these
-# from middleware, so a same-named global MCP tool (from any source) would shadow
-# or collide with the native one: filter them out here:
-#   - FilesystemMiddleware provides ls/read_file/write_file/edit_file/glob/grep
-#     over the CompositeBackend (multimodal read for pdf/image/...).
-#
-# `write_todos` is deliberately absent: deepagents 0.7 dropped TodoListMiddleware
-# from its default stack and the agent does not add it back, so nothing provides
-# that name natively and there is nothing to shadow. Re-add it here if
-# TodoListMiddleware is ever wired back into `agent.MirobodyAgent._build_agent`.
+# Tool names reserved by the native deepagents harness, filtered out here: the
+# agent gets them from FilesystemMiddleware, over the CompositeBackend, so a
+# same-named global MCP tool would shadow or collide with the native one.
+# `write_todos` is deliberately absent: deepagents 0.7 dropped
+# TodoListMiddleware from its default stack and the agent does not add it back,
+# so nothing provides that name. Re-add it if TodoListMiddleware is ever wired
+# back into `agent.MirobodyAgent._build_agent`.
 _NATIVE_TOOL_BLOCKLIST = frozenset({
     "ls", "read_file", "write_file", "edit_file", "glob", "grep",  # FilesystemMiddleware
 })

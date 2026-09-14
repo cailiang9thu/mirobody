@@ -108,23 +108,14 @@ class Resolution:
     loinc: str = ""                 # LOINC_NUM when the canonical name is LOINC
     candidates: int = 0             # how many corpus rows matched the alias
     resolved: bool = False
-    #: How the answer was reached, or why there is none:
-    #:
-    #:   ``"lexical"``   shipped vocabularies: the only kind :func:`resolve`
-    #:                   returns
-    #:   ``"semantic"``  embedding recall, via
-    #:                   :func:`resolve_with_semantic_fallback`
-    #:   ``"refused"``   a decision not to answer: a panel name, or a string
-    #:                   naming two different tests. Distinct from ``""`` (not
-    #:                   found) because a gap is worth a second opinion and a
-    #:                   refusal must not be overturned by one.
-    #:   ``""``          not found
-    #:
-    #: A caller using a code as an IDENTITY (a grouping key, a decision that two
-    #: readings are the same series, a FHIR mirror) must accept only
-    #: ``"lexical"``. Semantic recall cannot abstain: on the LOINC matrix
-    #: nonsense scored 0.78 while real terms went as low as 0.56, so no
-    #: threshold separates them. It suggests; it does not identify.
+    #: How the answer was reached, or why there is none. ``"lexical"`` from the
+    #: shipped vocabularies is the only kind :func:`resolve` returns;
+    #: ``"semantic"`` comes from :func:`resolve_with_semantic_fallback`;
+    #: ``"refused"`` is a decision not to answer (a panel name, a string naming
+    #: two tests) and unlike ``""`` must not be overturned by a second opinion.
+    #: A caller using a code as an IDENTITY must accept only ``"lexical"``:
+    #: semantic recall cannot abstain, nonsense scoring 0.78 on the LOINC matrix
+    #: where real terms went as low as 0.56, so no threshold separates them.
     method: str = ""
     score: float = 0.0              # cosine, semantic answers only
 
@@ -303,20 +294,13 @@ class OfflineResolver:
                     keys.append(key)
 
         # "Total cholesterol TC" -> "Total cholesterol". A lab report prints the
-        # analyte and its abbreviation side by side constantly, and none of those
-        # strings resolved: `Fasting plasma glucose FPG`, `总胆固醇 TC`,
-        # `甘油三酯 TG` all returned nothing while their bare stems answered.
-        #
-        # The strip used to be applied to the alias table's TARGET value, inside
-        # `_keys_for`, so it could only fire on inputs that were already alias
-        # keys, which are exactly the inputs that already resolved. The comment
-        # there gave an input-side example for target-side code; this is that
-        # example, on the input, where it was always meant to be.
-        #
-        # Tested on the RAW term because the pattern is a case test and
-        # `normalize` lowercases. Appended LAST, after every other key has
-        # missed, so like the surface variants above it can only turn a miss
-        # into a hit, never overrule an answer that was already right.
+        # analyte beside its abbreviation constantly, and none of those strings
+        # resolved: `Fasting plasma glucose FPG`, `总胆固醇 TC`, `甘油三酯 TG` all
+        # returned nothing while their bare stems answered. The strip used to be
+        # applied to the alias table's target inside `_keys_for`, where it could
+        # only fire on inputs that already resolved. Tested on the RAW term
+        # because the pattern is a case test and `normalize` lowercases;
+        # appended last, so it can only turn a miss into a hit.
         stem = _TRAILING_ACRONYM.sub("", term).strip()
         if stem and stem != term.strip():
             if self._trailing_token_is_an_abbreviation(stem, term.strip()[len(stem):].strip()):
@@ -481,18 +465,12 @@ class OfflineResolver:
 
         # Deliberate non-answers (target `!unresolved` in the overrides file).
         # Some terms name a CATEGORY with no code of its own: "血脂" is four
-        # analytes and LOINC's lipid panels differ by which children they
-        # include, so any single code encodes an assumption about what was
-        # ordered. A confident wrong code is worse than an honest miss, so these
-        # resolve to nothing and the caller has to say which measurement.
-        #
-        # Note the case this is NOT: a panel term that has a real panel code
-        # ("blood pressure" -> 85354-9) resolves, because a panel code says
-        # "expect components", which is the very thing a refusal would only be
-        # gesturing at. See resolver_overrides.tsv.
-        #
-        # All surface variants are checked, not just the term as written: see
-        # `_is_blocked` for the back door that requires.
+        # analytes and LOINC's lipid panels differ by which children they carry,
+        # so any single code assumes what was ordered. A panel term that HAS a
+        # real panel code ("blood pressure" -> 85354-9) still resolves, because
+        # a panel code says "expect components". All surface variants are
+        # checked, not just the term as written; `_is_blocked` has the back door
+        # that requires.
         if self._is_blocked(term):
             return Resolution(term=term, method="refused")
 
@@ -500,16 +478,13 @@ class OfflineResolver:
         if hit is not None:
             return hit
 
-        # "名称(缩写)": the shape a lab report prints more often than not. On
-        # the hosted platform's production data, 147 of 868 distinct indicator
-        # names are this shape and 70 of them carried no code at all.
-        #
-        # Which half is the answer is NOT decidable by position, so it is not
-        # guessed. ``空腹血糖(GLU)`` means the stem; ``血糖(HbA1c)`` means the
-        # parenthetical, and answering that one with glucose would file an HbA1c
-        # reading into the glucose series. So both halves are resolved, and when
-        # they disagree the term stays unresolved: the same trade the
-        # ``!unresolved`` sentinel makes, applied to a shape rather than a word.
+        # "名称(缩写)", the shape a lab report prints more often than not: on
+        # production data 147 of 868 distinct indicator names have it and 70 of
+        # those carried no code. Which half is the answer is not decidable by
+        # position. ``空腹血糖(GLU)`` means the stem, ``血糖(HbA1c)`` means the
+        # parenthetical, and answering the second with glucose would file an
+        # HbA1c reading into the glucose series. So both halves are resolved and
+        # a disagreement leaves the term unresolved.
         stem, inside = split_trailing_parenthetical(term)
         if not stem and not inside:
             return Resolution(term=term)
@@ -519,19 +494,14 @@ class OfflineResolver:
         stem_hit = self._lookup(stem) if stem else None
         inside_hit = self._lookup(inside) if inside else None
         if stem_hit and inside_hit and stem_hit.loinc != inside_hit.loinc:
-            # Different codes, so ask the axis table whether they are even the
-            # same substance. LOINC's COMPONENT answers it:
-            #
+            # Different codes, so ask LOINC's COMPONENT whether they are even
+            # the same substance.
             #   空腹血糖(GLU)   Glucose^post CFst  vs Glucose
-            #                  -> same analyte, the parenthetical is just
-            #                     labelling the stem, so the stem (the more
-            #                     specific framing, and the written head of the
-            #                     term) wins.
-            #   血糖(HbA1c)    Glucose            vs Hemoglobin A1c/Hemoglobin.total
-            #   胆固醇(HDL-C)  Cholesterol        vs Cholesterol.in HDL
-            #                  -> different analytes: two tests in one string,
-            #                     and picking either files the reading into the
-            #                     wrong series. Stays unresolved.
+            #     same analyte: the parenthetical only labels the stem, so the
+            #     stem wins
+            #   血糖(HbA1c)    Glucose      vs Hemoglobin A1c/Hemoglobin.total
+            #   胆固醇(HDL-C)  Cholesterol  vs Cholesterol.in HDL
+            #     two tests in one string, so it stays unresolved
             stem_analyte = self._analyte_of(stem_hit.loinc)
             inside_analyte = self._analyte_of(inside_hit.loinc)
             if not stem_analyte or stem_analyte != inside_analyte:
@@ -639,16 +609,12 @@ class OfflineResolver:
         if not siblings:
             # A differential percentage and a differential count are two
             # COMPONENTs, not two properties of one: `neutrophils/leukocytes`
-            # (NFr) and `neutrophils` (NCnc). So `中性粒细胞` reported as
-            # `4.2 10*9/L` could not reach its own count code: the analyte
-            # resolves to the ratio, which is what a bare differential term
-            # means on a CBC, and the unit had no way to say otherwise.
-            #
-            # Dropping the denominator is well-determined; adding one is not.
-            # `neutrophils` has three NFr children (`/cells`, `/leukocytes`,
-            # `/round cells`) and only clinical knowledge picks the CBC one, so
-            # this crosses in the ratio -> count direction ONLY. The other
-            # direction stays curated, in `resolver_overrides.tsv`.
+            # (NFr) against `neutrophils` (NCnc). So `中性粒细胞` reported as
+            # `4.2 10*9/L` could not reach its own count code. Dropping the
+            # denominator is well-determined; adding one is not, since
+            # `neutrophils` has three NFr children and only clinical knowledge
+            # picks the CBC one. This crosses ratio -> count ONLY; the other
+            # direction stays curated in `resolver_overrides.tsv`.
             numerator, sep, _ = current[1].partition("/")
             if sep:
                 siblings = _matching(numerator.encode("utf-8"))
@@ -680,21 +646,14 @@ class OfflineResolver:
                     break
                 name = self._names.get(row)
                 code = self._loinc_for_name(name)
-                # Two ways a candidate cannot be an identity, and both mean
-                # "try the next one" rather than "answer with it":
-                #
-                #   - the bundle tells us not to answer with this code;
-                #   - the row has no LOINC code at all. The corpus spans six
-                #     vocabularies and carries 4,991 `Deprecated …` names, so a
-                #     tenth of all alias hits came back `resolved=True,
-                #     method="lexical", loinc=""`. A caller following this
-                #     module's own identity rule (accept only
-                #     `method == "lexical"`) got `""` as a grouping key and
-                #     merged every such reading into one bucket. Two consumers
-                #     in this repo read that state opposite ways:
-                #     `resolve_with_semantic_fallback` treated it as answered
-                #     and withheld the second tier, `mirobody/evals/run_eval.py` scored
-                #     it as unanswered.
+                # Two ways a candidate cannot be an identity, both meaning
+                # "try the next one": the bundle says not to answer with this
+                # code, or the row has no LOINC code at all. The corpus spans
+                # six vocabularies and carries 4,991 `Deprecated ...` names, so
+                # a tenth of alias hits came back `resolved=True,
+                # method="lexical", loinc=""`, and a caller following this
+                # module's identity rule got `""` as a grouping key, merging
+                # every such reading into one bucket.
                 if not code or code.encode("ascii") in skipped:
                     exclude.add(row)
                     continue

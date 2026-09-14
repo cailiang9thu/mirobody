@@ -5,25 +5,14 @@ from psycopg_pool import AsyncConnectionPool
 
 logger = logging.getLogger(__name__)
 
-#-----------------------------------------------------------------------------
-# Tables where merging is a plain UPDATE col = winning WHERE col = losing.
-# No UNIQUE constraint covering the user_id column means no row collision.
-# Each entry: (table_name, [column1, column2, ...]).
-#
-# user_id values in subordinate tables are stored as VARCHAR (str of the
-# health_app_user.id integer); we pass str(losing)/str(winning).
-#
-# Tables that DON'T appear here have UNIQUE / PRIMARY KEY constraints over
-# the user_id column and need conflict-aware handling: see _merge_*().
-#
-# This list is deliberately WIDER than `mirobody/schema`: it covers whatever
-# user-scoped tables the running deployment happens to have, including ones
-# provisioned outside this project. Several entries name tables our own DDL no
-# longer creates (`th_task_flow`, `health_data_epic`, `health_data_oracle`,
-# `health_data_libre`, `health_vital_webhook`), that is correct, not stale:
-# every access is guarded by `_table_exists`, so an entry costs one catalogue
-# lookup where the table is absent and keeps a merge honest where it is
-# present. Do not prune this list by diffing it against our schema.
+# Tables where merging is a plain UPDATE col = winning WHERE col = losing:
+# no UNIQUE constraint over user_id means no row collision. Each entry is
+# (table_name, [column, ...]); user_id is VARCHAR here, so we pass
+# str(losing)/str(winning). Tables absent from this list have UNIQUE or
+# PRIMARY KEY constraints over user_id and need `_merge_*()` instead.
+# The list is deliberately WIDER than `mirobody/schema`, covering tables a
+# deployment may have from elsewhere; `_table_exists` guards every access,
+# so do not prune it by diffing against our own DDL.
 
 SIMPLE_RELINK_TABLES: list[tuple[str, list[str]]] = [
     # sql/ tables

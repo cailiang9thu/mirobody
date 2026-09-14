@@ -102,19 +102,13 @@ def enabled() -> bool:
 # the same rows.
 
 #: The string the end-to-end PHI check greps the running container's logs for.
-#:
-#: The discipline has a static layer (`testing.phi_lint`, which reads the AST of
-#: every log statement) and a runtime one (`ops.PHIPolicy`, a logging filter).
-#: This is the third, and the only one that tests the SYSTEM: a redaction that
-#: holds in unit tests and not in the container is not a redaction.
-#:
-#: It is a STRING, not an odd number, on purpose. A leaked bare value is
-#: indistinguishable from any other number in a log; a leaked comment is
-#: unambiguous, and a comment is free-text health data: the thing the column
-#: encryption at rest exists to protect. It rides on an existing row's comment
-#: rather than on a row of its own, so the demo's charts are unchanged.
-#:
-#: Demo data only, and the demo never seeds under PRODUCTION.
+#: The other two layers are static (`testing.phi_lint` reads the AST of every
+#: log statement) and runtime (`ops.PHIPolicy`, a logging filter); this is the
+#: only one that tests the system. A string, not a number, because a leaked
+#: bare value is indistinguishable from any other number in a log while a
+#: leaked comment is unambiguous, and a comment is the free-text health data
+#: column encryption exists to protect. It rides on an existing row, so the
+#: demo's charts are unchanged. Demo data only; never seeded under PRODUCTION.
 PHI_CANARY = "self-tracked PHI-CANARY-3f9a"
 
 #: Which row from the end carries it. The last one is the storyline's HbA1c and

@@ -313,18 +313,14 @@ class PgFilesystemBackend(BackendProtocol):
         created = _iso(row.get("created_at"))
         modified = _iso(row.get("updated_at"))
 
-        # Text-extractable documents (pdf/ppt/pptx/excel): rendering is capability-aware.
-        #  * PDF on a file-block-capable model (Claude/Gemini/GPT/…): fall through
-        #    to the base64 branch below so the model gets the NATIVE file block:
-        #    preserving tables, figures, layout, scanned pages (what vision models
-        #    are best at, and what matters for lab reports / scanned medical docs).
-        #  * everything else here (ppt/pptx and Excel, no provider accepts these
-        #    as file blocks, and PDF on text-only models like qwen/deepseek that
-        #    reject `{'type':'file'}` with HTTP 400): serve the extracted text,
-        #    extracting it now if this is the file's first read. We drop these
-        #    extensions from deepagents' multimodal
-        #    map (module-level patch below) so a text payload renders as a plain
-        #    text block while a base64 payload still falls back to a "file" block.
+        # Text-extractable documents (pdf/ppt/pptx/excel), rendered by
+        # capability. A PDF on a file-block-capable model falls through to the
+        # base64 branch for the NATIVE file block, which preserves tables,
+        # figures and scanned pages. Everything else gets the extracted text,
+        # extracted now on first read: no provider takes ppt or Excel as a file
+        # block, and text-only models reject `{'type':'file'}` with a 400. The
+        # module-level patch below drops these from deepagents' multimodal map
+        # so text renders as a text block and base64 still falls back to file.
         ext = PurePosixPath(file_path).suffix.lower()
         serve_native_pdf = ext == ".pdf" and self._supports_file_block
         if ext in _TEXT_DOC_EXTS and not serve_native_pdf:
@@ -615,17 +611,14 @@ def _compile_glob(pattern: str | None, *, base: str) -> re.Pattern[str]:
         return re.compile(fnmatch.translate(base_prefix + "/" + (pattern or "")))
 
 
-# Document types we reliably extract text from at upload time. They are stored
-# as base64 (object-storage offload) but READ as their extracted text: most
-# providers (qwen/DashScope, deepseek, ...) reject a ``{'type': 'file'}``
-# content block and only images go through the native vision path. Serving the
-# extracted text makes PDF/PPT/Excel chat work across every model.
-#
-# Excel (.xlsx/.xls/...) matters here: no provider accepts a spreadsheet as a
-# native file block, and its bytes are a ZIP the model cannot decode. Without
-# this entry ``aread`` would serve raw base64 and the model could not parse it.
-# The parser turns the workbook into a markdown table
-# (``_extract_excel_original_text``) on first read, which is what we serve.
+# Document types we reliably extract text from at upload time. Stored as base64
+# (object-storage offload) but READ as extracted text: most providers reject a
+# ``{'type': 'file'}`` block and only images take the native vision path, so
+# serving text is what makes PDF/PPT/Excel chat work everywhere. Excel matters
+# most: no provider accepts a spreadsheet as a file block and its bytes are a
+# ZIP, so without this entry ``aread`` serves raw base64 the model cannot
+# parse. ``_extract_excel_original_text`` turns the workbook into a markdown
+# table on first read.
 
 
 def _patch_deepagents_multimodal_exts() -> None:

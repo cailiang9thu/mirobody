@@ -84,20 +84,14 @@ class MirobodyAgent:
         self.default_provider = safe_read_cfg("DEFAULT_MODEL") or _default_provider()
         self.file_parse_cache_ttl = int(safe_read_cfg("FILE_CACHE_TTL") or 300)
         self.file_parse_cache_maxsize = int(safe_read_cfg("FILE_CACHE_MAXSIZE") or 100)
-        # Two layers, and they are not interchangeable (see `_build_agent`):
-        #
-        # MODEL_CALL_LIMIT is the real budget, counted in agent iterations (= model
-        # calls, one per tool round) and enforced by ModelCallLimitMiddleware, which
-        # ends the run gracefully so the model still writes a final answer. This is
-        # what "N rounds" should mean, and it is immune to how many middleware nodes
-        # run per cycle.
-        #
-        # RECURSION_LIMIT is a raw LangGraph super-step ceiling kept only as a
-        # last-resort net for a true runaway. It must sit WELL ABOVE the model-call
-        # budget or it fires first and hard-fails with GraphRecursionError instead of
-        # degrading: every built-in middleware compiles its after_model hook as its
-        # own graph node, so one tool round costs several super-steps. Default it to
-        # ~6x the round budget so the graceful limit always wins.
+        # Two layers, not interchangeable (see `_build_agent`). MODEL_CALL_LIMIT
+        # is the real budget, counted in model calls and enforced by
+        # ModelCallLimitMiddleware, which ends the run gracefully so the model
+        # still writes an answer. RECURSION_LIMIT is a raw LangGraph super-step
+        # ceiling, a last-resort net for a runaway: it must sit WELL above the
+        # call budget or it fires first and hard-fails with GraphRecursionError,
+        # since every middleware compiles its after_model hook as its own node
+        # and one tool round costs several super-steps. Default it to ~6x.
         self.model_call_limit = int(safe_read_cfg("MODEL_CALL_LIMIT") or 50)
         self.recursion_limit = int(
             safe_read_cfg("RECURSION_LIMIT") or max(100, self.model_call_limit * 6)
@@ -266,21 +260,14 @@ class MirobodyAgent:
         from .filesystem.files_backend import ThFilesBackend
         from .filesystem.profile_backend import ProfileBackend
 
-        # Every mount is now either graph state or a read-only PROJECTION of the
-        # table that owns the data. There is no agent-filesystem table:
-        #
-        #   /            the agent's scratch space: StateBackend, checkpointed by
-        #                LangGraph (checkpointer.py), so it survives the turn
-        #                without a table of its own
-        #   /memories/   projects health_user_profile_by_system (is_deleted = false)
-        #   /uploads/    projects th_files, narrowed to THIS request's file_keys
-        #   /library/    projects th_files (is_del = false), the rest of the history
-        #
-        # The two mirroring passes that used to run here (one per turn, copying
-        # path/mime/hash/text out of th_files into pointer rows) are gone. They
-        # bought nothing on the read path (they queried th_files every turn
-        # anyway) and cost a second home for the truth, which is how a deleted
-        # health document kept answering.
+        # Every mount is graph state or a read-only PROJECTION of the table
+        # that owns the data; there is no agent-filesystem table. Mirroring
+        # th_files into pointer rows gave truth a second home, which is how a
+        # deleted health document kept answering.
+        #   /            scratch space: StateBackend, checkpointed by LangGraph
+        #   /memories/   health_user_profile_by_system (is_deleted = false)
+        #   /uploads/    th_files, narrowed to THIS request's file_keys
+        #   /library/    th_files (is_del = false), the rest of the history
         this_turn_keys = [str(f["file_key"]) for f in (file_list or [])
                           if isinstance(f, dict) and f.get("file_key")]
 
@@ -444,17 +431,6 @@ class MirobodyAgent:
         logger.info(f"file-block support: pdf=False (unrecognised transport {type(llm_client).__name__})")
         return False
 
-    # Native tools this agent must not offer the model, hidden via the harness
-    # profile's ``excluded_tools`` (deepagents appends a ``_ToolExclusionMiddleware``
-    # for it).
-    #
-    # ``delete``: PgFilesystemBackend deliberately does not implement it (see
-    # backend.py). That alone is NOT enough to hide the tool, because the
-    # capability probe runs against the mounted backend, and ``CompositeBackend``
-    # DOES implement ``delete``, routing per path. So deepagents considers delete
-    # supported, offers it, and every call comes back as the composite's
-    # "unsupported" error after the model has already spent tokens on it. Excluding
-    # it by name is what actually keeps it off the tool list.
     #: Read-only tools the `eval` REPL may call as `tools.<name>`; each guards
     #: itself because the PTC bridge bypasses the tool middleware.
     _PTC_TOOLS: tuple[str, ...] = (query.TOOL_NAME,)
@@ -469,6 +445,12 @@ class MirobodyAgent:
     #: a trend" and still bounded; `exit_behavior="continue"` lets the model
     #: write its answer from what it already has rather than ending the turn.
     _QUERY_CALL_LIMIT = 12
+    #: Native tools hidden from the model via the harness profile's
+    #: ``excluded_tools``. PgFilesystemBackend does not implement ``delete``,
+    #: but that alone does not hide it: the capability probe runs against
+    #: ``CompositeBackend``, which does implement it, so deepagents offers the
+    #: tool and every call comes back "unsupported" after the model has already
+    #: spent tokens on it. Excluding by name is what keeps it off the list.
     _EXCLUDED_NATIVE_TOOLS = frozenset({"delete"})
 
     async def _build_agent(

@@ -157,15 +157,12 @@ class McpService:
         else:
             self._mcp_urls = {}
 
-        # How long a personal MCP URL stays valid.
-        #
-        # This was a hardcoded 365 days, and the URL is a bearer credential
-        # carried IN a URL: it is pasted into a desktop client's config file,
-        # it lands in screenshots and shell history, and `/mcp/{secret}` needs
-        # nothing else (no JWT) to read that person's whole health record.
-        # A year of that with no way to revoke it (there was none) is the
-        # combination a security audit flags. Thirty days by default, and
-        # `MCP_URL_TTL_DAYS` for a deployment that wants otherwise.
+        # How long a personal MCP URL stays valid. This was a hardcoded 365
+        # days, and the URL is a bearer credential carried IN a URL: pasted into
+        # a desktop client's config, landing in screenshots and shell history,
+        # and `/mcp/{secret}` needs nothing else to read that person's whole
+        # health record. A year of that with no revocation is what a security
+        # audit flags. Thirty days by default, `MCP_URL_TTL_DAYS` to change it.
         from ..utils.config import safe_read_cfg
 
         try:
@@ -417,26 +414,13 @@ class McpService:
 
         #-------------------------------------------------
 
-        # What this server answers, and what it deliberately does not. The
-        # previous version of this comment listed the whole MCP method surface
-        # without marking which half was wired, so it read as a support matrix
-        # when it was a spec crib sheet: three of the methods it named fall
-        # through to CODE_METHOD_NOT_FOUND.
-        #
-        #   IMPLEMENTED
-        #     tools/list                 tool definitions with schemas
-        #     tools/call                 execute one tool
-        #     prompts/list               always [], this server exposes none
-        #     initialize                 handshake revisions only
-        #     server/discover            2026-07-28 stateless discovery
-        #     notifications/initialized, ping
-        #
-        #   NOT IMPLEMENTED: method-not-found is the correct answer, not a gap:
-        #     prompts/get                we advertise zero prompts, so there is
-        #                                nothing any name could resolve to
-        #     resources/*                `_CAPABILITIES` declares no resources,
-        #                                so a spec-conforming client never
-        #                                sends these
+        #   IMPLEMENTED: tools/list, tools/call, prompts/list (always []),
+        #     initialize (handshake revisions only), server/discover
+        #     (2026-07-28 stateless discovery), notifications/initialized, ping
+        #   NOT IMPLEMENTED, where method-not-found is the answer and not a gap:
+        #     prompts/get    zero prompts are advertised, so no name resolves
+        #     resources/*    `_CAPABILITIES` declares none, so a conforming
+        #                    client never sends these
 
         if method == "tools/list":
             # Data-dependent exposure: query_genetic_data answers from the user's

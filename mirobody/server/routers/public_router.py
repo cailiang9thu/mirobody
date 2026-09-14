@@ -913,14 +913,12 @@ async def get_theta_indicators():
         categories_info = {}
 
         # The categories this endpoint publishes, spelled the way
-        # `get_all_indicators_info()` spells them: WITH SPACES. They were
-        # written with underscores ("vital_signs", "sleep", "activity"), which
-        # intersects the real labels in exactly zero places, so the filter
+        # `get_all_indicators_info()` spells them: WITH SPACES. Written with
+        # underscores they intersect the real labels nowhere, so the filter
         # dropped all 296 indicators and the route answered
-        # `{"indicators": [], "total": 0}` with HTTP 200 and code 0: an empty
-        # catalogue that looks like a successful one. The six below select
-        # 195 of the 296. (2026-09-14 regression report, F-2;
-        # tests/server/routers/test_theta_indicators.py pins the intersection)
+        # `{"indicators": [], "total": 0}` with HTTP 200: an empty catalogue
+        # that looks like a successful one. The six below select 195 of the 296;
+        # tests/server/routers/test_theta_indicators.py pins the intersection.
         theta_supported_categories = {
             "vital signs",
             "body composition",

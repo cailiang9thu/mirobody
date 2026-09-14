@@ -71,16 +71,13 @@ class FileHandlerFactory:
                 self.abstract_extractor
             )
 
-        # 4. Check for Text. Markdown included: browsers send .md as
-        # text/markdown, which used to fall through every branch and fail as
-        # "unsupported" even though TextHandler parses it identically to .txt.
-        # `text/csv` lands here too, and that is the fix for a real bug: it used
-        # to be routed to a `CSVHandler` that only delegated to an injected
-        # `csv_processor`, which nothing in this project ever injected. The
-        # factory therefore returned None for every .csv (no handler at all) 
-        # while `SUPPORTED_EXTENSIONS` accepted `.csv` and
-        # `file_types.TEXT_MIME_TYPES` already called it text. A lab CSV is text:
-        # extract it, then run the same indicator extraction as everything else.
+        # 4. Text, markdown included: browsers send .md as text/markdown, which
+        # used to fall through every branch and fail as "unsupported" even
+        # though TextHandler parses it identically to .txt. `text/csv` lands
+        # here too, fixing a real bug: it went to a `CSVHandler` that only
+        # delegated to a `csv_processor` nothing ever injected, so the factory
+        # returned None for every .csv while `SUPPORTED_EXTENSIONS` accepted it.
+        # A lab CSV is text: extract it, then extract indicators as usual.
         if (content_type.startswith(("text/plain", "text/markdown"))
                 or is_text_file(filename, content_type)):
              return TextHandler(

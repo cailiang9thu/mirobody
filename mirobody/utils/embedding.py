@@ -30,22 +30,14 @@ _EMB_MAX_RETRIES = 3
 _EMB_RETRY_BACKOFF = (1, 2, 4)  # seconds
 _EMB_RETRY_STATUSES = (408, 429, 502, 503, 504)
 
-# ── Disk cache (opt-in) ──────────────────────────────────────────────
-#
-# Single-process sqlite at ``~/.cache/mirobody/text_embedding.sqlite``
-# keyed on ``(provider, text)``. Vector stored as raw float32 bytes
-# (4 KB per 1024-dim row). WAL mode for safe concurrent reads from the
-# async event loop; writes go through a threading.Lock since sqlite3
-# isn't async-safe for write transactions.
-#
-# Opt-in (``text_embedding(..., cache=True)``): bulk index builds
-# (`fhir/embeddings/ref.py` embeds ~700K unique concepts that won't
-# re-occur) would bloat the cache to multi-GB with zero hit rate.
-# Query-side callers (resolve, benchmarks, search) opt in.
-#
-# To invalidate: ``rm ~/.cache/mirobody/text_embedding.sqlite``.
-# Model-version changes aren't auto-detected: clear the cache when
-# the provider's underlying model version is bumped.
+# Disk cache, opt-in: single-process sqlite at
+# ``~/.cache/mirobody/text_embedding.sqlite`` keyed on ``(provider, text)``,
+# vectors as raw float32 (4 KB per 1024-dim row). WAL for concurrent reads
+# from the event loop; writes take a threading.Lock, sqlite3 not being
+# async-safe for write transactions. Opt-in because a bulk index build embeds
+# ~700K concepts that never recur, bloating the cache for no hits; query-side
+# callers opt in. Invalidate by deleting the file: a model version bump is
+# not detected.
 
 _CACHE_PATH = Path.home() / ".cache" / "mirobody" / "text_embedding.sqlite"
 _CACHE_PARAM_LIMIT = 500  # sqlite3 SQLITE_MAX_VARIABLE_NUMBER conservatively
@@ -119,43 +111,23 @@ def _cache_store(provider: str, items: dict[str, list[float]]) -> None:
 
 _EMB_PROVIDERS: dict[str, callable] = {}
 
-#: provider → the exact model each factory below calls. ONE source of truth,
-#: shared with `scripts/build_loinc_embeddings.py` (matrix builds) and
-#: `indicator/semantic.py` (matrix load-time compatibility check): vectors are
-#: only comparable within one (provider, model) pair, so everything that
-#: stamps or checks identity must read the same table the factories use.
-#:
-#: Availability is measured, not assumed (all verified against the live
-#: endpoints, 2026-08-23):
-#:   * openrouter, qwen3-embedding-8b: open weights, so a deployment can
-#:     also self-host the same model (vLLM/TEI) and set OPENROUTER_BASE_URL
-#:     to its endpoint. OpenRouter serves 8b/4b but NOT 0.6b ("No endpoints
-#:     found").
-#:   * qwen (DashScope): text-embedding-v4 (the productized Qwen3-Embedding;
-#:     batch cap 10/request, `dimensions: 1024`), the fallback path when
-#:     openrouter.ai is unreachable. No
-#:     embedding model is served by BOTH gateways today (bge-m3 came closest:
-#:     OpenRouter yes, DashScope present-but-gated), so each gateway runs its
-#:     own model; vectors never cross deployments, so this costs nothing.
-#:
-#: The ids themselves are configuration: the `MODELS` entries in config.llm.yaml
-#: that carry `embedding: <family>`, and `UTILS_EMBEDDING_MODEL` names which of
-#: them to use (the first whose key is present). This layer keeps the FAMILY
-#: names because the database columns carry them (`embedding_qwen3_8b`,
-#: `embedding_gemini`), and a column name is not something a rename may move.
+#: provider -> the exact model each factory below calls. ONE source of truth,
+#: shared with `scripts/build_loinc_embeddings.py` and `indicator/semantic.py`:
+#: vectors compare only within one (provider, model) pair, so everything that
+#: stamps or checks identity reads this table. The ids are configuration, the
+#: `MODELS` entries in config.llm.yaml carrying `embedding: <family>`, with
+#: `UTILS_EMBEDDING_MODEL` naming which to use. The FAMILY names stay here
+#: because database columns carry them (`embedding_qwen3_8b`), and a column
+#: name is not something a rename may move. Availability measured 2026-08-23.
 
 #: An embedding entry's `model` in config.llm.yaml is the id (issue #52: a
-#: deployment that points `OPENROUTER_BASE_URL` at its own vLLM/TEI serving
-#: cannot be expected to serve `qwen/qwen3-embedding-8b` under that exact id).
-#: It reaches BOTH sides of the vector space at once: the factories below build
-#: the request from `embedding_model_id`, and `indicator/semantic.py` stamps and
-#: checks matrix identity through it, so a changed id against a matrix built
-#: with the old one fails loudly ("built by X, queries embedded by Y") instead
-#: of returning confident nonsense. Changing it means re-embedding, exactly like
-#: changing UTILS_EMBEDDING_MODEL.
-#:
-#: The 1024 `dimensions` in the factories is deliberately NOT config: it is the
-#: width of the database columns, a schema fact rather than a deployment one.
+#: deployment pointing `OPENROUTER_BASE_URL` at its own vLLM/TEI cannot be
+#: expected to serve `qwen/qwen3-embedding-8b` under that exact id). It reaches
+#: both sides of the vector space: the factories build the request from it, and
+#: `indicator/semantic.py` stamps matrix identity with it, so a changed id
+#: against an old matrix fails loudly instead of returning nonsense. Changing it
+#: means re-embedding. The 1024 `dimensions` is NOT config: it is the width of
+#: the database columns, a schema fact rather than a deployment one.
 def resolve_embedding_provider() -> str:
     """The vector-column family `UTILS_EMBEDDING_MODEL` routes to: the
     `embedding:` of the first listed entry whose key is present (that is how

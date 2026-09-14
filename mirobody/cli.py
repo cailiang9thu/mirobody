@@ -165,15 +165,13 @@ def _cmd_dev(args: argparse.Namespace) -> None:
             "postgres: `schema/00_init_schema.sql` creates a vector column."
         )
 
-    # Ephemeral by default, and said out loud. A dev secret that persists is a
-    # dev secret that reaches production in someone's shell history.
-    #
-    # Put into the ENVIRONMENT, not only into the overlay, and that is not a
-    # workaround: `Config.__init__` builds its `FernetEncrypter` from
-    # `get_fernet_key("CONFIG_ENCRYPTION_KEY")` BEFORE it loads any YAML, so a
-    # value supplied in config can never satisfy it: the run just logs
-    # "CONFIG_ENCRYPTION_KEY is not set" at ERROR and encrypts with a
-    # publicly-known key. `LOG_ENCRYPTION_KEY` reads the same way.
+    # Ephemeral by default, and said out loud: a dev secret that persists is a
+    # dev secret that reaches production in someone's shell history. It goes
+    # into the ENVIRONMENT, not only the overlay, because `Config.__init__`
+    # builds its `FernetEncrypter` from `get_fernet_key("CONFIG_ENCRYPTION_KEY")`
+    # BEFORE it loads any YAML, so a value supplied in config can never satisfy
+    # it: the run logs "CONFIG_ENCRYPTION_KEY is not set" at ERROR and encrypts
+    # with a publicly-known key. `LOG_ENCRYPTION_KEY` reads the same way.
     generated = []
     for name, nbytes in (("JWT_KEY", 32), ("CONFIG_ENCRYPTION_KEY", 16), ("LOG_ENCRYPTION_KEY", 16)):
         if not os.environ.get(name):

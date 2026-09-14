@@ -93,20 +93,13 @@ class ToolFaultMiddleware(AgentMiddleware):
 # `{"aggregate": none, ...}` for the health-data tool: Python's None
 # instead of JSON null / the quoted enum string "none".
 
-# ── salvaging malformed arguments ────────────────────────────────────────────
-#
-# The hint below tells the model exactly what it got wrong, and this provider
-# still re-emits the same shape twice in a row before we give up: observed
-# against the health-data tool, where every attempt looked like:
-#
-#     {"keywords": [...], "start_time": 2024-08-21, "aggregate": none}
-#                                       ^unquoted date      ^bare `none`
-#
-# The comment on _MAX_REPAIRS_PER_TURN was already right that a model emitting
-# broken JSON will not be argued into correctness. So try to REPAIR the string
-# before bouncing it back: these are deterministic, narrow rewrites applied only
-# to text that has ALREADY failed `json.loads`, so a valid call can never reach
-# them.
+# Salvaging malformed arguments. The hint below names exactly what went wrong
+# and some providers still re-emit the same shape twice before we give up,
+# observed against the health-data tool as
+# `{"keywords": [...], "start_time": 2024-08-21, "aggregate": none}`, with an
+# unquoted date and a bare `none`. So repair the string first: these rewrites
+# are deterministic and narrow, and run only on text that has ALREADY failed
+# `json.loads`.
 _PY_LITERALS = re.compile(r'(?<=[:\[,\s])(None|none|True|False)(?=[\s,\]}])')
 
 #: An unquoted date or timestamp: JSON reads `2024` and chokes on the dash.

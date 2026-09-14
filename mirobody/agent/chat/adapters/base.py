@@ -145,17 +145,14 @@ class ChatProtocolAdapter(ABC):
     def __init__(self):
         self.scene: str = "web"  # Default scene, subclasses can override
     
-    # =========================================================================
     # The only thing a protocol has to supply: how a chunk goes on the wire.
-    #
     # `handle_request` and `stream_output` used to be abstract. Between them
-    # they are 183 lines, of which 5 emitted SSE framing, so declaring them
-    # abstract obliged a second transport to reimplement the accumulator
-    # dispatch, the database write, the end-chunk ordering and the heartbeat
-    # timing in order to change `data: {...}\n\n` into a frame. They are
-    # concrete below; only the encoding is abstract, which is the seam that
-    # actually differs between SSE and WebSocket.
-    # =========================================================================
+    # they are 183 lines, 5 of which emit SSE framing, so a second transport
+    # had to reimplement the accumulator dispatch, the database write, the
+    # end-chunk ordering and the heartbeat timing just to change
+    # `data: {...}\n\n` into a frame. They are concrete below; only the
+    # encoding is abstract, which is the seam that differs between SSE and
+    # WebSocket.
 
     @abstractmethod
     def encode_chunk(self, chunk: dict[str, Any]) -> str:
@@ -414,24 +411,14 @@ class ChatProtocolAdapter(ABC):
                 yield self.encode_chunk({"type": "error", "content": "No permission to chat for this user"})
                 return
 
-            # An attachment-only turn asks "read this": say it out loud, ONCE,
-            # before anything downstream reads `params.question`. Everything
-            # that turn touches keys on that field: `_save_question_if_needed`
-            # (so the turn leaves a user row and the session gets a title
-            # instead of an assistant answer whose `question_id` points at a
-            # row that does not exist), the language the turn is answered in
-            # (an empty question reads as English, so a Chinese user who typed
-            # nothing got an English-instructed prompt), and the message the
-            # model receives. Substituting later, at message-build
-            # time, fixed only the last of those, and even that only until a
-            # `current_turn_note` was folded in ahead of it, which left the user
-            # message a bare time hint asking nothing at all.
-            #
-            # The empty message this replaces is not a harmless no-op: Anthropic
-            # rejects a zero-length text block outright (400), and LangGraph
-            # checkpoints the turn's input BEFORE the model node runs, so the
-            # failed turn stays in the session thread and is replayed on every
-            # later turn of that session.
+            # An attachment-only turn asks "read this": say it out loud ONCE,
+            # before anything downstream reads `params.question`. Three things
+            # key on that field: `_save_question_if_needed` (else the assistant
+            # row's `question_id` points at a user row that does not exist),
+            # the language the turn is answered in (an empty question reads as
+            # English), and the message the model receives. The empty message
+            # this replaces is not harmless: Anthropic rejects a zero-length
+            # text block (400), and LangGraph checkpoints it, so it replays.
             if not params.question and has_attachment(params.file_list):
                 params.question = t("attachment_only_question",
                                     params.language or "en", module="chat")

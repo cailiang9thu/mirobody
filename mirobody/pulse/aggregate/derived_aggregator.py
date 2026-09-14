@@ -69,17 +69,13 @@ def _safe_divide(numerator: float, denominator: float) -> float | None:
     return round(numerator / denominator, 4)
 
 
-# ---------------------------------------------------------------------------
-# Legacy alias mapping: current name → the `daily_stats_*` spelling.
-#
-# th_series_data still holds rows written under an older aggregation scheme
-# that named things `daily_stats_{indicator}{Method}`, where the current
-# SQLAggregator writes `daily{Method}{Indicator}`. Nothing produces the old
-# spelling any more, but the historical rows are real data and a derived rule
-# that ignored them would silently lose years of history, so every lookup
-# checks both spellings. The values are therefore DATA, not naming
-# preference: do not "modernise" them.
-# ---------------------------------------------------------------------------
+# Legacy alias mapping: current name -> the `daily_stats_*` spelling.
+# th_series_data still holds rows from an older scheme that named things
+# `daily_stats_{indicator}{Method}` where SQLAggregator now writes
+# `daily{Method}{Indicator}`. Nothing produces the old spelling, but those rows
+# are real data and a derived rule ignoring them loses years of history, so
+# every lookup checks both. These values are DATA, not naming preference: do
+# not "modernise" them.
 LEGACY_DAILY_STATS_ALIASES: dict[str, str] = {
     # Sleep
     "dailyTotalSleepAnalysis_Asleep(Total)": "daily_stats_sleepAnalysis_Asleep(Total)Sum",

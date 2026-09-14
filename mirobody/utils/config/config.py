@@ -34,24 +34,14 @@ _global_config = None
 #: carries it (see `server/bootstrap.py`).
 PLACEHOLDER_SENTINEL = "REPLACE_THIS_VALUE_IN_PRODUCTION"
 
-#-----------------------------------------------------------------------------
 # Keys 1.4.0 and 1.4.1 renamed, and the one place that knows every spelling.
-#
-# When the agent stopped being "the DeepAgent" its config keys lost the `_DEEP`
-# suffix (1.4.0); when the model table stopped being called `PROVIDERS` (in
-# this project a provider is a device) it became `MODELS` (1.4.1). The upgrade
-# failure that motivates this table was SILENT: an overlay written for 1.3.x
-# still said `PROVIDERS_DEEP`, the new key was simply absent from it, and the
-# agent booted with zero models and an empty `/api/models`: nothing raised,
-# nothing logged, and the deployment looked healthy. Owner's call
-# (2026-09-07): map the old spelling onto the new one.
-#
-# It has to happen at LOAD time, not read time. The shipped `config.llm.yaml`
-# declares `MODELS`, `PROMPTS`, `ALLOWED_TOOLS` and `DISALLOWED_TOOLS` itself,
-# so a "fall back when the new key is missing" alias would never fire: the
-# shipped default shadows the user's overlay, which is the whole bug.
-# Renaming as each file merges means ordinary layering decides: a later file's
-# old spelling overrides an earlier file's new one, exactly as it did in 1.3.x.
+# `_DEEP` went when the agent stopped being "the DeepAgent"; `PROVIDERS` became
+# `MODELS` once a provider meant a device. The upgrade failure was silent: a
+# 1.3.x overlay still said `PROVIDERS_DEEP`, the new key was absent from it,
+# and the agent booted with zero models and an empty `/api/models`.
+# Renaming happens at LOAD time, not read time, because the shipped
+# `config.llm.yaml` declares `MODELS` itself and would shadow a read-time
+# fallback. Renaming as each file merges lets ordinary layering decide.
 _RENAMED_KEYS = {
     "PROVIDERS_DEEP": "MODELS",
     "PROMPTS_DEEP": "PROMPTS",
@@ -301,14 +291,12 @@ class Config:
                     not upper_key.endswith("_URL") and \
                     value != PLACEHOLDER_SENTINEL:
 
-                    # Encrypt it.
-                    #
                     # An empty result means the encrypter is a no-op (an
                     # unusable key: see `get_fernet_key`). Writing that back
-                    # would REPLACE the user's real secret with "" in the
-                    # config file. `self._raw` keeps the plaintext, so the
-                    # process keeps working and the loss only surfaces on the
-                    # next restart, with nothing to point at. Leave the file
+                    # would REPLACE the user's real secret with "" in the config
+                    # file, and since `self._raw` keeps the plaintext the
+                    # process keeps working, so the loss would only surface on
+                    # the next restart with nothing to point at. Leave the file
                     # alone and say so.
                     encrypted = self._encrypter.encrypt(value)
                     if not encrypted:
