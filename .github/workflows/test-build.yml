@@ -95,6 +95,12 @@ jobs:
         # regression was invisible here.
         ruff check mirobody examples
 
+    # Comment style, which ruff cannot see: block length and em-dashes in
+    # prose. The thresholds and what they were measured against are in the
+    # script's own docstring.
+    - name: Comment style gate
+      run: python scripts/check_comment_style.py mirobody
+
     - name: Set test version
       run: |
         VERSION="${{ github.event.inputs.test_version || '0.0.0a1' }}"
