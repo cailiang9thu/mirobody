@@ -8,7 +8,7 @@ import json
 import logging
 import os
 
-from ..kernel.ops import PHIPolicy
+from mirobody.kernel.ops import PHIPolicy
 from .config import FernetEncrypter
 from .req_ctx import get_req_ctx
 

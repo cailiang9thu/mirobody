@@ -13,7 +13,7 @@ import logging
 
 from openai import AsyncOpenAI, OpenAI
 
-from ..config.llm import RouteSpec
+from mirobody.utils.config.llm import RouteSpec
 
 logger = logging.getLogger(__name__)
 

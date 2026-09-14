@@ -26,8 +26,8 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..kernel import metrics
-from ..kernel.series import Fact
+from mirobody.kernel import metrics
+from mirobody.kernel.series import Fact
 
 Decoder = Callable[..., Sequence[Fact]]
 

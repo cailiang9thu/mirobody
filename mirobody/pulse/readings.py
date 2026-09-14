@@ -60,11 +60,11 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import Any, Literal
 
-from ..kernel import metrics, quality, series, sink
+from mirobody.kernel import metrics, quality, series, sink
 # Resolved at call time through the package attribute, not bound at import:
 # `demo/test_member_seed.py` substitutes `mirobody.utils.execute_query` to run
 # the seed without a database, and a bound name would bypass the substitute.
-from .. import utils
+from mirobody import utils
 logger = logging.getLogger(__name__)
 
 OnConflict = Literal["update", "update_revive", "revive_deleted", "nothing"]

@@ -220,7 +220,7 @@ class ProviderPlatform(Platform):
 
         # Installed plugins: a distribution that declares a `mirobody.providers`
         # entry point pointing at a module with a BasePullProvider subclass.
-        from ....utils.plugin_dirs import GROUP_PROVIDERS, entry_point_modules
+        from mirobody.utils.plugin_dirs import GROUP_PROVIDERS, entry_point_modules
         for module in entry_point_modules(GROUP_PROVIDERS):
             try:
                 provider = self._provider_from_module(module, Path(getattr(module, "__file__", None) or module.__name__))

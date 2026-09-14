@@ -31,9 +31,9 @@ from datetime import datetime, timedelta, UTC
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from ..repositories.health_data import HealthDataRepository
-from ...aggregate.service import AggregateIndicatorService
-from ...standardize.indicators_info import (
+from mirobody.pulse.ingest.repositories.health_data import HealthDataRepository
+from mirobody.pulse.aggregate.service import AggregateIndicatorService
+from mirobody.pulse.standardize.indicators_info import (
     HealthDataType,
     get_indicators_in_same_categories,
 )

@@ -10,7 +10,7 @@ from .apple.platform import AppleHealthPlatform
 from .manager import platform_manager
 from mirobody.pulse.providers.platform.base import BasePullProvider
 from mirobody.pulse.providers.platform.platform import ProviderPlatform
-from ..utils.config import global_config
+from mirobody.utils.config import global_config
 
 logger = logging.getLogger(__name__)
 

@@ -26,16 +26,9 @@ from webauthn.helpers.structs import (
 
 from .jwt import AbstractTokenValidator
 
-from ...utils import (
-    json_response_with_code,
-    json_response,
-    get_jwt_token,
-    Request,
-    Response,
-    Route,
-)
+from mirobody.utils import json_response_with_code, json_response, get_jwt_token, Request, Response, Route
 
-from ..user import get_user
+from mirobody.user.user import get_user
 
 logger = logging.getLogger(__name__)
 

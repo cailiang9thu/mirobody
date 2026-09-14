@@ -43,9 +43,9 @@ import io
 from dataclasses import dataclass
 from importlib import resources
 
-from .. import metrics
-from ... import units
-from ..series import Fact
+from mirobody.kernel import metrics
+from mirobody import units
+from mirobody.kernel.series import Fact
 from ._common import number, parse_ts_smart
 
 #: The API shapes this module reads. `timeseries` is the paged sample feed;

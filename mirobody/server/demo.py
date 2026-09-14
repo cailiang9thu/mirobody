@@ -198,7 +198,7 @@ async def _put_blob(file_key: str, text: str) -> None:
     Best-effort: a storage failure must not fail the seed.
     """
     try:
-        from ..utils.config.storage.factory import get_storage_client
+        from mirobody.utils.config.storage.factory import get_storage_client
         _, err = await get_storage_client().put(
             key=file_key,
             content=text.encode("utf-8"),
@@ -214,7 +214,7 @@ async def _seed_member_own_data(execute_query, member_id: str, email: str) -> in
     """Give a sign-in account its own thin record. Returns readings written."""
     # Imported here, not at module top: the sibling `_member_series` test runs
     # on a bare `pip install mirobody`, and `pulse.readings` pulls in `utils`.
-    from ..pulse.readings import upsert_readings
+    from mirobody.pulse.readings import upsert_readings
 
     rows = _member_series(member_id, email)
     await upsert_readings(rows, on_conflict="update_revive")
@@ -249,8 +249,8 @@ async def seed(member_emails: list[str]) -> None:
     needs a member id and `add_or_get_user` only runs on first login: without
     this, the first sign-in would land on an account that is in no circle.
     """
-    from ..user import care_circle as cc
-    from ..utils import execute_query
+    from mirobody.user import care_circle as cc
+    from mirobody.utils import execute_query
 
     if not FIXTURE.is_file():
         # A pip install of the library, or a checkout without the fixture:
@@ -279,7 +279,7 @@ async def seed(member_emails: list[str]) -> None:
 
     # A replay must bring the shared record back whatever a walkthrough did to
     # it: hence "update_revive", not the device-sync "update".
-    from ..pulse.readings import upsert_readings
+    from mirobody.pulse.readings import upsert_readings
 
     series = fixture.get("series") or []
     written_count = await upsert_readings([dict(r, user_id=owner_id) for r in series], on_conflict="update_revive")

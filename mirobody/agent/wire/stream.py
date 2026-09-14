@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from langchain_core.callbacks import AsyncCallbackHandler
 
 from .events_bridge import ReasoningDelta, TextDelta, ToolArgumentsDelta, ToolCallStarted, is_tool_message, result_status, text_events, tool_call_events
-from ..models.usage import UsageAccumulator
+from mirobody.agent.models.usage import UsageAccumulator
 
 from mirobody.kernel.ops import is_driver_exception
 

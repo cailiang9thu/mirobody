@@ -8,7 +8,7 @@ import logging
 
 from .task import AggregateIndicatorTask
 from .derived_task import DerivedCalculationTask
-from ..core.scheduler import scheduler
+from mirobody.pulse.core.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
 

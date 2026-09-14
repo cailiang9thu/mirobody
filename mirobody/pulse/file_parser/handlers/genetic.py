@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi import UploadFile
-from ....utils.tasks import spawn
+from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
 

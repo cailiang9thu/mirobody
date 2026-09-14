@@ -13,22 +13,11 @@ from starlette.routing import Route
 
 from typing import Any
 
-from ..utils.http import META_PROTOCOL_VERSION, request_origin
+from mirobody.utils.http import META_PROTOCOL_VERSION, request_origin
 
-from ..utils import (
-    get_jwt_token,
+from mirobody.utils import get_jwt_token, json_response, json_response_with_code, jsonrpc_result, jsonrpc_error
 
-    json_response,
-    json_response_with_code,
-
-    jsonrpc_result,
-    jsonrpc_error,
-)
-
-from ..user import (
-
-    AbstractTokenValidator
-)
+from mirobody.user import AbstractTokenValidator
 
 from .tool import load_tools_from_directories, call_tool
 
@@ -163,7 +152,7 @@ class McpService:
         # and `/mcp/{secret}` needs nothing else to read that person's whole
         # health record. A year of that with no revocation is what a security
         # audit flags. Thirty days by default, `MCP_URL_TTL_DAYS` to change it.
-        from ..utils.config import safe_read_cfg
+        from mirobody.utils.config import safe_read_cfg
 
         try:
             self._mcp_url_ttl_days = max(1, int(safe_read_cfg("MCP_URL_TTL_DAYS") or 30))
@@ -293,7 +282,7 @@ class McpService:
         if not user_id:
             return set()
 
-        from ..utils import execute_query
+        from mirobody.utils import execute_query
 
         hidden: set[str] = set()
         for name, probe in self._DATA_GATED.items():
@@ -752,7 +741,7 @@ class McpService:
             # and returning an error STRING: with two bugs in the parse
             # (`isinstance(obj)` one-arg, and an unbound `e` in the handler)
             # that made the success path raise.
-            from ..user.care_circle import CareCircleDenied, resolve_subject
+            from mirobody.user.care_circle import CareCircleDenied, resolve_subject
             try:
                 await resolve_subject(user_id, beneficiary_user_id)
             except CareCircleDenied as denied:

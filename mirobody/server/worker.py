@@ -17,8 +17,8 @@ import asyncio
 import logging
 import signal
 
-from ..task import iter_redis_tasks, load_tasks_from_directories
-from ..utils import Config
+from mirobody.task import iter_redis_tasks, load_tasks_from_directories
+from mirobody.utils import Config
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class Worker:
 
         # The worker runs the extraction queues, so it has the same question
         # the server asks at boot: which surfaces have a provider.
-        from ..utils.config.doctor import log_report, provider_report
+        from mirobody.utils.config.doctor import log_report, provider_report
         log_report(provider_report(config), logger)
 
         logger.info("Worker runner starting")

@@ -53,8 +53,8 @@ from functools import lru_cache
 from collections.abc import Callable
 from typing import Any
 
-from ...utils.config import safe_read_cfg
-from ...utils.config.llm import vertex_host
+from mirobody.utils.config import safe_read_cfg
+from mirobody.utils.config.llm import vertex_host
 
 logger = logging.getLogger(__name__)
 
@@ -302,7 +302,7 @@ def default_resolver(name: str) -> str | None:
     chat surface healthy. One key, two answers, is #68.
     """
     if name.endswith("_API_KEY"):
-        from ...utils.config.llm import read_api_key
+        from mirobody.utils.config.llm import read_api_key
 
         return read_api_key(name) or None
     return os.environ.get(name) or safe_read_cfg(name) or None

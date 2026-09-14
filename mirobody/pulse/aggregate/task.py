@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 
 from .service import AggregateIndicatorService
-from ..core.scheduler import PullTask, ScheduleType
+from mirobody.pulse.core.scheduler import PullTask, ScheduleType
 
 logger = logging.getLogger(__name__)
 

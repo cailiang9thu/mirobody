@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
-from ...utils.tasks import spawn
+from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
 

@@ -25,7 +25,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from ..series import Fact
+from mirobody.kernel.series import Fact
 from ._common import MS, epoch_to_ms, fact, number, parse_ts_smart
 
 _S_TO_MIN = 1 / 60

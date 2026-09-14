@@ -74,7 +74,7 @@ def _route_status(surface: str, what: str) -> SurfaceStatus:
 
 
 def _embedding_status() -> SurfaceStatus:
-    from ..embedding import embedding_model_id, resolve_embedding_provider
+    from mirobody.utils.embedding import embedding_model_id, resolve_embedding_provider
 
     what = SURFACES[3][1]
     provider = resolve_embedding_provider()

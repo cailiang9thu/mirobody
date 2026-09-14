@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from ...utils import execute_query
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 
@@ -163,8 +163,8 @@ async def _refresh_file_urls_in_content(content_json_obj: Any) -> None:
     if not content_json_obj:
         return
 
-    from ...pulse.file_parser.services.database_services import FileParserDatabaseService
-    from ...pulse.file_parser.services.db_utils import get_mime_type
+    from mirobody.pulse.file_parser.services.database_services import FileParserDatabaseService
+    from mirobody.pulse.file_parser.services.db_utils import get_mime_type
 
     async def _sign(file_key: str, file_name: str = "") -> str:
         if not file_key:

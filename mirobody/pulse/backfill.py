@@ -25,8 +25,8 @@ from __future__ import annotations
 
 import logging
 
-from ..kernel import metrics
-from .. import utils
+from mirobody.kernel import metrics
+from mirobody import utils
 logger = logging.getLogger(__name__)
 
 #: How many rows one UPDATE claims. Large enough that the history goes in a

@@ -36,7 +36,7 @@ _SUFFIX = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "im
 
 async def vision_ocr(image: bytes, mime: str, *, prompt: str = OCR_PROMPT) -> str:
     """Text of one image through the configured vision provider."""
-    from ..utils.llm import unified_file_extract
+    from mirobody.utils.llm import unified_file_extract
 
     with tempfile.NamedTemporaryFile(suffix=_SUFFIX.get(mime, ".png"), delete=False) as handle:
         handle.write(image)

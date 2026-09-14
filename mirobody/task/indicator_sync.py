@@ -52,8 +52,8 @@ from datetime import datetime, UTC
 from typing import Any
 
 from .base import BaseRedisTask
-from ..utils import execute_query
-from ..utils.embedding import text_embedding
+from mirobody.utils import execute_query
+from mirobody.utils.embedding import text_embedding
 
 logger = logging.getLogger(__name__)
 

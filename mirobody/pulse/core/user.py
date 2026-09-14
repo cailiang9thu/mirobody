@@ -303,7 +303,7 @@ class PlatformUserService:
             User information dictionary, None if not exists
         """
         try:
-            from ...user.user import get_user
+            from mirobody.user.user import get_user
 
             return await get_user(user_id=user_id)
 

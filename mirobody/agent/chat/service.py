@@ -3,7 +3,7 @@ import logging
 
 from psycopg_pool import AsyncConnectionPool
 
-from ..registry import available_models, load_agent
+from mirobody.agent.registry import available_models, load_agent
 from .session import (
     create_session,
     get_session_summaries,
@@ -17,23 +17,11 @@ from .message import (
 )
 from .adapters import HTTPChatAdapter
 
-from ...user import (
-    JwtTokenValidator,
-)
-from ...user.user import get_user_info
-from ...user.care_circle import beneficiary_users
-from ...utils.sse import sse_headers
-from ...utils import (
-    json_response_with_code,
-    json_response,
-
-    global_config,
-
-    Request,
-    Response,
-    StreamingResponse,
-    Route
-)
+from mirobody.user import JwtTokenValidator
+from mirobody.user.user import get_user_info
+from mirobody.user.care_circle import beneficiary_users
+from mirobody.utils.sse import sse_headers
+from mirobody.utils import json_response_with_code, json_response, global_config, Request, Response, StreamingResponse, Route
 
 logger = logging.getLogger(__name__)
 

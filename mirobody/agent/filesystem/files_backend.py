@@ -32,7 +32,7 @@ from typing import Any
 
 from deepagents.backends.protocol import EditResult, FileUploadResponse, WriteResult
 
-from ...utils.db import execute_query
+from mirobody.utils.db import execute_query
 from .backend import PgFilesystemBackend, _is_text_mime
 from .naming import guess_mime, safe_basename
 

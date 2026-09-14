@@ -18,8 +18,8 @@ from .models import (
     FLUTTER_TO_RECORD_TYPE_MAPPING,
     FlutterHealthTypeEnum,
 )
-from ..aggregate.naming import build_indicator_name
-from ..aggregate.database_service import AggregateDatabaseService
+from mirobody.pulse.aggregate.naming import build_indicator_name
+from mirobody.pulse.aggregate.database_service import AggregateDatabaseService
 
 logger = logging.getLogger(__name__)
 

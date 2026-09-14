@@ -266,7 +266,7 @@ def validator_from_config() -> "JwtTokenValidator":
 
     Claim shape belongs in one place. This is that place.
     """
-    from ...utils.config import global_config
+    from mirobody.utils.config import global_config
 
     opts = global_config().get_jwt_options()
     return JwtTokenValidator(

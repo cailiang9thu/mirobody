@@ -10,12 +10,7 @@ import json
 import logging
 from typing import Any
 
-from ..config.llm import (
-    RouteSpec,
-    no_provider_message,
-    resolve_named,
-    resolve_route,
-)
+from mirobody.utils.config.llm import RouteSpec, no_provider_message, resolve_named, resolve_route
 
 logger = logging.getLogger(__name__)
 

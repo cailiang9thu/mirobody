@@ -131,7 +131,7 @@ async def load_global_tools(
     Returns:
         List of LangChain StructuredTool instances
     """
-    from ..mcp.tool import get_global_tools
+    from mirobody.mcp.tool import get_global_tools
 
     existing_tools = get_global_tools()
 

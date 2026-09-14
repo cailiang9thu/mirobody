@@ -7,10 +7,10 @@ from datetime import datetime, date
 
 import redis.asyncio
 
-from ..utils import execute_query
-from ..utils.llm import async_get_text_completion
-from ..utils.llm_output import strip_code_fence
-from ..utils.config import safe_read_cfg, global_config
+from mirobody.utils import execute_query
+from mirobody.utils.llm import async_get_text_completion
+from mirobody.utils.llm_output import strip_code_fence
+from mirobody.utils.config import safe_read_cfg, global_config
 
 logger = logging.getLogger(__name__)
 

@@ -24,7 +24,7 @@ call to make.
 
 from __future__ import annotations
 
-from ...kernel import metrics
+from mirobody.kernel import metrics
 #: The default window: a plain calendar day.
 MIDNIGHT = "00:00"
 

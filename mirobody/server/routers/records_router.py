@@ -39,11 +39,11 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from ...engine import resolve_reading as resolve_indicator_name
+from mirobody.engine import resolve_reading as resolve_indicator_name
 from mirobody.units.normalize import normalize_unit, parse_value_unit
-from ...pulse.readings import upsert_readings
-from ...utils import execute_query
-from ..auth import verify_token
+from mirobody.pulse.readings import upsert_readings
+from mirobody.utils import execute_query
+from mirobody.server.auth import verify_token
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +128,7 @@ async def standardize(body: StandardizeRequest, user_id: str = Depends(verify_to
     normalization are offline. A deployment with no LLM key configured gets a
     plain 400 saying so rather than a stack trace.
     """
-    from ...engine import parse_text
+    from mirobody.engine import parse_text
 
     try:
         readings = await parse_text(body.text)

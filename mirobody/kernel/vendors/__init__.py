@@ -25,8 +25,8 @@ from __future__ import annotations
 
 from types import ModuleType
 
-from ..connect import Coverage
-from ..series import Fact
+from mirobody.kernel.connect import Coverage
+from mirobody.kernel.series import Fact
 from . import garmin, open_wearables, oura, whoop
 
 DECODERS: dict[str, ModuleType] = {

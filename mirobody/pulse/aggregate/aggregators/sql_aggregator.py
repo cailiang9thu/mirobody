@@ -13,13 +13,13 @@ from typing import Any
 
 from zoneinfo import ZoneInfo
 
-from ....utils import execute_query
-from .. import windows
-from ..models import CalculationTask
-from ..rule_generator import get_rules_by_source_indicator
+from mirobody.utils import execute_query
+from mirobody.pulse.aggregate import windows
+from mirobody.pulse.aggregate.models import CalculationTask
+from mirobody.pulse.aggregate.rule_generator import get_rules_by_source_indicator
 from .source_id_priority import APPLE_SOURCES, build_apple_priority_case
-from ...standardize.indicators_info import StandardIndicator
-from ...standardize.fhir_mapping import get_fhir_id
+from mirobody.pulse.standardize.indicators_info import StandardIndicator
+from mirobody.pulse.standardize.fhir_mapping import get_fhir_id
 
 logger = logging.getLogger(__name__)
 

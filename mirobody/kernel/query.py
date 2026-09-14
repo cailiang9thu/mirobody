@@ -37,7 +37,7 @@ from datetime import datetime, timedelta
 from importlib import resources
 from typing import Protocol
 
-from .. import lexical
+from mirobody import lexical
 from .series import zone
 
 # --- windows -------------------------------------------------------------------------

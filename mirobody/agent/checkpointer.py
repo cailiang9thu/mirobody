@@ -57,7 +57,7 @@ def _build_pool() -> AsyncConnectionPool:
     ``public`` appended, and libpq's ``options`` is whitespace-delimited so the
     comma-joined value must stay space-free.
     """
-    from ..utils.config import global_config
+    from mirobody.utils.config import global_config
 
     pg = global_config().get_postgresql()
     return AsyncConnectionPool(
@@ -101,7 +101,7 @@ async def get_checkpointer():
     # role is DDL-less, or that wants to stage the rollout, sets
     # `AGENT_CHECKPOINTER: false` and gets the pre-checkpointer behaviour
     # (stateless turns) with no code change.
-    from ..utils.config import safe_read_cfg
+    from mirobody.utils.config import safe_read_cfg
 
     if (safe_read_cfg("AGENT_CHECKPOINTER", "true") or "true").strip().lower() in ("false", "0", "off", "no"):
         logger.info("agent checkpointer disabled by AGENT_CHECKPOINTER; turns will be stateless")

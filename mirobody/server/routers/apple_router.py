@@ -11,10 +11,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi.responses import JSONResponse
 
-from ...pulse.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
-from ...pulse.apple.statistics_service import process_apple_health_statistics
-from ...pulse.manager import platform_manager
-from ..auth import verify_token
+from mirobody.pulse.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
+from mirobody.pulse.apple.statistics_service import process_apple_health_statistics
+from mirobody.pulse.manager import platform_manager
+from mirobody.server.auth import verify_token
 
 logger = logging.getLogger(__name__)
 

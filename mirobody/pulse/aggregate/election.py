@@ -36,9 +36,9 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime
 
-from ... import units
-from ...kernel import metrics, series
-from ...utils import execute_query
+from mirobody import units
+from mirobody.kernel import metrics, series
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 

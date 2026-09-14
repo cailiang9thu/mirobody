@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 from starlette.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..user import JwtTokenValidator
+from mirobody.user import JwtTokenValidator
 
 #-----------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ class JwtMiddleware(BaseHTTPMiddleware):
                 ctx["trace_id"] = request.state.trace_id
 
             if ctx:
-                from ..utils.req_ctx import REQ_CTX
+                from mirobody.utils.req_ctx import REQ_CTX
                 REQ_CTX.set(ctx)
 
         #-------------------------------------------------

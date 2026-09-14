@@ -15,8 +15,8 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
-from ...kernel import query, tools
-from ...kernel.ops import is_driver_exception
+from mirobody.kernel import query, tools
+from mirobody.kernel.ops import is_driver_exception
 from ._authz import caller_of, denied
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 
 from typing import BinaryIO
 
-from ...file_types import guess_mime
+from mirobody.utils.file_types import guess_mime
 
 #-----------------------------------------------------------------------------
 

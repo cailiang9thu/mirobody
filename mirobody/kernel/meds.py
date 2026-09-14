@@ -43,7 +43,7 @@ from importlib import resources
 from typing import Literal, Protocol
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from .. import units
+from mirobody import units
 from .series import day_bounds_ms, stable_hash
 
 MS = 1000

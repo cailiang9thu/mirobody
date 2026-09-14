@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from ..series import Fact
+from mirobody.kernel.series import Fact
 from ._common import dig, fact, number, parse_ts_smart
 
 _KJ_PER_KCAL = 4.184

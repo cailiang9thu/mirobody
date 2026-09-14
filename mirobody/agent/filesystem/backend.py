@@ -59,7 +59,7 @@ from deepagents.backends.protocol import (
     WriteResult,
 )
 
-from ...utils.db import execute_query
+from mirobody.utils.db import execute_query
 from .coercion import coerce_to_int
 from .naming import MULTIMODAL_EXTS
 
@@ -181,7 +181,7 @@ class PgFilesystemBackend(BackendProtocol):
 
     async def _get_from_storage(self, key: str) -> bytes | None:
         try:
-            from ...utils.config.storage.factory import get_storage_client
+            from mirobody.utils.config.storage.factory import get_storage_client
             content, err = await get_storage_client().get(key)
             if err:
                 logger.error("storage get failed for %s: %s", key, err)

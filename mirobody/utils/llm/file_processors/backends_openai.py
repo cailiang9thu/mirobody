@@ -34,7 +34,7 @@ from .media import (
     _read_and_optimize_image,
 )
 from .results import _build_prompt_with_schema, _merge_page_results, clean_json_response
-from ...file_types import IMAGE_EXTENSIONS
+from mirobody.utils.file_types import IMAGE_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ async def openai_compatible_file_extract(
     if client is None:
         # Function-local: clients.py builds SDK clients, and a module-scope
         # import here would close the loop back through llm/__init__.
-        from ..clients import client_manager
+        from mirobody.utils.llm.clients import client_manager
 
         client = client_manager.for_spec(spec)
     file_path = pathlib.Path(local_file_path)

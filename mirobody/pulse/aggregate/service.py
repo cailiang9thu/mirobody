@@ -13,8 +13,8 @@ from typing import Any
 from .aggregators import SQLAggregator, AggregatorProtocol
 from .database_service import AggregateDatabaseService
 from .rule_generator import get_rules_by_source_indicator
-from ..standardize.fhir_mapping import get_fhir_id, FhirMapping
-from ..standardize.indicators_info import StandardIndicator
+from mirobody.pulse.standardize.fhir_mapping import get_fhir_id, FhirMapping
+from mirobody.pulse.standardize.indicators_info import StandardIndicator
 
 logger = logging.getLogger(__name__)
 
@@ -291,7 +291,7 @@ class AggregateIndicatorService:
         worse outcome than a day that is merely not yet arbitrated.
         """
         from .election import elect_range
-        from ..readings import day_key
+        from mirobody.pulse.readings import day_key
 
         by_user: dict[str, list] = {}
         for row in summaries:

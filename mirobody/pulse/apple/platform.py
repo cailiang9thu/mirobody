@@ -8,16 +8,13 @@ from typing import Any
 
 from .provider import AppleHealthProvider, CDAProvider
 from .services.database_service import AppleDatabaseService
-from ..base import LinkRequest, Platform, ProviderInfo
-from ..core import (
-    CacheConfig,
-    UserProvider
-)
-from ..aggregate.service import AggregateIndicatorService
-from ..core.distributed_lock import pull_task_lock_manager
-from ..ingest.models.requests import FormatDataContext, FormatDataInput
-from ..ingest.services import StandardHealthService
-from ...utils.tasks import spawn
+from mirobody.pulse.base import LinkRequest, Platform, ProviderInfo
+from mirobody.pulse.core import CacheConfig, UserProvider
+from mirobody.pulse.aggregate.service import AggregateIndicatorService
+from mirobody.pulse.core.distributed_lock import pull_task_lock_manager
+from mirobody.pulse.ingest.models.requests import FormatDataContext, FormatDataInput
+from mirobody.pulse.ingest.services import StandardHealthService
+from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
 

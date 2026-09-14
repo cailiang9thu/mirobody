@@ -19,16 +19,7 @@ from .user import (
 
 from .account_merge import merge_accounts
 
-from ..utils import (
-    execute_query,
-    secret_fingerprint,
-    json_response_with_code,
-    json_response,
-
-    Request,
-    Response,
-    Route
-)
+from mirobody.utils import execute_query, secret_fingerprint, json_response_with_code, json_response, Request, Response, Route
 
 logger = logging.getLogger(__name__)
 

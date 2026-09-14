@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from ....utils import execute_query
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 

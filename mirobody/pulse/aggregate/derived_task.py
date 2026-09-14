@@ -8,7 +8,7 @@ Independent from AggregateIndicatorTask.
 import logging
 from datetime import datetime
 
-from ..core.scheduler import PullTask, ScheduleType
+from mirobody.pulse.core.scheduler import PullTask, ScheduleType
 from .derived_aggregator import DerivedAggregator
 
 logger = logging.getLogger(__name__)

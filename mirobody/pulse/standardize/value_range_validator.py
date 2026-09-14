@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from typing import Any
 from collections.abc import Callable
 
-from ...utils import execute_query
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 

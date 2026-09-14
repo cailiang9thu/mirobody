@@ -5,7 +5,7 @@ import os
 
 from types import ModuleType, FunctionType
 
-from ..utils.plugin_dirs import GROUP_TOOLS, entry_point_modules, import_plugin_module, resolve_plugin_dir
+from mirobody.utils.plugin_dirs import GROUP_TOOLS, entry_point_modules, import_plugin_module, resolve_plugin_dir
 
 logger = logging.getLogger(__name__)
 

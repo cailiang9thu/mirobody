@@ -42,7 +42,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from ...kernel import query, tools
+from mirobody.kernel import query, tools
 from ._authz import refused, subject_for
 from ._base import RecordTool
 from ._render import awaited, envelope_meta, render_compact
@@ -87,7 +87,7 @@ class HealthIndicatorsService(RecordTool):
 
     def _query(self) -> Any:
         if self._health_query is None:
-            from ...pulse.query import PostgresHealthQuery
+            from mirobody.pulse.query import PostgresHealthQuery
             self._health_query = PostgresHealthQuery()
         return self._health_query
 

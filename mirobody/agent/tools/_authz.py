@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from ...kernel import query, tools
+from mirobody.kernel import query, tools
 
 
 def caller_of(user_info: Mapping[str, Any] | None) -> str:
@@ -34,7 +34,7 @@ async def subject_for(caller_id: str, member: str) -> str:
     """
     if not member or member == caller_id:
         return caller_id
-    from ...user.care_circle import CareCircleDenied, resolve_subject
+    from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
     try:
         return str((await resolve_subject(caller_id, member)).subject_id)

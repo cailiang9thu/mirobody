@@ -26,7 +26,7 @@ class AwsStorage(AbstractStorage):
             not region or \
             not bucket:
 
-            from ..config import global_config
+            from mirobody.utils.config.config import global_config
             config = global_config()
             if config:
                 if not access_key_id:

@@ -14,10 +14,10 @@ migration 94 will simply skip registration on every tick.
 import logging
 from datetime import datetime
 
-from ...aggregate.rule_generator import get_all_aggregation_rules
-from ..indicators_info import HealthDataType, StandardIndicator
-from ...core.scheduler import PullTask, ScheduleType
-from ....utils import execute_query
+from mirobody.pulse.aggregate.rule_generator import get_all_aggregation_rules
+from mirobody.pulse.standardize.indicators_info import HealthDataType, StandardIndicator
+from mirobody.pulse.core.scheduler import PullTask, ScheduleType
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 

@@ -106,7 +106,7 @@ class GeneticDataLoader:
             return
 
         try:
-            from ..file_upload_manager import websocket_file_upload_manager
+            from mirobody.pulse.file_parser.file_upload_manager import websocket_file_upload_manager
 
             # Calculate progress: genetic processing maps to 50-100%
             genetic_progress = min((processed / total * 100), 100) if total and total > 0 else 0
@@ -310,7 +310,7 @@ async def process_genetic_file(
     """
     try:
         # Import websocket manager locally to avoid circular import
-        from ..file_upload_manager import websocket_file_upload_manager
+        from mirobody.pulse.file_parser.file_upload_manager import websocket_file_upload_manager
 
         # 🔧 Fix: Use original filename, or temporary filename if not provided
         display_filename = original_filename or temp_file_path.name

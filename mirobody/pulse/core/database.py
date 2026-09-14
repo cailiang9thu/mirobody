@@ -8,8 +8,8 @@ import logging
 
 from typing import Any
 
-from ...utils import execute_query
-from ...utils.db import engine_for
+from mirobody.utils import execute_query
+from mirobody.utils.db import engine_for
 
 from sqlalchemy import text
 
@@ -180,7 +180,7 @@ class ManageDatabaseService(CacheableDatabaseService):
             is_summary = (indicator_type == 'summary')
         else:
             # Fallback to heuristic for backward compatibility
-            from ..standardize.indicators_info import is_summary_indicator
+            from mirobody.pulse.standardize.indicators_info import is_summary_indicator
             is_summary = is_summary_indicator(indicator)
         
         if is_summary:

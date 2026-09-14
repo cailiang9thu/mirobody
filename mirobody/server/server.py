@@ -15,15 +15,10 @@ from .bootstrap import create_schema, enforce_production_auth_safety, seed_demo_
 from .middleware_stack import build_middlewares
 from .htdoc import add_htdoc_routes
 
-from .. import __version__
-from ..user import (
-    AbstractTokenValidator,
-    JwtTokenValidator,
-    OAuthService,
-    UserService
-)
-from ..mcp import McpService
-from ..agent.chat import ChatService
+from mirobody import __version__
+from mirobody.user import AbstractTokenValidator, JwtTokenValidator, OAuthService, UserService
+from mirobody.mcp import McpService
+from mirobody.agent.chat import ChatService
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +145,7 @@ class Server:
         # what is actually installed rather than hardcoding them; an overlay's
         # MIROBODY_WEB_CONFIG still wins.
         if "__IS_MOBILE_SOURCE_ON__" not in self._webpage_config:
-            from ..pulse.providers.installed import installed_provider_slugs
+            from mirobody.pulse.providers.installed import installed_provider_slugs
             self._webpage_config["__IS_MOBILE_SOURCE_ON__"] = bool(installed_provider_slugs())
 
         if "__IS_NEW_FEATURES_ON__" not in self._webpage_config:
@@ -273,7 +268,7 @@ class Server:
     #-----------------------------------------------------
 
     async def health_check_handler(self, request: Request) -> Response:
-        from ..agent.registry import agent_name
+        from mirobody.agent.registry import agent_name
 
         return JSONResponse(
             content = {
@@ -299,7 +294,7 @@ class Server:
     @staticmethod
     async def start(yaml_files: list[str] | None = None, fastapi_routers: list | None = None):
         # Load configuration via file.
-        from ..utils import Config
+        from mirobody.utils import Config
         if fastapi_routers is None:
             fastapi_routers = []
         if yaml_files is None:
@@ -309,7 +304,7 @@ class Server:
 
         # Which LLM surfaces have a provider, before the first request finds
         # out. A zero-key server used to boot in silence (#68).
-        from ..utils.config.doctor import log_report, provider_report
+        from mirobody.utils.config.doctor import log_report, provider_report
         log_report(provider_report(config), logger)
 
         # Fail fast, before any socket is bound: a production ENV that still
@@ -372,7 +367,7 @@ class Server:
         # health record.
         from fastapi.responses import JSONResponse
 
-        from ..user.care_circle import CareCircleDenied
+        from mirobody.user.care_circle import CareCircleDenied
 
         @app.exception_handler(CareCircleDenied)
         async def _care_circle_denied(request, exc: CareCircleDenied):

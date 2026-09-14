@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from typing import Any
 from collections.abc import Callable
 
-from ...utils import execute_query
+from mirobody.utils import execute_query
 from .database_service import AggregateDatabaseService
 
 logger = logging.getLogger(__name__)

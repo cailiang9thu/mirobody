@@ -53,7 +53,7 @@ class PushService:
         """
         try:
             # Use platformManager to get registered platform instance
-            from ...pulse.manager import platform_manager
+            from mirobody.pulse.manager import platform_manager
 
             platform_instance = platform_manager.get_platform(platform)
             if not platform_instance:

@@ -25,21 +25,8 @@ import uuid
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
-from ...kernel.events import (
-    ActionRequest,
-    AgentEvent,
-    Interrupt,
-    Interrupted,
-    ReasoningDelta,
-    TextContent,
-    TextDelta,
-    ToolArgumentsDelta,
-    ToolCallCompleted,
-    ToolCallStarted,
-    ToolResult,
-    UsageDelta,
-)
-from ..models.messages import message_reasoning
+from mirobody.kernel.events import ActionRequest, AgentEvent, Interrupt, Interrupted, ReasoningDelta, TextContent, TextDelta, ToolArgumentsDelta, ToolCallCompleted, ToolCallStarted, ToolResult, UsageDelta
+from mirobody.agent.models.messages import message_reasoning
 
 #: ``tool_kind(name) -> str``: how a renderer classifies a tool call
 #: (`ToolCallStarted.kind`), so it never carries a hardcoded tool-name list.

@@ -324,7 +324,7 @@ def _load_loinc_code_mask(cache: dict, member: str, *, kind: str) -> None:
     both have the same code-list format. *kind* is the cache-key suffix
     (``skip`` or ``demote``).
     """
-    from ..._bundle import BUNDLE_BASENAME, read_code_list
+    from mirobody._bundle import BUNDLE_BASENAME, read_code_list
     bundle_path = os.path.join(cache["_bundle_dir"], BUNDLE_BASENAME)
     codes = read_code_list(member, bundle_path=bundle_path)
     if not codes:
@@ -376,7 +376,7 @@ def _load_snomed_body_structure(cache: dict) -> None:
     Returns silently when the SNOMED bundle is absent (e.g. stripped
     deployment that doesn't carry SNOMED data).
     """
-    from ..._bundle import SNOMED_BUNDLE_BASENAME, read_snomed_member
+    from mirobody._bundle import SNOMED_BUNDLE_BASENAME, read_snomed_member
     bundle_path = os.path.join(cache["_bundle_dir"], SNOMED_BUNDLE_BASENAME)
     raw = read_snomed_member("snomed_body_structure.txt", bundle_path=bundle_path)
     if raw is None:
@@ -460,7 +460,7 @@ def _load_loinc_rank(cache: dict) -> None:
     bonus (0.0 for non-LOINC and unranked LOINC rows). Sets
     ``cache["loinc_rank_bonus"]``. Silently skipped when the member is
     absent — resolve works without rank tie-breaking."""
-    from ..._bundle import BUNDLE_BASENAME, read_member
+    from mirobody._bundle import BUNDLE_BASENAME, read_member
     import io as _io
     n = int(cache["arr"].shape[0])
     bundle_path = os.path.join(cache["_bundle_dir"], BUNDLE_BASENAME)
@@ -495,7 +495,7 @@ def _load_dose_index(cache: dict) -> None:
     canonical ``(value, ucum_unit)`` tuple, which is what the resolver
     actually intersects against per-query dose sets.
     """
-    from ..._bundle import BUNDLE_BASENAME, read_member
+    from mirobody._bundle import BUNDLE_BASENAME, read_member
     import io as _io
     bundle_path = os.path.join(cache["_bundle_dir"], BUNDLE_BASENAME)
     raw = read_member("fhir_dose_index.npz", bundle_path=bundle_path)
@@ -533,7 +533,7 @@ def _load_alias_index(cache: dict) -> None:
     three arrays (``aliases`` object, ``offsets`` int32, ``rows``
     int32) — see :mod:`.alias`. Silently skipped when the member is
     absent — resolve falls back to embedding-only scoring."""
-    from ..._bundle import BUNDLE_BASENAME, read_member
+    from mirobody._bundle import BUNDLE_BASENAME, read_member
     import io as _io
     bundle_path = os.path.join(cache["_bundle_dir"], BUNDLE_BASENAME)
     raw = read_member("loinc_alias_index.npz", bundle_path=bundle_path)
@@ -628,7 +628,7 @@ def _compute_ratio_code_mask(cache: dict) -> None:
     (:class:`FhirAdapter._resolve_local_batch`) to boost ratio-named
     candidates when the query explicitly asks for a ratio/index.
     """
-    from ..common import SYSTEM_TO_CODE, _CODE_BITS
+    from mirobody.indicator.common import SYSTEM_TO_CODE, _CODE_BITS
     names = cache.get("names")
     if not names:
         return
@@ -656,9 +656,7 @@ def _augment_demote_with_names(cache: dict) -> None:
     the same patterns is a no-op since the existing mask already
     covers the matches.
     """
-    from ..common import (
-        SYSTEM_TO_CODE, _CODE_BITS, _HAND_DEMOTE_NAME_PATTERNS,
-    )
+    from mirobody.indicator.common import SYSTEM_TO_CODE, _CODE_BITS, _HAND_DEMOTE_NAME_PATTERNS
     if not _HAND_DEMOTE_NAME_PATTERNS:
         return
     names = cache.get("names")

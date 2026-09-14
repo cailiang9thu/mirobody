@@ -18,7 +18,7 @@ from __future__ import annotations
 import math
 
 from . import metrics
-from .. import units
+from mirobody import units
 from .series import Fact
 
 #: Reason codes. Consumers persist these literals on quarantined rows.

@@ -29,7 +29,7 @@ from mirobody.pulse.providers.platform.normalize import records_from_facts
 from mirobody.kernel import vendors
 from mirobody.utils import execute_query
 from mirobody.utils.config import safe_read_cfg
-from ....utils.tasks import spawn
+from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
 

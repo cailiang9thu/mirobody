@@ -11,8 +11,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from .. import metrics
-from ..series import Fact, day_bounds_ms, zone
+from mirobody.kernel import metrics
+from mirobody.kernel.series import Fact, day_bounds_ms, zone
 
 MS = 1000
 

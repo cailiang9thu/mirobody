@@ -9,7 +9,7 @@ import re
 from ruamel.yaml import YAML
 from typing import Any
 
-from ... import __version__
+from mirobody import __version__
 from typing import TYPE_CHECKING
 
 from .encrypt import FernetEncrypter
@@ -879,7 +879,7 @@ class Config:
         if env and log_extra:
             log_extra["env"] = env
 
-        from ..log import init_log_console
+        from mirobody.utils.log import init_log_console
         init_log_console(extra=log_extra)
 
         #-----------------------------------------------------
@@ -943,7 +943,7 @@ class Config:
 
         #-----------------------------------------------------
 
-        from ..log import init_log
+        from mirobody.utils.log import init_log
         init_log(
             name        = config.log.name,
             dir         = config.log.dir,

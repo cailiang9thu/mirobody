@@ -51,7 +51,7 @@ from mirobody.pulse.file_parser.services.database_services import FileParserData
 from mirobody.pulse.file_parser.services.file_db_service import FileDbService
 from mirobody.pulse.file_parser.services.db_utils import get_mime_type
 from mirobody.pulse.file_parser.handlers.genetic import GeneticHandler
-from ...utils.tasks import spawn
+from mirobody.utils.tasks import spawn
 from .memory_upload_file import MemoryUploadFile
 
 logger = logging.getLogger(__name__)
@@ -1024,7 +1024,7 @@ class WebSocketFileUploadManager:
                     # a bare engine install; function scope defers that cost
                     # to the moment a profile is actually (re)built, exactly
                     # like task/profile_refresh does.
-                    from ...user.profile import UserProfileService
+                    from mirobody.user.profile import UserProfileService
 
                     owner_user_id = query_user_id if query_user_id else user_id
                     await UserProfileService.create_user_profile(owner_user_id)

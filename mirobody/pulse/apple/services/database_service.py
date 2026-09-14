@@ -5,7 +5,7 @@ Database service for Vital providers
 import logging
 import traceback
 
-from ....utils import execute_query
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 

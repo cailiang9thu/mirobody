@@ -14,7 +14,7 @@ import random
 from collections.abc import Iterator
 from datetime import date, datetime, timedelta
 
-from ..series import day_bounds_ms, zone
+from mirobody.kernel.series import day_bounds_ms, zone
 
 MS = 1000
 

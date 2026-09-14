@@ -3,8 +3,8 @@ import uuid
 
 from datetime import datetime
 
-from ...utils import execute_query
-from ...user.care_circle import CareCircleDenied, resolve_subject
+from mirobody.utils import execute_query
+from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ async def get_session_summaries_by_person(user_id: str) -> list[dict[str, any]]:
             # old, in the profile block that goes into the agent's context.
             # `_calculate_age` compares (month, day) and already existed; this path
             # simply wasn't using it.
-            from ...user.profile import BasicInfoService
+            from mirobody.user.profile import BasicInfoService
             user_age = BasicInfoService._calculate_age(user_birth)
             if user_age is None:
                 user_age = ""
@@ -265,7 +265,7 @@ async def delete_session(user_id: str, session_id: str) -> str | None:
         # to delete it, not just stop listing it. Best-effort by design (see
         # deep.checkpointer.delete_thread): the user-visible rows are already
         # gone, and a checkpoint-cleanup failure must not turn that into an error.
-        from ..checkpointer import delete_thread
+        from mirobody.agent.checkpointer import delete_thread
         await delete_thread(session_id)
 
         return None

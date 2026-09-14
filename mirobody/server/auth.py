@@ -23,9 +23,9 @@ import logging
 from urllib.parse import unquote
 from fastapi import Header, HTTPException
 
-from ..utils.config import global_config
-from ..utils.log import secret_fingerprint
-from ..utils.req_ctx import get_req_ctx, update_req_ctx
+from mirobody.utils.config import global_config
+from mirobody.utils.log import secret_fingerprint
+from mirobody.utils.req_ctx import get_req_ctx, update_req_ctx
 
 logger = logging.getLogger(__name__)
 

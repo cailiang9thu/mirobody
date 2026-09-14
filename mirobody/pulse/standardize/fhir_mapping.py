@@ -13,8 +13,8 @@ import logging
 import threading
 from typing import Optional
 
-from ...utils import execute_query
-from ...utils.config import safe_read_cfg
+from mirobody.utils import execute_query
+from mirobody.utils.config import safe_read_cfg
 
 logger = logging.getLogger(__name__)
 

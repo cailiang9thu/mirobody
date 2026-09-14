@@ -34,7 +34,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ...kernel import query, tools
+from mirobody.kernel import query, tools
 from ._authz import refused, subject_for
 from ._base import RecordTool
 from ._render import envelope_meta, render_compact
@@ -282,7 +282,7 @@ class GeneticService(RecordTool):
 
     async def _read(self, sql: str, params: Mapping[str, Any]) -> list[Mapping[str, Any]]:
         if self._execute is None:
-            from ...utils import execute_query
+            from mirobody.utils import execute_query
 
             self._execute = execute_query
         return list(await self._execute(sql, dict(params)) or [])

@@ -6,7 +6,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 from mirobody.utils import execute_query
 
-from ...readings import upsert_readings
+from mirobody.pulse.readings import upsert_readings
 
 from .db_utils import (
     safe_json_dumps,
@@ -165,7 +165,7 @@ class FileParserDatabaseService:
     async def get_user_current_time_with_timezone(user_id: str) -> datetime:
         """Get current time in user's timezone, falls back to UTC"""
         try:
-            from ....user.user import get_user
+            from mirobody.user.user import get_user
 
             first_record = await get_user(user_id=user_id)
             if not first_record:

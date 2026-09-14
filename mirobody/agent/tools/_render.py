@@ -17,7 +17,7 @@ import inspect
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from ...kernel import query, tools
+from mirobody.kernel import query, tools
 
 #: The character budget for one rendered result. Past this the tool truncates
 #: and tells the model how to ask again: an answer that blows the context

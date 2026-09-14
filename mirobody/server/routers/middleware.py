@@ -9,8 +9,8 @@ unused and a second source of truth for the same logic.
 
 import logging
 
-from ...pulse import setup_platform_system_async
-from ...pulse.providers.platform.startup import start_theta_pull_scheduler
+from mirobody.pulse import setup_platform_system_async
+from mirobody.pulse.providers.platform.startup import start_theta_pull_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ async def init():
     
     # Start aggregate indicator scheduler
     try:
-        from ...pulse.aggregate.startup import start_aggregate_indicator_scheduler
+        from mirobody.pulse.aggregate.startup import start_aggregate_indicator_scheduler
         await start_aggregate_indicator_scheduler(False)
         logger.info("Aggregate indicator scheduler started")
     except Exception as e:
@@ -33,7 +33,7 @@ async def init():
     # StandardIndicator enum + derived aggregation rules to
     # standard_indicators_device once a day.
     try:
-        from ...pulse.standardize.std_indicator_registry.startup import start_std_indicator_registry
+        from mirobody.pulse.standardize.std_indicator_registry.startup import start_std_indicator_registry
         await start_std_indicator_registry()
         logger.info("Std indicator registry task started")
     except Exception as e:

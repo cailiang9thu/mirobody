@@ -16,19 +16,19 @@ from abc import ABC, abstractmethod
 from typing import Any
 from collections.abc import AsyncGenerator
 
-from ...registry import agent_name, new_agent
-from ..file import process_files_from_storage
-from ...errors import client_safe_error
+from mirobody.agent.registry import agent_name, new_agent
+from mirobody.agent.chat.file import process_files_from_storage
+from mirobody.agent.errors import client_safe_error
 
-from ..message import save_message
-from ..model import ChatStreamRequest, has_attachment
+from mirobody.agent.chat.message import save_message
+from mirobody.agent.chat.model import ChatStreamRequest, has_attachment
 
-from ....user.care_circle import CareCircleDenied, resolve_subject
-from ....utils import execute_query, safe_read_cfg
-from ....utils.sse import heartbeat_seconds
-from ....utils.config import get_default_timezone
-from ....utils.i18n import t
-from ....utils.tasks import spawn
+from mirobody.user.care_circle import CareCircleDenied, resolve_subject
+from mirobody.utils import execute_query, safe_read_cfg
+from mirobody.utils.sse import heartbeat_seconds
+from mirobody.utils.config import get_default_timezone
+from mirobody.utils.i18n import t
+from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
 
@@ -491,7 +491,7 @@ class ChatProtocolAdapter(ABC):
             return None
 
         # Get Redis client dynamically
-        from ....utils.config import global_config
+        from mirobody.utils.config import global_config
         redis_client = None
         try:
             redis_client = await global_config().get_redis().get_async_client()
@@ -536,7 +536,7 @@ class ChatProtocolAdapter(ABC):
                 params={"session_id": session_id, "user_id": user_id},
             )
             if result and (not result[0].get("summary") or result[0].get("summary") == "New Session"):
-                from ..summary import generate_and_save_summary
+                from mirobody.agent.chat.summary import generate_and_save_summary
                 await generate_and_save_summary(
                     user_id=user_id,
                     session_id=session_id,

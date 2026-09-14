@@ -26,11 +26,11 @@ from langchain_core.tools import BaseTool
 
 from .chat.model import UserInfo
 from .registry import llm_client, llm_client_names
-from ..kernel import query
-from ..kernel.ops import is_driver_exception
-from ..utils.log import get_req_ctx
-from ..utils.config import safe_read_cfg
-from ..utils.config.llm import chat_default, chat_entries
+from mirobody.kernel import query
+from mirobody.kernel.ops import is_driver_exception
+from mirobody.utils.log import get_req_ctx
+from mirobody.utils.config import safe_read_cfg
+from mirobody.utils.config.llm import chat_default, chat_entries
 
 from . import harness
 from .errors import AgentError, ConfigError, client_safe_error
@@ -186,7 +186,7 @@ class MirobodyAgent:
         tools: list,
     ) -> str:
         """Build system prompt with tools, time, user context, and health-profile core."""
-        from ..user.profile import get_health_profile_core
+        from mirobody.user.profile import get_health_profile_core
         maxlen = int(safe_read_cfg("PROFILE_CORE_MAXLEN") or 2000)
         health_profile = await get_health_profile_core(user_id, maxlen) if user_id else None
         try:
@@ -219,7 +219,7 @@ class MirobodyAgent:
         work on a bare pip install with zero configuration. Deployments list
         their own directory first to override.
         """
-        from ..utils.config import global_config
+        from mirobody.utils.config import global_config
 
         cfg = global_config()
         dirs = cfg.get_dirs("SKILL_DIRS", []) if cfg else []

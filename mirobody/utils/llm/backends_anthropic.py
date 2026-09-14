@@ -37,7 +37,7 @@ import time
 from functools import lru_cache
 from typing import Any
 
-from ..config.llm import RouteSpec
+from mirobody.utils.config.llm import RouteSpec
 
 logger = logging.getLogger(__name__)
 
@@ -274,7 +274,7 @@ async def file_extract(
                 )
             return _merge_page_results(results, json_mode)
 
-        from ..file_types import IMAGE_EXTENSIONS
+        from mirobody.utils.file_types import IMAGE_EXTENSIONS
 
         if suffix not in IMAGE_EXTENSIONS:
             raise ValueError(f"unsupported file type for vision extraction: {suffix}")

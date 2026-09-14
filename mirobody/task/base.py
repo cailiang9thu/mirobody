@@ -78,7 +78,7 @@ class BaseRedisTask(BaseTask):
     @classmethod
     async def _get_producer_redis(cls) -> Redis:
         if BaseRedisTask._producer_redis is None:
-            from ..utils.config import global_config
+            from mirobody.utils.config import global_config
             cfg = global_config()
             if cfg is None:
                 raise RuntimeError(

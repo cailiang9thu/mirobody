@@ -26,7 +26,7 @@ from deepagents.backends.utils import _EXTENSION_TO_FILE_TYPE, _VIDEO_EXTRA_EXTE
 
 # `guess_mime` lives in the engine layer, because object storage needs the
 # same answers and cannot import the agent layer.
-from ...utils.file_types import guess_mime as guess_mime
+from mirobody.utils.file_types import guess_mime as guess_mime
 
 #: The suffixes deepagents treats as binary: derived from its own table, not
 #: copied (a copy once missed ``.mkv``).

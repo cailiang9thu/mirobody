@@ -25,7 +25,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from ...kernel import metrics
+from mirobody.kernel import metrics
 logger = logging.getLogger(__name__)
 
 

@@ -26,8 +26,8 @@ import logging
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
 
-from ...kernel import meds, overlay, series
-from ...utils import execute_query
+from mirobody.kernel import meds, overlay, series
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 

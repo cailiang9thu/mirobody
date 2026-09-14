@@ -18,7 +18,7 @@ async def get_redis_client() -> redis.asyncio.Redis | None:
     global _global_redis_client
 
     if not _global_redis_client:
-        from ...utils.config import global_config
+        from mirobody.utils.config import global_config
         _global_redis_client = await global_config().get_redis().get_async_client()
 
     return _global_redis_client

@@ -18,7 +18,7 @@ The same docs note the second half of the problem: nobody awaits these, so a
 failure surfaces only as "Task exception was never retrieved" at GC time, if at
 all. `spawn` therefore logs failures itself.
 
-    from ..utils.tasks import spawn
+    from mirobody.utils.tasks import spawn
     spawn(self.process_files_async(...), name="file-processing")
 """
 

@@ -33,7 +33,7 @@ from mirobody.server.auth import verify_token
 from mirobody.server.envelope import err, ok
 from fastapi import Depends
 
-from ...user import care_circle as cc
+from mirobody.user import care_circle as cc
 
 logger = logging.getLogger(__name__)
 

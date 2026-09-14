@@ -14,8 +14,8 @@ import numpy as np
 from mirobody.utils import execute_query
 from mirobody.utils.embedding import text_embedding
 
-from ..concept_graph import ConceptGraph
-from ..search import DomainAdapter, ResolveResult
+from mirobody.indicator.concept_graph import ConceptGraph
+from mirobody.indicator.search import DomainAdapter, ResolveResult
 from .common import (
     FHIR_GRAPH_BIN,
     SYSTEMS, SYSTEM_TO_CODE, _CODE_BITS, _CODE_MASK, int_to_code,
@@ -143,7 +143,7 @@ class FhirAdapter(DomainAdapter):
         explicit = os.environ.get(GRAPH_ENV_VAR)
         if not explicit:
             try:
-                from ...utils.config import safe_read_cfg
+                from mirobody.utils.config import safe_read_cfg
 
                 explicit = safe_read_cfg(GRAPH_ENV_VAR, "")
             except Exception:

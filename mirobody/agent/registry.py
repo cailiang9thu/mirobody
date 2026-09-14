@@ -29,8 +29,8 @@ from collections.abc import AsyncGenerator
 from types import ModuleType
 from typing import Any
 
-from ..utils import Config, global_config
-from ..utils.plugin_dirs import GROUP_AGENTS, entry_point_modules, import_plugin_module, resolve_plugin_dir
+from mirobody.utils import Config, global_config
+from mirobody.utils.plugin_dirs import GROUP_AGENTS, entry_point_modules, import_plugin_module, resolve_plugin_dir
 
 logger = logging.getLogger(__name__)
 
@@ -199,7 +199,7 @@ def available_models() -> list[str]:
     """
     if not _llm_clients:
         return []
-    from ..utils.config.llm import read_api_key
+    from mirobody.utils.config.llm import read_api_key
 
     cfg = global_config()
     providers = (cfg.get_agent_settings() or {}).get("providers") or {} if cfg else {}

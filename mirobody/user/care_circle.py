@@ -47,7 +47,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..utils.db import execute_query
+from mirobody.utils.db import execute_query
 from .user import get_user
 
 # ── wire values ──────────────────────────────────────────────────────────────

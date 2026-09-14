@@ -15,8 +15,8 @@ from mirobody.user.auth.jwt import validator_from_config
 from mirobody.server.auth import verify_token
 from mirobody.utils import execute_query
 from mirobody.utils.config import get_default_timezone, global_config
-from ...user import care_circle as cc
-from ...user.user import get_user
+from mirobody.user import care_circle as cc
+from mirobody.user.user import get_user
 
 logger = logging.getLogger(__name__)
 

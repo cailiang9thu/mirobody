@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Mapping, Sequence
 
-from ..kernel.sink import Sink
+from mirobody.kernel.sink import Sink
 
 
 def check_sink(

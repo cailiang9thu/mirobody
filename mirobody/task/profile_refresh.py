@@ -28,7 +28,7 @@ class ProfileRefreshTask(BaseRedisTask):
 
     async def consume(self, messages: list[str]) -> None:
         # Lazy import breaks mirobody.task ↔ mirobody.agent.chat/pulse cycle.
-        from ..user.profile import UserProfileService
+        from mirobody.user.profile import UserProfileService
 
         user_ids = {m for m in messages if m}
         if not user_ids:

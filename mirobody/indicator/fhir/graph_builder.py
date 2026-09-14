@@ -19,7 +19,7 @@ import logging
 import os
 from collections.abc import Iterator
 
-from ..concept_graph import ConceptGraphBuilder
+from mirobody.indicator.concept_graph import ConceptGraphBuilder
 from .common import FHIR_GRAPH_BIN, code_to_fhir_id
 
 log = logging.getLogger(__name__)

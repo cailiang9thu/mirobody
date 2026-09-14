@@ -23,7 +23,7 @@ from collections.abc import Mapping
 from datetime import date, timedelta
 from typing import Any
 
-from ...kernel import meds, series, tools
+from mirobody.kernel import meds, series, tools
 from ._authz import refused, subject_for
 from ._base import RecordTool
 from ._render import awaited, envelope_meta, render_compact
@@ -116,7 +116,7 @@ class MedicationsService(RecordTool):
 
     def _stores(self) -> tuple[Any, Any]:
         if self._store is None or self._dose_log is None:
-            from ...pulse.meds import PostgresDoseLogStore, PostgresMedicationStore
+            from mirobody.pulse.meds import PostgresDoseLogStore, PostgresMedicationStore
             self._store = self._store or PostgresMedicationStore()
             self._dose_log = self._dose_log or PostgresDoseLogStore()
         return self._store, self._dose_log
@@ -124,7 +124,7 @@ class MedicationsService(RecordTool):
     async def _zone_of(self, subject_id: str) -> str:
         if self._tz is not None:
             return await awaited(self._tz(subject_id)) or "UTC"
-        from ...user.user import get_user
+        from mirobody.user.user import get_user
         row = await get_user(user_id=subject_id)
         return ((row or {}).get("tz") or "").strip() or "UTC"
 

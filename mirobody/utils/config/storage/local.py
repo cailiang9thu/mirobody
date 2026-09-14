@@ -35,7 +35,7 @@ class LocalStorage(AbstractStorage):
         """
 
         if not base_path or not proxy_url:
-            from ..config import global_config
+            from mirobody.utils.config.config import global_config
             config = global_config()
             if config:
                 if not base_path:

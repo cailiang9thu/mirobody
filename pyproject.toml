@@ -660,10 +660,14 @@ extend-exclude = [
 #   RUF100  a `noqa` that no longer suppresses anything. A stale one silently
 #        swallows the NEXT finding on that line.
 #   C4, PIE  comprehension and simplification defects, three findings between them.
+#   TID  a relative import that leaves its directory (TID252, at ruff's default
+#        `parents` level; plain `from .sibling` stays legal). See CLAUDE.md:
+#        the same dependency was being spelled two ways, so grep stopped
+#        answering "who imports kernel".
 select = [
     "E4", "E7", "E9", "F", "UP",
     "B", "ISC", "C4", "PIE", "PLE", "RUF100",
-    "RET505", "RET507", "PLW0602",
+    "RET505", "RET507", "PLW0602", "TID",
 ]
 ignore = [
     "B007",   # unused loop variable. `for k, v in d.items()` when only `v` is read
@@ -689,8 +693,12 @@ ignore = [
 #        start_time` is a NAIVE LOCAL wall clock, and `schema/a4_series_data_day_
 #        authority.sql` plus `pulse/readings.py` are built on that. Selecting DTZ
 #        would ask us to break the storage contract to satisfy a linter.
-#   TID252 (408) relative imports. The package uses them throughout by choice;
-#        import-linter is what actually guards the layering here.
+# TID252 was listed here as "relative imports are used throughout by choice".
+# Reversed 2026-09-14 on measurement, not taste: numpy nests deeper than we do
+# with zero parent-relative imports, fastapi likewise, and nothing in an
+# eighteen-library sample reached the four dots this package had. It is selected
+# above now. import-linter still guards the layering; TID252 keeps the edge
+# visible to a reader.
 
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI declares a parameter's SOURCE in its default: `file: UploadFile =

@@ -9,7 +9,7 @@ import logging
 
 from typing import Any
 
-from ..readings import upsert_readings
+from mirobody.pulse.readings import upsert_readings
 
 logger = logging.getLogger(__name__)
 

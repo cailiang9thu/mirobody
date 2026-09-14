@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from psycopg_pool import AsyncConnectionPool
 
-from ..utils.db import execute_query
+from mirobody.utils.db import execute_query
 
 logger = logging.getLogger(__name__)
 

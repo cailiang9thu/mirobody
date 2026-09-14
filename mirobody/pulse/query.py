@@ -44,8 +44,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-from ..kernel import metrics, query, series
-from ..utils import execute_query
+from mirobody.kernel import metrics, query, series
+from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class PostgresHealthQuery:
         function is where `is_del = false` lives: a hand-rolled lookup answers
         for deleted accounts, time zone and all.
         """
-        from ..user.user import get_user
+        from mirobody.user.user import get_user
         row = await get_user(user_id=subject_id)
         return ((row or {}).get("tz") or "").strip() or "UTC"
 
@@ -358,8 +358,8 @@ class PostgresHealthQuery:
         SILENTLY: the search answered "no indicator matched" for `HbA1c` while
         the person's own `GlycatedHemoglobin-HbA1c` sat in the table."""
         try:
-            from ..indicator.fhir.adapter import FhirAdapter
-            from ..indicator.search import search
+            from mirobody.indicator.fhir.adapter import FhirAdapter
+            from mirobody.indicator.search import search
             found = await search(
                 adapter=FhirAdapter(bundle_dir=None), user_id=str(subject_id),
                 keywords=kws, start_time=(window.start if window else None),
@@ -373,7 +373,7 @@ class PostgresHealthQuery:
     async def _by_resolved_code(self, subject_id: str, kws: list[str], catalog: list[str]) -> list[str]:
         codes: set[str] = set()
         try:
-            from ..engine import resolve
+            from mirobody.engine import resolve
             for kw in kws:
                 result = resolve(kw)
                 if getattr(result, "resolved", False) and getattr(result, "loinc", ""):

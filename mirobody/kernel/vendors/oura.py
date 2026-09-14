@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 
-from ..series import Fact, zone
+from mirobody.kernel.series import Fact, zone
 from ._common import MS, dig, fact, local_day_window, number, parse_ts_smart
 
 STRATEGY: dict[str, str] = {

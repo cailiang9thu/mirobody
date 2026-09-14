@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import os
 
-from ..utils.plugin_dirs import import_plugin_module, resolve_plugin_dir
+from mirobody.utils.plugin_dirs import import_plugin_module, resolve_plugin_dir
 
 logger = logging.getLogger(__name__)
 

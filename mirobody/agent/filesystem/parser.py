@@ -30,11 +30,8 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import BinaryIO
 
-from ...pulse.file_parser.services.file_abstract_extractor import (
-    FileAbstractExtractor,
-    lookup_extracted_text,
-)
-from ...utils.db import execute_query
+from mirobody.pulse.file_parser.services.file_abstract_extractor import FileAbstractExtractor, lookup_extracted_text
+from mirobody.utils.db import execute_query
 from .naming import guess_mime, is_multimodal
 
 logger = logging.getLogger(__name__)

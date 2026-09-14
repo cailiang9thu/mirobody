@@ -6,10 +6,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..models.requests import StandardPulseData
-from ..repositories.health_data import HealthDataRepository, health_data_repository
-from ...standardize.units import convert_to_standard
-from ...standardize.indicators_info import get_indicator_by_str
+from mirobody.pulse.ingest.models.requests import StandardPulseData
+from mirobody.pulse.ingest.repositories.health_data import HealthDataRepository, health_data_repository
+from mirobody.pulse.standardize.units import convert_to_standard
+from mirobody.pulse.standardize.indicators_info import get_indicator_by_str
 
 logger = logging.getLogger(__name__)
 

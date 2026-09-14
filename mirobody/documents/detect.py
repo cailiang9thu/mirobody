@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 
-from ..utils.file_types import TEXT_EXTENSIONS, TEXT_MIME_TYPES
+from mirobody.utils.file_types import TEXT_EXTENSIONS, TEXT_MIME_TYPES
 
 KIND_PDF = "pdf"
 KIND_IMAGE = "image"
