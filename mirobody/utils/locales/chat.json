@@ -5,5 +5,12 @@
     "fr": "Merci de lire le ou les fichiers que j'ai joints à ce message et de m'expliquer ce qu'ils contiennent.",
     "ja": "今回アップロードしたファイルを読んで、内容を説明してください。",
     "es": "Por favor, lee el archivo o los archivos que he adjuntado a este mensaje y explícame qué dicen."
+  },
+  "empty_turn": {
+    "zh": "这一轮没有产生回答——模型把这次的输出预算全用在推理上了。请再问一次。",
+    "en": "This turn produced no answer — the model spent its whole output budget on reasoning. Please ask again.",
+    "fr": "Ce tour n'a produit aucune réponse : le modèle a consacré tout son budget de sortie au raisonnement. Merci de reposer la question.",
+    "ja": "今回は回答が生成されませんでした（モデルが出力予算をすべて推論に使いました）。もう一度お尋ねください。",
+    "es": "Este turno no produjo respuesta: el modelo gastó todo su presupuesto de salida en razonar. Vuelve a preguntar."
   }
 }

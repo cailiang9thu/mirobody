@@ -157,6 +157,23 @@ class McpService:
         else:
             self._mcp_urls = {}
 
+        # How long a personal MCP URL stays valid.
+        #
+        # This was a hardcoded 365 days, and the URL is a bearer credential
+        # carried IN a URL: it is pasted into a desktop client's config file,
+        # it lands in screenshots and shell history, and `/mcp/{secret}` needs
+        # nothing else — no JWT — to read that person's whole health record.
+        # A year of that with no way to revoke it (there was none) is the
+        # combination a security audit flags. Thirty days by default, and
+        # `MCP_URL_TTL_DAYS` for a deployment that wants otherwise.
+        from ..utils.config import safe_read_cfg
+
+        try:
+            self._mcp_url_ttl_days = max(1, int(safe_read_cfg("MCP_URL_TTL_DAYS") or 30))
+        except ValueError:
+            logger.warning("MCP_URL_TTL_DAYS is not an integer; using 30 days")
+            self._mcp_url_ttl_days = 30
+
         #----------------------------------------------
 
         self._callable, self._tool_descriptions = load_tools_from_directories(tool_dirs)
@@ -189,7 +206,10 @@ class McpService:
         self.routes.append(Route(f"{uri_prefix}/mcp/{{secret:str}}", endpoint=self.mcp_handler, methods=["POST", "GET", "OPTIONS"]))
         self.routes.append(Route(f"{uri_prefix}/mcp", endpoint=self.mcp_handler, methods=["POST", "GET", "OPTIONS"]))
 
-        self.routes.append(Route(f"{uri_prefix}/personal/mcp", endpoint=self.generate_personal_mcp, methods=["POST", "OPTIONS"]))
+        # DELETE on the same resource rather than a `/personal/mcp/revoke` path:
+        # it is the same object being minted and destroyed, and it keeps the
+        # surface at one path to document in four READMEs.
+        self.routes.append(Route(f"{uri_prefix}/personal/mcp", endpoint=self.generate_personal_mcp, methods=["POST", "DELETE", "OPTIONS"]))
 
         #-------------------------------------------------
 
@@ -256,7 +276,7 @@ class McpService:
     # Tools whose only possible answer without the corresponding data is
     # "no data": each maps to the EXISTS probe that decides its visibility.
     _DATA_GATED = {
-        "get_genetic_data":
+        "query_genetic_data":
             "SELECT 1 FROM th_series_data_genetic"
             " WHERE user_id = :uid AND is_deleted = false LIMIT 1",
         "query_health_indicators":
@@ -419,7 +439,7 @@ class McpService:
         #                                sends these
 
         if method == "tools/list":
-            # Data-dependent exposure: get_genetic_data answers from the user's
+            # Data-dependent exposure: query_genetic_data answers from the user's
             # uploaded genotype file, and most users never upload one. Listing
             # the tool anyway makes every external MCP client carry its schema
             # and lets a model call it just to learn "no data" — so when the
@@ -590,35 +610,17 @@ class McpService:
                 session_id  = session_id
             )
 
+            # A tool answer used to be able to hijack this reply: any result
+            # carrying `redirect_to_upload` was replaced by an "open /drive and
+            # upload" message. Its only producer was the genetics tool's no-rows
+            # branch, and `_DATA_GATED` already hides that tool from a user with
+            # no genetic rows — so the redirect could only fire for a user who
+            # HAS uploaded a genotype file and asked about rsIDs it does not
+            # carry, where "upload your data first" is the wrong answer. The
+            # tool now says "not typed" in its envelope and this branch is gone.
             is_error = False
             data = result
             if isinstance(result, dict):
-                if "redirect_to_upload" in result:
-                    return jsonrpc_result(
-                        id      = id,
-                        protocol_version = negotiated,
-                        result  = {
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": json.dumps(
-                                        {
-                                            "success": True,
-                                            "message": "Health Data uploading URL generated. Client should open browser automatically",
-                                            "open_url": f"{url_prefix}/drive",
-                                            "auto_open_browser": True,
-                                            "client_instructions": "No health data found. To access comprehensive health data including medical records, functional examinations, and device-generated data, please upload your health information first",
-                                        },
-                                        ensure_ascii=False,
-                                        separators=(',', ':')
-                                    )
-                                }
-                            ]
-                        },
-                        method  = params["name"],
-                        request = request
-                    )
-
                 if "success" in result and isinstance(result["success"], bool):
                     is_error = not result["success"]
 
@@ -726,24 +728,25 @@ class McpService:
 
     #-----------------------------------------------------
 
-    async def generate_personal_mcp(self, request: Request) -> Response:
-        if request.method == "OPTIONS":
-            return json_response_with_code(disable_log=True)
+    async def _personal_mcp_subject(self, request: Request) -> tuple[str, Response | None]:
+        """Whose personal MCP URL this request is about.
 
-        #-------------------------------------------------
-
+        Shared by mint and revoke so the two cannot drift on authorization —
+        the shape of bug that let a caller act on someone else's record once
+        already (`/ws/upload-health-report`, 2026-08-23).
+        """
         if not self._token_validator:
-            return json_response_with_code(-1, "No JWT token validator.", request=request)
+            return "", json_response_with_code(-1, "No JWT token validator.", request=request)
 
-        token = get_jwt_token(request)
-
-        payload, err = self._token_validator.verify_token(token)
+        # 401, not 200-with-an-error-body: this route is consumed by MCP
+        # clients, and a client that reads the status code — most do — took
+        # "no token" for success. `/api/chat` has always answered 401 here, so
+        # the two halves of the same API disagreed. The envelope is unchanged.
+        payload, err = self._token_validator.verify_token(get_jwt_token(request))
         if err:
-            return json_response_with_code(-2, err, request=request)
+            return "", json_response_with_code(-2, err, request=request, status=401)
         if not payload:
-            return json_response_with_code(-3, "Empty token payload.", request=request)
-
-        #-------------------------------------------------
+            return "", json_response_with_code(-3, "Empty token payload.", request=request, status=401)
 
         try:
             data = await request.json()
@@ -756,7 +759,7 @@ class McpService:
 
         user_id = payload.get("sub")
         if not user_id or not isinstance(user_id, str):
-            return json_response_with_code(-4, "Invalid user ID.", request=request)
+            return "", json_response_with_code(-4, "Invalid user ID.", request=request, status=401)
 
         if len(beneficiary_user_id) > 0 and beneficiary_user_id != user_id:
             # The personal MCP URL can be minted for someone else's record only
@@ -769,9 +772,62 @@ class McpService:
             try:
                 await resolve_subject(user_id, beneficiary_user_id)
             except CareCircleDenied as denied:
-                return json_response_with_code(-5, str(denied), request=request)
+                # 403: authenticated, and not allowed. Deliberately not 404 —
+                # the care circle already refuses to say whether the subject
+                # exists (see user/test_care_circle.py), and the body carries
+                # that same non-committal message.
+                return "", json_response_with_code(-5, str(denied), request=request, status=403)
 
             user_id = beneficiary_user_id
+
+        return user_id, None
+
+    async def _revoke_personal_mcp(self, request: Request, user_id: str) -> Response:
+        """Invalidate this user's personal MCP URL.
+
+        The URL is a bearer credential carried in a URL, and until this existed
+        there was no way to take one back: re-minting returned the SAME secret
+        (the mint path reads the stored one first), so a leaked URL stayed live
+        until its expiry. Deleting both directions of the mapping is what makes
+        the next mint hand out a new secret.
+
+        Idempotent on purpose — revoking a URL that was never minted, or twice,
+        is a success. A client cannot tell those apart and does not need to.
+        """
+        if self._redis:
+            try:
+                secret = await self._redis.get(self._mcp_url_keyprefix + user_id)
+                if secret:
+                    # The secret -> user mapping FIRST: that is the one
+                    # `/mcp/{secret}` reads, so it is the one that stops the
+                    # credential working. If the second delete then fails, the
+                    # URL is already dead and the next mint only leaks a
+                    # dangling key that expires on its own.
+                    await self._redis.delete(self._mcp_url_keyprefix + secret)
+                await self._redis.delete(self._mcp_url_keyprefix + user_id)
+            except Exception as e:
+                logger.warning("MCP: personal URL revoke failed: error_type=%s", type(e).__name__)
+                return json_response_with_code(-6, "Could not revoke the personal MCP URL.", request=request)
+        else:
+            secret = self._mcp_urls.pop(user_id, "")
+            if secret:
+                self._mcp_urls.pop(secret, None)
+
+        logger.info("MCP: personal URL revoked for user %s", user_id)
+        return json_response_with_code(data={"revoked": True}, request=request)
+
+    async def generate_personal_mcp(self, request: Request) -> Response:
+        if request.method == "OPTIONS":
+            return json_response_with_code(disable_log=True)
+
+        #-------------------------------------------------
+
+        user_id, refusal = await self._personal_mcp_subject(request)
+        if refusal is not None:
+            return refusal
+
+        if request.method == "DELETE":
+            return await self._revoke_personal_mcp(request, user_id)
 
         #-------------------------------------------------
 
@@ -791,9 +847,9 @@ class McpService:
 
             if self._redis:
                 try:
-                    # Set 1 year expiration (365 days)
-                    await self._redis.set(self._mcp_url_keyprefix+user_secret, user_id, ex=365*24*60*60)
-                    await self._redis.set(self._mcp_url_keyprefix+user_id, user_secret, ex=365*24*60*60)
+                    ttl = self._mcp_url_ttl_days * 24 * 60 * 60
+                    await self._redis.set(self._mcp_url_keyprefix+user_secret, user_id, ex=ttl)
+                    await self._redis.set(self._mcp_url_keyprefix+user_id, user_secret, ex=ttl)
                 except Exception as e:
                     return json_response_with_code(-6, str(e), request=request)
             else:

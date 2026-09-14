@@ -57,11 +57,6 @@ def _default_provider() -> str:
     chat then raises names a real entry and its missing key."""
     return chat_default() or next(iter(chat_entries()), "")
 
-if TYPE_CHECKING:
-    from langchain_core.language_models import BaseChatModel
-
-logger = logging.getLogger(__name__)
-
 
 class MirobodyAgent:
 
@@ -140,7 +135,7 @@ class MirobodyAgent:
             _ = agent_llm_client.invoke
         except AttributeError as attr_error:
             logger.error(f"Provider validation failed: {attr_error}")
-            raise ConfigError(f"Provider initialization failed: {attr_error}")
+            raise ConfigError(f"Provider initialization failed: {attr_error}") from attr_error
         
         # Extract model name
         model_name = getattr(agent_llm_client, "model_name", None) or getattr(agent_llm_client, "model", "Unknown")
@@ -219,7 +214,7 @@ class MirobodyAgent:
             raise AgentError(
                 f"System prompt construction failed: {str(e)}",
                 user_message=f"Failed to build the agent's system prompt. Details: {str(e)}"
-            )
+            ) from e
     
     @staticmethod
     def _skills_source_dir() -> str:

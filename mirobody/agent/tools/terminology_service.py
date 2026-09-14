@@ -14,7 +14,7 @@ Two properties worth stating plainly, because they are unusual for an MCP tool:
   still answer — which is exactly the property health data deserves.
 
 Measured coverage of the resolver these tools call: see
-``mirobody/test_engine_coverage.py`` (94 everyday panel terms across English,
+``mirobody/tests/test_engine_coverage.py`` (94 everyday panel terms across English,
 中文 and 日本語).
 """
 
