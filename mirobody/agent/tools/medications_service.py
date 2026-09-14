@@ -20,22 +20,23 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any
 
-from ...kernel import meds, query, series, tools
-from ...kernel.ops import is_driver_exception
-from ._authz import caller_of, denied, refused, subject_for
-from .health_indicators_service import awaited, envelope_meta, render_compact
+from ...kernel import meds, series, tools
+from ._authz import refused, subject_for
+from ._base import RecordTool
+from ._render import awaited, envelope_meta, render_compact
 
 logger = logging.getLogger(__name__)
 
 
-class MedicationsService:
+class MedicationsService(RecordTool):
     """The tool body. `__tools__` is the whole published surface; `envelope`
     is API for the chat adapter, not a tool."""
 
     __tools__ = (meds.TOOL_NAME,)
+    TOOL_NAME = meds.TOOL_NAME
     input_schema = meds.TOOL_SCHEMA
 
     def __init__(self, store: Any = None, dose_log: Any = None, *, tz: Any = None, now: Any = None) -> None:
@@ -83,18 +84,6 @@ class MedicationsService:
         so both surfaces render the same table; not a tool (`__tools__`)."""
         return meds.VIEW_COLUMNS.get(str(args.get("view") or meds.VIEW_PLAN))
 
-    async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
-        caller_id = caller_of(user_info)
-        if not caller_id:
-            return denied("authorization required")
-        try:
-            return await self._run(caller_id, args)
-        except query.Denied:
-            return denied("you may not read this person's data")
-        except Exception as e:
-            tool_name = meds.TOOL_NAME
-            logger.error("[%s] error_type=%s", tool_name, type(e).__name__, exc_info=not is_driver_exception(e))
-            return tools.fault_envelope(e)
 
     # --- the run ------------------------------------------------------------
 
@@ -138,9 +127,6 @@ class MedicationsService:
         from ...user.user import get_user
         row = await get_user(user_id=subject_id)
         return ((row or {}).get("tz") or "").strip() or "UTC"
-
-    def _clock(self) -> datetime:
-        return self._now() if callable(self._now) else datetime.now(UTC)
 
 
 # --- pure --------------------------------------------------------------------

@@ -95,7 +95,7 @@ def _envelope_wrapper(bound_method, user_info: dict):
     if service is None or not hasattr(service, "envelope"):
         return None
 
-    from .tools.health_indicators_service import render_compact
+    from .tools._render import render_compact
 
     # Which columns the rendering shows is the service's call, not the
     # adapter's: medications name them per view and genetics has one fixed

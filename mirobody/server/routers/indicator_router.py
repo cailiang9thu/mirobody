@@ -32,7 +32,8 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from ...pulse.query import REST_CATALOG_MAX, PostgresHealthQuery
-from ...agent.tools.health_indicators_service import HealthIndicatorsService, render_rest
+from ...agent.tools._render import render_rest
+from ...agent.tools.health_indicators_service import HealthIndicatorsService
 from ...utils import execute_query
 from ...user.care_circle import CareCircleDenied, resolve_subject
 from ..auth import verify_token

@@ -35,9 +35,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from ...kernel import query, tools
-from ...kernel.ops import is_driver_exception
-from ._authz import caller_of, denied, refused, subject_for
-from .health_indicators_service import envelope_meta, render_compact
+from ._authz import refused, subject_for
+from ._base import RecordTool
+from ._render import envelope_meta, render_compact
 
 logger = logging.getLogger(__name__)
 
@@ -164,11 +164,12 @@ def parse_query(args: Mapping[str, Any]) -> GeneticRequest:
     )
 
 
-class GeneticService:
+class GeneticService(RecordTool):
     """The tool body. `__tools__` is the whole published surface; `envelope`
     is API for the chat adapter, not a tool."""
 
     __tools__ = (TOOL_NAME,)
+    TOOL_NAME = TOOL_NAME
     input_schema = TOOL_SCHEMA
 
     def __init__(self, execute: Any = None) -> None:
@@ -216,21 +217,6 @@ class GeneticService:
         (`__tools__`). Fixed here: a genotype row has one shape."""
         return COLUMNS
 
-    async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
-        caller_id = caller_of(user_info)
-        if not caller_id:
-            return denied("authorization required")
-        try:
-            return await self._run(caller_id, args)
-        except query.Denied:
-            return denied("you may not read this person's data")
-        except Exception as e:
-            # Never hand the raw exception to the model: driver messages quote
-            # the SQL with its bound parameters, and a model echoes what it is
-            # given. The type goes to the log, the class to the envelope.
-            tool_name = TOOL_NAME  # a local the PHI log lint can see is a name, not a value
-            logger.error("[%s] error_type=%s", tool_name, type(e).__name__, exc_info=not is_driver_exception(e))
-            return tools.fault_envelope(e)
 
     # --- the run ------------------------------------------------------------
 

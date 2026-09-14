@@ -61,9 +61,14 @@ tools/
 ├── genetic_service.py               # query_genetic_data: genotype calls at named
 │                                    #   rsIDs, plus the typed neighbours of each
 │                                    #   hit (5 parameters)
-└── _authz.py                        # who a read is about (shared, not a tool)
+├── _authz.py                        # who a read is about
+├── _base.py                         # RecordTool: authorization and the
+│                                    #   never-raises contract, shared
+└── _render.py                       # envelope -> compact table / REST rows
 
-Every file here IS a tool. The implementations they read through are not:
+Every file here WITHOUT a leading underscore IS a tool; the underscored ones
+are shared parts the loader skips. The implementations they read through are
+also not tools:
 `query.HealthQuery` over `th_series_data` is `mirobody/pulse/query.py`, beside
 the writer of that table, and the medication stores are `mirobody/pulse/meds/`.
 

@@ -252,11 +252,10 @@ def _declared_tool_names(obj) -> frozenset[str] | None:
 
     Without it the rule is "every public method of a `*Service` class, and
     every public module-level function, is a tool", and that rule publishes
-    whatever a refactor happens to leave public. `health_indicators_service` has three
-    such names (`envelope`, `render_compact`, `render_rest`): all three are
-    real API for the REST route and the chat adapter, and all three appeared in
-    `tools/list` as tools an MCP client could call. The leading underscore is
-    not an option for a name another module imports.
+    whatever a refactor happens to leave public. Each record tool has one such
+    name, `envelope`: real API for the REST route and the chat adapter, and it
+    appeared in `tools/list` as a tool an MCP client could call. The leading
+    underscore is not an option for a name another module imports.
     """
     declared = getattr(obj, "__tools__", None)
     if declared is None:

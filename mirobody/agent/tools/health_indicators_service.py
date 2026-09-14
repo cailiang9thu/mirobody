@@ -39,17 +39,13 @@ every path returns an envelope, including the ones that failed.
 
 from __future__ import annotations
 
-import inspect
-import logging
 from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
 from typing import Any
 
 from ...kernel import query, tools
-from ...kernel.ops import is_driver_exception
-from ._authz import caller_of, denied, refused, subject_for
-
-logger = logging.getLogger(__name__)
+from ._authz import refused, subject_for
+from ._base import RecordTool
+from ._render import awaited, envelope_meta, render_compact
 
 #: The span a window covers when only ONE end is named. Three months: two lab
 #: cycles and a season of wearable data.
@@ -58,35 +54,13 @@ DEFAULT_HOURS = 24 * 90
 #: most recent part and says so, rather than being refused or silently served.
 MAX_HOURS = 24 * 366 * 5
 
-#: The character budget for one rendered result. Past this the tool truncates
-#: and tells the model how to ask again: an answer that blows the context
-#: window is not an answer.
-MAX_RENDER_CHARS = 40_000
-
-#: Columns each method renders, in order. Anything not listed never reaches the
-#: model: `row_id` is for the web client's edit button, `total` and `day_known`
-#: are bookkeeping, `provenance` rides in the envelope.
-_COLUMNS: dict[str, tuple[str, ...]] = {
-    "catalog": ("indicator", "system", "code", "count", "first_date", "last_date"),
-    "readings": ("indicator", "time", "value", "unit", "file_key"),
-    "buckets": ("indicator", "period", "avg", "min", "max", "n", "unit"),
-    "stats": ("indicator", "count", "min", "max", "avg", "first", "first_date", "last", "last_date", "change", "unit"),
-    "latest": ("indicator", "date", "time", "value", "unit"),
-}
 
 #: Said on every readings answer, because a model that does not hear it draws
 #: the opposite conclusion: an empty result is "not on file", never "not true".
 _ABSENCE_NOTE = "no data for an indicator means it was never recorded, not that the condition is absent"
 
 
-async def awaited(value: Any) -> Any:
-    """A port is declared with plain `def` so an in-memory implementation is
-    possible; the reference one is async. Accept either rather than forcing a
-    choice on every consumer."""
-    return await value if inspect.isawaitable(value) else value
-
-
-class HealthIndicatorsService:
+class HealthIndicatorsService(RecordTool):
     """The tool body.
 
     `__tools__` is the whole published surface. `envelope` is public because
@@ -98,6 +72,7 @@ class HealthIndicatorsService:
 
     #: The ONE method that is a tool. See `mcp/tool.py::_declared_tool_names`.
     __tools__ = (query.TOOL_NAME,)
+    TOOL_NAME = query.TOOL_NAME
 
     #: Published verbatim as the MCP `inputSchema` and as the chat tool's
     #: `args_schema`, so the two surfaces cannot drift. See `mcp/tool.py`.
@@ -156,23 +131,6 @@ class HealthIndicatorsService:
         envelope = await self.envelope(user_info, **args)
         return {"result": render_compact(envelope), **envelope_meta(envelope)}
 
-    async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
-        """The same call, returning the envelope rather than a rendering: for
-        the REST route, and for the chat tool's `content_and_artifact`."""
-        caller_id = caller_of(user_info)
-        if not caller_id:
-            return denied("authorization required")
-        try:
-            return await self._run(caller_id, args)
-        except query.Denied:
-            return denied("you may not read this person's data")
-        except Exception as e:
-            # Never hand the raw exception to the model: driver messages quote
-            # the SQL with its bound parameters, and a model will echo whatever
-            # it is given. The type goes to the log, the class to the envelope.
-            tool_name = query.TOOL_NAME
-            logger.error("[%s] error_type=%s", tool_name, type(e).__name__, exc_info=not is_driver_exception(e))
-            return tools.fault_envelope(e)
 
     # --- the run ------------------------------------------------------------
 
@@ -230,9 +188,6 @@ class HealthIndicatorsService:
         if method == "latest":
             return await awaited(hq.latest(subject_id, sel, window, basis=request.basis))
         raise ValueError(f"no leaf for method {method!r}")
-
-    def _clock(self) -> datetime:
-        return self._now() if callable(self._now) else datetime.now(UTC)
 
 
 # --- envelope and renderings (pure) -----------------------------------------
@@ -320,116 +275,8 @@ def _semantics(rows: Sequence[Mapping[str, Any]]) -> str:
     )
 
 
-def _method_columns(rows: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
-    """Which columns a readings result renders. Derived from the row shape
-    rather than passed down, so a renderer can never disagree with its data."""
-    if not rows:
-        return ()
-    first = rows[0]
-    if "period" in first:
-        return _COLUMNS["buckets"]
-    if "avg" in first and "count" in first:
-        return _COLUMNS["stats"]
-    if "first_date" in first:
-        return _COLUMNS["catalog"]
-    if "time" in first and "total" in first:
-        return _COLUMNS["readings"]
-    if "value" in first:
-        return _COLUMNS["latest"]
-    return tuple(first.keys())
-
-
-def render_compact(envelope: tools.Envelope, columns: Sequence[str] | None = None) -> str:
-    """What the model reads: the table, then the methodology. Never prose about
-    findings: the model narrates, the tool reports. `columns` is for a tool
-    whose rows are not readings; a readings result derives its own."""
-    if envelope.status == tools.STATUS_ERROR:
-        return _render_error(envelope)
-    rows = list(envelope.data or [])
-    cols = tuple(columns) if columns else _method_columns(rows)
-    table = query.compact(rows, cols) if rows else ""
-    body = table or "(no rows)"
-    if len(body) > MAX_RENDER_CHARS:
-        body = body[:MAX_RENDER_CHARS] + f"\n… cut at {MAX_RENDER_CHARS} characters"
-    lines = [body, "", _meta_line(envelope.meta)]
-    if envelope.assumptions:
-        lines.append("notes: " + "; ".join(envelope.assumptions))
-    if envelope.next_steps:
-        lines.append("next: " + ", ".join(envelope.next_steps))
-    return "\n".join(lines)
-
-
-def render_rest(envelope: tools.Envelope) -> dict[str, Any]:
-    """What a browser reads: rows as objects, with the same meta block. The
-    web client sorts and paginates these; it must never be handed a pipe
-    table to parse back into the dicts it came from."""
-    meta = envelope.meta
-    return {
-        "rows": [dict(r) for r in (envelope.data or [])],
-        "count": meta.row_count,
-        "total": meta.catalog_total or meta.row_count,
-        "truncated": meta.truncated,
-        "window": {"start": meta.window[0], "end": meta.window[1], "tz": meta.tz, "semantics": meta.window_semantics},
-        "resolution": meta.resolution,
-        "aggregate": meta.aggregate,
-        "status": envelope.status,
-        **({"error_kind": envelope.error_kind} if envelope.error_kind else {}),
-    }
-
-
-def _render_error(envelope: tools.Envelope) -> str:
-    reason = "; ".join(envelope.assumptions) or "this lookup could not complete"
-    hint = (
-        "Fix the arguments and try once more."
-        if envelope.error_class == tools.ERROR_RECOVERABLE
-        else "Do not repeat this call. Continue with what you have, or tell the person it is unavailable."
-    )
-    return f"error ({envelope.error_kind}): {reason}. {hint}"
-
-
-def _meta_line(meta: tools.Meta) -> str:
-    # A tool whose data has no time axis (genetics) reports no zone, and gets
-    # no window line: "window=all recorded data, tz=, dates=tz_exact" on a
-    # genotype answer is three tokens of noise and one false claim: a
-    # genotype is not dated at all, exactly or otherwise.
-    bits: list[str] = []
-    if meta.tz or any(meta.window):
-        span = f"{meta.window[0]}..{meta.window[1]}" if any(meta.window) else "all recorded data"
-        bits += [f"window={span}", f"tz={meta.tz}", f"dates={meta.window_semantics}"]
-    if meta.resolution:
-        bits.append(f"resolution={meta.resolution}")
-    if meta.aggregate and meta.aggregate != "none":
-        bits.append(f"aggregate={meta.aggregate}/{meta.aggregate_basis}")
-    bits.append(f"rows={meta.row_count}")
-    if meta.catalog_total:
-        bits.append(f"of {meta.catalog_total}")
-    if meta.truncated:
-        bits.append("truncated")
-    return "(" + ", ".join(bits) + ")"
-
-
-def envelope_meta(envelope: tools.Envelope) -> dict[str, Any]:
-    """The machine-readable half a PTC caller sees next to the rendering: it
-    has no middleware above it to read the artifact."""
-    return {
-        "status": envelope.status,
-        "row_count": envelope.meta.row_count,
-        "truncated": envelope.meta.truncated,
-        **({"error_kind": envelope.error_kind} if envelope.error_kind else {}),
-    }
-
-
-#: This module's tool surface: nothing. `render_compact` and `render_rest` are
-#: renderers the router and the chat adapter call, not tools a model may run.
+#: This module's tool surface: nothing. `envelope` is API for the REST route
+#: and the chat adapter, not a tool a model may run.
 __tools__: tuple[str, ...] = ()
 
-__all__ = [
-    "DEFAULT_HOURS",
-    "MAX_HOURS",
-    "MAX_RENDER_CHARS",
-    "HealthIndicatorsService",
-    "awaited",
-    "envelope_meta",
-    "render_compact",
-    "render_rest",
-]
+__all__ = ["DEFAULT_HOURS", "MAX_HOURS", "HealthIndicatorsService"]

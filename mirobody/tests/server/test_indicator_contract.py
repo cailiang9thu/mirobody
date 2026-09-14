@@ -20,7 +20,7 @@ client.
 
 from __future__ import annotations
 
-from mirobody.agent.tools.health_indicators_service import render_rest
+from mirobody.agent.tools._render import render_rest
 from mirobody.kernel import tools
 from mirobody.pulse.query import _catalog_row, _reading_row
 from mirobody.server.routers.indicator_router import ReadingPatch
