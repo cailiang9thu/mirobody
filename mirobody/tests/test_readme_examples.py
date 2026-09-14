@@ -22,12 +22,20 @@ from __future__ import annotations
 
 import ast
 import os
+import pathlib
 import re
 
 import pytest
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_READMES = ["README.md", "README.zh-CN.md"]  # the live editions; see archived/README.md
+import mirobody
+from mirobody.tests import LIVE_READMES
+
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+_ROOT = str(pathlib.Path(mirobody.__file__).resolve().parent.parent)
+_READMES = list(LIVE_READMES)
 
 # `resolve("x").loinc   # '718-7'  comment` / `resolve("血脂").resolved  # False`
 #
@@ -66,7 +74,9 @@ def test_readme_resolver_examples_produce_what_they_claim(name):
     from mirobody.engine import resolve, resolve_reading  # noqa: F401
 
     for expr, expected in _examples(name):
-        got = eval(expr)  # noqa: S307 — the input is this repo's own README
+        # `eval` on purpose, and safe for one reason only: the expression comes
+        # from this repo's own README, which the same test suite gates.
+        got = eval(expr)
         # Two lines write the call without `.loinc` and comment it with the
         # code. That is what they mean, so read the code off the Resolution.
         code = getattr(got, "loinc", got)

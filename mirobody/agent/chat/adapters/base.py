@@ -46,6 +46,10 @@ _NON_STREAMING_TYPES = {"food_snap", "report"}
 FINISH_STOP = "stop"
 FINISH_ERROR = "error"
 FINISH_UNAVAILABLE = "unavailable"
+#: The turn ended cleanly and said nothing. `kernel.events.Completed` documents
+#: `finish_reason` as an open string, and the shipped client stores it without
+#: branching, so this is additive.
+FINISH_EMPTY = "empty"
 
 
 class ChunkAccumulator:
@@ -95,6 +99,16 @@ class ChunkAccumulator:
         self.thinking_chunks.clear()
         return True
     
+    def has_reply(self) -> bool:
+        """Whether any visible answer text was produced, pending or flushed.
+
+        `thinking` does not count: the client renders it separately, and a turn
+        whose entire output was `thinking` is exactly the case this exists for.
+        """
+        return any(c for c in self.reply_chunks) or any(
+            e.get("type") == "reply" for e in self.element_list
+        )
+
     def flush_all(self) -> None:
         """Flush both thinking and reply chunks."""
         self.flush_thinking()
@@ -629,6 +643,23 @@ class ChatProtocolAdapter(ABC):
                     if should_send:
                         await output_queue.put(chunk)
                 
+                # A turn that ends without one `reply` chunk is not a success
+                # the client can render: it draws an empty bubble under "Answer
+                # Completed". Measured 2026-09-11 across two vendors — gemini
+                # spent 2,337 of 2,539 output tokens on `thinking` and qwen
+                # 8,943 of 9,862, both finishing `stop` with no error event and
+                # no reply. Say it in the bubble, and mark the outcome, so the
+                # next one shows up in a log rather than only in a screenshot.
+                if accumulator.stream_completed and not accumulator.has_reply():
+                    language = getattr(context.get('params'), 'language', None) or "en"
+                    filler = t("empty_turn", language, module="chat")
+                    accumulator.reply_chunks.append(filler)
+                    await output_queue.put({"type": "reply", "content": filler})
+                    if accumulator.finish_reason == FINISH_STOP:
+                        accumulator.finish_reason = FINISH_EMPTY
+                    logger.warning("turn produced no reply text (finish_reason=%s)",
+                                   accumulator.finish_reason)
+
                 # Finalize: flush remaining accumulated content and add end chunk if needed
                 element_list = accumulator.finalize()
                 

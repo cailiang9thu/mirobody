@@ -183,13 +183,10 @@ mirobody/pulse/file_parser/file_upload_manager.py	interpolation	base_progress
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	e
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	error_message
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	f' for {filename}' if filename else ''
-mirobody/pulse/file_parser/file_upload_manager.py	interpolation	file_abstract[:50]
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	file_data['filename']
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	file_end_progress
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	file_entry.get('filename', 'unknown')
-mirobody/pulse/file_parser/file_upload_manager.py	interpolation	file_name
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	file_start_progress
-mirobody/pulse/file_parser/file_upload_manager.py	interpolation	filename
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	has_genetic_files
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	list(self.active_connections.keys())
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	mapped_progress
@@ -203,9 +200,7 @@ mirobody/pulse/file_parser/file_upload_manager.py	interpolation	session['status'
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	str(abstract_error)
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	str(e)
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	successful_files
-mirobody/pulse/file_parser/file_upload_manager.py	interpolation	total_chunks
 mirobody/pulse/file_parser/file_upload_manager.py	interpolation	total_files
-mirobody/pulse/file_parser/file_upload_manager.py	interpolation	uploaded_files[i]['filename']
 mirobody/pulse/file_parser/handlers/base.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/pulse/file_parser/handlers/base.py	interpolation	ctx.filename
 mirobody/pulse/file_parser/handlers/base.py	interpolation	e
@@ -213,7 +208,6 @@ mirobody/pulse/file_parser/handlers/base.py	interpolation	err
 mirobody/pulse/file_parser/handlers/base.py	interpolation	error_msg
 mirobody/pulse/file_parser/handlers/base.py	interpolation	event.get('type')
 mirobody/pulse/file_parser/handlers/base.py	interpolation	file_key
-mirobody/pulse/file_parser/handlers/base.py	interpolation	filename
 mirobody/pulse/file_parser/handlers/base.py	interpolation	full_url
 mirobody/pulse/file_parser/handlers/base.py	interpolation	self.get_type_name()
 mirobody/pulse/file_parser/handlers/base.py	interpolation	str(update_error)
@@ -339,7 +333,6 @@ mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolatio
 mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	data_key
 mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	e
 mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	resp.text
-mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	secret_fingerprint(client_secret)
 mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	self.client_id[:3]
 mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	self.redirect_url
 mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	str(db_error)
@@ -357,7 +350,6 @@ mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	error_de
 mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	id_field
 mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	raw_data
 mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	retry_after
-mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	secret_fingerprint(client_secret)
 mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	self.client_id[:3]
 mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	self.redirect_url
 mirobody/pulse/providers/mirobody_whoop/provider_whoop.py	interpolation	str(e)
@@ -370,7 +362,6 @@ mirobody/pulse/providers/platform/base.py	interpolation	table_name
 mirobody/pulse/providers/platform/base.py	interpolation	user_timezone
 mirobody/pulse/providers/platform/database_service.py	interpolation	error_msg
 mirobody/pulse/providers/platform/database_service.py	interpolation	expires_at
-mirobody/pulse/providers/platform/database_service.py	interpolation	f"AES-GCM InvalidTag error for user {user_id}: Authentication tag verification f
 mirobody/pulse/providers/platform/database_service.py	interpolation	llm_access
 mirobody/pulse/providers/platform/database_service.py	interpolation	row['user_id']
 mirobody/pulse/providers/platform/database_service.py	interpolation	str(e)
@@ -516,7 +507,6 @@ mirobody/user/auth/oauth_service.py	extra_key	token
 mirobody/user/auth/oauth_service.py	interpolation	data
 mirobody/user/auth/oauth_service.py	interpolation	e
 mirobody/user/auth/oauth_service.py	interpolation	err
-mirobody/user/auth/oauth_service.py	interpolation	secret_fingerprint(client_secret)
 mirobody/user/auth/oauth_service.py	interpolation	str(e)
 mirobody/user/auth/webauthn.py	interpolation	e
 mirobody/user/auth/webauthn.py	interpolation	self._origin
@@ -538,8 +528,6 @@ mirobody/user/user_service.py	extra_key	email
 mirobody/user/user_service.py	extra_key	token
 mirobody/user/user_service.py	interpolation	err
 mirobody/user/user_service.py	interpolation	existing_owner
-mirobody/user/user_service.py	interpolation	secret_fingerprint(code)
-mirobody/user/user_service.py	interpolation	secret_fingerprint(token)
 mirobody/utils/config/agent_options.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/utils/config/agent_options.py	interpolation	str(e)
 mirobody/utils/config/config.py	interpolation	e

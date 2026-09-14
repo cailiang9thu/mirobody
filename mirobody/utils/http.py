@@ -119,10 +119,19 @@ def json_response(content: any, status_code: int = 200, request: Request = None,
         media_type  = "application/json; charset=utf-8"
     )
 
-def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, request: Request = None, disable_log: bool = False) -> Response:
+def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, request: Request = None,
+                           disable_log: bool = False, status: int = 200) -> Response:
+    """The `{success, code, msg, data}` envelope.
+
+    `status` exists for the routes where the HTTP status is part of the
+    contract — an MCP client keys on 401, not on a body it may not parse.
+    It defaults to 200 because every other caller (and the web client)
+    reads `code`, and changing that for all of them is a coordinated
+    release, not a bug fix. (2026-09-14 regression report, F-7)
+    """
     if not disable_log:
         extra = {
-            "status": 200,
+            "status": status,
             "code"  : code
         }
         _fill_extra_log(request=request, extra=extra)
@@ -147,7 +156,7 @@ def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, re
             ensure_ascii= False,
             separators  = (',', ':')
         ),
-        status_code = 200,
+        status_code = status,
         media_type  = "application/json; charset=utf-8"
     )
 

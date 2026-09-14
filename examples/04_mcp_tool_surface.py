@@ -1,6 +1,6 @@
 """What an external MCP client sees — and calling a tool without a server.
 
-    pip install mirobody
+    pip install 'mirobody[agent]'
     python examples/04_mcp_tool_surface.py
 
 Mirobody's tools are ordinary Python functions. The MCP layer turns each into a
@@ -17,9 +17,18 @@ To expose these over HTTP instead, run `mirobody serve` and point a client at
 """
 
 import asyncio
+import importlib.util
 import json
+import sys
 
-from mirobody.mcp.tool import call_tool, global_descriptions, global_tools, load_tools_from_directories
+# `mcp` is the [agent] extra, not the base install — and without this the first
+# import below dies several modules deep with a bare `ModuleNotFoundError: mcp`,
+# while 05, 06 and 07 all print what to install. Same shape as `cli.py`'s
+# `_require_extra`. (2026-09-14 regression report, F-4)
+if importlib.util.find_spec("mcp") is None:
+    sys.exit("this example needs the MCP SDK — pip install 'mirobody[agent]'")
+
+from mirobody.mcp.tool import call_tool, get_global_descriptions, get_global_tools, load_tools_from_directories
 
 # The same directory scan the server performs at startup. Point it anywhere to
 # add your own tools — MCP_TOOL_DIRS in config does exactly this.
@@ -30,9 +39,9 @@ from mirobody.mcp.tool import call_tool, global_descriptions, global_tools, load
 # from the repo root and from an arbitrary directory after `pip install`.
 load_tools_from_directories(["mirobody/agent/tools"])
 
-print(f"{len(global_descriptions)} tools discovered\n")
+print(f"{len(get_global_descriptions())} tools discovered\n")
 
-for d in sorted(global_descriptions, key=lambda x: x["name"]):
+for d in sorted(get_global_descriptions(), key=lambda x: x["name"]):
     schema = d["inputSchema"]
     params = schema.get("properties", {})
     required = set(schema.get("required", []))
@@ -55,16 +64,16 @@ print("a tool works in our own agent and fails in someone else's.\n")
 # ── calling one, in-process, with no server ──────────────────────────────────
 async def main():
     print("Calling `resolve_indicator` directly — offline, no auth:\n")
-    result = await call_tool(global_tools, "resolve_indicator",
+    result = await call_tool(get_global_tools(), "resolve_indicator",
                              {"names": ["hemoglobin", "血糖", "blood pressure"]})
     print(json.dumps(result, indent=2, ensure_ascii=False)[:700])
 
     print("\nAnd the same call with a misspelled argument:\n")
-    bad = await call_tool(global_tools, "resolve_indicator", {"name": ["hemoglobin"]})
+    bad = await call_tool(get_global_tools(), "resolve_indicator", {"name": ["hemoglobin"]})
     print(f"  {bad}")
     print("\n  Rejected rather than silently defaulted — a model can act on that error.")
 
 asyncio.run(main())
 
-print("\nThe other three tools (query_health_indicators, query_medications, get_genetic_data) read a user's")
+print("\nThe other three tools (query_health_indicators, query_medications, query_genetic_data) read a user's")
 print("stored records, so they need `mirobody serve` and a database.")

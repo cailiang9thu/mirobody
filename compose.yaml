@@ -69,6 +69,7 @@ services:
         PYPROJ_HASH=$$(md5sum pyproject.toml requirements.txt | md5sum | awk '{print $$1}') &&
         if [ \"$$PYPROJ_HASH\" != \"$$(cat \"$$HASH_FILE\" 2>/dev/null)\" ]; then
           echo '>> deps changed, installing...' &&
+          python -m ensurepip --upgrade >/dev/null 2>&1 || true &&
           pip install --upgrade pip &&
           pip install -r requirements.txt &&
           echo \"$$PYPROJ_HASH\" > \"$$HASH_FILE\";
@@ -80,6 +81,12 @@ services:
     volumes:
       - .:/app
       - mirobody_upload:/app/.theta/mcp/upload
+      # A NAMED volume, which Docker seeds from the image — so the venv's own
+      # pip is there on first start. A host that rejects named volumes (rootless
+      # Docker) has to replace this with a bind mount in compose.override.yaml,
+      # and a bind mount is NOT seeded: it mounts empty over the venv and the
+      # next line's `pip install` is `No module named pip`, on a loop. Hence
+      # the `ensurepip` above. (2026-09-14 regression report, F-10)
       - mirobody_site_packages:/root/venv/lib/python3.12/site-packages
     environment:
       - ENV=${ENV}               # a real env var, so `ENV=prod ./deploy.sh` beats a stale .env

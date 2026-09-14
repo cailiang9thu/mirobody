@@ -212,6 +212,14 @@ RUN apt update && \
     mkdir /root/venv && \
     python3 -m venv /root/venv && \
     mkdir -p /app
+# The venv on PATH, so an interactive shell is the same interpreter the service
+# runs. Without it \`docker compose exec mirobody python -m mirobody doctor\` --
+# printed by this script after every successful deploy, and asked for five
+# times by .github/ISSUE_TEMPLATE/upload-no-indicators.yml -- answers
+# \`python: command not found\`, and \`python3\` finds the system interpreter
+# with none of our dependencies. The compose commands source the venv
+# themselves, so the service never noticed. (2026-09-14 regression report, F-1)
+ENV PATH=/root/venv/bin:\$PATH
 WORKDIR /app
 "
 mirobody_dockerfile_version=$(echo -n "${mirobody_dockerfile_content}" | openssl md5 | awk '{print $NF}')
@@ -303,11 +311,22 @@ if [[ -x "$(dirname "$0")/scripts/fetch_data.sh" ]]; then
     "$(dirname "$0")/scripts/fetch_data.sh"
 fi
 
-docker compose -f ${DOCKER_COMPOSE_FILE} down
+# No `-f`: naming the file turns OFF Compose's automatic pickup of
+# `compose.override.yaml`, which is where a rootless-Docker host puts its
+# bind mounts — and the commands this script prints for the user
+# (`docker compose restart`) DO load it. Two paths, two stacks, and the
+# failure was silent: the override was ignored, the named volumes it
+# replaces were rejected, and the script still said "Up".
+docker compose down
 check_ports_free 18060 18062 18069
 check_subnet_free
 
-docker compose -f ${DOCKER_COMPOSE_FILE} up -d --remove-orphans
+if ! docker compose up -d --remove-orphans; then
+    echo ""
+    echo "Compose could not start the stack — the error is above; nothing is running."
+    echo "Nothing below this line ran. Fix the error and re-run ./deploy.sh."
+    exit 1
+fi
 echo ""
 echo "Up. Open http://localhost:18060 and sign in as caregiver@mirobody.ai / 111111."
 echo "The boot log below ends with 'LLM models by surface': if a surface reads '--',"
@@ -315,6 +334,6 @@ echo "put ONE LLM API key in .env (the names are listed there) and run:"
 echo "    docker compose restart"
 echo "Details any time:  docker compose exec mirobody python -m mirobody doctor"
 echo ""
-docker compose -f ${DOCKER_COMPOSE_FILE} logs -f
+docker compose logs -f
 
 #-----------------------------------------------------------------------------

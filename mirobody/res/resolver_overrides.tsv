@@ -37,6 +37,8 @@
 total cholesterol	Cholesterol
 cholesterol total	Cholesterol
 serum cholesterol	Cholesterol
+serum creatinine	Creatinine
+serum total bilirubin	Bilirubin
 LDL cholesterol	LDL-C
 LDL-cholesterol	LDL-C
 low density lipoprotein cholesterol	LDL-C
@@ -253,6 +255,16 @@ lipid panel	!unresolved
 # Two of these did not merely miss — they resolved CONFIDENTLY WRONG, which is
 # the failure mode this project scores as worse than silence:
 #   血清肌酐  -> 44760-7 MELD score          (its long name contains "serum creatinine")
+# The ENGLISH forms of that same trap were never swept, and a 2026-09-14
+# end-to-end run over real English-language reports hit both: `Serum
+# Creatinine` AND `Serum Total Bilirubin` answered 44760-7, because the MELD
+# score's long name names all three of its inputs. Two different analytes on
+# one code is worse than either being wrong alone — it MERGES their readings
+# into one series. Both are above, beside `serum cholesterol`. The rest of
+# the English `serum <analyte>` family abstains rather than answering wrong
+# (glucose, sodium, potassium, albumin, total protein, uric acid, calcium,
+# ALT all return nothing); that is a recall gap, not a defect, and the
+# symmetric sweep belongs with an eval re-baseline, not with a patch release.
 #   血清白蛋白 -> chicken serum albumin nGal d 5  (an allergen panel entry)
 # Found by resolving the terms printed in mirobody/test_engine_coverage.py's
 # newest cases, which were lifted verbatim off a 2025 physical report.

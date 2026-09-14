@@ -16,11 +16,16 @@ import re
 
 import pytest
 
-_ROOT = pathlib.Path(__file__).resolve().parent.parent
-# The two LIVE editions. 繁體中文 and 日本語 are frozen at 1.4.0 under `archived/`
-# (each drew under 9 unique visitors in the 14 days before the freeze, against
-# 263 for zh-CN) and are not gated; `archived/README.md` says how to revive one.
-_READMES = ["README.md", "README.zh-CN.md"]
+import mirobody
+from mirobody.tests import LIVE_READMES
+
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+_PKG = pathlib.Path(mirobody.__file__).resolve().parent
+_ROOT = _PKG.parent
+_READMES = list(LIVE_READMES)
 
 pytestmark = pytest.mark.skipif(
     not (_ROOT / "README.md").is_file(),

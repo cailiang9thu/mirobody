@@ -21,7 +21,7 @@ suffix. A deployment that wants its own harness REPLACES `MirobodyAgent` by
 pointing `AGENT_DIRS` at its own directory (`agent/registry.py`). External
 clients get the engine through `mirobody/mcp/` (six tools: `resolve_indicator`,
 `convert_unit`, `normalize_unit`, `query_health_indicators`, `query_medications`,
-`get_genetic_data`) —
+`query_genetic_data`) —
 and that list is asserted exactly, in `tests/agent/test_tool_surface.py`.
 The agent's config keys are `MODELS`, `PROMPTS`, `ALLOWED_TOOLS`,
 `DISALLOWED_TOOLS`, `DEFAULT_MODEL`, `AGENT_NAME` — no suffix, and no "provider"
@@ -106,7 +106,7 @@ wheel in the same venv — otherwise they pass vacuously.
   Guide: `docs/provider-guide.md`.
 - **Docs are code.** Rename a module → grep the `.md` files. The README ships
   in four languages; English first, then the other three, and say so if you
-  only changed English. `mirobody/test_readme_*.py` checks them as a set.
+  only changed English. `mirobody/tests/test_readme_*.py` checks them as a set.
 
 ## Never commit
 

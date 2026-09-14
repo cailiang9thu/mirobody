@@ -12,28 +12,34 @@ long-lived venv:
 
 | install | packages | tests |
 | --- | --- | --- |
-| `'.[test]'` | 17 | 100 — resolve, units, lexical, the README gates |
-| `'.[test,parse]'` | ~90 | 166 — + document extraction, model clients |
-| `'.[test,app]'` | ~190 | 215 — everything |
+| `'.[test]'` | 17 | 191 passed, 16 skipped — resolve, units, lexical, the README gates |
+| `'.[test,parse]'` | 74 | 269 passed, 6 skipped — + document extraction, model clients |
+| `'.[test,app]'` | 146 | 333 passed — everything a clone can run |
+
+<sub>Measured 2026-09-14 on a clone-shaped tree (1.4.2). `pytest` in a checkout
+that also has the maintainers' local suite collects more; these are the numbers
+a clone sees.</sub>
 
 They used to abort collection outright rather than skip — first with
 `ModuleNotFoundError: langchain_core`, then with `psycopg_pool` and `mandrill`
 because `mirobody/server/__init__` and `mirobody/user/__init__` import them,
-and in 1.3.0 with `dotenv` and `ruamel` after those left the base install. In
-every case a test module executes its parent package first, so a module-level
-`importorskip` is too late; `conftest.py` decides at COLLECTION time, which is
-the only point early enough.
+and in 1.3.0 with `dotenv` and `ruamel` after those left the base install. In every case the failing import sits at the top of the
+test module, so a module-level `importorskip` is already too late;
+`conftest.py` decides at COLLECTION time, which is the only point early
+enough.
 
 That is the entire happy path. `testpaths` is set, so bare `pytest` collects
 two trees, and a third that is neither:
 
-- `tests/` at the repo root, mirroring the package: `tests/test_series.py` for
-  `mirobody/kernel/series.py`, `tests/pulse/test_readings.py` for
-  `mirobody/pulse/readings.py`, and so on, plus the repo-wide gates at the top
-  (README figures and links, the public surface, the PHI baseline, the one-key
-  defaults). Nothing under `mirobody/` is a test, so the wheel needs no
-  pruning and `scripts/check_wheel_data.py` fails the build if a `test_*.py`
-  ever appears inside it.
+- `mirobody/tests/` — the gate suite, described below. It ships in the
+  repository and is what `pytest mirobody` runs in a clone; the build prunes
+  the whole directory, and `scripts/check_wheel_data.py` fails if a member of
+  it turns up in the wheel.
+- `tests/` at the repo root — the maintainers' regression suite, mirroring the
+  package (`tests/test_series.py` for `mirobody/kernel/series.py`,
+  `tests/pulse/test_readings.py` for `mirobody/pulse/readings.py`). It is
+  gitignored, so it is simply absent from a clone, and pytest skips a testpath
+  that does not exist.
 - `benchmarks/` — the resolver scoring harness (`run_eval.py`). Not a test
   (nothing asserts), not library code (nothing imports it); it runs from a
   checkout against a test set you point it at.
@@ -42,29 +48,49 @@ two trees, and a third that is neither:
 
 **Two roots, and only one of them is published.**
 
-`mirobody/` keeps the tests that are *evidence* for something this project
-claims. A benchmark nobody can run is an assertion, so the resolver score the
-README prints lives in the repository, next to the code it scores. The core
-five:
+`mirobody/tests/` is the **gate suite**: every module in it is *evidence* for
+something this project claims in public. A benchmark nobody can run is an
+assertion, so the resolver score the README prints ships in the repository,
+where anyone with a clone can re-run it. Twenty-one modules, and each one can
+name the sentence it proves.
 
-| Suite | Covers | Notes |
+The ones that back a published number or promise:
+
+| Module | Covers | Notes |
 | --- | --- | --- |
-| `mirobody/test_engine_coverage.py` | **the published accuracy number** | the case table: the panels an ordinary checkup includes, in en / 简体中文 / 繁體中文 / 日本語, plus device vocabulary, report shapes (`名称(缩写)`, `Name-ABBREV`, snake_case, full-width), unit-dependent codes and non-numeric readings. Run with `-s` to print the score; `COVERAGE_FLOOR = 1.0` |
-| `mirobody/test_engine.py` | golden LOINC codes for ② Translate | pins the whole chain: alias index → commonness prior → axis table |
-| `mirobody/test_readme_numbers.py` | every figure the four READMEs publish | each one re-derived from the artifact or code that defines it, so a number cannot drift silently |
-| `mirobody/test_readme_links.py` | every link and demo asset in the four READMEs | a dead relative link is a broken promise on the front page; localized GIFs must be referenced by their own translations |
-| `mirobody/test_readme_l10n.py` | the translations themselves | script hygiene (no Simplified characters in 繁體中文), and every language shows the same demo |
-| `mirobody/test_one_key_defaults.py` | the "one key runs everything" promise | the shipped defaults must chat, see and embed with a single OPENROUTER_API_KEY or DASHSCOPE_API_KEY, no overlay edits |
-| `mirobody/test_public_surface.py` | every `__all__` in the package | a name left in one after the symbol is deleted turns `import *` into an `AttributeError` |
+| `test_engine_coverage.py` | **the published accuracy number** | 204 cases: the panels an ordinary checkup prints, in English, 简体中文, 繁體中文 and 日本語, plus device vocabulary, report shapes (`名称(缩写)`, `Name-ABBREV`, snake_case, full-width), unit-dependent codes and non-numeric readings. Run with `-s` to print the score; `COVERAGE_FLOOR = 1.0` |
+| `test_engine.py` | golden LOINC codes for ② Translate | pins the whole chain: alias index → commonness prior → axis table |
+| `test_units.py` | the units claims in CHANGELOG 1.2.2 | golden conversion vectors, and the zero-drift guard on the ① Collect path |
+| `test_readme_numbers.py` | every figure the live READMEs quote | each re-derived from the artifact or code that produces it, so a number cannot drift silently |
+| `test_readme_links.py` | every relative link and demo asset in them | a dead link is a broken promise on the front page |
+| `test_readme_examples.py` | the resolver commands they print | run for real, and the answers checked |
+| `test_readme_l10n.py` | the editions as a set | the same demo everywhere, localized assets where they exist, and no README naming a module that does not exist |
+| `test_one_key_defaults.py` | "one key runs everything" | any ONE of six keys — OpenRouter, DashScope, Google, OpenAI, Anthropic, DeepSeek — must chat, see and (where the vendor has one) embed, from `config.llm.yaml` alone with no overlay edits |
+| `test_public_api.py` | the library contract the READMEs sell | including the "two packages" promise, measured as an import delta in a subprocess |
+| `test_public_surface.py` | every `__all__` in the package | a name left in one after the symbol is deleted turns `import *` into an `AttributeError` |
+| `test_cli_width.py` | the CLI table the quickstart GIF shows | it has to line up when the terms are not all ASCII |
 
-A second, smaller ring backs promises the docs make about *behavior*: the
-care-circle isolation the front page demonstrates
-(`mirobody/user/test_care_circle.py`, `mirobody/server/test_member_seed.py`), the
-deployment posture SECURITY.md documents (`mirobody/server/test_bootstrap_guard.py`),
-the CLI rendering the quickstart GIF shows (`mirobody/test_cli_width.py`), and a few
-contracts whose docstrings are load-bearing (`mirobody/utils/test_content_type.py`,
-`mirobody/user/test_user_lookup.py`, `tests/agent/filesystem/test_naming.py`,
-`mirobody/pulse/file_parser/services/test_delete_is_deletion.py`).
+The second ring backs promises about *behavior* — most of them in SECURITY.md:
+
+| Module | Covers |
+| --- | --- |
+| `pulse/test_upload_authz.py` | a proxy upload must prove write access to the target's record |
+| `pulse/test_delete_is_deletion.py` | a deleted document must not stay answerable by the agent |
+| `pulse/test_upload_smoke.py` | a real PDF through the real upload path, no key and no database |
+| `user/test_care_circle.py` | the care-circle authorization throat the front page demonstrates |
+| `user/test_user_lookup.py` | one `health_app_user` lookup, so no call site can drop `is_del = false` |
+| `server/test_bootstrap_guard.py` | `PRODUCTION: true` strips the demo affordances, and nothing else |
+| `server/test_member_seed.py` | every sign-in account gets its own thin record beside the shared one |
+| `server/test_indicator_contract.py` | the keys `GET /api/v1/health-indicators` puts on the wire |
+| `agent/test_file_block_transport.py` | a PDF block goes on the wire only if the wire carries one |
+| `utils/test_content_type.py` | an uploaded object's stored `Content-Type` is a real MIME type |
+
+It is a package, not a loose directory, because these modules cite each other:
+`test_readme_numbers` re-derives the published coverage score from
+`test_engine_coverage`'s case table rather than keeping a second copy, and the
+live-README list lives once in `mirobody/tests/__init__.py`. None of it reaches
+the wheel — the build prunes the directory and `scripts/check_wheel_data.py`
+fails the build if a member comes back.
 
 ## Markers
 
@@ -90,7 +116,7 @@ resolve to the panel and never to one of its members. Adding a term
 is one row in `mirobody/res/resolver_overrides.tsv` plus one case here.
 
 ```bash
-pytest mirobody/test_engine_coverage.py -s     # prints the score and every miss
+pytest mirobody/tests/test_engine_coverage.py -s     # prints the score and every miss
 ```
 
 **Gate snapshots** (maintainers' internal tree — not in a clone). The

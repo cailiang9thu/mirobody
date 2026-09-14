@@ -49,12 +49,16 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable
+from typing import NamedTuple
 
 from .families import UCUM_FAMILY
 
 __all__ = [
     "DimScale",
     "scale",
+    "canonical_unit",
+    "canonicalize",
+    "CanonicalQuantity",
     "convertible",
     "conversion_factor",
     "convert_value",
@@ -251,6 +255,95 @@ def convert_value(value: float, from_unit: str, to_unit: str, *, loinc_code: str
     """
     factor = conversion_factor(from_unit, to_unit, loinc_code=loinc_code)
     return None if factor is None else value * factor
+
+
+#: Dimension tag → the base unit :func:`scale`'s factor actually lands in. The
+#: table is not a preference: `scale` normalizes every parseable unit to exactly
+#: this composition, so rendering a signature with these symbols names the unit
+#: whose value is `raw * factor`.
+_CANONICAL_BASE: dict[str, str] = {
+    "M": "g", "V": "L", "N": "mol", "L": "m", "T": "s", "A": "U",
+}
+
+
+class CanonicalQuantity(NamedTuple):
+    """A value folded to base units, and the unit it landed in.
+
+    A tuple so it unpacks, named so a stored pair cannot be transposed:
+    ``(0.0056, "mol/L")``, never ``("mol/L", 0.0056)``.
+    """
+
+    value: float
+    unit: str
+
+
+def _render(signature: tuple[tuple[str, int], ...]) -> str:
+    """Dimension signature → its UCUM spelling (`g/L`, `mol/L`, `/s`, `g/m2`)."""
+    def part(dim: str, exponent: int) -> str:
+        symbol = _CANONICAL_BASE[dim]
+        return symbol if exponent == 1 else f"{symbol}{exponent}"
+
+    numerator = ".".join(part(d, e) for d, e in signature if e > 0)
+    denominator = ".".join(part(d, -e) for d, e in signature if e < 0)
+    if not denominator:
+        return numerator or "1"
+    return f"{numerator}/{denominator}"
+
+
+def _canonical(ucum: str | None, loinc_code: str) -> tuple[tuple[tuple[str, int], ...], float] | None:
+    """(signature, factor) after the molar bridge is applied; None if unparseable."""
+    parsed = scale(ucum)
+    if parsed is None:
+        return None
+    signature, factor = parsed
+    if signature == _MASS_PER_VOLUME:
+        molar = MOLAR_MASS.get(loinc_code or "")
+        if molar is not None:
+            return (_SUBSTANCE_PER_VOLUME, factor / molar[0])
+    return (signature, factor)
+
+
+def canonical_unit(ucum: str | None, *, loinc_code: str = "") -> str | None:
+    """The base unit `ucum` folds to, or None when it does not fold at all.
+
+    `mg/dL` and `g/L` both answer `g/L`; with a `loinc_code` that
+    :data:`MOLAR_MASS` bridges, both answer `mol/L` instead. None means atomic
+    (`%`, `mm[Hg]`, `meq/L`) — see :func:`scale`.
+    """
+    got = _canonical(ucum, loinc_code)
+    return None if got is None else _render(got[0])
+
+
+def canonicalize(value: float, unit: str | None, *, loinc_code: str = "") -> CanonicalQuantity:
+    """A reading folded to base units — the COMPARISON KEY, not a replacement.
+
+    Store it in a second column beside the value as recorded, and two readings
+    are comparable when their canonical PAIRS agree — a `SELECT ... GROUP BY`
+    rather than a conversion pass per query. The original is never touched;
+    provenance and FHIR fidelity depend on the reading as written down, and
+    :func:`convert_value` remains the way to answer "in THIS unit, what is it".
+
+    The unit comes back with the number because the canonical basis is not a
+    property of the input alone. Without a code, `mg/dL` folds to `g/L`; with
+    `2345-7` it folds to `mol/L`, where the mmol/L half of the world's glucose
+    readings already is. That is the whole point — a Chinese report's 5.6 mmol/L
+    and a US report's 100 mg/dL are one series only across the molar bridge —
+    but it means a bare canonical number is ambiguous. Comparing the pairs is
+    not, and the two bases stay distinguishable rather than silently mixing.
+
+        canonicalize(100, "mg/dL", loinc_code="2345-7")   # ≈ (0.005551, 'mol/L')
+        canonicalize(5.6, "mmol/L", loinc_code="2345-7")  #   (0.0056,   'mol/L')
+
+    An unparseable unit is returned unchanged rather than raising: a reading
+    whose unit this module cannot fold is still a reading, and `%` or `mm[Hg]`
+    is already its own canonical form — equal only to itself, which is exactly
+    what an unchanged pair means to a caller comparing pairs.
+    """
+    got = _canonical(unit, loinc_code)
+    if got is None:
+        return CanonicalQuantity(value, unit or "")
+    signature, factor = got
+    return CanonicalQuantity(value * factor, _render(signature))
 
 
 def partition_units(units: Iterable[str], *, loinc_code: str = "") -> list[list[str]]:

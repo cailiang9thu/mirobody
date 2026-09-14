@@ -1,6 +1,6 @@
 import logging
 
-from typing import BinaryIO  # noqa: F401 – BinaryIO used in type hints
+from typing import BinaryIO
 
 from .abstract import AbstractStorage
 

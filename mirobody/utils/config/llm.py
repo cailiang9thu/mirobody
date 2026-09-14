@@ -126,6 +126,36 @@ _NOT_OPENAI_CLIENT = ("gemini", "anthropic")
 
 #: provider → (api key config key, default base_url), the shape `Config.get_llm`
 #: reads.
+#: Vertex locations served from a MULTI-REGIONAL endpoint, whose hostname is
+#: neither the global one nor the `<region>-` one. Not a guess: both official
+#: SDKs carry exactly this set — `google.genai._api_client._MULTI_REGIONAL_LOCATIONS`
+#: and `anthropic.lib.vertex._client`, which hardcodes
+#: `https://aiplatform.us.rep.googleapis.com/v1`.
+_VERTEX_MULTI_REGIONS = frozenset({"us", "eu"})
+
+
+def vertex_host(location: str) -> str:
+    """The `aiplatform` hostname for a Vertex location. THREE shapes, not two.
+
+        global      aiplatform.googleapis.com
+        us / eu     aiplatform.<loc>.rep.googleapis.com     <- the one that was missing
+        <region>    <loc>-aiplatform.googleapis.com
+
+    The multi-regional pair is where the newest Claude and Gemini releases are
+    often published — and a deployment that must keep data in the US cannot use
+    `global`, so `location: us` is the only value that satisfies both. That is
+    exactly the value the two-shape formula got wrong, and it got it wrong
+    silently: `us-aiplatform.googleapis.com` is not a host, so the failure is a
+    name that does not resolve rather than an error naming the cause. (#73)
+    """
+    loc = (location or "").strip().lower()
+    if not loc or loc == "global":
+        return "aiplatform.googleapis.com"
+    if loc in _VERTEX_MULTI_REGIONS:
+        return f"aiplatform.{loc}.rep.googleapis.com"
+    return f"{loc}-aiplatform.googleapis.com"
+
+
 _OPENAI_COMPAT: dict[LLMProvider, tuple[str, str]] = {
     LLMProvider(name): (key, url) for name, (key, url) in KNOWN_ENDPOINTS.items() if name not in _NOT_OPENAI_CLIENT
 }
@@ -566,9 +596,11 @@ class LLMConfig:
         if provider == LLMProvider.GEMINI and not base_url:
             self.base_url = f"{self._GEMINI_BASE}/{gemini_api_version}"
         elif provider == LLMProvider.VERTEX_AI and not base_url:
+            # `vertex_host` rather than a `<loc>-` f-string: this one also got
+            # `global` wrong, building `global-aiplatform.googleapis.com`.
             self.base_url = (
-                f"https://{gcp_location}-aiplatform.googleapis.com/v1"
-                f"/projects/{gcp_project}/locations/{gcp_location}"
+                f"https://{vertex_host(gcp_location)}/v1"
+                f"/projects/{gcp_project}/locations/{gcp_location or 'global'}"
             )
 
         self._client: Any = None

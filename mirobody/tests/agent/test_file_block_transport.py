@@ -30,8 +30,8 @@ import pytest
 
 pytest.importorskip("langchain_core", reason="the agent layer is the [agents] extra")
 
-from mirobody.agent.agent import MirobodyAgent  # noqa: E402
-from mirobody.agent.models.clients import _profile_override  # noqa: E402
+from mirobody.agent.agent import MirobodyAgent
+from mirobody.agent.models.clients import _profile_override
 
 _TOOL_MESSAGE_FIELDS = ("pdf_tool_message", "image_tool_message")
 

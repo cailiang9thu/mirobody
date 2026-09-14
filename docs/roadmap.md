@@ -471,7 +471,7 @@ read five different opinions on "which keys count" (#68). The DATA is one
 table now — `MODELS` in `config.llm.yaml`, with the per-surface routes
 (`UTILS_VISION_MODEL`, `UTILS_TEXT_MODEL`, `UTILS_EMBEDDING_MODEL`) next to it —
 and the vision dispatcher, the text surface, the embedding layer and the
-agent's default all read it; `mirobody/test_one_key_defaults.py`
+agent's default all read it; `mirobody/tests/test_one_key_defaults.py`
 pins that every surface covers the same set. What remains split, on purpose,
 is client CONSTRUCTION: `LLMConfig.get_async_client()` (the `Config` family,
 used by embeddings) and `client_manager` (the direct-SDK extraction paths).
@@ -808,7 +808,7 @@ they exposed — that a prompt belongs to an agent and should not be a
 user-facing axis at all — was resolved on the client side: the shipped web
 client no longer offers a prompt picker.
 
-**The fifth is FIXED too** (CHANGELOG "Unreleased" → Changed): `/mirobody.json`
+**The fifth is FIXED too** (CHANGELOG 1.4.0 → Changed): `/mirobody.json`
 now derives `__IS_MOBILE_SOURCE_ON__` from the installed provider directories,
 puts `MCP` in `__IS_NEW_FEATURES_ON__` and turns `__IS_API_CONFIG_ON__` on, so
 the six flags the shipped client reads are all present. The original finding,

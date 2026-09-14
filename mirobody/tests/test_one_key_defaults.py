@@ -26,7 +26,14 @@ import re
 
 import pytest
 
-_ROOT = pathlib.Path(__file__).resolve().parent.parent
+import mirobody
+
+#: The package directory and the checkout above it, found through
+#: `mirobody.__file__` rather than by walking up from `__file__` — this
+#: module has moved once (`mirobody/` -> `mirobody/tests/`) and a
+#: `parents[n]` count is what silently breaks when it moves again.
+_PKG = pathlib.Path(mirobody.__file__).resolve().parent
+_ROOT = _PKG.parent
 _LLM_YAML = _ROOT / "config.llm.yaml"
 
 ONE_KEY = ("OPENROUTER_API_KEY", "DASHSCOPE_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY",

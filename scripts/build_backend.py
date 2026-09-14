@@ -1,12 +1,12 @@
 """Build backend: setuptools, minus the build-time-only data and code.
 
 The local regression suite lives in a gitignored `tests/` at the repo root and
-never reaches a build. What DOES reach one is the handful of test modules that
-stay inside `mirobody/` because they are EVIDENCE for a public claim — the
-resolver score the README links, the README gates, the export tables. Useful to
-anyone with a checkout, useless in someone's site-packages, so the hook prunes
-them (:func:`_is_test_artifact`), and `scripts/check_wheel_data.py` fails the
-build if one comes back. Also dropped: the terminology artifacts nothing at
+never reaches a build. What DOES reach one is `mirobody/tests/`, the gate suite
+that ships in the repository because each module is EVIDENCE for a public claim
+— the resolver score the README links, the README gates, the export tables.
+Useful to anyone with a checkout, useless in someone's site-packages, so the
+hook prunes the whole directory (:func:`_should_drop`), and
+`scripts/check_wheel_data.py` fails the build if one comes back. Also dropped: the terminology artifacts nothing at
 runtime reads (:data:`_BUILD_ONLY_DATA`) and the two bundle-build code trees
 nobody who installs the package can run (:data:`_BUILD_ONLY_CODE`).
 
@@ -271,5 +271,9 @@ def _should_drop(member: str) -> bool:
         return True
     parts = member.split("/")
     if "goldens" in parts or "fixtures" in parts:
+        return True
+    # The gate suite by DIRECTORY, not by filename: `mirobody/tests/__init__.py`
+    # is not a `test_*.py`, and a basename rule would have shipped it.
+    if "tests" in parts:
         return True
     return _is_test_artifact(member)

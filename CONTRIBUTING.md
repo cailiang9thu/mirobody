@@ -52,7 +52,7 @@ the mail client.
     ./scripts/fetch_data.sh --all        # the terminology data that is not tracked here
     ```
     The second command is not optional if you intend to run the tests: without
-    the concept graph, `mirobody/test_readme_numbers.py` skips rather than
+    the concept graph, `mirobody/tests/test_readme_numbers.py` skips rather than
     holding the README's numbers to the artifacts they come from. What it
     fetches, and why those files are not in the repository, is
     [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv).
@@ -213,7 +213,7 @@ Two rules that are specific to this project:
 
 Adding a new indicator term in any language is one row in
 `mirobody/res/resolver_overrides.tsv` plus one case in
-`mirobody/test_engine_coverage.py`. The right-hand side of an override row must
+`mirobody/tests/test_engine_coverage.py`. The right-hand side of an override row must
 be a key the alias index can look up — **not another row's left-hand side**; the
 resolver does not follow a two-hop chain, and such a row resolves to nothing
 while looking correct.
@@ -221,8 +221,8 @@ while looking correct.
 UI strings are **not** in this repo. `frontend/` holds the built web client, not
 its source, so there is no `i18n/` here to edit. What is translatable here is the
 two live READMEs — `README.md` and `README.zh-CN.md` — and they are checked as a
-set by `mirobody/test_readme_links.py`, `mirobody/test_readme_numbers.py`,
-`mirobody/test_readme_examples.py` and `mirobody/test_readme_l10n.py`.
+set by `mirobody/tests/test_readme_links.py`, `mirobody/tests/test_readme_numbers.py`,
+`mirobody/tests/test_readme_examples.py` and `mirobody/tests/test_readme_l10n.py`.
 Everything under `docs/` and every in-package `README.md` stays English.
 
 ### Commits
