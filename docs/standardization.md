@@ -3,7 +3,7 @@
 The long form of the README's **② Translate (standardize)** stage: what the shipped
 vocabulary is, what it deliberately does not do, which LOINC release it is cut
 from and why, and the opt-in semantic tier. Every exact figure here is the same
-one the README quotes; `mirobody/test_readme_numbers.py` checks the README, and
+one the README quotes; `mirobody/tests/test_readme_numbers.py` checks the README, and
 this page follows it.
 
 <p align="center"><img src="images/where-your-data-comes-from.svg" alt="From wearables to food photos — one standard format, ready for AI." width="920"></p>
@@ -42,15 +42,15 @@ Standardization here is not a lookup table but a complete terminology-normalizat
   → [Semantic recall](https://docs.mirobody.ai/en/concepts/semantic-recall/) — the
   benchmark, the two axis gates, and why `min_score` is not a correctness threshold.
 - **We measure the claim instead of asserting it.**
-  [`test_engine_coverage.py`](../mirobody/test_engine_coverage.py) scores the offline
+  [`test_engine_coverage.py`](../mirobody/tests/test_engine_coverage.py) scores the offline
   resolver against the panels an ordinary checkup includes, written the way a report
   prints them, in English, 简体中文, 繁體中文 and 日本語 — plus the wearable
-  vocabulary the platform API teaches. **211/211 today; it scored 32/94 the day it
+  vocabulary the platform API teaches. **213/213 today; it scored 32/94 the day it
   was written.** It grades *clinical* correctness: answering `血红蛋白` with the
   HbA1c code is a failure, and `血脂` is required to resolve to nothing.
 
 ```bash
-pytest mirobody/test_engine_coverage.py -s   # offline, about a second
+pytest mirobody/tests/test_engine_coverage.py -s   # offline, about a second
 ```
 
 ### Two semantic indexes, and which one you get for free

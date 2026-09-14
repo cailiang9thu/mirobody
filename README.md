@@ -4,10 +4,14 @@
 
 **The AI-native health data engine — Collect · Translate · Answer.**
 
-Lab reports, wearables and genomics become one language AI can read:
-LOINC-coded, UCUM-normalized, FHIR-ready. The resolver runs offline, and the
-engine powers **[Theta Wellness](https://www.thetahealth.ai/)**, a live consumer
-health product with 5,000+ registered users and 500+ daily active.
+One lab prints `A1c`, the next `HbA1c`, a third `hemoglobin A1c` — one test,
+three spellings, and that is before the units disagree. Mirobody turns lab
+reports, wearables and genomics into one language AI can read: LOINC-coded,
+UCUM-normalized, FHIR-ready. The resolver runs offline, and the engine powers
+**[Theta Wellness](https://www.thetahealth.ai/)**, a live consumer health
+product with 5,000+ registered users and 500+ daily active.
+
+**English** · **[中文](README.zh-CN.md)**
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
@@ -17,20 +21,20 @@ health product with 5,000+ registered users and 500+ daily active.
 [![Docs](https://img.shields.io/badge/Docs-docs.mirobody.ai-black)](https://docs.mirobody.ai/)
 [![GitHub stars](https://img.shields.io/github/stars/thetahealth/mirobody?style=social)](https://github.com/thetahealth/mirobody/stargazers)
 
-**[📚 Documentation](https://docs.mirobody.ai/)** · **[▶ Live demo](https://chat.mirobody.ai/)** · **[🔌 API platform](https://platform.mirobody.ai/)**
-
-**English** · **[中文](README.zh-CN.md)**
+**[📚 Documentation](https://docs.mirobody.ai/)** · **[▶ Live demo — no sign-up](https://chat.mirobody.ai/demo)** · **[🔌 API platform](https://platform.mirobody.ai/)**
 
 </div>
 
 ## ⚡ Try it in 60 seconds
 
-No key, no config, no network:
+No key, no config, no network — and with `uvx`, no install either:
 
 ```bash
-pip install mirobody
-mirobody resolve "LDL cholesterol" 血红蛋白 ヘモグロビン "空腹血糖(GLU)" 血脂
+uvx mirobody resolve "LDL cholesterol" 血红蛋白 ヘモグロビン "空腹血糖(GLU)" 血脂
 ```
+
+<sub>`pip install mirobody` instead if you want it on your PATH. Either way the
+resolver answers from a bundle that ships with the package.</sub>
 
 <p align="center">
   <img src="docs/images/resolve-demo.gif"
@@ -85,7 +89,7 @@ The engine does three things, and the codebase, the docs and
 
 | Stage | What it means | Where |
 | --- | --- | --- |
-| **① Collect** | Pull signals in: 3 device providers + a SQL source · 7 file formats · Apple Health (receive-only: a signed iOS client POSTs it in) | [`pulse/`](mirobody/pulse/) |
+| **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (receive-only: a signed iOS client POSTs it in) | [`pulse/`](mirobody/pulse/) |
 | **② Translate** (standardize) | One standard: resolve any reading to canonical codes (LOINC · SNOMED CT · RxNorm), normalize units to UCUM, land on FHIR-recognized code systems | [`indicator/`](mirobody/indicator/) |
 | **③ Answer** (agent) | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
 
@@ -99,7 +103,7 @@ The engine does three things, and the codebase, the docs and
 | Units | ~310 UCUM families with dimensional analysis and a molar-mass bridge keyed by LOINC code; 305 standard pulse indicators |
 | Coverage | **213/213** on the panels an ordinary checkup prints, in English, Chinese (Simplified and Traditional) and Japanese ([`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)) |
 | Bundle | LOINC 2.82: `mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285` — release, cut date and a digest over the bundle's own members |
-| Install | `pip install mirobody` is **2 packages, 52 MB**, on numpy only |
+| Install | `pip install mirobody` is **2 packages**, on numpy only — ~52 MB on macOS, ~100 MB on Linux, where numpy bundles its own BLAS |
 
 Why 2.82 and not 2.83, what LOINC covers of the wearable world, and the opt-in
 semantic tier that cannot abstain: → [Standardization in depth](docs/standardization.md)
@@ -126,7 +130,9 @@ git lfs install && git lfs pull   # the resolver's LOINC bundle; a fresh clone h
 ```
 
 `--depth 1` because the history is mostly superseded frontend builds and you
-almost certainly do not want it: it takes the clone from ~98 MB to ~48 MB.
+almost certainly do not want it: it takes the clone from ~125 MB to ~99 MB
+(measured 2026-09-14 — most of what is left is the LFS bundle, which both
+copies need).
 Drop the flag if you plan to send a pull request. `./deploy.sh` also fetches
 the 22 MB concept graph behind semantic indicator search, which is a release
 asset rather than a tracked file — see [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv).
@@ -269,9 +275,10 @@ Regenstrief Institute (LOINC), UCUM, HL7 FHIR, OHDSI OMOP — see `LICENSE-3RD-P
   </picture>
 </a>
 
-*If it read a report for you, a star helps the next person find it.*
+*If it read a report for you, a star helps the next person find it.
+Releases land most weeks — [Watch](https://github.com/thetahealth/mirobody/subscription) for them.*
 
-**[📚 Docs](https://docs.mirobody.ai/)** · **[▶ Demo](https://chat.mirobody.ai/)** · **[🔌 Platform](https://platform.mirobody.ai/)** · **[🧪 Eval](https://github.com/thetahealth/mirobody-eval)**
+**[📚 Docs](https://docs.mirobody.ai/)** · **[▶ Demo](https://chat.mirobody.ai/demo)** · **[🔌 Platform](https://platform.mirobody.ai/)** · **[🧪 Eval](https://github.com/thetahealth/mirobody-eval)**
 
 Apache 2.0 · © 2026 [Theta Health](https://thetahealth.ai)
 

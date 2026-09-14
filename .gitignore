@@ -34,6 +34,12 @@ package-lock.json
 !config.devices.yaml
 !config.llm.yaml
 *.env
+# `*.*.yaml` is here for `config.{env}.yaml` and its `.key.yaml` sibling — the
+# per-deployment overlays that carry secrets. It also matched
+# `.pre-commit-config.yaml`, which is the opposite kind of file: the gate every
+# contributor is meant to install. It was written, ignored, and invisible in
+# `git status` until someone thought to run `git check-ignore` on it.
+!.pre-commit-config.yaml
 
 # AI assistant working notes (local only, never published).
 # Bare `CLAUDE.md` at the root is the intended one; the `**/` pattern is because
@@ -48,8 +54,8 @@ CLAUDE.md
 #
 # Our own measurements are not what an open-source reader needs. What they need
 # is a demo they can run (`examples/`) and a claim they can check themselves
-# (`pytest mirobody/test_engine_coverage.py -s` prints the published score). The
-# rule for which side a number falls on: backed by a test in the repo that
+# (`pytest mirobody/tests/test_engine_coverage.py -s` prints the published
+# score). The rule for which side a number falls on: backed by a test in the repo that
 # anyone can run -> publishable; produced by `eval/` -> not.
 #
 # The same rule sorts prose. `internal/` holds what is addressed to US:

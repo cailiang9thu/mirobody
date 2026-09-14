@@ -234,7 +234,7 @@ node — the quickest way to confirm a merge produced what you expected.
 
 (There was a `test` subcommand documented here that does not exist: running it
 exits with `invalid choice: 'test'`. The resolver's actual regression gate is
-`pytest mirobody/test_engine_coverage.py`, the 197-case benchmark the README
+`pytest mirobody/tests/test_engine_coverage.py`, the 197-case benchmark the README
 headline number comes from.)
 
 ### 2.6 All-in-one
