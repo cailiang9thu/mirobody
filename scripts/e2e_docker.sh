@@ -138,7 +138,7 @@ check "$(echo "$REFUSED" | grep -q 'user_info' && echo 1 || echo 0)" \
 # ── 4. the in-process suite, against this database ───────────────────────────
 if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
   docker exec "$CONTAINER" sh -c \
-    'cd /app && /root/venv/bin/python scripts/e2e_health_data.py --user 2' >/tmp/e2e_inproc.txt 2>&1
+    'cd /app && /root/venv/bin/python scripts/e2e_health_data.py --user 1' >/tmp/e2e_inproc.txt 2>&1
   INNER=$?
   check "$INNER" "scripts/e2e_health_data.py inside the container" "see /tmp/e2e_inproc.txt"
 fi

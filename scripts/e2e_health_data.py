@@ -72,13 +72,23 @@ async def _pick_a_day(service, user_id: str) -> tuple[str, str] | None:
     return None
 
 
-async def _canary_present(user_id: str, canary: str) -> bool:
+async def _canary_present(canary: str) -> bool:
+    """Is the sentinel anywhere in the record set?
+
+    NOT filtered by `--user`: the canary rides on the signed-in member's own
+    thin record (`demo._member_series`), never on the Demo subject, so asking
+    about user 1 — the documented command, and this script's own default —
+    reported "seed the demo data first" on a correctly seeded database. Whose
+    row it is does not matter to what this checks: that PHI exists somewhere in
+    the system, so grepping the logs for it means something. (2026-09-14
+    regression report, F-8)
+    """
     from mirobody.utils import execute_query
 
     rows = await execute_query(
-        "SELECT 1 FROM th_series_data WHERE user_id = :uid AND deleted = 0"
+        "SELECT 1 FROM th_series_data WHERE deleted = 0"
         " AND decrypt_content(comment) LIKE :needle LIMIT 1",
-        {"uid": str(user_id), "needle": f"%{canary}%"},
+        {"needle": f"%{canary}%"},
         log_sql=False,
     ) or []
     return bool(rows)
@@ -217,8 +227,8 @@ async def run(user_id: str, capture: Path | None) -> int:
     canary = phi_canary()
     failures += not _check(
         "the canary is in the record (so a log check means something)",
-        await _canary_present(user_id, canary),
-        "seed the demo data first (SEED_DEMO_DATA=true), or pass the member's --user",
+        await _canary_present(canary),
+        "seed the demo data first (SEED_DEMO_DATA=true)",
     )
     print(f"\n  now grep the running container's logs — a hit is a leak:\n"
           f"    docker compose logs mirobody | grep -F {canary.split()[-1]!r} | head\n")
