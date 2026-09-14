@@ -1,10 +1,10 @@
-"""The read side of `th_series_data` — one read authority, in SQL.
+"""The read side of `th_series_data`: one read authority, in SQL.
 
 It lives beside `readings.py`, the one WRITER of the same table, because the
 table is what the two share: a reader that guesses where a day begins while
 the writer stores one is the whole class of bug this pair exists to prevent.
 (`meds/store.py` is the same arrangement for the medication tables.) The agent
-layer holds the TOOL — `agent/tools/health_indicators_service.py` — and this
+layer holds the TOOL (`agent/tools/health_indicators_service.py`) and this
 is the implementation it is handed.
 
 Every surface that shows a person their own readings goes through this class:
@@ -21,7 +21,7 @@ a day begins, and the two could disagree on screen.
 through the metric's own window (`"18:00"` for the sleep family), so a day
 query is an equality on a date column: `tz_exact`. Rows older than that
 migration have `local_date IS NULL` until the backfill reaches them, and those
-are found by casting the timestamp with a day of padding either side —
+are found by casting the timestamp with a day of padding either side:
 `date_padded_naive`, which is why a June window used to return a May 31 bucket.
 Which one answered is reported in `query.Meta.window_semantics`; it is not a
 detail to hide, because it is the difference between "on the 3rd" and "around
@@ -34,7 +34,7 @@ the `elected` row for that `(indicator, local_date)`. Election happens once, on
 the write side (`pulse/aggregate`), which is what keeps the chat answer and the
 dashboard identical by construction rather than by two implementations
 agreeing. Where nothing has been elected yet the query falls back to the rows
-themselves and says so in `provenance` — `elected:<rule>` when a row was
+themselves and says so in `provenance`: `elected:<rule>` when a row was
 elected, `measured` when it was not.
 """
 
@@ -86,7 +86,7 @@ WITH base AS (
 )"""
 
 #: Names listed for the MODEL: a token budget. The browser gets `_REST_CATALOG`
-#: — capping its catalogue at a model's context window hid 44 of the demo
+#:, capping its catalogue at a model's context window hid 44 of the demo
 #: user's 244 indicators AND reported `count: 200` as if that were the total.
 CATALOG_MAX = 200
 REST_CATALOG_MAX = 2000
@@ -116,7 +116,7 @@ class PostgresHealthQuery:
         and never the session's: a window is the person's day.
 
         Through `user.get_user` rather than its own SELECT, because that
-        function is where `is_del = false` lives — a hand-rolled lookup answers
+        function is where `is_del = false` lives: a hand-rolled lookup answers
         for deleted accounts, time zone and all.
         """
         from ..user.user import get_user
@@ -128,7 +128,7 @@ class PostgresHealthQuery:
 
         This deployment aggregates in a background worker, so a read refreshes
         nothing and this is a no-op. It stays on the port because the other
-        shape — recompute the dirty windows before answering — is common, and a
+        shape (recompute the dirty windows before answering) is common, and a
         consumer that needs it must have somewhere to put it that every surface
         already calls.
         """
@@ -137,7 +137,7 @@ class PostgresHealthQuery:
     # --- the six leaves ------------------------------------------------------
 
     async def catalog(self, subject_id: str, window: query.Window | None, *, cap: int = CATALOG_MAX) -> list[dict]:
-        """What this person actually has — the honest answer to a miss.
+        """What this person actually has: the honest answer to a miss.
 
         `total` rides on every row (a window function runs before LIMIT), so a
         truncated page can say how much it left out. Reporting `count: 200` as
@@ -177,7 +177,7 @@ class PostgresHealthQuery:
 
         `total` per indicator comes from the same statement rather than a
         second round trip, so "5 of 667 shown" is one query. `file_key` is the
-        handle back to the ORIGINAL lab report — the whole reason the engine
+        handle back to the ORIGINAL lab report: the whole reason the engine
         keeps the source document.
         """
         names = await self._resolve(subject_id, sel, window)
@@ -223,7 +223,7 @@ class PostgresHealthQuery:
 
     async def stats(self, subject_id: str, sel: query.Selection, window: query.Window, *, basis: str) -> list[dict]:
         """count/min/max/avg/first/last/change per indicator over the WHOLE
-        window — computed in SQL, never over a fetched page. "How did my LDL
+        window: computed in SQL, never over a fetched page. "How did my LDL
         change this year" must not require pulling every reading.
 
         `basis` decides WHAT is averaged, and it is not decoration. At
@@ -320,7 +320,7 @@ class PostgresHealthQuery:
     async def _by_keywords(self, subject_id: str, keywords: tuple[str, ...], window: query.Window | None) -> list[str]:
         """Free text → the person's own indicator names, in three tiers.
 
-        1. `query.rank_catalog` — a zero-API lexical rank over THIS PERSON'S
+        1. `query.rank_catalog`: a zero-API lexical rank over THIS PERSON'S
            catalogue, with the shipped zh↔en synonym seed;
         2. semantic recall, for a surface that shares no characters with the
            stored name (another language, a brand for a generic);
@@ -332,7 +332,7 @@ class PostgresHealthQuery:
         whereas a vector search returns its top-k for any input at all: asked
         for `definitely-not-zzz` it confidently offered ten sleep metrics,
         which the model then had to be told to disbelieve. Semantics still
-        answer what lexical recall cannot — `血红蛋白` finds hemoglobin — and
+        answer what lexical recall cannot (`血红蛋白` finds hemoglobin) and
         now cost an API call only in that case.
         """
         kws = [k.strip() for k in keywords if k and k.strip()]
@@ -379,7 +379,7 @@ class PostgresHealthQuery:
                 if getattr(result, "resolved", False) and getattr(result, "loinc", ""):
                     codes.add(result.loinc)
         except Exception as e:
-            # No resolver data (the LFS bundle absent, say) — the lexical tier
+            # No resolver data (the LFS bundle absent, say): the lexical tier
             # above already ran; this one simply contributes nothing.
             logger.warning("offline resolver unavailable in keyword recall: error_type=%s", type(e).__name__)
         if not codes:
@@ -444,7 +444,7 @@ class PostgresHealthQuery:
         authority where one has been elected.
 
         The inner `DISTINCT ON` picks the elected row of each local day when
-        there is one and the newest otherwise, in a single pass — so a store
+        there is one and the newest otherwise, in a single pass, so a store
         that has not been through an election yet still answers, and says
         which it was.
         """
@@ -498,7 +498,7 @@ def _day_expression() -> str:
 def _window_clause(params: dict[str, Any], window: query.Window | None) -> str:
     """The window as SQL, in whichever semantics the rows support.
 
-    A row with `local_date` is compared on the date, inclusive at both ends —
+    A row with `local_date` is compared on the date, inclusive at both ends,
     that is `tz_exact`. A row without one falls back to the naive timestamp
     padded a day each way, because the timestamp's own zone is unknown; the
     padding is why the answer says `date_padded_naive` rather than pretending.

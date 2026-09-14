@@ -72,7 +72,7 @@ class PullTaskLockManager:
         if redis_client is None:
             # Fail CLOSED. An earlier version answered "lock acquired" here,
             # which abandoned mutual exclusion at exactly the moment duplicate
-            # concurrent execution is most likely — every instance that could
+            # concurrent execution is most likely: every instance that could
             # not reach Redis proceeded at once. A pull that waits for Redis
             # to come back is a delay; two instances double-pulling and
             # double-writing the same readings is the bug this class exists
@@ -140,7 +140,7 @@ class PullTaskLockManager:
             # GET → compare → DELETE ran as three round trips: if this
             # instance's lock expired between the GET and the DELETE and
             # another instance acquired it in that window, the DELETE removed
-            # the OTHER instance's live lock — reopening the duplicate-
+            # the OTHER instance's live lock: reopening the duplicate-
             # execution hole. The Lua script evaluates atomically inside Redis.
             released = await redis_client.eval(
                 self._RELEASE_SCRIPT, 1, lock_key, self.instance_id, execution_id
@@ -288,7 +288,7 @@ class PullTaskLockManager:
         """Read the persisted PullTask.last_run for a provider.
 
         Returns None if redis is unavailable, the key is unset, or the
-        stored value is unparseable — caller should treat that as "no
+        stored value is unparseable: caller should treat that as "no
         prior run on record" and let normal scheduling apply. (TH-416)
         """
         redis_client = await get_redis_client()

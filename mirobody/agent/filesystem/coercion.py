@@ -4,7 +4,7 @@ Argument Coercion Utilities
 LLMs (notably Qwen and DeepSeek) do not reliably honor the declared JSON
 schema of tool parameters. Common failure modes observed in production:
 
-- A `list[str]` parameter is returned as a plain string — e.g. the model
+- A `list[str]` parameter is returned as a plain string: e.g. the model
   sends ``"[\"/uploads/a.pdf\"]"`` or just ``"/uploads/a.pdf"`` instead of a
   real array. ``for x in sources`` then iterates the *characters* of the
   string, producing nonsense like ``'[': File not found``.
@@ -14,7 +14,7 @@ schema of tool parameters. Common failure modes observed in production:
 - A `bool` parameter arrives as the string ``"true"``/``"false"``.
 
 These helpers normalize such values at the tool boundary so the rest of the
-code can assume well-typed arguments. They never raise — on anything
+code can assume well-typed arguments. They never raise: on anything
 unparseable they fall back to a sensible default.
 """
 

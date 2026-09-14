@@ -32,8 +32,8 @@ class ChatFileObject:
 class ChatStreamRequest:
     """Chat stream request from a client.
 
-    All parameters are passed explicitly from the API request — no implicit
-    context — for thread safety and testability.
+    All parameters are passed explicitly from the API request, no implicit
+    context: for thread safety and testability.
 
     `agent`, `enable_mcp`, `group_id` and `reference_task_id` are ACCEPTED AND
     IGNORED: nothing reads them, but the shipped web client still sends

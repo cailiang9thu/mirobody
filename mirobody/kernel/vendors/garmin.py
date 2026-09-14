@@ -8,7 +8,7 @@ shape two repositories had converged on independently; this copy takes the
 corrections each had made and the other had not:
 
 - ``bodyComps`` field names are the API's (``weightInGrams``,
-  ``measurementTimeInSeconds``) — an earlier table invented names no
+  ``measurementTimeInSeconds``): an earlier table invented names no
   payload has and every scale reading decoded to nothing.
 - ``pulseOx`` monitoring mode (``timeOffsetSpo2Values``) is a series, not
   only the on-demand ``singleReadingSpO2``.
@@ -167,8 +167,8 @@ def record_time_ms(item: dict, data_type: str, tz: str) -> int:
 #: Metrics `decode` emits from the tables above but that no table LISTS: the
 #: three derived from a sleep record's own arithmetic, and the daily total
 #: that is active plus basal. Named here rather than discovered, because
-#: `connect.Coverage` claiming a metric this decoder cannot produce — or
-#: missing one it can — is exactly the kind of documentation drift the
+#: `connect.Coverage` claiming a metric this decoder cannot produce (or
+#: missing one it can) is exactly the kind of documentation drift the
 #: generated matrix exists to prevent.
 DERIVED_METRICS: frozenset[str] = frozenset(
     {"dailyTotalCalories", "dailySleepDuration", "dailyTotalSleepTime", "dailySleepEfficiency"}
@@ -187,7 +187,7 @@ def decode(
     data_type: str, item: dict, tz: str, *, pulled_at_ms: int = 0, source_record_id: str = "", ingested_at_ms: int = 0
 ) -> list[Fact]:
     """Facts from one Garmin summary object of ``data_type``. Unknown types
-    and records without a time decode to nothing — never to a guessed time.
+    and records without a time decode to nothing, never to a guessed time.
     ``pulled_at_ms`` is accepted for signature parity; Garmin records carry
     their own time."""
     cfg = CONFIG.get(data_type)

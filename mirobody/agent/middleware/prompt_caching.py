@@ -200,7 +200,7 @@ class UniversalPromptCachingMiddleware(AgentMiddleware):
         if client_type == "anthropic":
             return CacheStrategy.MODEL_SETTINGS, model_config
 
-        # Anthropic (Claude) on Vertex AI — same top-level cache_control kwarg as
+        # Anthropic (Claude) on Vertex AI: same top-level cache_control kwarg as
         # native Anthropic. ChatAnthropicVertex pops it and places a breakpoint on
         # the last message block, caching the full prefix (system + tools + all
         # messages, including large tool results such as PDF file blocks) across
@@ -327,9 +327,9 @@ class UniversalPromptCachingMiddleware(AgentMiddleware):
 
         Places two cache breakpoints (Anthropic allows up to 4):
 
-        1. **Static prefix** — last block of the system message (caches the
+        1. **Static prefix**: last block of the system message (caches the
            system prompt and, by prefix, the tool schemas).
-        2. **Conversation tail** — last block of the last message. This is what
+        2. **Conversation tail**: last block of the last message. This is what
            caches the GROWING prefix, including large tool results such as PDF /
            image file blocks returned by read_file. Without it, re-reading the
            same document across turns would be re-billed at full input price
@@ -368,7 +368,7 @@ class UniversalPromptCachingMiddleware(AgentMiddleware):
                     logger.debug(f"Applied message_content cache to first user message for: {model_name}")
                     break
 
-        # Breakpoint 2: conversation tail (last message) — caches tool results /
+        # Breakpoint 2: conversation tail (last message), caching tool results /
         # PDF blocks across turns. Skip if it is the same object we just tagged.
         if new_messages and new_messages[-1] is not system_message:
             if _tag_last_block(new_messages[-1]):

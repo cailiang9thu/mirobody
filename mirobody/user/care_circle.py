@@ -1,7 +1,7 @@
 """The care circle: who may act on whose record, and how much of it they see.
 
-`resolve_subject` is the authorization throat. It answers one question — *may
-this operator act on this subject's record, and to what depth* — and it is the
+`resolve_subject` is the authorization throat. It answers one question (*may
+this operator act on this subject's record, and to what depth*) and it is the
 check standing between one person's health record and another's.
 
 **Why this replaced `th_share_relationship`.** That table stored a directed
@@ -9,8 +9,8 @@ grant, "owner O lets member M read O's record", with the level in a schemaless
 `permissions` jsonb defaulting to `{"all": 1}`. The README's own diagram
 (`docs/images/your-care-circle.svg`) promises the opposite arrangement:
 
-    "health stays off until you allow it" · "your switch — off by default"
-    "mutual — each member controls their own"
+    "health stays off until you allow it" · "your switch (off by default"
+    "mutual) each member controls their own"
 
 A default of `{"all": 1}` is read-everything, on by default, decided by the
 other party. So the shipped code contradicted the picture on the one point that
@@ -29,7 +29,7 @@ which was a real defect rather than a matter of taste:
 2. **The parameters mean what they are named.** `get_query_user_id`'s first
    parameter was named `user_id` and documented as "owner_user_id, namely the
    data owner", but every one of its eleven call sites passed the *target* there
-   and the *caller* second — because the SQL required `owner_user_id = <arg 1>`.
+   and the *caller* second, because the SQL required `owner_user_id = <arg 1>`.
    The function's return value (`query_user_id`) was then ignored by those
    callers, who used their own variable. Names that invert their meaning are how
    an authorization check gets called backwards.
@@ -75,7 +75,7 @@ class CareCircleDenied(Exception):
     """The operator may not act on this subject's record.
 
     Raised, not returned. `server/server.py` registers the one handler that
-    turns it into a 403, so no route has to remember — which is the whole point:
+    turns it into a 403, so no route has to remember, which is the whole point:
     the shape it replaces was a falsy field in a success-shaped dict.
     """
 
@@ -85,7 +85,7 @@ class Membership:
     """A live, mutually-accepted care-circle relationship.
 
     Only ever constructed by `accepted_membership`, whose contract is that it
-    returns `None` for anything short of that — no shared circle, an invitation
+    returns `None` for anything short of that, no shared circle, an invitation
     still pending on either side, a decline, a soft-deleted row. Pending and
     declined states are therefore invisible to the policy: they are filtered at
     the query, not judged here.
@@ -129,16 +129,16 @@ class Subject:
 async def accepted_membership(operator_id: int, subject_id: int) -> Membership | None:
     """What `subject_id` grants `operator_id`, or None if nothing does.
 
-    `MAX`, not `LIMIT 1`. Two people can share more than one circle — mutual
-    invitations produce exactly that — and `health_access` is per circle, so
+    `MAX`, not `LIMIT 1`. Two people can share more than one circle (mutual
+    invitations produce exactly that) and `health_access` is per circle, so
     "what B grants A" is a set, not a value. `LIMIT 1` without `ORDER BY` picks
     an arbitrary row, which makes the answer drift with the query plan.
     Taking the maximum means "granted in any shared circle counts", which is the
     same rule `shared_with_me` lists by; if the two disagreed, the UI would show
     someone as sharing with you while your requests came back denied.
 
-    `GROUP BY` is not optional. A bare aggregate always returns one row — NULL
-    when there is no relationship — which would collapse "no relationship at
+    `GROUP BY` is not optional. A bare aggregate always returns one row (NULL
+    when there is no relationship) which would collapse "no relationship at
     all" into `Membership(health_access=0)` and throw away the `None`.
     """
     rows = await execute_query(
@@ -169,7 +169,7 @@ async def resolve_subject(
     """The record this request runs against. Raises `CareCircleDenied`.
 
     `requested_subject_id=None`, or the operator's own id, means "my own record"
-    and always succeeds with full access — acting on your own data is not proxy
+    and always succeeds with full access: acting on your own data is not proxy
     access, and there is no narrower authorization to express.
 
     Ids arrive as strings from URL parameters and as ints from the JWT subject,
@@ -204,7 +204,7 @@ async def resolve_subject(
 # ── circles ──────────────────────────────────────────────────────────────────
 
 async def own_circle_id(owner_id: int | str) -> int | None:
-    """The circle this user owns, if they have one. Read only — never creates."""
+    """The circle this user owns, if they have one. Read only, never creates."""
     rows = await execute_query(
         "SELECT id FROM care_circles WHERE owner_user_id = :o AND deleted_at IS NULL"
         " ORDER BY id LIMIT 1",
@@ -325,7 +325,7 @@ async def set_health_access(user_id: int | str, circle_id: int, access: int) -> 
 
     Only ever the caller's own row: there is no argument for whose access this
     sets, because the answer is always "the caller's". That is the invariant the
-    old model could not express — its grant lived on a row the *other* party
+    old model could not express: its grant lived on a row the *other* party
     wrote, with a default of read-everything.
     """
     if access not in (ACCESS_NONE, ACCESS_VIEW, ACCESS_EDIT):
@@ -358,7 +358,7 @@ async def resolve_member_row(member_row_id: int) -> tuple[int, int] | None:
     """`(circle_id, user_id)` behind a member row id, or None if it is not live.
 
     The row id is the opaque handle every response carries. It is not the user
-    id — they coincide only by accident on early rows.
+    id, they coincide only by accident on early rows.
     """
     rows = await execute_query(
         "SELECT care_circle_id, user_id FROM care_circle_members"
@@ -377,7 +377,7 @@ async def set_member_label(
 ) -> bool:
     """Set the label or picture a member carries inside the circle.
 
-    One label per member, not one per viewer — which is what the diagram shows
+    One label per member, not one per viewer, which is what the diagram shows
     ("mom", "dad") and what `th_share_user_config` got wrong by keying on
     (setter, target, context) and then never using the context.
     """
@@ -434,7 +434,7 @@ async def shared_with_me(user_id: int | str) -> list[dict]:
 async def circle_members(user_id: int | str) -> list[dict]:
     """Every circle the user belongs to, with its full membership.
 
-    Includes the user's own pending invitations — the row that says "you were
+    Includes the user's own pending invitations: the row that says "you were
     invited" is the same row that says "you are a member", which is why one
     query answers both and the old model needed two endpoints.
     """
@@ -470,7 +470,7 @@ async def beneficiary_users(user_id: int | str, fallback_name: str = "") -> list
     """The record switcher: me first, then everyone sharing with me.
 
     Serves `/api/beneficiary-users`, which is how the web client learns there is
-    a second record to look at — the README's demo turns on this one call. The
+    a second record to look at: the README's demo turns on this one call. The
     shape is the client's, not the table's: `id`, `name`, `nickname`, `gender`
     as "male"/"female", `blood_type`, `age`, `is_current_user`.
 
@@ -523,8 +523,8 @@ def _age_from(birth: str | None) -> int | None:
 async def resolve_email_to_user(email: str) -> int | None:
     """The user id behind an address, minting a shell account on first sight.
 
-    Inviting somebody who has never signed in has to work — that is what an
-    invitation IS — so the row is created here and the invitee claims it at
+    Inviting somebody who has never signed in has to work (that is what an
+    invitation IS) so the row is created here and the invitee claims it at
     first login. `add_or_get_user` only runs on login, which is why the invite
     path needs its own upsert.
     """
@@ -554,7 +554,7 @@ async def force_accept_managed_member(
 ) -> int:
     """Put a managed member straight into a circle, accepted and read-write.
 
-    A managed member — the web client calls it a virtual user — is a family
+    A managed member (the web client calls it a virtual user) is a family
     member who will never sign in: a parent whose readings someone else uploads
     and asks about. There is nobody to accept an invitation and nobody to set
     the health switch, so the person who created them holds both.
@@ -563,7 +563,7 @@ async def force_accept_managed_member(
     circle the caller owns (the caller is its Owner member, created by
     `create_circle`), so the shortcut cannot reach a stranger's circle. That
     matters because `health_access = 2` here would be wrong for anyone who CAN
-    sign in — for them the switch is their own and starts at 0.
+    sign in: for them the switch is their own and starts at 0.
     """
     rows = await execute_query(
         """

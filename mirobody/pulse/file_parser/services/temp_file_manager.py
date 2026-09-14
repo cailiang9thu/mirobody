@@ -14,7 +14,7 @@ import uuid
 from pathlib import Path
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING

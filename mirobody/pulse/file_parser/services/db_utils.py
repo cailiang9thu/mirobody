@@ -126,7 +126,7 @@ def extract_first_record(result: list | None) -> dict | None:
 def get_mime_type(filename: str) -> str:
     """MIME type for a filename, from the one shared table.
 
-    Was a 40-entry `MIME_TYPE_MAP` local to this module — the fifth
+    Was a 40-entry `MIME_TYPE_MAP` local to this module: the fifth
     extension-to-MIME implementation in the project, and the one with the most
     reach: five call sites use it to set the `content_type` stored on a file row
     and the type handed to the model. It disagreed with what object storage had
@@ -157,7 +157,7 @@ def get_simple_file_type(file_type: str) -> str:
     if "pdf" in file_type_lower:
         return "pdf"
 
-    # Office spreadsheets — map the long MIME (or extension) to a stable "excel"
+    # Office spreadsheets: map the long MIME (or extension) to a stable "excel"
     # so the drive list `type` matches the file's scene and the frontend can pick
     # the right icon/filter instead of seeing the raw MIME.
     if ("spreadsheet" in file_type_lower or "excel" in file_type_lower

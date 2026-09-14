@@ -1,11 +1,11 @@
 """A static check that log statements cannot carry health data.
 
 The rule (``mirobody.kernel.ops``): a log line may interpolate identifiers, counts,
-durations, status codes and type names — nothing else. This lint walks the
+durations, status codes and type names: nothing else. This lint walks the
 AST of the given files and reports every ``logger.<level>(...)`` call whose
 interpolated expressions are not of an allowed *shape*:
 
-* a name (or attribute) whose last component matches :data:`SAFE_NAME` —
+* a name (or attribute) whose last component matches :data:`SAFE_NAME`:
   ``user_id``, ``row_count``, ``duration_ms``, ``error_type``, ``status``…;
 * ``len(...)``, ``type(...).__name__``, ``str()``/``int()``/``float()`` of an
   allowed expression;
@@ -88,7 +88,7 @@ class Finding:
     detail: str
 
     def key(self) -> str:
-        """A line-number-free identity, stable across unrelated edits — what a
+        """A line-number-free identity, stable across unrelated edits: what a
         baseline file stores."""
         return f"{self.path}\t{self.kind}\t{self.detail}"
 
@@ -267,7 +267,7 @@ def lint_paths(paths: Iterable[Path | str], *, root: Path | None = None) -> tupl
 #:
 #: It is not "all of `mirobody`". `indicator/` and `kernel/` are excluded on
 #: purpose: the baseline predates them, and `baseline_lines` over a WIDER tree
-#: writes a LONGER file — which is how a "clean-up" ends up growing the thing
+#: writes a LONGER file, which is how a "clean-up" ends up growing the thing
 #: it was meant to shrink. The test and the pre-commit hook both read this
 #: constant rather than each spelling the list out, because two copies of a
 #: list like this drift and the drift is silent.
@@ -287,7 +287,7 @@ def baseline_lines(findings: Iterable[Finding]) -> list[str]:
 
 
 def new_findings(findings: Iterable[Finding], baseline: Iterable[str]) -> tuple[Finding, ...]:
-    """Findings whose key is not in the baseline — what CI fails on."""
+    """Findings whose key is not in the baseline: what CI fails on."""
     known = set(baseline)
     return tuple(f for f in findings if f.key() not in known)
 
@@ -301,7 +301,7 @@ __all__ = [
 def main(argv: Sequence[str] | None = None) -> int:
     """``python -m mirobody.testing.phi_lint [PATH...] [--root R] [--baseline F] [--write-baseline]``
 
-    With no PATH, scans :data:`DEFAULT_TREES` — the same trees the shipped
+    With no PATH, scans :data:`DEFAULT_TREES`: the same trees the shipped
     baseline covers, so the CLI, the test and the pre-commit hook cannot
     disagree about scope.
     """

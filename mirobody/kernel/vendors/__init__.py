@@ -1,4 +1,4 @@
-"""Vendor payload decoders — the part of a provider that is pure.
+"""Vendor payload decoders: the part of a provider that is pure.
 
 A provider integration is two very different things glued together: the
 OAuth dance, token storage, rate limits and pull windows (IO, per
@@ -18,7 +18,7 @@ ship in the wheel so a consumer's ``mirobody.testing.FormatTestRunner`` can
 run them against its own decoders, and ``test_vendors.py`` runs them here.
 
 Adding a vendor: one module here (table + ``decode``), one sample set, one
-entry in ``DECODERS`` — the IO half lives with whoever runs it.
+entry in ``DECODERS``: the IO half lives with whoever runs it.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ DECODERS: dict[str, ModuleType] = {
     "oura": oura,
     # Not a device vendor: an ACCESS PLATFORM. Decoding its API is the seam
     # between "connect eight vendors and a phone SDK" and "make the data mean
-    # one thing" — see open_wearables.py.
+    # one thing": see open_wearables.py.
     "open_wearables": open_wearables,
 }
 

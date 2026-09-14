@@ -10,7 +10,7 @@ from typing import Any
 from collections.abc import Callable
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING
@@ -37,7 +37,7 @@ class FileProcessingContext:
     file_key: str | None = None
     skip_upload_oss: bool = False
     original_filename: str | None = None
-    #: Why text extraction produced nothing, when it raised — set by
+    #: Why text extraction produced nothing, when it raised: set by
     #: `_extract_original_text`, read by `process`. A report photo with no
     #: vision provider used to pass through here as a success with empty text.
     extraction_error: str = ""
@@ -182,7 +182,7 @@ class BaseFileHandler(abc.ABC):
         SHA256 dedup lives inside
         ``FileAbstractExtractor.extract_file_original_text`` (one cache for
         every extraction consumer, not a per-handler copy). The hash is
-        computed here because callers persist it on the ``th_files`` row —
+        computed here because callers persist it on the ``th_files`` row,
         which is what makes the next upload of the same bytes a cache hit.
 
         Returns:
@@ -255,7 +255,7 @@ class BaseFileHandler(abc.ABC):
             # parameter, and "use the same language as the content" was one
             # bullet in a list the model ignored. An English lab report came
             # back named `2025-10-15_Laborbericht_Lipide_Glukose.pdf`, and on a
-            # second run `..._Rapport_labo_lipides_glycemie.pdf` — German, then
+            # second run `..._Rapport_labo_lipides_glycemie.pdf`: German, then
             # French, for the same English document. Two runs, two wrong
             # languages, so it was not one bad sample.
             prompt = f"""Based on the document content below, generate:
@@ -400,7 +400,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
              user_message = t('file_upload_failed', language, 'file_processor')
         # The reason travels with the message: "Image processing failed" alone
         # sent the reporter of #68 into the server logs for a cause that was
-        # one sentence long ("no vision provider — set one of these keys").
+        # one sentence long ("no vision provider: set one of these keys").
         if error_msg:
             user_message = f"{user_message}: {error_msg}"
 
@@ -424,12 +424,12 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
 
     @staticmethod
     def _indicator_extraction_enabled() -> bool:
-        """`ENABLE_INDICATOR_EXTRACTION` — 0 skips the LLM extraction pass.
+        """`ENABLE_INDICATOR_EXTRACTION`: 0 skips the LLM extraction pass.
 
         config.yaml and docs/file-processing.md have both documented this switch
-        for a long time and NOTHING read it, so a deployment that set it to 0 —
+        for a long time and NOTHING read it, so a deployment that set it to 0 (
         to stop paying for an extraction call on a bulk import, say, or to keep
-        a document store text-only — got extraction anyway. It is the single
+        a document store text-only) got extraction anyway. It is the single
         most expensive step in the upload path (one LLM call per file), which
         makes a silently-ignored off switch an unbudgeted bill rather than a
         cosmetic defect.
@@ -456,7 +456,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         `message_id` is the upload session the file arrived in; it is how the
         task's two progress events find the client's WebSocket (see
         `_push_upload_event`). A chat-channel upload has no such session and
-        passes None — the agent asks about the date instead.
+        passes None: the agent asks about the date instead.
         """
         if not self._indicator_extraction_enabled():
             logger.info(
@@ -486,7 +486,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         """Tell the client that uploaded this file what extraction found.
 
         The upload socket is per user and outlives the upload (it heartbeats),
-        so a background task can still reach the page that sent the file —
+        so a background task can still reach the page that sent the file,
         which is what lets the Data page ask "which date?" the moment the
         answer is known instead of on the next reload. Silent when the socket
         is gone or the upload had no session (chat channel): the file row
@@ -561,10 +561,10 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
                 # Three kinds of "zero indicators", told apart (#68). The file is
                 # stored either way; what the UI must not do is render the first
                 # two like the third:
-                #   1. no provider can do structured extraction — configuration;
-                #   2. a provider exists and every call failed — the reason is
+                #   1. no provider can do structured extraction: configuration;
+                #   2. a provider exists and every call failed: the reason is
                 #      in the log, the file row says the call failed;
-                #   3. a model read the document and found no indicators — a
+                #   3. a model read the document and found no indicators: a
                 #      normal result.
                 # Reporting 1 and 2 as "complete" showed a green status over an
                 # empty list, with the cause visible only in server logs.
@@ -606,7 +606,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
                 # The fourth kind of "zero indicators", and the one that got
                 # away: extraction RAISED. `extraction_failed_reason` was left
                 # empty here, so the row below was written `status: completed`
-                # with `indicators_count: 0` — a green file over an empty list,
+                # with `indicators_count: 0`: a green file over an empty list,
                 # cause visible only in this warning. That is exactly how the
                 # bytearray bug (#B-1) stayed invisible: every PDF uploaded
                 # through the web client raised `TypeError: Invalid input type
@@ -681,8 +681,8 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         """Update th_files with indicator extraction results.
 
         `failed_reason` marks the file `status: failed` (the files API maps it
-        to `upload_status: "failed"`), so an extraction that could not run —
-        e.g. zero LLM keys — is not presented as a processed file. A later
+        to `upload_status: "failed"`), so an extraction that could not run:
+        e.g. zero LLM keys: is not presented as a processed file. A later
         successful extraction on the same file_key writes `completed`, which
         clears an earlier failure.
 
@@ -690,7 +690,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         filed under and whether it was read off the document or is the upload
         time standing in. Extraction runs after the upload has already
         completed, so the file row is the only place the UI can learn this
-        from — it is what the Data page reads to ask "which date?" (#53).
+        from, it is what the Data page reads to ask "which date?" (#53).
         """
         try:
             from mirobody.pulse.file_parser.services.file_db_service import FileDbService

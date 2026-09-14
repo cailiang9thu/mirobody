@@ -1,17 +1,17 @@
 """Surface algebra for indicator names: NFKC-lite folding + a CJK-aware tokenizer.
 
-Pure Python, no dependencies, no data files — importable anywhere in the engine.
+Pure Python, no dependencies, no data files: importable anywhere in the engine.
 
 **Two normalizers live here, and the split is load-bearing.**
 :func:`index_fold` is the BUNDLE's normalizer: the keys in
 ``loinc_alias_index.npz`` were folded with it at build time, so changing it
 would silently stop those keys matching. It is therefore frozen by the
-artifact, and it is minimal — NFKC + casefold, and nothing else.
+artifact, and it is minimal: NFKC + casefold, and nothing else.
 :func:`normalize` is the LOOKUP side, free to be as thorough as the input
 deserves; it derives *additional* candidate surfaces that are then looked up
 with :func:`index_fold`.
 
-They used to sit in different packages — ``index_fold`` was a private
+They used to sit in different packages: ``index_fold`` was a private
 ``_normalize`` inside ``indicator/fhir/embeddings/alias.py``, i.e. inside the
 bundle-BUILD tooling, imported from there by ``engine.py``. One function that
 the build and the runtime must agree on exactly is precisely the function that
@@ -22,7 +22,7 @@ What that thoroughness buys, measured on real report text:
 
 * ``ＦＢＧ`` (full-width), ``LDL–C`` (en-dash), ``mg/m²`` (superscript),
   ``空腹　血糖`` (ideographic space) all fold to the plain form. Before this,
-  ``LDL–C`` missed while ``LDL-C`` resolved — one invisible codepoint apart.
+  ``LDL–C`` missed while ``LDL-C`` resolved: one invisible codepoint apart.
 * ``fasting_glucose`` tokenizes to ``fasting glucose``. Every ``POST /data``
   example in the platform docs names indicators in snake_case, and every one of
   them missed while its spaced form resolved.
@@ -70,7 +70,7 @@ TRAILING_PARENTHETICAL = re.compile(r"[（(\[【]([^)）\]】]*)[)）\]】]\s*$"
 def index_fold(s: str) -> str:
     """NFKC normalize + casefold. CJK passes through unchanged.
 
-    **The bundle's own key fold — do not "improve" it.** Every key in
+    **The bundle's own key fold: do not "improve" it.** Every key in
     ``loinc_alias_index.npz`` was written through this exact function, so any
     change here stops those keys matching and the resolver silently loses
     recall. The build pass that mints the index
@@ -131,8 +131,8 @@ def word_tokens(text: str) -> list[str]:
     """Split ``normalize(text)`` into word tokens.
 
     A token is a maximal run of ASCII ``[a-z0-9]`` **or** a maximal run of
-    non-ASCII codepoints. Every ASCII non-alphanumeric byte — space, slash,
-    bracket, comma, and crucially ``_`` and ``-`` — is a separator. No stopword
+    non-ASCII codepoints. Every ASCII non-alphanumeric byte (space, slash,
+    bracket, comma, and crucially ``_`` and ``-``) is a separator. No stopword
     or number filtering: the matcher needs ``hpv 16`` and ``vitamin d``.
     """
     out: list[str] = []
@@ -184,7 +184,7 @@ def surface_variants(term: str) -> list[str]:
     The last is the zh-Hant → zh-Hans fold. The alias lexicon build already
     mirrors Simplified keys to Traditional in the BUNDLE, but
     ``res/resolver_overrides.tsv`` is a runtime file that gets no such
-    expansion — and it holds the hand-curated everyday panel terms. Measured
+    expansion, and it holds the hand-curated everyday panel terms. Measured
     before this: of eight common indicators whose Traditional spelling differs,
     two resolved and six returned nothing, with no rule distinguishing them.
     Folding the query is the symmetric half of what the build does to the
@@ -214,7 +214,7 @@ def split_trailing_parenthetical(term: str) -> tuple[str, str]:
     A lab report writes the analyte and its abbreviation together far more often
     than not: on the hosted platform's production data, 147 of 868 distinct
     indicator names were this shape, and 70 of those carried no code at all.
-    Both halves are returned because neither is reliably the answer — see
+    Both halves are returned because neither is reliably the answer: see
     ``OfflineResolver.resolve`` for the rule that decides between them.
     """
     match = TRAILING_PARENTHETICAL.search(term or "")
@@ -223,7 +223,7 @@ def split_trailing_parenthetical(term: str) -> tuple[str, str]:
     inside = match.group(1).strip()
     # The parenthetical must look like a NAME, not a unit. `中性粒细胞(%)` is a
     # differential percentage whose stem answers the ABSOLUTE-count code
-    # (751-8) while the value is a fraction — stripping it would turn an honest
+    # (751-8) while the value is a fraction: stripping it would turn an honest
     # miss into a confidently wrong answer, which is the failure this project
     # scores worst. Requiring a letter keeps `(ALT)` and `(10*9/L)` (which does
     # name a unit, but is at least a token the index can be asked about) while

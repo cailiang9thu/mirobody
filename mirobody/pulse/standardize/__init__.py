@@ -1,15 +1,15 @@
 """
-Standardization layer — what a value *means*.
+Standardization layer: what a value *means*.
 
 The indicator catalogue, unit conversion, value-range validation, the
 indicator→fhir_id mapping, and the registry task that publishes the catalogue
 to the database. Extracted from `pulse/core`, where these five sat between
 auth, scheduler and push-service infrastructure and "standardization" was not
-a place you could point to — it was a mental list of which core files counted.
+a place you could point to, it was a mental list of which core files counted.
 
 Dependency rule that keeps the split meaningful: this package imports from
 `mirobody.utils` and (for task wiring only, in `std_indicator_registry`) from
-`pulse.core` — but the catalogue/units/validator modules themselves must not
+`pulse.core`, but the catalogue/units/validator modules themselves must not
 depend on `pulse.core`, so they stay importable as pure data + DB reads.
 
 Lazy (PEP 562), matching `mirobody/pulse/__init__.py` and

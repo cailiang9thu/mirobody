@@ -1,4 +1,4 @@
-"""Standalone worker runner — starts the mirobody task consumers without an
+"""Standalone worker runner: starts the mirobody task consumers without an
 HTTP server.
 
 Mirrors `Server.start(yaml_files)` in shape so deployment is symmetric: both
@@ -8,7 +8,7 @@ read the same YAML config; this class spins up the Redis-queue consumer loops
 
 Task discovery is automatic: every `BaseRedisTask` subclass registered under
 `mirobody.task` is picked up via `iter_redis_tasks()`, so adding a new task
-class is enough — no wiring needed here.
+class is enough, no wiring needed here.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ class Worker:
 
         logger.info("Worker runner starting")
 
-        # One redis client shared by all consumers — redis.asyncio.Redis has
+        # One redis client shared by all consumers: redis.asyncio.Redis has
         # an internal connection pool (max_connections from config), so each
         # BLPOP borrows its own connection and they don't serialize.
         redis = await config.get_redis().get_async_client()

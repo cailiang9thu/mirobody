@@ -2,7 +2,7 @@
 
 These two mounts used to be COPIES. `_sync_session_uploads` and
 `_sync_user_library` ran on every chat turn, selected the authoritative answer
-out of `th_files`, and wrote pointer rows into `deep_agent_workspace` — path,
+out of `th_files`, and wrote pointer rows into `deep_agent_workspace`: path,
 mime, hash, and the extracted text copied column-for-column. The copy bought
 nothing on the read path, because the sync queried `th_files` every turn anyway;
 what it bought was a second place for the truth to live, and that is what let a
@@ -12,10 +12,10 @@ So the rows come from `th_files` now, and `is_del = false` is in the query. No
 sync, no pointer rows, no deletion to propagate, and no reconciliation pass to
 remember to write.
 
-**Only the two fetch methods change.** Everything about how a file is READ —
+**Only the two fetch methods change.** Everything about how a file is READ:
 extracted text for ppt/xlsx, a native file block for PDF on a capable model,
 base64 from object storage for images and audio, the lazy first-read extraction,
-the multimodal size cap — lives in `PgFilesystemBackend.aread` and is inherited
+the multimodal size cap: lives in `PgFilesystemBackend.aread` and is inherited
 untouched. That is deliberate: that logic encodes provider quirks (Anthropic
 rejecting a `{'type':'file'}` block from a text payload, qwen/deepseek 400ing on
 PDF blocks) which are expensive to relearn. The row shape those methods consume

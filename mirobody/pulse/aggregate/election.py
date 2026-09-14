@@ -1,4 +1,4 @@
-"""Which source a day publishes from — decided once, on the write side.
+"""Which source a day publishes from: decided once, on the write side.
 
 Two devices measure the same day. A watch reports 7,412 steps, a phone reports
 7,890, and both are correct about themselves. Something has to choose, and the
@@ -9,7 +9,7 @@ disagree: the chat answer and the dashboard could show a person two different
 numbers for the same Tuesday. So the choice happens here, once, after
 aggregation, and every reader afterwards just filters on `elected`.
 
-The ranking is `mirobody.kernel.series.elect` — the same pure function a consumer
+The ranking is `mirobody.kernel.series.elect`: the same pure function a consumer
 with a different store uses, so what "prefer" means is one implementation and
 what to prefer is this application's decision:
 
@@ -17,18 +17,18 @@ what to prefer is this application's decision:
   wearable's profile ECHOES the weight the person typed in months ago, on
   every sync, with today's date. Both look like "a weight reading today", and
   the echo is not one;
-* then **coverage** — the source that watched more of the day;
+* then **coverage**: the source that watched more of the day;
 * then **measurement freshness**, which is the measurement instant and never
   the row's update time: an echo is rewritten daily and looks fresh by update
   time while being stale;
-* then a **static priority**, read from `th_data_source_priority` — the
+* then a **static priority**, read from `th_data_source_priority`: the
   deployment's own list, not a rule of the framework.
 
 A candidate is REJECTED, not merely ranked, when its numbers are impossible:
 a total sleep time longer than the night it was measured in is arithmetic, not
 opinion (`quality.overcount_suspect` through `series.coverage_bound`). When
 every candidate fails, the day keeps whatever it published before and the
-rejection reasons are logged — a silently empty day is worse than a stale one.
+rejection reasons are logged: a silently empty day is worse than a stale one.
 """
 
 from __future__ import annotations
@@ -106,7 +106,7 @@ async def elect_range(user_id: str, start: date, end: date, *, indicators: list[
 
 async def source_priorities() -> list[str]:
     """The deployment's source order, best first. Empty when the table is not
-    there — the framework ships no opinion about whose watch is better."""
+    there: the framework ships no opinion about whose watch is better."""
     try:
         rows = await execute_query(
             "SELECT source FROM th_data_source_priority WHERE is_active ORDER BY priority", {}, log_sql=False
@@ -172,7 +172,7 @@ async def _candidates(user_id: str, indicator: str, day: date) -> tuple[list[ser
 
 
 def _validators_for(indicator: str, day: date) -> list:
-    """The checks a candidate must pass. Only impossibilities — "heart rate 190
+    """The checks a candidate must pass. Only impossibilities: "heart rate 190
     is high" is a reference range and this module maintains none.
 
     The one check that applies here is the coverage bound, and it applies to
@@ -198,7 +198,7 @@ def _duration_unit_ms(unit: str) -> float | None:
 
     Through `mirobody.units`, so the catalogue's spellings (`seconds`,
     `minutes`, `hours`, `ms`) and any other UCUM time unit resolve the same
-    way — a hand-written table here would be a second opinion about what a
+    way: a hand-written table here would be a second opinion about what a
     minute is.
     """
     normalized = units.normalize_unit(unit) or unit
@@ -211,7 +211,7 @@ async def _mark(user_id: str, indicator: str, day: date, winner: str, rows_by_so
     """One statement: the winning source's rows are the day's authority, every
     other row of that day is not. Written as an assignment rather than an
     "elect the winner" update, so a source that stops winning is un-elected in
-    the same breath — a day with two elected rows is not a state this can reach.
+    the same breath: a day with two elected rows is not a state this can reach.
     """
     winning_ids = rows_by_source.get(winner) or []
     await execute_query(

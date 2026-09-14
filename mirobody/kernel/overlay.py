@@ -1,11 +1,11 @@
-"""Corrections as a layer over stored rows — the original row is never rewritten.
+"""Corrections as a layer over stored rows: the original row is never rewritten.
 
 A user fixes a mis-parsed reading, a reviewer changes a medication's dose, a
 caregiver marks an entry deleted: every one of these used to be an ``UPDATE``
 on the row, and every one of them was silently undone the next time the
 source re-pushed the same record. The invariant this module carries is that
-a correction is a *separate fact about a row* — who changed which field to
-what, when — and the corrected view is computed by laying those facts over
+a correction is a *separate fact about a row* (who changed which field to
+what, when) and the corrected view is computed by laying those facts over
 the row at read time. Re-pushing the source changes the row and leaves the
 corrections standing; removing a correction restores the source value.
 
@@ -31,7 +31,7 @@ class Override:
 
     ``at_ms`` orders overrides of the same field; ``seq`` breaks ties between
     two written in the same millisecond (a batch edit). ``actor`` is an
-    opaque identifier — ``"user:…"``, ``"reviewer:…"``, ``"system"`` — never
+    opaque identifier (``"user:…"``, ``"reviewer:…"``, ``"system"``) never
     a name or email. ``value`` is any JSON-compatible value; ``None`` means
     "cleared".
     """
@@ -97,7 +97,7 @@ def by_target(overrides: Iterable[Override]) -> dict[str, list[Override]]:
 
 
 def audit(overrides: Iterable[Override]) -> tuple[Override, ...]:
-    """The change history, oldest first — what an "edited" badge expands to."""
+    """The change history, oldest first: what an "edited" badge expands to."""
     return tuple(sorted(overrides, key=lambda o: (o.at_ms, o.seq, o.field)))
 
 

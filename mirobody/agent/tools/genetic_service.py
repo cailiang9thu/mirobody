@@ -1,15 +1,15 @@
-"""`query_genetic_data` — the one tool for a person's genotype calls.
+"""`query_genetic_data`: the one tool for a person's genotype calls.
 
 Genetics is a third data class, next to readings
 (`health_indicators_service.py`) and medications (`medications_service.py`),
 and it gets its own tool for the same reason they do: its grammar shares
 nothing with theirs. A genotype has no window, no resolution and no
-aggregate — a call is "what did this person's array call at these rsIDs",
+aggregate: a call is "what did this person's array call at these rsIDs",
 plus optionally the neighbours of each hit. Five parameters, every one
 applicable to every call.
 
-The tool shell is the same three steps as its siblings — authorize, run,
-render — and the same envelope: the model reads a rendered table, and
+The tool shell is the same three steps as its siblings: authorize, run,
+render, and the same envelope: the model reads a rendered table, and
 everything a *program* needs (did it work, is a retry pointless, how much was
 cut) travels beside it in a `tools.Envelope`.
 
@@ -46,7 +46,7 @@ TOOL_NAME = "query_genetic_data"
 #: rsIDs one call may name. The list becomes an `IN` clause of bound
 #: parameters, and a model that wants a whole panel should ask twice.
 MAX_RSIDS = 50
-#: Variants one answer may carry, and the default. Direct hits only — the
+#: Variants one answer may carry, and the default. Direct hits only: the
 #: neighbours of each hit are capped separately.
 MAX_LIMIT = 500
 DEFAULT_LIMIT = 100
@@ -57,7 +57,7 @@ MAX_NEARBY_PER_HIT = 20
 DEFAULT_NEARBY_RANGE = 1_000_000
 
 #: Columns the answer renders, in order. `distance` and `near` are empty on a
-#: direct hit, and `render_compact` drops a column no row fills — so an exact
+#: direct hit, and `render_compact` drops a column no row fills, so an exact
 #: lookup renders four columns, not six.
 COLUMNS: tuple[str, ...] = ("rsid", "chromosome", "position", "genotype", "distance", "near")
 
@@ -183,7 +183,7 @@ class GeneticService:
         raw genotype file they uploaded.
 
         USE IT when the question names variants or asks what this person
-        carries at one — "what is my rs4988235", "am I a C677T carrier". With
+        carries at one: "what is my rs4988235", "am I a C677T carrier". With
         include_nearby it also returns the typed variants around each hit.
 
         DO NOT use it for readings (`query_health_indicators`), for
@@ -195,8 +195,8 @@ class GeneticService:
         `TOOL_SCHEMA`, published verbatim).
 
         Returns:
-            A compact table — rsid, chromosome, position, genotype, and for a
-            neighbour its distance and which query it is near — plus a `meta`
+            A compact table (rsid, chromosome, position, genotype, and for a
+            neighbour its distance and which query it is near) plus a `meta`
             block. Absence means "not typed", never "does not carry it".
 
         Notes for LLMs:
@@ -213,7 +213,7 @@ class GeneticService:
     def columns(self, args: Mapping[str, Any]) -> tuple[str, ...]:
         """Which columns one answer renders. Read by the chat adapter too
         (`tool_loader`), so both surfaces render the same table; not a tool
-        (`__tools__`). Fixed here — a genotype row has one shape."""
+        (`__tools__`). Fixed here: a genotype row has one shape."""
         return COLUMNS
 
     async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
@@ -311,7 +311,7 @@ def _in_clause(prefix: str, values: Sequence[str]) -> tuple[str, dict[str, Any]]
     rsIDs are BOUND, never interpolated. They come out of a user-uploaded
     genotype file that is split on whitespace with no format validation
     (`pulse/file_parser/services/genetic_processor.py`), so a single quote in
-    an uploaded file breaks out of an interpolated literal — a stored SQL
+    an uploaded file breaks out of an interpolated literal: a stored SQL
     injection on the read path, which is what this was.
     """
     params = {f"{prefix}_{i}": v for i, v in enumerate(values)}
@@ -356,7 +356,7 @@ def _envelope_for(
 
 
 #: This module's tool surface: nothing at module level. The schema, the
-#: validator and the parser are the tool's CONTRACT, imported by name — a
+#: validator and the parser are the tool's CONTRACT, imported by name: a
 #: module-level function without this list would be published as a tool.
 __tools__: tuple[str, ...] = ()
 

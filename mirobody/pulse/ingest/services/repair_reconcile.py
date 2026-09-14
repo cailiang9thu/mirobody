@@ -10,7 +10,7 @@ a re-sync of a date range fixes structural corruption (e.g. TH-449 sleep-stage
 duplication), not just overwrites values.
 
 Window contract (epoch ms, from metaInfo): the sweep deletes ONLY within
-[windowFrom, windowTo]. If either bound is missing/invalid, the sweep is SKIPPED — the
+[windowFrom, windowTo]. If either bound is missing/invalid, the sweep is SKIPPED: the
 batch is still upserted, but nothing is deleted (keep the original, safe behavior).
 
 Sweep targets:
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 REPAIR_TASK_ID_PREFIX = "repair-"
 
 # Apple sources eligible for repair sweep (already lower-cased upstream).
-# apple.cda (clinical documents) is intentionally excluded — different semantics.
+# apple.cda (clinical documents) is intentionally excluded: different semantics.
 APPLE_REPAIR_SOURCES = {"apple_health", "apple_health_watch"}
 
 # Pad applied to the aggregation window so the sleep 18:00-18:00 boundary is fully
@@ -126,7 +126,7 @@ class RepairReconciler:
             return {"status": "empty_batch", "repair_task_id": repair_task_id}
 
         # Window completeness guard: BOTH bounds required and ordered. If incomplete,
-        # keep the original behavior (upsert only, NO delete) — explicit per requirement.
+        # keep the original behavior (upsert only, NO delete): explicit per requirement.
         if (
             window_from_ms is None
             or window_to_ms is None

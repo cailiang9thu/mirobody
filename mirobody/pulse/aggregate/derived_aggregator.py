@@ -2,7 +2,7 @@
 Derived Aggregator (TH-174 W2.2)
 
 Computes derived indicators from existing daily summaries in th_series_data.
-Independent from SQLAggregator — reads th_series_data, computes, writes back.
+Independent from SQLAggregator: reads th_series_data, computes, writes back.
 
 Data source priority:
   1. legacy `daily_stats_*` rows (already source-resolved when written)
@@ -76,7 +76,7 @@ def _safe_divide(numerator: float, denominator: float) -> float | None:
 # that named things `daily_stats_{indicator}{Method}`, where the current
 # SQLAggregator writes `daily{Method}{Indicator}`. Nothing produces the old
 # spelling any more, but the historical rows are real data and a derived rule
-# that ignored them would silently lose years of history — so every lookup
+# that ignored them would silently lose years of history, so every lookup
 # checks both spellings. The values are therefore DATA, not naming
 # preference: do not "modernise" them.
 # ---------------------------------------------------------------------------

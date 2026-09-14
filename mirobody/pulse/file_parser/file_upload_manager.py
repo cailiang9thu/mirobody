@@ -3,16 +3,16 @@ WebSocket file upload manager
 Supports file upload through WebSocket with real-time progress synchronization
 
 SECTION INDEX (line numbers are approximate):
-    ~50   WebSocketFileUploadManager   — main orchestrator class
-    (MemoryUploadFile lives in .memory_upload_file — shared with the
+    ~50   WebSocketFileUploadManager   main orchestrator class
+    (MemoryUploadFile lives in .memory_upload_file: shared with the
      chat-attachment path in services/file_processing_service.py)
-    ~82     connect()                  — establish WebSocket connection
-    ~120    disconnect()               — clean up connection state
-    ~135    send_message()             — send JSON message to client
-    ~191    handle_upload_start()      — initialize file upload session
-    ~307    handle_file_chunk()        — receive and buffer file chunks
-    ~445    start_file_processing()    — kick off processing after upload
-    ~475    process_files_async()      — main file processing pipeline
+    ~82     connect()                  establish WebSocket connection
+    ~120    disconnect()               clean up connection state
+    ~135    send_message()             send JSON message to client
+    ~191    handle_upload_start()      initialize file upload session
+    ~307    handle_file_chunk()        receive and buffer file chunks
+    ~445    start_file_processing()    kick off processing after upload
+    ~475    process_files_async()      main file processing pipeline
     ~667    update_genetic_processing_complete()
     ~680  ---- Helper Methods for process_files_async ----
     ~682    _save_files_to_database()
@@ -23,10 +23,10 @@ SECTION INDEX (line numbers are approximate):
     ~1010   _start_embedding_update_task()
     ~1048   _build_return_info_for_failed()
     ~1127 ---- End Helper Methods ----
-    ~1129   _build_return_info()       — build response info for completed files
-    ~1326   update_progress()          — send progress update to client
-    ~1377   handle_upload_end()        — finalize upload session
-    ~1445   get_upload_status()        — query upload status
+    ~1129   _build_return_info()       build response info for completed files
+    ~1326   update_progress()          send progress update to client
+    ~1377   handle_upload_end()        finalize upload session
+    ~1445   get_upload_status()        query upload status
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ import uuid
 from datetime import datetime
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING
@@ -121,7 +121,7 @@ class WebSocketFileUploadManager:
 
             # Clean up ALL of this connection's sessions, completed included:
             # get_upload_status is only reachable over this (now closed) socket,
-            # so a completed session kept here is pure leak — it held the
+            # so a completed session kept here is pure leak, it held the
             # session dict and its results payload forever.
             sessions_to_remove = []
             for message_id, session in self.upload_sessions.items():
@@ -213,7 +213,7 @@ class WebSocketFileUploadManager:
             # AUTHORIZE a proxy upload before anything is written. `query_user_id`
             # is client-supplied: without this gate any authenticated user could
             # write a file into ANY user's record (even a non-existent id) by
-            # naming it here — the file lands under the victim's query_user_id,
+            # naming it here: the file lands under the victim's query_user_id,
             # their agent's VFS reads it, and it never shows in the attacker's
             # own file list. That is the prompt-injection delivery surface
             # SECURITY.md warns about. Same check the proxy paths in
@@ -994,7 +994,7 @@ class WebSocketFileUploadManager:
         # Release the buffered raw file bytes. Nothing reads them after this
         # point (the abstract fallback in _build_return_info already ran), and
         # without this every successful upload kept its full content resident
-        # in upload_sessions for the life of the process — disconnect() only
+        # in upload_sessions for the life of the process: disconnect() only
         # evicts sessions that are NOT completed.
         for f in session.get("uploaded_files", []):
             f["content"] = None
@@ -1017,7 +1017,7 @@ class WebSocketFileUploadManager:
                     # Dim sync + embedding backfill is now handled automatically by
                     # FileParserDatabaseService.save_indicators_to_db(), no need to call here.
 
-                    # Start user profile creation. Lazy import — this is
+                    # Start user profile creation. Lazy import, this is
                     # documented seam #4 (see pyproject ignore_imports): the
                     # profile GENERATOR lives agent-side because it calls the
                     # LLM. Importing it at module scope would make

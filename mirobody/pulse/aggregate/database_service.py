@@ -42,7 +42,7 @@ class AggregateDatabaseService:
 
         try:
             # A re-aggregation re-sends the truth: a collision replaces the row.
-            # `anchored`: these rows already ARE days — the aggregator writes each
+            # `anchored`: these rows already ARE days, the aggregator writes each
             # at local 00:00:00–23:59:59 of the day it summarises, including the
             # sleep family, whose 18:00 window was applied when the window was
             # chosen. Pushing them through it again would file every night a day

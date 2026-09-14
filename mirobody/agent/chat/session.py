@@ -19,8 +19,8 @@ async def create_session(
     Create a row in th_sessions.
 
     `session_id` is optional. When omitted the function behaves as before
-    (mints a uuid4). When supplied — e.g. by a client that needs to
-    encode pane/group metadata directly into the id (compare mode) —
+    (mints a uuid4). When supplied: e.g. by a client that needs to
+    encode pane/group metadata directly into the id (compare mode):
     the supplied id is used verbatim, after a safety check rejects
     obvious abuse (too long / unsupported chars). Other callers that
     don't send the param continue to get backend-minted uuids, so this
@@ -164,7 +164,7 @@ async def get_session_summaries_by_person(user_id: str) -> list[dict[str, any]]:
             user_age = ""
             query_user_id = _session.get("query_user_id")
 
-            # Subtracting birth year from current year — which is what stood here —
+            # Subtracting birth year from current year (which is what stood here) 
             # is wrong for everyone whose birthday has not happened yet this year:
             # roughly half of all users at any moment, each reported one year too
             # old, in the profile block that goes into the agent's context.
@@ -259,8 +259,8 @@ async def delete_session(user_id: str, session_id: str) -> str | None:
 
         # And the agent's own copy. The agent's conversation memory is the
         # LangGraph checkpointer keyed on thread_id = session_id, so the two
-        # deletes above would otherwise leave the same turns — the health
-        # questions and the tool results answering them — sitting in the
+        # deletes above would otherwise leave the same turns (the health
+        # questions and the tool results answering them) sitting in the
         # checkpoint tables under this session id. Deleting a conversation has
         # to delete it, not just stop listing it. Best-effort by design (see
         # deep.checkpointer.delete_thread): the user-visible rows are already
@@ -277,13 +277,13 @@ async def delete_session(user_id: str, session_id: str) -> str | None:
 # Public session sharing (th_session_share): owner-created share links whose
 # history is then served WITHOUT authentication (see session_share_router).
 # Formerly a separate session_share.py holding a SessionShareService class of
-# three staticmethods and a no-state module instance — plain module functions
+# three staticmethods and a no-state module instance: plain module functions
 # are this module's idiom, and sessions/share-links are one lifecycle.
 #-----------------------------------------------------------------------------
 
 async def create_or_get_share_session(user_id: str, session_id: str) -> dict:
     """Create a share link for a session the caller owns, or return the
-    existing active one (idempotent — one active share link per session)."""
+    existing active one (idempotent: one active share link per session)."""
     try:
         # Check if user owns this session
         session_result = await execute_query(
@@ -363,7 +363,7 @@ async def create_or_get_share_session(user_id: str, session_id: str) -> dict:
 #-----------------------------------------------------------------------------
 
 async def get_shared_session_history(share_session_id: str) -> dict:
-    """Chat history by share link — the unauthenticated read path.
+    """Chat history by share link: the unauthenticated read path.
 
     Returns the same ``{"history": [...]}`` shape as ``/api/history`` (via the
     same ``get_chat_history``) so the frontend renders shared and own sessions

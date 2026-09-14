@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 #: What the date probe asks for. One field, one job: the full indicator
 #: extraction takes 15-25 s on a lab page, and the Data page cannot ask "which
-#: date?" until it knows there is no date — so the date is looked up first, on
+#: date?" until it knows there is no date, so the date is looked up first, on
 #: its own, in a few seconds. Sample collection outranks receipt outranks report
 #: date, the same priority the full extraction uses; empty when the document
 #: shows none, never invented.
@@ -53,7 +53,7 @@ class IndicatorExtractor:
         """The document's examination date alone, ahead of the full extraction.
 
         Returns the raw string the model gave (parsed by `resolve_report_date`),
-        or "" — for no date AND for any failure, so the caller falls through to
+        or "": for no date AND for any failure, so the caller falls through to
         the full extraction's own date field either way.
         """
         if not original_text or not original_text.strip():
@@ -112,14 +112,14 @@ class IndicatorExtractor:
                 fallback, so a date this extraction finds still upgrades it.
 
         Returns:
-            (indicators, LLM response, report) — `report` is
+            (indicators, LLM response, report): `report` is
             `{"report_date", "date_source"}` as resolved by
             `FileParserDatabaseService.resolve_report_date` when readings were
             saved, else None; the handler records it on the th_files row.
 
             The LLM response is ``None`` when the extraction call itself
             produced nothing (no provider, or every provider failed) and a
-            dict — possibly with zero indicators — when a model answered. The
+            dict (possibly with zero indicators) when a model answered. The
             two used to come back identical (``[], {}``), so "this deployment
             cannot extract" rendered exactly like "this document has no
             indicators" (#68).

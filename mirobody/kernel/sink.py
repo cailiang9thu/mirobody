@@ -1,8 +1,8 @@
 """The write contract: what it means to put rows somewhere.
 
 A row written twice must mean the same thing the second time, and a batch
-that changed nothing must not touch the store. Those two rules — idempotency
-and fingerprint-skip — are the whole of what a sink promises; the SQL (or
+that changed nothing must not touch the store. Those two rules (idempotency
+and fingerprint-skip) are the whole of what a sink promises; the SQL (or
 the file, or the queue) is the consumer's.
 
 ``disposition`` names what a collision on the store's natural key means,
@@ -28,7 +28,7 @@ DISPOSITIONS = frozenset({REPLACE, MERGE, APPEND})
 @dataclass(frozen=True)
 class WriteReport:
     """What one write did. ``skipped`` counts rows whose fingerprint the
-    store already had — the number that should dominate on a re-sync."""
+    store already had: the number that should dominate on a re-sync."""
 
     inserted: int = 0
     updated: int = 0
@@ -54,7 +54,7 @@ def fingerprint(row: Mapping[str, object], fields: Sequence[str]) -> str:
 def dedupe(
     rows: Iterable[Mapping[str, object]], key: Callable[[Mapping[str, object]], Hashable]
 ) -> tuple[Mapping[str, object], ...]:
-    """Within one batch, the last row per natural key wins — a vendor that
+    """Within one batch, the last row per natural key wins: a vendor that
     sends a summary twice in one webhook is not sending two summaries."""
     out: dict[Hashable, Mapping[str, object]] = {}
     for r in rows:

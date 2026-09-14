@@ -4,7 +4,7 @@ Every provider family puts the same two things somewhere different. The
 visible answer is a plain string on OpenAI-compatible models and a LIST of
 content blocks on Anthropic and Gemini; the reasoning is
 ``additional_kwargs.reasoning_content`` on DashScope/DeepSeek, a ``thinking``
-or ``reasoning`` block on Anthropic/Gemini, and — on some qwen models — an
+or ``reasoning`` block on Anthropic/Gemini, and (on some qwen models) an
 inline ``<think>…</think>`` inside the text itself. These two functions are
 the one place that knows all of that, so a chat surface, an OpenAI-compatible
 relay and a background summariser read a message the same way. Never
@@ -38,7 +38,7 @@ def message_reasoning(msg) -> str:
 def message_text(msg) -> str:
     """The VISIBLE answer text of a message or chunk: the string content, or the
     text blocks of a block list (reasoning blocks skipped), with any inline
-    ``<think>…</think>`` — balanced or dangling — removed."""
+    ``<think>…</think>`` (balanced or dangling) removed."""
     content = getattr(msg, "content", None)
     if isinstance(content, str):
         raw = content

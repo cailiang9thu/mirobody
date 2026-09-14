@@ -1,7 +1,7 @@
 """Assembling the middleware stack.
 
 Lifted out of `Server.__init__` so the composition root registers a stack rather
-than computing one. The two comments below are load-bearing incident records —
+than computing one. The two comments below are load-bearing incident records:
 both bugs took the whole server down at startup and are easy to reintroduce.
 """
 
@@ -42,7 +42,7 @@ def build_middlewares(
     # Extract CORS-related headers if provided; otherwise use secure defaults.
     #
     # `http_headers` arrives as `config.http.headers`, which is a LIST of
-    # (name, value) tuples — the shape uvicorn wants — not a dict. Normalize
+    # (name, value) tuples (the shape uvicorn wants) not a dict. Normalize
     # first: calling .get() on it raised AttributeError on EVERY startup, and
     # `or {}` upstream cannot save it because HttpConfig always appends a
     # "Server" header, so the list is never empty (introduced in 06e1ad9).
@@ -58,7 +58,7 @@ def build_middlewares(
         if allowed_origin == "*" and allow_credentials:
             # NOTE: do NOT `import logging` here. `logging` is imported at module
             # scope, and a function-local import rebinds the name for the WHOLE of
-            # __init__ — which made the `logger.info(...)` at the top of this same
+            # __init__, which made the `logger.info(...)` at the top of this same
             # method raise UnboundLocalError and took the entire server down at
             # startup (introduced in 06e1ad9, the CORS refactor).
             logging.getLogger(__name__).warning(

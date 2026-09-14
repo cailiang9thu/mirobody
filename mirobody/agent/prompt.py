@@ -5,14 +5,14 @@ that announces this turn's attachments.
 tool descriptions, the time in the user's zone and the user context.
 Rendering is strict: a variable the template names and the harness does not
 supply raises, and `MirobodyAgent._build_system_prompt` turns that into the
-`AgentError` the client sees. The alternative — falling back to the raw
-template — handed the model `{{ tools_description }}` as literal text and
+`AgentError` the client sees. The alternative: falling back to the raw
+template: handed the model `{{ tools_description }}` as literal text and
 called it a warning.
 
 `attachment_reminder` names the files a turn attached and where the virtual
 filesystem serves them, so the model reads them without an `ls /uploads/`
 round trip and never silently misses one. The paths come from the MOUNT, not
-from the request — see the function for why that distinction has bitten.
+from the request: see the function for why that distinction has bitten.
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ async def build_system_prompt(
 
 async def report_date_status(attached: list[dict[str, Any]]) -> str:
     """One line per attachment: its file_key and whether a report date was
-    found — what the prompt's "Report date of an attachment" rule keys on.
+    found: what the prompt's "Report date of an attachment" rule keys on.
 
     Extraction starts when the chat request lands and the date probe answers
     within seconds, but this note is built at the very start of the turn, so
@@ -108,13 +108,13 @@ async def attachment_reminder(backend: Any,
     agree in the common case, but a request-derived listing can still name a
     path the mount does not serve, in at least three ways:
 
-    * two attachments share a name — the mount serves the second under a
+    * two attachments share a name: the mount serves the second under a
       ``__thf_`` suffix the request cannot predict, so a request-derived note
       announces one path twice and every read lands on the first file;
     * the row is gone or was never the caller's (deleted, another user's
-      `file_key`) — the projection filters on `user_id` and `is_del`, the
+      `file_key`): the projection filters on `user_id` and `is_del`, the
       request does not, so the note promises a file the mount will refuse;
-    * more than `_MAX_SESSION_FILES` attachments — the mount truncates, and a
+    * more than `_MAX_SESSION_FILES` attachments: the mount truncates, and a
       request-derived note lists files that are not there.
 
     Every one of those ends the same way for the user: the agent says the
@@ -128,7 +128,7 @@ async def attachment_reminder(backend: Any,
     so what lands mid-turn is an UPDATE (the rename), and anything the snapshot
     somehow missed is still reachable with `ls`.
 
-    Injected as a transient message (NOT the system prompt — that is cached and
+    Injected as a transient message (NOT the system prompt, that is cached and
     must stay stable across turns). Ephemeral: persistence saves the user
     question + assistant reply separately, not this note.
     """

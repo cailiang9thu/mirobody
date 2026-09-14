@@ -35,7 +35,7 @@ class AggregationType(Enum):
     # Time-based aggregations
     TIME_OF_MAX = "time_of_max"  # Time when max value occurred (HH:MM)
     TIME_OF_MIN = "time_of_min"  # Time when min value occurred (HH:MM)
-    # Threshold-based aggregations — each threshold is explicitly declared.
+    # Threshold-based aggregations: each threshold is explicitly declared.
     # Implementation reuses parameterized functions: pct_below(threshold), pct_above(threshold), tir(lower, upper).
     # To add a new threshold, add an enum here + add to the indicator's aggregation_methods list.
     PCT_BELOW_70 = "pct_below_70"  # % of readings < 70 (blood glucose TBR)

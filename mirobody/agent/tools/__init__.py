@@ -40,7 +40,7 @@ The loader scans this directory with the following rules:
      dict; it is published VERBATIM as the tool's `inputSchema` and reaches
      the chat model unchanged, instead of being generated from the signature.
    - That is for a tool whose parameters are a CONTRACT shared with other
-     surfaces — `query_health_indicators` publishes `kernel.query.TOOL_SCHEMA`,
+     surfaces: `query_health_indicators` publishes `kernel.query.TOOL_SCHEMA`,
      `query_medications` publishes `kernel.meds.TOOL_SCHEMA` and
      `query_genetic_data` publishes `genetic_service.TOOL_SCHEMA`, so the MCP
      tool and the chat tool cannot drift apart. Such a method takes
@@ -54,11 +54,11 @@ DIRECTORY STRUCTURE
 tools/
 ├── __init__.py                      # This documentation
 ├── terminology_service.py           # ② Translate over MCP: resolve_indicator, normalize_unit
-│                                    #   (offline, no user data — works anonymously)
-├── health_indicators_service.py     # query_health_indicators — readings: catalogue,
+│                                    #   (offline, no user data: works anonymously)
+├── health_indicators_service.py     # query_health_indicators, readings: catalogue,
 │                                    #   raw rows, buckets, stats, latest (8 parameters)
-├── medications_service.py           # query_medications — plan / log / history (5 parameters)
-├── genetic_service.py               # query_genetic_data — genotype calls at named
+├── medications_service.py           # query_medications: plan / log / history (5 parameters)
+├── genetic_service.py               # query_genetic_data: genotype calls at named
 │                                    #   rsIDs, plus the typed neighbours of each
 │                                    #   hit (5 parameters)
 └── _authz.py                        # who a read is about (shared, not a tool)
@@ -76,7 +76,7 @@ could be asked for, and the two halves could disagree about what a window
 meant.
 
 Note: filesystem tools (ls, read_file, write_file, edit_file, glob, grep) are
-NOT MCP tools here — the agent gets them natively from the deepagents
+NOT MCP tools here: the agent gets them natively from the deepagents
 FilesystemMiddleware, backed by the PgFilesystemBackend in
 mirobody/agent/filesystem/backend.py. There is no write_todos and no task/
 subagent tool: deepagents 0.7 dropped TodoListMiddleware from its default stack
@@ -84,7 +84,7 @@ and the agent does not add it back, and the general-purpose subagent is disabled
 outright (see agent.MirobodyAgent._apply_harness_profile).
 
 =============================================================================
-CHARTING: ONE PATH — ```vis-chart``` blocks
+CHARTING: ONE PATH, ```vis-chart``` blocks
 =============================================================================
 
 Charting belongs to the chat agent alone: the model writes a fenced vis-chart code
@@ -98,7 +98,7 @@ The former ChartService MCP tools (generate_*_chart), which rendered PNGs
 through a Node @antv/gpt-vis-ssr toolchain, were removed: the repository's
 ONLY Node.js dependency, five chart tools polluting the MCP surface, and 18
 "Method not found" warnings on every boot. The `/charts` static mount and its
-Docker volume went with them — nothing writes chart files any more, so there
+Docker volume went with them: nothing writes chart files any more, so there
 is nothing to serve.
 
 =============================================================================

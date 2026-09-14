@@ -2,7 +2,7 @@
 
 A reading travels through the reference application in `pulse/` (collect,
 store, aggregate) and is answered from `agent/`; this package is the part of
-that path that is not a database or a model call — the rules, and only the
+that path that is not a database or a model call: the rules, and only the
 rules, so any other application can run the same ones. Nothing here opens a
 connection, reads a clock it was not handed, or imports a third-party package
 (import-linter enforces it: `pyproject.toml`, four contracts).
@@ -24,8 +24,8 @@ What a reading passes through, and which module decides each step:
     tool result ──── tools ────────────▶ envelope         status, fault class, retry ledger
     log line ─────── ops ──────────────▶ ids and counts   never a value
 
-Beside the reading path: `meds` (medications are an entity — plans, doses,
-adherence — not readings; their own tool, `query_medications`), `connect` (what a credential and a pull promise),
+Beside the reading path: `meds` (medications are plans, doses and
+adherence, not readings; their own tool, `query_medications`), `connect` (what a credential and a pull promise),
 `sink` (what writing a row twice means), `events` (the wire-neutral agent
 event vocabulary a consumer's own runtime emits and its adapters translate),
 `evidence` (statistics produce the evidence a model only narrates: deviation /
@@ -35,7 +35,7 @@ regenerates and an agent reads, with the watermark that says what is fresh),
 and `vendors/` (one decode table per vendor, with samples shipped for a
 consumer to run against its own decoder).
 
-The vocabulary layer — a lab name to a LOINC code — is the sibling
+The vocabulary layer (a lab name to a LOINC code) is the sibling
 `mirobody.engine` / `mirobody.units` / `mirobody.lexical`, older and larger;
 the kernel builds on `units` for dimensions and conversions.
 """

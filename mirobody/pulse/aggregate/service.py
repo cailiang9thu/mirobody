@@ -285,8 +285,8 @@ class AggregateIndicatorService:
         day is a few hundred cells, and re-electing a year on every four-minute
         tick would be a background job pretending to be an incremental one.
 
-        Failure is logged and swallowed. An unelected day still ANSWERS — the
-        readers fall back to the newest row and say so in the provenance — and
+        Failure is logged and swallowed. An unelected day still ANSWERS (the
+        readers fall back to the newest row and say so in the provenance) and
         an aggregation pass that refuses to finish because of it would be a
         worse outcome than a day that is merely not yet arbitrated.
         """

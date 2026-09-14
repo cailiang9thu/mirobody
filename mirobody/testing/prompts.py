@@ -3,7 +3,7 @@
 A system prompt that says "call ``search_health_indicators`` then
 ``fetch_health_data``" after those tools were merged, or offers ``TodoWrite``
 after the todo middleware was dropped, costs a wasted round trip on every
-turn — the model tries, the harness says no such tool. This lint pulls every
+turn: the model tries, the harness says no such tool. This lint pulls every
 backticked identifier out of a template and compares it with the tool
 registry the harness actually exposes. Pure; stdlib only.
 """

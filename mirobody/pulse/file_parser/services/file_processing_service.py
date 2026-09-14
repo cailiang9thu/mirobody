@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING
@@ -185,13 +185,13 @@ async def _invalidate_derived_profile(owner_id: str) -> None:
 
     Revoking the file copy was not enough. The profile generator writes a
     summary into ``health_user_profile_by_system.common_part`` and mirrors the
-    detailed version to ``/memories/health_profile.md`` — and that mirror quotes
+    detailed version to ``/memories/health_profile.md``, and that mirror quotes
     the readings verbatim ("GLU 7.5 mmol/L, FBG 7.45, PBG 9.5, HbA1c 7.2% ...").
     It carries no ``file_key``, so it survived both the file delete and the
     reading cascade.
 
     Measured, after deleting the report through the UI: the file was gone, its
-    readings were gone, the agent's copy was revoked — and the next question
+    readings were gone, the agent's copy was revoked, and the next question
     still came back with all twelve values, sourced from that profile.
 
     Both derived copies are therefore invalidated here rather than repaired.
@@ -304,7 +304,7 @@ async def delete_files_from_message(
                 })
         
         # The profile is derived from the readings the cascade is about to remove,
-        # and it quotes them. Invalidate it inline — a background failure here
+        # and it quotes them. Invalidate it inline: a background failure here
         # leaves deleted values in the model's system prompt.
         if deleted_files:
             await _invalidate_derived_profile(cascade_delete_user_id or user_id)
@@ -596,7 +596,7 @@ def _start_background_cascade_delete(
         user_id: User ID
         deleted_files: List of deleted file information
     """
-    # spawn() keeps a strong reference until completion — a bare
+    # spawn() keeps a strong reference until completion: a bare
     # asyncio.create_task here left the task GC-collectable mid-delete
     # (the exact failure mode utils/tasks.py documents).
     logger.info(f"Creating background cascade delete task - message_id: {message_id}, user_id: {user_id}, files_count: {len(deleted_files)}")

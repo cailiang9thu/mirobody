@@ -1,4 +1,4 @@
-"""Terminology tools — ② Translate, exposed over MCP.
+"""Terminology tools: ② Translate, exposed over MCP.
 
 This is the engine's differentiator on the tool surface. Every other health MCP
 server hands the model *vendor-shaped* data and leaves naming to chance:
@@ -11,7 +11,7 @@ Two properties worth stating plainly, because they are unusual for an MCP tool:
   an anonymous caller and disclose nothing. They are pure terminology.
 * **No network, no API key.** Resolution runs against the data bundles shipped
   inside the package (~46 MB, Git LFS). A client can be air-gapped and these
-  still answer — which is exactly the property health data deserves.
+  still answer, which is exactly the property health data deserves.
 
 Measured coverage of the resolver these tools call: see
 ``mirobody/tests/test_engine_coverage.py`` (94 everyday panel terms across English,
@@ -34,7 +34,7 @@ class TerminologyService:
     async def resolve_indicator(self, names: list[str]) -> dict[str, Any]:
         """
         Resolve health indicator names to canonical LOINC codes. Offline, no
-        user data — safe for any term. Any language and clinical shorthand:
+        user data: safe for any term. Any language and clinical shorthand:
         "LDL-C", "低密度脂蛋白胆固醇" and "ヘモグロビン" all resolve.
 
         Use whenever a name needs a standard identity: storing a reading,
@@ -45,17 +45,17 @@ class TerminologyService:
             names: Names exactly as printed. Pass the whole batch in one call.
 
         Returns:
-            results: per input, in order — name (unchanged), resolved, loinc
+            results, per input, in order: name (unchanged), resolved, loinc
                 (e.g. "718-7", empty when unresolved), canonical (LOINC long
                 common name), candidates (matched corpus rows; a large number
-                means genuine ambiguity and one sensible default was chosen —
+                means genuine ambiguity and one sensible default was chosen:
                 surface that when precision matters).
 
         Notes for LLMs:
             - Unresolved is an honest "no": report it unmatched, never invent
               a code.
             - PANEL names ("blood pressure", "血圧") deliberately do not
-              resolve — ask for the specific measurement (systolic/diastolic).
+              resolve: ask for the specific measurement (systolic/diastolic).
             - Same code from two names = same test. That, not string equality,
               decides whether two readings are comparable.
         """
@@ -103,7 +103,7 @@ class TerminologyService:
         """
         Convert one measurement between units. Offline, no user data. Use this
         before comparing or charting readings that were recorded in different
-        units — never scale a value by hand.
+        units, never scale a value by hand.
 
         Args:
             value: The number as recorded, e.g. 5.6.
@@ -115,7 +115,7 @@ class TerminologyService:
 
         Returns:
             converted: the value in `to_unit`, or null when the two units cannot
-                be converted — which is an ANSWER, not a failure: report the
+                be converted, which is an ANSWER, not a failure: report the
                 readings separately with their own units rather than scaling
                 one to look like the other. Percentages and absolute counts, and
                 anything needing a molar mass this engine does not carry, land
@@ -156,16 +156,16 @@ class TerminologyService:
         """
         Normalize free-text measurement units to canonical UCUM form. Offline,
         no user data. The same unit gets written many ways ("mg/dL", "MG/DL",
-        "毫摩尔每升") — normalize before comparing or converting values.
+        "毫摩尔每升"): normalize before comparing or converting values.
 
         Args:
             units: Unit strings as printed, e.g. ["mg/dL", "毫摩尔每升", "次/分"].
 
         Returns:
-            results: per input, in order — unit (unchanged), ucum (canonical
-                form; empty means unrecognized — say so rather than assuming),
+            results, per input, in order: unit (unchanged), ucum (canonical
+                form; empty means unrecognized: say so rather than assuming),
                 family (LOINC PROPERTY, e.g. "SCnc"). `family` classifies the
-                property; it does NOT tell you what converts — `kg/m2` (BMI)
+                property; it does NOT tell you what converts: `kg/m2` (BMI)
                 and `mg/dL` share the family MCnc and cannot convert, while
                 `U/L` and `[IU]/L` are in different families and are the same
                 unit. Call `convert_unit` for that question.

@@ -201,7 +201,7 @@ class RequestRateLimiterMiddleware(BaseHTTPMiddleware):
             threshold = self._url_paths.get(request.url.path)
             if isinstance(threshold, int) and threshold > 0:
                 # Authenticated requests count per user. Unauthenticated ones
-                # count per client IP — an earlier version required
+                # count per client IP: an earlier version required
                 # `user_id > 0`, which meant the pre-auth endpoints
                 # (/password/login, /password/register, /email/verify) could
                 # STRUCTURALLY never be limited: exactly the routes an online

@@ -4,7 +4,7 @@ FHIR Indicator Mapping
 Loads fhir_indicators table at startup and provides fhir_id lookup for
 th_series_data writes. Hot path is read-only (memory cache).
 
-Configuration (read via safe_read_cfg — environment > overlay > config.yaml):
+Configuration (read via safe_read_cfg: environment > overlay > config.yaml):
     FHIR_TABLE_AUTO_R: "true"/"false" - Whether to load fhir_indicators mapping
     FHIR_TABLE_AUTO_W: "true"/"false" - Whether to auto-register missing indicators
 """
@@ -132,7 +132,7 @@ class FhirMapping:
         if fhir_id:
             return fhir_id
 
-        # Cache miss — record for background processing
+        # Cache miss: record for background processing
         if base_indicator not in self._pending:
             self._pending.add(base_indicator)
             logger.debug(f"[FhirMapping] Cache miss: {base_indicator}")
@@ -179,7 +179,7 @@ class FhirMapping:
                     registered.add(code)
                     logger.info(f"[FhirMapping] Auto-registered: {code} -> {new_id}")
                 else:
-                    # ON CONFLICT DO NOTHING — already exists, fetch its id into cache
+                    # ON CONFLICT DO NOTHING: already exists, fetch its id into cache
                     existing_id = await self._lookup_fhir_id(code)
                     if existing_id:
                         with self._lock:
@@ -209,7 +209,7 @@ class FhirMapping:
         """Insert a new indicator into fhir_indicators and return its id.
 
         The column list used to end in ``update_time``, which
-        ``schema/01_basedata.sql`` does not define — so this INSERT raised
+        ``schema/01_basedata.sql`` does not define, so this INSERT raised
         ``column "update_time" of relation "fhir_indicators" does not exist``
         against our own DDL, every time. It went unnoticed because the write
         path is gated behind ``FHIR_TABLE_AUTO_W`` and because the table used

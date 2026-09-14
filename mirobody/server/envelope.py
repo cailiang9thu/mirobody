@@ -1,6 +1,6 @@
 """The routers' response envelope: `{"code", "msg", "data"}`.
 
-Every FastAPI router under `server/routers` answers with this shape — `code`
+Every FastAPI router under `server/routers` answers with this shape: `code`
 0 on success, an HTTP-like code on failure, `msg` a sentence for a human,
 `data` the payload (always an object, empty on failure, so a client can read
 `data.x` without a null check). It used to be defined three times: two

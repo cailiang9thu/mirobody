@@ -1,18 +1,18 @@
 """Naming and typing inside the agent's virtual filesystem.
 
-deepagents' ``ls`` returns paths and nothing else — no size, no date — so the
+deepagents' ``ls`` returns paths and nothing else (no size, no date) so the
 NAME is the only index the model gets, and a backend that projects stored
 records into files has to answer the same three questions every time: how to
 keep a name to one path segment (`safe_basename`), how two records with the same
 name both stay visible (`resolve_names`: the later one is renamed, never
-dropped — a listing that silently loses a file is a listing the model trusts
-and is wrong), and — for a backend that serves EXTRACTED TEXT for binaries —
+dropped: a listing that silently loses a file is a listing the model trusts
+and is wrong), and: for a backend that serves EXTRACTED TEXT for binaries:
 how to keep deepagents from wrapping that text as a file/image block
 (`display_alias`: a ``.txt`` suffix, because the tool-result block type is
 chosen from the requested path's suffix, and Anthropic rejects a file block in
 a tool result with a 400 that ends the turn).
 
-It also answers what KIND a file is — `guess_mime` (re-exported from the
+It also answers what KIND a file is: `guess_mime` (re-exported from the
 engine layer) and `MULTIMODAL_EXTS` / `is_multimodal`, the extensions
 deepagents serves as content blocks rather than as text.
 """
@@ -28,7 +28,7 @@ from deepagents.backends.utils import _EXTENSION_TO_FILE_TYPE, _VIDEO_EXTRA_EXTE
 # same answers and cannot import the agent layer.
 from ...utils.file_types import guess_mime as guess_mime
 
-#: The suffixes deepagents treats as binary — derived from its own table, not
+#: The suffixes deepagents treats as binary: derived from its own table, not
 #: copied (a copy once missed ``.mkv``).
 BINARY_SUFFIXES: tuple[str, ...] = tuple(sorted({*_EXTENSION_TO_FILE_TYPE, *_VIDEO_EXTRA_EXTENSIONS}))
 
@@ -68,7 +68,7 @@ def disambiguate(name: str, key: str) -> str:
 def resolve_names(rows: list[dict], *, pinned: dict[str, str] | None = None, key: str = "file_key", name: str = "filename") -> list[dict]:
     """Fix each row's agent-facing filename; returns copies with ``name`` rewritten.
 
-    ``pinned`` (key → name) wins over the stored name — the mount must answer to
+    ``pinned`` (key → name) wins over the stored name: the mount must answer to
     the paths the model was already told, and the stored column may be rewritten
     mid-turn. A repeated name is DISAMBIGUATED, not dropped: this view is
     addressed by name, so names must be unique, but dropping the later record
@@ -95,7 +95,7 @@ def resolve_names(rows: list[dict], *, pinned: dict[str, str] | None = None, key
 
 
 #: Extensions deepagents surfaces as multimodal content blocks (stored as raw
-#: bytes / object-storage offload, served as base64 — never as inline text).
+#: bytes / object-storage offload, served as base64, never as inline text).
 #: Mirrors the harness virtual-filesystem docs:
 #: https://docs.langchain.com/oss/python/deepagents/harness#virtual-filesystem-access
 #: One copy: it used to live in both `parser.py` (upload-time classification)

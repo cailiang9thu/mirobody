@@ -3,9 +3,9 @@
 Two conversions, shared by every provider because every vendor gets
 them differently:
 
-* timestamps — epoch seconds/millis, ISO-8601 with and without offset, and
+* timestamps: epoch seconds/millis, ISO-8601 with and without offset, and
   local wall-clock with a separate offset field, all reduced to one form;
-* source names — the free-text device/app label a vendor reports, normalized
+* source names: the free-text device/app label a vendor reports, normalized
   so `Garmin Connect`, `garmin_connect` and `GarminConnect` are one source.
 
 Was a 369-line module called `utils` holding five helper classes (an

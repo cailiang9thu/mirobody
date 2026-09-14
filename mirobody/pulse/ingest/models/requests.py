@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 
 class FormatDataContext(BaseModel):
-    """Pre-resolved context for format_data() — no DB calls needed inside."""
+    """Pre-resolved context for format_data(), no DB calls needed inside."""
     theta_user_id: str | None = Field(default="", description="Internal platform user ID")
     external_user_id: str | None = Field(None, description="Vendor-side user ID (Garmin userId, Whoop numeric ID, Vital user_id)")
     user_timezone: str = Field(default="UTC", description="Pre-resolved user timezone")
@@ -50,7 +50,7 @@ class StandardPulseRecord(BaseModel):
 
     The first six fields are the record shape the Vital vendor's API used,
     kept verbatim so its payloads needed no conversion. Vital is no longer a
-    provider here — the installed three are Garmin, Oura and WHOOP — and the
+    provider here (the installed three are Garmin, Oura and WHOOP) and the
     `VitalHealthRecord` model that documented that shape is gone with it.
     The field set stays because rows in `th_series_data` were written against
     it: that is why `value` is required and why `source` still reads

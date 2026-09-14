@@ -59,7 +59,7 @@ class AppleHealthPlatform(Platform):
         # The /apple/cda endpoint routes to slug "cda". This registration was
         # missing, so `post_data(provider_slug="cda", ...)` failed the provider
         # lookup on EVERY request and the endpoint answered a permanent
-        # `200 {"success": false}` — total unavailability dressed up as an
+        # `200 {"success": false}`: total unavailability dressed up as an
         # ordinary soft failure.
         cda_provider = CDAProvider(self)
         self._providers[cda_provider.info.slug] = cda_provider
@@ -141,11 +141,11 @@ class AppleHealthPlatform(Platform):
 
         Runs all-users incremental aggregation to keep the call path simple;
         the distributed lock inside AggregateIndicatorService de-duplicates
-        concurrent ingest bursts. Any failure here is logged and swallowed —
+        concurrent ingest bursts. Any failure here is logged and swallowed:
         AggregateIndicatorTask (every 4 min) will catch up.
         """
         # Not debounced. If concurrent uploads from many users ever back the
-        # distributed lock up, a short Redis SET NX here would coalesce them —
+        # distributed lock up, a short Redis SET NX here would coalesce them:
         # keyed globally, since this runs a global incremental, or by user_id
         # if it ever becomes per-user.
 

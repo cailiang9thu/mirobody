@@ -2,7 +2,7 @@
 
 ``assert_golden(path, actual)`` compares ``actual`` with the file at
 ``path`` and raises with a unified diff on mismatch. Setting
-``MIROBODY_UPDATE_GOLDEN=1`` rewrites the file instead — the only way a
+``MIROBODY_UPDATE_GOLDEN=1`` rewrites the file instead: the only way a
 snapshot changes, so a behaviour change is a visible diff in review, never
 a silent re-baseline. Pure; stdlib only.
 """

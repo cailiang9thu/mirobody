@@ -1,4 +1,4 @@
-"""Outbound URL safety and bounded fetching — the one implementation.
+"""Outbound URL safety and bounded fetching: the one implementation.
 
 Every URL a caller hands in goes through `assert_public_url()` first: if any
 address it resolves to is loopback, private, link-local, reserved or
@@ -8,7 +8,7 @@ server that fetches whatever it is told to is a pivot into all of them.
 
 `fetch_bounded()` is the matching downloader: it counts bytes *as they
 arrive* and disconnects the moment the cap is exceeded, instead of
-``await resp.read()`` then a length check — which is no defence against a
+``await resp.read()`` then a length check, which is no defence against a
 response that claims 1 KB and sends 10 GB (Content-Length is the peer's word).
 
 The judgement used to live inside one MCP-tool loader, for developer-typed
@@ -33,7 +33,7 @@ _REDIRECTS = frozenset({301, 302, 303, 307, 308})
 
 #: Ranges `ipaddress` does not call private but that are not the public
 #: internet either. `100.64.0.0/10` is RFC 6598 carrier-grade NAT, which is
-#: also where several Kubernetes distributions put pod and service networks —
+#: also where several Kubernetes distributions put pod and service networks,
 #: so it is reachable in-cluster while `is_private` returns False for it, the
 #: one combination this guard exists to refuse.
 _EXTRA_REFUSED = (
@@ -89,9 +89,9 @@ async def fetch_bounded(
     """Fetch ``url`` and return ``(body, content_type)``; raise
     ``FetchTooLargeError`` past ``max_bytes``.
 
-    Every redirect hop is re-checked with `assert_public_url` — checking only
+    Every redirect hop is re-checked with `assert_public_url` (checking only
     the initial URL does not stop the most common bypass, a public hostname
-    that 302s to 169.254.169.254 — so automatic following is off and the hops
+    that 302s to 169.254.169.254) so automatic following is off and the hops
     are walked here.
 
     ``aiohttp`` is imported lazily: it is the one HTTP client this package

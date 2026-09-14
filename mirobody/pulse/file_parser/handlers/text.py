@@ -29,7 +29,7 @@ class TextHandler(BaseFileHandler):
 
         # For text files the raw decode IS the original text. The dedup
         # read/write that used to sit here cached a free decode and was the
-        # third hand-copied version of the cache SQL — dedup for expensive
+        # third hand-copied version of the cache SQL: dedup for expensive
         # extraction lives in FileAbstractExtractor now.
         original_text = raw_text
 

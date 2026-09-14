@@ -122,7 +122,7 @@ def window_ms(data_type: str, item: dict, tz: str, pulled_at_ms: int) -> tuple[i
     return pulled_at_ms, pulled_at_ms
 
 
-#: Every catalogue metric this table can emit — derived from MAPPING, so it
+#: Every catalogue metric this table can emit: derived from MAPPING, so it
 #: cannot drift from what `decode` actually produces. `connect.Coverage` is
 #: built from it (`vendors.coverage_of`).
 METRICS: frozenset[str] = frozenset(

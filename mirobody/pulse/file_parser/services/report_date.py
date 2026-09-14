@@ -1,4 +1,4 @@
-"""One uploaded file, one report date — the write side of issue #53.
+"""One uploaded file, one report date: the write side of issue #53.
 
 Three callers, one rule: the Data page's "which date?" bar, the
 `POST /api/v1/health-indicators/file-date` endpoint behind it, and the agent's
@@ -6,11 +6,11 @@ Three callers, one rule: the Data page's "which date?" bar, the
 must agree on what "set the date" means, so the meaning lives here and nowhere
 else:
 
-* `when` given — every reading of the file moves to that date and is labelled
+* `when` given: every reading of the file moves to that date and is labelled
   `date_source: manual`; the file row records the same. Readings that do not
   exist YET (extraction still running) are not lost: the extractor re-reads the
   file row before it saves and honours a manual date it finds there.
-* `when` None — "keep the upload day": nothing about the readings changes, the
+* `when` None, "keep the upload day": nothing about the readings changes, the
   file row gets `date_confirmed` so the question is not asked again.
 
 Authorization is the caller's job (`resolve_subject(..., require_write=True)`
@@ -50,7 +50,7 @@ RETURNING t.id
 
 # The unique (user, indicator, start, end) key counts soft-deleted rows too, so
 # a reading the user deleted (a re-uploaded report, a removed file) would block
-# the live one from taking its date — found in the clean-slate walk: 18 of 21
+# the live one from taking its date, found in the clean-slate walk: 18 of 21
 # readings "already had a reading that day" that was the deleted copy of
 # themselves. Trash that stands in the way is removed for good; live rows are
 # never touched here.

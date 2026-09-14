@@ -190,7 +190,7 @@ class GarminProvider(BasePullProvider):
                 verifier=None
             )
 
-            # Get request token. OAuth1Session is synchronous `requests` —
+            # Get request token. OAuth1Session is synchronous `requests`:
             # awaiting it in a thread keeps this provider from freezing the
             # event loop (Oura/Whoop use aiohttp natively; Garmin is the one
             # provider still on OAuth1, which aiohttp does not speak).
@@ -350,7 +350,7 @@ class GarminProvider(BasePullProvider):
             )
             garmin_user_id = await asyncio.to_thread(self._get_user_id, oauth)
 
-            # Get access token (sync requests — run in a thread, see above)
+            # Get access token (sync requests: run in a thread, see above)
             resp = await asyncio.to_thread(oauth.post, self.access_token_url)
 
             if resp.status_code != 200:
@@ -433,7 +433,7 @@ class GarminProvider(BasePullProvider):
                     resource_owner_secret=token_secret
                 )
 
-                # Call DELETE API to unlink user (sync requests — thread)
+                # Call DELETE API to unlink user (sync requests: thread)
                 unlink_url = f"{self.api_base_url}/user/registration"
                 resp = await asyncio.to_thread(oauth.delete, unlink_url)
 
@@ -621,7 +621,7 @@ class GarminProvider(BasePullProvider):
             # Get user ID first. Everything below is synchronous `requests`
             # via OAuth1Session; each unit runs in a worker thread so a
             # multi-endpoint, multi-day pull does not stall every other
-            # coroutine on this loop for its whole duration — which is what
+            # coroutine on this loop for its whole duration, which is what
             # happened when these were called inline in this `async def`.
             user_id = await asyncio.to_thread(self._get_user_id, oauth)
 

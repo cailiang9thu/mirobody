@@ -7,18 +7,18 @@ SECTION INDEX (line numbers are approximate):
     ~28   Request/Response Models (AuthType, LinkProviderRequest, StandardResponse, ProviderInfo, etc.)
     ~164  Helper: _sort_providers_by_priority()
     ~204  Helper: handle_redirect()
-    ~229  GET  /providers              — list all available providers
-    ~365  GET  /user/providers         — list user's connected providers
-    ~415  POST /user/providers/link    — link a provider (OAuth/password/custom)
+    ~229  GET  /providers              list all available providers
+    ~365  GET  /user/providers         list user's connected providers
+    ~415  POST /user/providers/link    link a provider (OAuth/password/custom)
     ~502  Helper: _generate_oauth_completion_html()
-    ~565  GET  /{platform}/{provider}/callback — OAuth callback handler
-    ~626  POST /user/providers/unlink  — unlink a provider
-    ~701  POST /user/providers/llm-access — update LLM access permission
-    ~828  POST /{platform}/webhook     — universal webhook receiver
-    ~879  POST /{platform}/{provider}/webhook — provider-specific webhook
+    ~565  GET  /{platform}/{provider}/callback (OAuth callback handler
+    ~626  POST /user/providers/unlink  unlink a provider
+    ~701  POST /user/providers/llm-access) update LLM access permission
+    ~828  POST /{platform}/webhook     universal webhook receiver
+    ~879  POST /{platform}/{provider}/webhook: provider-specific webhook
     ~930  Helper: get_provider_slug(), get_msg_id()
-    ~959  POST /{platform}/token       — get theta token
-    ~1022 GET  /theta/indicators       — list theta indicators
+    ~959  POST /{platform}/token       get theta token
+    ~1022 GET  /theta/indicators       list theta indicators
 """
 
 import json
@@ -913,7 +913,7 @@ async def get_theta_indicators():
         categories_info = {}
 
         # The categories this endpoint publishes, spelled the way
-        # `get_all_indicators_info()` spells them — WITH SPACES. They were
+        # `get_all_indicators_info()` spells them: WITH SPACES. They were
         # written with underscores ("vital_signs", "sleep", "activity"), which
         # intersects the real labels in exactly zero places, so the filter
         # dropped all 296 indicators and the route answered

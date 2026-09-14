@@ -69,8 +69,8 @@ class ProviderDatabaseService:
                 # line. `phi_baseline.txt` had grandfathered it, and the entry
                 # read as one long f-string rather than as the slice it
                 # interpolated, so nothing pointed at it. A fingerprint answers
-                # the only question a log can honestly ask here — "is this the
-                # same stored value as last time?" — without carrying the value.
+                # the only question a log can honestly ask here ("is this the
+                # same stored value as last time?") without carrying the value.
                 logger.error(
                     "AES-GCM InvalidTag for user %s: authentication tag verification failed "
                     "(ciphertext len=%d, fingerprint=%s). Data corruption or a key mismatch.",
@@ -192,7 +192,7 @@ class ProviderDatabaseService:
 
         Logic:
         - Soft-delete the existing active row (if any) AND insert the new row in a
-          single data-modifying CTE — both run inside the same statement / transaction.
+          single data-modifying CTE: both run inside the same statement / transaction.
           If anything in the statement fails, PostgreSQL rolls back the whole CTE,
           so we never end up with "old row soft-deleted but new row not inserted"
           which would silently drop the user's credentials.
@@ -254,7 +254,7 @@ class ProviderDatabaseService:
             params["connect_info"] = json.dumps(credentials.connect_info)
 
         # Atomic soft-delete + insert via data-modifying CTE.
-        # The CTE's UPDATE may match 0 rows (first link) — that's fine, the INSERT
+        # The CTE's UPDATE may match 0 rows (first link), that's fine, the INSERT
         # still runs. Both statements share the same transaction; either both
         # commit or both roll back.
         atomic_query = f"""

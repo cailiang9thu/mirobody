@@ -1,11 +1,11 @@
-"""Morpheme + alias tables — source of truth for unit normalization.
+"""Morpheme + alias tables: source of truth for unit normalization.
 
 Edit this file directly when adding new units or language variants.
 Two layers:
 
-* MORPHEMES — atomic tokens consumed by the tokenize-compose path
+* MORPHEMES: atomic tokens consumed by the tokenize-compose path
   (``Millimol`` + ``/`` + ``L`` → ``mmol/L``).
-* ALIASES — full-string mappings looked up directly without composing
+* ALIASES: full-string mappings looked up directly without composing
   (``mmHg`` → ``mm[Hg]``).
 
 Keys are the canonical UCUM unit; values are lists of input variants.

@@ -3,7 +3,7 @@
 `local_date` is derived at write time (`readings.derive_day_columns`), so
 every row written from now on carries its day. The rows already in the table
 do not, and a reader that meets a NULL there has to fall back to casting the
-naive timestamp with a day of padding either side — the `date_padded_naive`
+naive timestamp with a day of padding either side: the `date_padded_naive`
 semantics the query layer reports. This pass removes that fallback for the
 history.
 
@@ -13,12 +13,12 @@ Two things make it safe to run on every boot:
   cheap index probe and nothing else;
 * it groups by the metric's WINDOW rather than by indicator, and there are
   exactly two windows in the catalogue (`00:00` and `18:00`), so the whole
-  history is two UPDATE statements — not one per name.
+  history is two UPDATE statements, not one per name.
 
 The time zone does not appear anywhere here on purpose: `th_series_data`
 stores naive LOCAL wall clock, so the day is wall-clock arithmetic. A store
 whose time column were UTC would need the subject's zone and would have to
-say which zone it used — see `query.SEMANTICS_*`.
+say which zone it used: see `query.SEMANTICS_*`.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ WHERE id IN (
 
 # A windowed row is filed under the day its window OPENED: a sleep stage at
 # 02:00 belongs to the night that started at 18:00 the day before. Rows the
-# aggregator already anchored to local 00:00 are excluded — they ARE days.
+# aggregator already anchored to local 00:00 are excluded, they ARE days.
 _SQL_WINDOWED = """
 UPDATE th_series_data SET
     local_date   = (start_time - (:offset)::interval)::date,

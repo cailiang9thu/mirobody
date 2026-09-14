@@ -9,9 +9,9 @@ Provides common functionalities for all Platforms and Providers, including:
 - Unified background task scheduler
 - Encapsulated push service
 
-What a value *means* — the indicator catalogue, unit conversion, value-range
-validation, fhir_id mapping — lives in `mirobody.pulse.standardize`, not here.
-The downstream pipeline stage — `pulse.aggregate`, series → daily summaries —
+What a value *means* (the indicator catalogue, unit conversion, value-range
+validation, fhir_id mapping) lives in `mirobody.pulse.standardize`, not here.
+The downstream pipeline stage (`pulse.aggregate`, series → daily summaries) 
 is a top-level pulse package too. Both used to live inside this package, which
 made "core" a grab-bag: the pipeline was invisible in the directory tree, and
 pure data modules imported alongside the server infrastructure above. Core is
@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 #
 # Importing any submodule ran this __init__, which imported `.database` and
 # pulled SQLAlchemy and FastAPI into the process. That made the INDICATOR
-# CATALOGUE — pure data, no I/O — unusable without the server stack installed,
+# CATALOGUE (pure data, no I/O) unusable without the server stack installed,
 # which is the opposite of the engine's premise.
 #
 # Every existing `from mirobody.pulse.core import X` keeps working unchanged; each export

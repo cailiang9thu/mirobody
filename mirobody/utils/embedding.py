@@ -1,4 +1,4 @@
-"""Lightweight embedding API — provider-agnostic, config-driven.
+"""Lightweight embedding API: provider-agnostic, config-driven.
 
 Usage::
 
@@ -38,13 +38,13 @@ _EMB_RETRY_STATUSES = (408, 429, 502, 503, 504)
 # async event loop; writes go through a threading.Lock since sqlite3
 # isn't async-safe for write transactions.
 #
-# Opt-in (``text_embedding(..., cache=True)``) — bulk index builds
+# Opt-in (``text_embedding(..., cache=True)``): bulk index builds
 # (`fhir/embeddings/ref.py` embeds ~700K unique concepts that won't
 # re-occur) would bloat the cache to multi-GB with zero hit rate.
 # Query-side callers (resolve, benchmarks, search) opt in.
 #
 # To invalidate: ``rm ~/.cache/mirobody/text_embedding.sqlite``.
-# Model-version changes aren't auto-detected — clear the cache when
+# Model-version changes aren't auto-detected: clear the cache when
 # the provider's underlying model version is bumped.
 
 _CACHE_PATH = Path.home() / ".cache" / "mirobody" / "text_embedding.sqlite"
@@ -75,7 +75,7 @@ def _get_embedding_cache() -> sqlite3.Connection:
 
 def _cache_lookup(provider: str, texts: list[str]) -> dict[str, list[float]]:
     """Bulk-fetch cached vectors for ``texts``. Missing keys absent from
-    returned dict — caller embeds those via the API."""
+    returned dict: caller embeds those via the API."""
     import numpy as np
 
     conn = _get_embedding_cache()
@@ -127,11 +127,11 @@ _EMB_PROVIDERS: dict[str, callable] = {}
 #:
 #: Availability is measured, not assumed (all verified against the live
 #: endpoints, 2026-08-23):
-#:   * openrouter — qwen3-embedding-8b: open weights, so a deployment can
+#:   * openrouter, qwen3-embedding-8b: open weights, so a deployment can
 #:     also self-host the same model (vLLM/TEI) and set OPENROUTER_BASE_URL
 #:     to its endpoint. OpenRouter serves 8b/4b but NOT 0.6b ("No endpoints
 #:     found").
-#:   * qwen (DashScope) — text-embedding-v4 (the productized Qwen3-Embedding;
+#:   * qwen (DashScope): text-embedding-v4 (the productized Qwen3-Embedding;
 #:     batch cap 10/request, `dimensions: 1024`), the fallback path when
 #:     openrouter.ai is unreachable. No
 #:     embedding model is served by BOTH gateways today (bge-m3 came closest:
@@ -157,15 +157,15 @@ _EMB_PROVIDERS: dict[str, callable] = {}
 #: The 1024 `dimensions` in the factories is deliberately NOT config: it is the
 #: width of the database columns, a schema fact rather than a deployment one.
 def resolve_embedding_provider() -> str:
-    """The vector-column family `UTILS_EMBEDDING_MODEL` routes to — the
+    """The vector-column family `UTILS_EMBEDDING_MODEL` routes to: the
     `embedding:` of the first listed entry whose key is present (that is how
     one key runs everything); "" when none.
 
     "" rather than a default: this used to answer "openrouter" with zero keys,
     which turned "no provider" into "a provider you cannot call" and moved the
     failure to the first request (a 401 from a gateway the deployment never
-    chose). A DEEPSEEK_API_KEY-only deployment also lands here — DeepSeek
-    serves no embedding model — and semantic search degrades to the lexical
+    chose). A DEEPSEEK_API_KEY-only deployment also lands here: DeepSeek
+    serves no embedding model, and semantic search degrades to the lexical
     index rather than to a 401; `mirobody doctor` says which.
     """
     spec = resolve_route("embedding")
@@ -258,7 +258,7 @@ def _openrouter():
     by anyone who wants to run it themselves rather than being a black box
     behind an API. A mirobody deployment **already needs an OPENROUTER_API_KEY**
     for the agent, so the semantic tier costs no second credential. And it is
-    about **$0.01 per million tokens** — embedding the whole 96k-row LOINC
+    about **$0.01 per million tokens**: embedding the whole 96k-row LOINC
     corpus is under two cents.
 
     OpenRouter's `/models` listing covers chat models only and shows no
@@ -266,11 +266,11 @@ def _openrouter():
     answers regardless. Verified against the live endpoint, not the docs.
 
     `dimensions: 1024` uses Qwen3-Embedding's MRL prefix rather than a
-    projection, so it matches a corpus matrix built the same way — and the
+    projection, so it matches a corpus matrix built the same way, and the
     corpus side MUST be built with this same model. A near-miss is worse than a
     mismatch you can see: a matrix built from a different Qwen3-Embedding
     serving config scored 0.64 self-cosine (against a 0.30 floor) and returned
-    plausible-looking nonsense — `空腹血糖` came back as "Widespread delusions".
+    plausible-looking nonsense: `空腹血糖` came back as "Widespread delusions".
     """
     from mirobody.utils.config import global_config
     from mirobody.utils.config.llm import LLMProvider
@@ -293,8 +293,8 @@ def _openrouter():
 def _openai():
     """`text-embedding-3-small` at 1024 dimensions.
 
-    Last resort by design — OpenRouter's open-weights Qwen3 is two orders of
-    magnitude cheaper for the same 96k-row corpus — but without it a deployment
+    Last resort by design (OpenRouter's open-weights Qwen3 is two orders of
+    magnitude cheaper for the same 96k-row corpus) but without it a deployment
     holding only an OPENAI_API_KEY had no embedding path at all, so
     `resolve_embedding_provider()` answered "openrouter" and every call failed
     on a key that was not there. v3 embeddings accept `dimensions`, which is

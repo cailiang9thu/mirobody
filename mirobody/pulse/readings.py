@@ -1,4 +1,4 @@
-"""The one writer of `th_series_data` — every reading, whatever brought it in.
+"""The one writer of `th_series_data`: every reading, whatever brought it in.
 
 Five call sites used to carry their own INSERT for this table: the Apple
 Health upload, the aggregation worker, the file parser, `POST /api/records`
@@ -8,21 +8,21 @@ comment. They differed in what they wanted a collision on the
 `(user_id, indicator, start_time, end_time)` unique key to mean, and that is
 the one thing a caller still says, through `on_conflict`:
 
-- `"update"`         — the new reading replaces the old (device sync,
+- `"update"`         the new reading replaces the old (device sync,
                        aggregation: the source re-sent the truth).
-- `"update_revive"`  — replace AND un-delete (the demo seed: a replay must
+- `"update_revive"`  replace AND un-delete (the demo seed: a replay must
                        bring the shared record back whatever the user did to it).
-- `"revive_deleted"` — replace only a soft-DELETED copy; a live row is left
+- `"revive_deleted"`: replace only a soft-DELETED copy; a live row is left
                        alone (the file parser: a report re-uploaded after its
                        file was deleted collided with its own deleted rows and
                        wrote nothing while the log said otherwise).
-- `"nothing"`        — a collision is a retry, not a duplicate (the records
+- `"nothing"`        a collision is a retry, not a duplicate (the records
                        API: re-sending a batch after a timeout).
 
 Columns a caller does not supply take the table's meaning of "unknown": empty
 string for the text columns, NULL for `source`/`task_id`/`fhir_id`/
 `fhir_mapping_info`. `comment` is always written through `encrypt_content`
-— it is free-text health data, and the readers all `decrypt_content` it.
+it is free-text health data, and the readers all `decrypt_content` it.
 `fhir_id` and `fhir_mapping_info` COALESCE on update so a writer that does
 not know the code cannot erase one that did.
 
@@ -32,7 +32,7 @@ not know the code cannot erase one that did.
 `a4_series_data_day_authority.sql`) are DERIVED here rather than asked of
 every caller, because every caller would derive them differently and the
 read side would then have to guess again. The derivation is
-`mirobody.kernel.series` + `mirobody.kernel.metrics`, and it is pure — `day_key()` and
+`mirobody.kernel.series` + `mirobody.kernel.metrics`, and it is pure: `day_key()` and
 `series_key()` below are unit-tested without a database.
 
 The one thing a caller must say is whether its rows are already anchored to
@@ -48,8 +48,8 @@ earlier. `anchored=True` says "the timestamp is the day".
 Every row passes `mirobody.kernel.quality` before it is bound: `time_gate`
 (no start, an end before its start, a span over 36 hours, a start more than a
 day in the future) and `value_gate` (a non-finite number, a percentage outside
-0–100). Only the physically impossible is rejected — a reference range is a
-clinical asset this project does not maintain — and a rejection is a reason
+0–100). Only the physically impossible is rejected: a reference range is a
+clinical asset this project does not maintain, and a rejection is a reason
 CODE counted in the log, never a value. Rejected rows are dropped, not
 quarantined: there is no quarantine table yet (`docs/roadmap.md`).
 """
@@ -167,7 +167,7 @@ def window_for(indicator: str) -> str:
     """The local-day window of an indicator, `"00:00"` unless the catalogue
     says otherwise. The aggregate writers append the source to the name
     (`totalSleepTime.apple_health`), so the part before the first dot is
-    tried too — this is what replaced four `LOWER(indicator) LIKE '%sleep%'`
+    tried too, this is what replaced four `LOWER(indicator) LIKE '%sleep%'`
     clauses, which matched `sleepScore` (a daily score, not a night) and
     missed `remDuration` (a night, not a score)."""
     metric = metrics.METRICS.get(indicator)
@@ -211,7 +211,7 @@ def series_key(indicator: str, source: Any) -> str:
 def source_class_for(row: dict[str, Any]) -> str:
     """Which of `series.SOURCE_*` a row is, from what the table already knows.
 
-    A caller that knows better passes `source_class` explicitly — a wearable
+    A caller that knows better passes `source_class` explicitly: a wearable
     profile field that comes back on every sync is a `profile_echo`, and only
     the provider adapter can tell.
     """
@@ -224,7 +224,7 @@ def source_class_for(row: dict[str, Any]) -> str:
 
 def derive_day_columns(row: dict[str, Any], *, anchored: bool = False) -> dict[str, Any]:
     """The four derived columns for one row, without overwriting anything the
-    caller stated. Pure — no clock, no database."""
+    caller stated. Pure, no clock, no database."""
     out = dict(row)
     if out.get("local_date") is None:
         out["local_date"] = day_key(str(out.get("indicator") or ""), out.get("start_time"), anchored=anchored)
@@ -245,8 +245,8 @@ def gate(row: dict[str, Any], *, now: datetime | None = None) -> str:
     """The reason code that keeps `row` out of the table, or `""` to let it in.
 
     `start_time`/`end_time` are naive local wall clock, so `now` is compared
-    the same way (`datetime.now()`, naive, local). The value column is text —
-    a lab result can be "positive" — so `value_gate` sees only what parses as
+    the same way (`datetime.now()`, naive, local). The value column is text (
+    a lab result can be "positive") so `value_gate` sees only what parses as
     a number, against the catalogue's unit for the indicator.
     """
     start = _as_datetime(row.get("start_time"))
@@ -288,7 +288,7 @@ async def upsert_readings(
     the quality gate rejects is counted in the log by reason code and not
     written; the return value is the rows that were.
 
-    `anchored=True` for a writer whose rows already ARE days — see the module
+    `anchored=True` for a writer whose rows already ARE days: see the module
     docstring.
     """
     if not rows:

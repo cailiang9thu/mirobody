@@ -18,19 +18,19 @@ paths re-serving index.html. Two failure modes, both observed:
 
 Now it uses `app.frontend()` (FastAPI >= 0.138, verified against the installed
 0.141.1 source): files come off disk via `StaticFiles` (ETag/Range for free),
-and any path with no matching route falls back to index.html — but only for
+and any path with no matching route falls back to index.html, but only for
 requests that accept text/html, so an API client still gets a real 404.
 `app.frontend()` routes match only after every path operation regardless of
 registration order, which is what removes both failure modes structurally.
 
-One thing stays hand-rolled — API-prefix 404 guards: the html-only fallback already protects API clients,
+One thing stays hand-rolled, the API-prefix 404 guards: the html-only fallback already protects API clients,
   but a *browser* navigating to a mistyped backend path (`/api/...`, `/mcp/...`)
   would otherwise receive the SPA shell with a 200. Real backend routes are
   registered before this is called, so they win by order; the guards only
   catch what nothing else matched. `/auth` is deliberately NOT guarded
   wholesale: the client router owns callback routes under `/auth`, and a
   deployment's identity gateway may 302 to one of them with tokens in the URL
-  fragment — those must reach the SPA shell, not a backend 404. Only the
+  fragment, those must reach the SPA shell, not a backend 404. Only the
   backend-owned `/auth/session` and `/auth/webauthn` subtrees get guards.
 """
 
@@ -42,7 +42,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 # Backend-owned URL prefixes (from the manually-built service routes and every
 # APIRouter prefix in server/routers/). A GET under these that nothing matched
-# is a mistake, not a SPA deep link — answer 404, not the shell.
+# is a mistake, not a SPA deep link: answer 404, not the shell.
 _API_PREFIXES = (
     "/api",
     "/mcp",
@@ -64,7 +64,7 @@ class _CacheControl:
     `app.frontend()` exposes no header hook, so this sits in the middleware
     stack instead: Vite's hashed `assets/*` never change content under the
     same name (immutable), while `index.html` and `/mirobody.json` are the
-    two files a deployment swap must propagate immediately (no-cache — the
+    two files a deployment swap must propagate immediately (no-cache: the
     ETag from StaticFiles makes revalidation cheap, but without no-cache
     browsers apply heuristic freshness and can keep serving a stale shell).
     Responses that already set Cache-Control (e.g. SSE) are left alone.

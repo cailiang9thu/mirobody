@@ -91,7 +91,7 @@ Please generate a JSON format response based on the file content:"""
 FALLBACK_ABSTRACT_TEMPLATES = {
     # These are what a reader sees when summarisation FAILED, so they say so.
     # They used to read "uploaded successfully, contains {page_count} pages"
-    # and were filled with `page_count="unknown pages"` — rendering "contains
+    # and were filled with `page_count="unknown pages"`: rendering "contains
     # unknown pages pages", a doubled word inside a sentence claiming success
     # over a document nothing had managed to read. The file IS stored; it is
     # the summary that is missing, and only that.

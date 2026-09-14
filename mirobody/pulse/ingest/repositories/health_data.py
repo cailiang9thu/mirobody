@@ -132,7 +132,7 @@ class HealthDataRepository:
         Multi-batch guarantee: a single repair (`repair-<uuid>`) may arrive split
         across several upload batches sharing the SAME task_id. The
         `task_id IS DISTINCT FROM :repair_task_id` predicate means rows already written
-        by an earlier batch of THIS repair (same task_id) are NEVER deleted — only rows
+        by an earlier batch of THIS repair (same task_id) are NEVER deleted: only rows
         the repair has not (re-)confirmed are swept. So batch N's sweep cannot wipe
         batch N-1's rows; multi-batch repairs converge correctly.
 
@@ -146,7 +146,7 @@ class HealthDataRepository:
         # NOTE: this DELETE intentionally does NOT exclude task_id='filtered_out_of_range'.
         # Unlike a read (which must hide filtered rows), the repair sweep makes the window
         # authoritative: any in-window apple row of the repaired family NOT re-confirmed by
-        # this repair — including stale out-of-range rows — is removed. Rows of the current
+        # this repair (including stale out-of-range rows) is removed. Rows of the current
         # repair are still protected by the task_id predicate below.
         query = """
             DELETE FROM series_data

@@ -1,4 +1,4 @@
-"""Medications as their own entity — a plan, the doses it schedules, and what
+"""Medications as their own entity: a plan, the doses it schedules, and what
 was actually taken. None of it is a reading and none of it belongs in a
 series table.
 
@@ -18,7 +18,7 @@ learned the hard way are load-bearing here:
   unanswered slot is still ``due`` or already ``missed`` depends on *now* and on
   a grace rule, so :func:`slot_state` takes both.
 * **Adherence needs ``now``.** A dose scheduled for tonight is not missed at
-  noon. The percentage is over elapsed slots only, and is ``None`` — not 0 —
+  noon. The percentage is over elapsed slots only, and is ``None`` (not 0) 
   when nothing has elapsed or the plan is as-needed.
 
 Nothing here prints a drug name by accident: free-text fields are excluded
@@ -71,9 +71,9 @@ def normalize_name(text: str | None) -> str:
     """The comparison form of a medication name that has no code.
 
     Deterministic and convergent only: Unicode compatibility folding (so
-    full-width ``５００ｍｇ`` and ``㎎`` become ASCII — a superset of a plain
+    full-width ``５００ｍｇ`` and ``㎎`` become ASCII: a superset of a plain
     full-width fold), case folding, and dropping all whitespace. Deliberately
-    *no* alias or brand→generic mapping — that is an open-ended asset behind
+    *no* alias or brand→generic mapping, that is an open-ended asset behind
     the ``Terminology`` port. Two spellings of one drug make two plans; a user
     sees that and deletes one, which is safer than a wrong merge.
     """
@@ -85,7 +85,7 @@ def normalize_name(text: str | None) -> str:
 class MedicationConcept:
     """What the medication is: free text as the person wrote it, plus any
     codes a terminology service attached. ``text`` and ``strength`` are kept
-    out of ``repr`` — they are health data."""
+    out of ``repr``, they are health data."""
 
     text: str = field(repr=False)
     codes: tuple[Coding, ...] = ()
@@ -105,7 +105,7 @@ class MedicationConcept:
         """``rxnorm:<sorted codes>`` when coded, else ``text:<hash of the
         normalised name>``. Order-independent for multi-coded concepts; a
         coded concept and a text-only one never compare equal, even for the
-        same drug — auto-merging them is how a wrong code silently rewrites a
+        same drug: auto-merging them is how a wrong code silently rewrites a
         person's medication list. The text key is a hash so the key can be
         logged without the name."""
         codes = self.rxnorm_codes
@@ -390,7 +390,7 @@ def weekday_from(value: int | str, convention: Literal["iso", "zero_monday", "ze
 
 @dataclass(frozen=True)
 class ScheduleParts:
-    """A description of a schedule with no words in it — labels render it."""
+    """A description of a schedule with no words in it: labels render it."""
 
     kind: str
     times: tuple[str, ...]
@@ -442,7 +442,7 @@ _ZH_WEEKDAY_RE = re.compile(
 )  # 周一、三、五; 每周一次 is "once weekly"
 _PRN_RE = re.compile(r"\b(?:prn|as needed|when needed|if needed)\b|必要时|按需|需要时", re.I)
 #: Most specific first: "twice daily" contains "daily". ``od`` is deliberately
-#: absent — in ophthalmic sigs it means the right eye, not once daily.
+#: absent: in ophthalmic sigs it means the right eye, not once daily.
 _PER_DAY = (
     (
         re.compile(r"\b(?:four times a day|four times daily|qid|q\.i\.d\.)\b|每天四次|每日四次|一天四次|每天4次", re.I),
@@ -481,7 +481,7 @@ def parse_dose_instruction(text: str | None) -> Schedule | None:
     The grammar is small and closed (``docs/medications.md``): one dose
     (number + unit or form), one frequency (n per day / every N days / every N
     hours / weekdays / weekly / as needed), optional clock times. Returns a
-    one-element schedule, or ``None`` when nothing is recognised — the caller
+    one-element schedule, or ``None`` when nothing is recognised: the caller
     keeps the original text either way. **No partial parses**: a dose range
     (``"1-2 tablets"``), two different doses, two frequencies, or two regimens
     in one sentence return ``None`` rather than half a regimen.
@@ -578,11 +578,11 @@ class MedicationPlan:
     ``stopped`` or ``entered_in_error``; ``intended`` and ``completed`` are
     derived from the dates by :func:`effective_status`.
 
-    ``start`` is required — a plan with no start cannot be projected or
+    ``start`` is required: a plan with no start cannot be projected or
     placed on a timeline. ``schedule`` holds one instruction per regimen
     (morning 1 tablet, evening ½ tablet is two). ``confirmed`` is ``True`` for
     what the person entered; extraction and import pass ``False`` explicitly
-    and UIs/tools label it — projections do not care. ``entered_in_error`` is
+    and UIs/tools label it: projections do not care. ``entered_in_error`` is
     FHIR's "recorded in error", terminal and retroactive: a consumer whose
     "cancel" is reversible maps it to ``stopped`` with its own flag.
     """
@@ -627,7 +627,7 @@ def effective_status(plan: MedicationPlan, today: date) -> str:
 
 @dataclass(frozen=True)
 class Course:
-    """A period during which a plan was followed — the analysis-side
+    """A period during which a plan was followed: the analysis-side
     "exposure" (OMOP ``drug_exposure``) that lines up with readings on a
     timeline. ``closed_by`` says why it ended, or ``None`` while open; an
     open course is materialised at "today in the subject's zone" by whoever
@@ -647,8 +647,8 @@ def plan_status_transition(
 
     * ``active --stop--> stopped`` (only once the plan has started); closes
       ``Course(start, today, "stopped")``.
-    * ``stopped --resume--> active``: a *new* course starts today — the plan's
-      ``start`` moves to ``today`` and ``end`` clears — and the closed course
+    * ``stopped --resume--> active``: a *new* course starts today (the plan's
+      ``start`` moves to ``today`` and ``end`` clears) and the closed course
       of the previous period is returned so the store can keep it.
     * ``* --void--> entered_in_error`` (not from ``entered_in_error``).
 
@@ -687,7 +687,7 @@ REVIEW_STATES = frozenset({REVIEW_PENDING, REVIEW_ACCEPTED, REVIEW_REJECTED, REV
 class Prescription:
     """A clinician's order (FHIR ``MedicationRequest``), kept apart from the
     plan the person actually follows. ``order_status`` and ``intent`` are the
-    resource's own values, verbatim; ``review`` is *our* state — whether the
+    resource's own values, verbatim; ``review`` is *our* state: whether the
     person has accepted it into a plan. ``order_id`` is the caller's: a
     server-local resource id collides across two EHRs."""
 
@@ -774,8 +774,8 @@ def slot_instant(d: date, slot: str, tz: str, *, gap: str = GAP_SHIFT_FORWARD) -
 
 @dataclass(frozen=True)
 class DoseSlot:
-    """One planned intake. Identity is ``key`` — ``(plan_id, local_date,
-    slot)`` — never the instant. ``utc_ms`` is derived at projection time
+    """One planned intake. Identity is ``key`` (``(plan_id, local_date,
+    slot)``) never the instant. ``utc_ms`` is derived at projection time
     (``None`` for a skipped daylight-saving gap) and is what reminders and
     :func:`slot_state` use."""
 
@@ -835,7 +835,7 @@ def project_schedule(
 ) -> tuple[DoseSlot, ...]:
     """Every dose the plan schedules on the local days ``start..end``
     (both inclusive), clipped to the plan's own dates and, for a stopped
-    plan, to the day it was stopped — history stays answerable. Interval
+    plan, to the day it was stopped: history stays answerable. Interval
     schedules anchor on ``plan.start``. An unknown zone or an inverted
     window raises; a plan recorded in error, an as-needed or an unscheduled
     plan projects to nothing; a window longer than ``max_days`` is refused
@@ -933,7 +933,7 @@ def slot_state(
     ``upcoming`` before its instant, ``due`` until the grace deadline (end of
     the slot's local day in the slot's zone, or ``grace`` minutes after the
     instant), then ``missed``; ``unschedulable`` when the slot has no
-    instant. Derived — call it, do not store it."""
+    instant. Derived: call it, do not store it."""
     if event is not None:
         return STATE_TAKEN if event.status == EVENT_TAKEN else STATE_SKIPPED
     if slot.utc_ms is None:
@@ -948,7 +948,7 @@ def slot_state(
 @dataclass(frozen=True)
 class Adherence:
     """Counts over one window. ``percent`` is ``100 · taken / (taken + skipped
-    + missed)``, one decimal, over *elapsed* slots only — ``None`` when none
+    + missed)``, one decimal, over *elapsed* slots only: ``None`` when none
     have elapsed (an as-needed plan, or a window that has not started).
     ``extra`` are taken doses with no slot in the window; ``extra_skipped``
     are skips with no slot (they answer nothing); ``unschedulable`` slots
@@ -981,7 +981,7 @@ def adherence(
     """Adherence for ``plan`` over ``window`` as of ``now_ms``. Events match
     slots by key (the latest event per slot wins); ``tz`` places slot-less
     events on a local date. The grace deadline is judged in each slot's own
-    zone — the zone the person was in when the dose was due."""
+    zone: the zone the person was in when the dose was due."""
     lo, hi = window
     zone = _zone(tz)
     slots = [d for d in scheduled if d.plan_id == plan.plan_id and lo <= d.local_date <= hi]
@@ -1077,8 +1077,8 @@ class Reconcile:
 
     create: tuple[MedicationPlan, ...] = ()
     already_known: tuple[str, ...] = ()
-    stopped_known: tuple[str, ...] = ()  # the person says they stopped; the plan exists — the caller decides
-    stopped_unknown: tuple[str, ...] = ()  # says stopped, no plan on file — never create one
+    stopped_known: tuple[str, ...] = ()  # the person says they stopped; the plan exists: the caller decides
+    stopped_unknown: tuple[str, ...] = ()  # says stopped, no plan on file, never create one
     ignored: tuple[tuple[str, str], ...] = ()  # (concept_key, reason)
 
     def counts(self) -> dict[str, int]:
@@ -1298,7 +1298,7 @@ def _instruction_from_fhir_dosage(d: Mapping) -> DoseInstruction:
 
 
 def _schedule_from_fhir(dosages: object) -> Schedule:
-    """Every ``dosage``/``dosageInstruction`` entry becomes one instruction —
+    """Every ``dosage``/``dosageInstruction`` entry becomes one instruction:
     a morning/evening regimen is two."""
     if not isinstance(dosages, list) or not dosages:
         return (DoseInstruction(),)
@@ -1362,7 +1362,7 @@ def from_fhir_medication_statement(
       ``effectivePeriod`` (or ``effectiveDateTime``, or ``dateAsserted``, or
       ``default_start``);
     * ``completed`` → active with an ``end`` (period end, else asserted, else
-      ``default_start``) — never open-ended;
+      ``default_start``), never open-ended;
     * ``intended`` → only when its start is after ``today``; otherwise ``None``;
     * ``on-hold`` → stopped on the asserted date; ``stopped`` → stopped;
     * ``not-taken``, ``entered-in-error``, ``unknown`` without dates → ``None``;
@@ -1401,8 +1401,8 @@ def from_fhir_medication_statement(
         # the server that issued it, and a plan id is unique across every
         # person a consumer stores: two people importing from the same clinic
         # collide, and one medication list overwrites another. `plan_id_for`
-        # keeps the idempotency that made the raw id tempting — re-importing
-        # the same record yields the same id — and scopes it to the subject.
+        # keeps the idempotency that made the raw id tempting (re-importing
+        # the same record yields the same id) and scopes it to the subject.
         plan_id=plan_id or plan_id_for(subject_id, str(resource.get("id") or "fhir"), concept.concept_key),
         concept=concept,
         schedule=_schedule_from_fhir(resource.get("dosage")),
@@ -1421,7 +1421,7 @@ def from_fhir_medication_statement(
 
 class MedicationStore(Protocol):
     """Where plans live. ``list(active_only=True)`` is by *stored* status
-    (``active``, which includes not-yet-started and completed plans — those
+    (``active``, which includes not-yet-started and completed plans, those
     are derived); the caller applies :func:`effective_status` with the
     subject's local date, never ``date.today()``. Per-field corrections are
     :mod:`mirobody.kernel.overlay` overrides; ``overrides`` returns them so a reader
@@ -1446,7 +1446,7 @@ class DoseLogStore(Protocol):
 # --- the read tool: query_medications ------------------------------------------------
 #
 # Medications have their own tool because they have their own grammar: a plan
-# has a lifecycle, a dose log has a day, a course has a reason it closed —
+# has a lifecycle, a dose log has a day, a course has a reason it closed:
 # none of which is a resolution or an aggregate. Five parameters, every one
 # applicable to every call; the readings tool is `mirobody.kernel.query`.
 
@@ -1564,7 +1564,7 @@ def _overlaps(start: date, end: date | None, window: tuple[date, date] | None) -
 
 
 def schedule_text(schedule: Schedule) -> str:
-    """A schedule the model can read, built from the STRUCTURE — never from
+    """A schedule the model can read, built from the STRUCTURE, never from
     the person's free text, which is health data and stays in the name."""
     parts: list[str] = []
     for instr in schedule:

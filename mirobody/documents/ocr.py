@@ -1,7 +1,7 @@
 """The reference `Ocr`: one image → its text, through the engine's vision client.
 
 `extract.pdf_text` hands this only the pages whose text layer is empty, and
-`extract.image_text` one downscaled photo at a time — never a whole document.
+`extract.image_text` one downscaled photo at a time, never a whole document.
 The provider is whichever key is configured (`utils.llm.unified_file_extract`
 picks it); a consumer with its own vision model passes its own callable.
 """

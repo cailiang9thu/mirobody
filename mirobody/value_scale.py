@@ -1,7 +1,7 @@
-"""What KIND of result is this — and therefore which LOINC scales can produce it.
+"""What KIND of result is this, and therefore which LOINC scales can produce it.
 
 Half of what a lab report prints is not a number. Of the shipped LOINC axis,
-40,681 rows are ``Qn`` and **38,687 are not** — 25,156 ``Ord``, 7,859 ``Nom``,
+40,681 rows are ``Qn`` and **38,687 are not**: 25,156 ``Ord``, 7,859 ``Nom``,
 4,258 ``SemiQn``, 1,414 ``OrdQn``. 尿蛋白 阴性, 便隐血 ++, 血型 O, HBsAg
 non-reactive are all real readings whose correct code is not quantitative, so a
 resolver that only knows how to constrain numbers is blind to half the corpus.
@@ -14,7 +14,7 @@ class it must belong to:
     "阴性" / "O+"    nom     Nom     Ord     OrdQn
     free prose      nar     Nar     Doc
 
-(`nom` admitting `Ord` is not sloppiness — see :data:`GATE_SCALES`. LOINC codes
+(`nom` admitting `Ord` is not sloppiness: see :data:`GATE_SCALES`. LOINC codes
 a urine dipstick negative as ``Ord``, and urine glucose has no ``Nom`` variant
 at all, so a Nom-only filter admits nothing.)
 
@@ -26,7 +26,7 @@ answered with an ``Ord`` presence code.
 **This module exists to be shared, not to be new.** The tables and the
 classifier were written for the v2 semantic pipeline
 (:mod:`mirobody.indicator.fhir.resolve.pipeline`), which is the only thing that
-could reach them — 7,286 lines that need a 677k-row corpus matrix. Extracted
+could reach them: 7,286 lines that need a 677k-row corpus matrix. Extracted
 here so the lexical resolver and the small semantic tier use the same vocabulary
 as the big pipeline rather than a second, drifting copy of it. `pipeline.py`
 imports these back.
@@ -44,7 +44,7 @@ __all__ = [
     "scales_for_value",
 ]
 
-# Ordinal markers — the graded results a report prints for a dipstick or a
+# Ordinal markers: the graded results a report prints for a dipstick or a
 # smear. Simplified and traditional Chinese, Japanese, Korean, plus "+/-" and
 # ASCII "trace". A bare ``+`` / ``-`` is ambiguous with positive/negative
 # (which is Nom, not Ord); this matches only when the marker is the WHOLE
@@ -71,7 +71,7 @@ _VALUE_QN_RE = re.compile(
     r"(?:\s*[^\d].*)?$"              # any trailing unit/text
 )
 
-# Nominal tokens — short categorical labels: blood-type letters (A/B/AB/O ±
+# Nominal tokens, short categorical labels: blood-type letters (A/B/AB/O ±
 # Rh), positive/negative, reactive/non-reactive serology. Multilingual because
 # the report is.
 VALUE_NOM_TOKENS: frozenset[str] = frozenset({
@@ -101,7 +101,7 @@ SCALE_COMPAT: dict[str, tuple[str, ...]] = {
     "qn": ("Qn", "SemiQn", "OrdQn"),
     "ord": ("Ord", "OrdQn", "SemiQn"),
     # Semi-quantitative: titer / grade assays. SemiQn first (the canonical
-    # match), OrdQn next (ordinal with a quantitative anchor), then Qn — an
+    # match), OrdQn next (ordinal with a quantitative anchor), then Qn: an
     # over-specified Mass/vol still beats Ord, which carries no magnitude at
     # all.
     "semiqn": ("SemiQn", "OrdQn", "Qn", "Ord"),
@@ -138,7 +138,7 @@ def classify_value(value: str | None) -> str | None:
 #:
 #: The difference that forces two tables is ``nom``. LOINC is not consistent
 #: about how it scales a positive/negative result: a urine dipstick is ``Ord``
-#: (``Glucose [Presence] in Urine``, PROPERTY ``PrThr`` — and urine glucose has
+#: (``Glucose [Presence] in Urine``, PROPERTY ``PrThr``, and urine glucose has
 #: NO ``Nom`` variant at all, so a Nom-only filter admits nothing and the gate
 #: starves), while a few interpretations are ``Nom``
 #: (``Choriogonadotropin [Interpretation]``). A consumer has to accept both.
@@ -154,7 +154,7 @@ GATE_SCALES: dict[str, tuple[str, ...]] = {
 def scales_for_value(value: str | None) -> frozenset[str] | None:
     """The admissible ``SCALE_TYP`` set for a value, or None to place no constraint.
 
-    None means the value was empty or unclassifiable — not that anything goes,
+    None means the value was empty or unclassifiable, not that anything goes,
     but that this signal has nothing to say and some other one must decide.
     """
     cls = classify_value(value)

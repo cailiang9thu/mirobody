@@ -3,14 +3,14 @@
 Two responsibilities, both at *upload time* (the agent reads files through the
 deepagents-native ``read_file`` tool, not through this module):
 
-1. **Classification** — given a filename/mime, decide whether the file is a
+1. **Classification**: given a filename/mime, decide whether the file is a
    *multimodal* type (image / audio / video / pdf / ...). Multimodal files are
    stored as raw bytes (object-storage offload) and surfaced to the model as
    multimodal content blocks by the deepagents filesystem middleware. See
    https://docs.langchain.com/oss/python/deepagents/harness#virtual-filesystem-access
    and https://docs.langchain.com/oss/python/langchain/messages#multimodal
 
-2. **Text extraction, cold** — registration never OCRs. It only asks whether
+2. **Text extraction, cold**: registration never OCRs. It only asks whether
    these exact bytes were extracted before (one indexed SHA256 lookup against
    ``th_files``); if not, ``content`` stays empty and the real extraction runs
    the first time the model calls ``read_file`` on the file, via
@@ -64,14 +64,14 @@ class FileParser:
         file_input: bytes | BinaryIO,
         filename: str,
     ) -> PreparedFile:
-        """Classify an uploaded file for storage — deliberately does NOT extract.
+        """Classify an uploaded file for storage: deliberately does NOT extract.
 
         Cold loading: OCR is the expensive step and most registered files are
         never opened, so it is deferred to the moment the model actually calls
         ``read_file`` (``PgFilesystemBackend._lazy_extract_doc_text`` ->
         ``extract_text``). Registration stays a byte copy.
 
-        The one thing done here is the cheap half — a single indexed SHA256
+        The one thing done here is the cheap half: a single indexed SHA256
         lookup. Bytes somebody already extracted come back inline immediately,
         so a re-uploaded document is free, greppable at once, and needs no
         read-time round-trip.
@@ -109,7 +109,7 @@ class FileParser:
         )
 
     async def extract_text(self, file_bytes: bytes, filename: str) -> str:
-        """Run the real extraction — the only path here that can call a Vision LLM.
+        """Run the real extraction: the only path here that can call a Vision LLM.
 
         Reached from ``read_file`` on a document whose text is not inline yet.
         Deduplication still applies inside ``extract_file_original_text``: two

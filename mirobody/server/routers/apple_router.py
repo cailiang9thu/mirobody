@@ -47,7 +47,7 @@ async def _process_request_data(
         
         logger.info(f"Raw body size: {len(raw_body)} bytes, content_encoding: {content_encoding}, content_type: {content_type}")
 
-        # If gzip compressed, decompress first — with a ceiling. A compressed
+        # If gzip compressed, decompress first: with a ceiling. A compressed
         # body is attacker-shaped input: gzip reaches ~1000:1, so a 100 MB
         # bomb inflates to ~100 GB and `gzip.decompress` would try to hold all
         # of it. Streaming through a `decompressobj` with `max_length` caps

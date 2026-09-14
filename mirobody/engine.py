@@ -1,8 +1,8 @@
-"""The engine's front door — parse a health document, resolve to standard codes.
+"""Parse a health document, resolve indicator names to standard codes.
 
 Zero infrastructure: no PostgreSQL, no Redis, no server. ``resolve`` needs no
-credentials at all (pure offline lookup against the shipped data bundles);
-``parse`` needs exactly one LLM key (any of the providers
+credentials at all (offline lookup against the shipped data bundles);
+``parse`` needs exactly one LLM key (any provider
 :func:`mirobody.utils.llm.unified_file_extract` auto-detects).
 
     from mirobody.engine import resolve, parse_file
@@ -10,28 +10,23 @@ credentials at all (pure offline lookup against the shipped data bundles);
     resolve("血红蛋白").loinc          # -> "718-7", offline
     await parse_file("labs.pdf")       # -> readings + resolutions, one LLM call
 
-This is the deliberate small door into the first two engine stages (① Collect,
-② Translate) — the same machinery the full platform uses, minus its persistence:
+The first two engine stages (① Collect, ② Translate) without persistence:
 
-* **Lexical resolution** rides the shipped LOINC bundle: the 921k-entry
-  multilingual alias index (``loinc_alias_index.npz``), the 677k-name corpus
-  sidecar (``fhir_meta.csv.gz``), the per-row commonness prior
-  (``loinc_rank_bonus.npy``), and the LOINC axis table for the final
-  name → LOINC_NUM hop. All official build artifacts, loaded read-only —
-  plus ``res/resolver_overrides.tsv``, the hand-written corrections for terms
-  the index gets wrong or misses (see that file's header, and
-  ``test_engine_coverage.py`` for what it is measured against).
-* **What this deliberately is NOT**: the full v2 semantic pipeline
+* **Lexical resolution** against the shipped LOINC bundle: a 921k-entry
+  multilingual alias index, a 677k-name corpus sidecar, a per-row commonness
+  prior, and the LOINC axis table for the final name to LOINC_NUM hop. Plus
+  ``res/resolver_overrides.tsv``, hand-written corrections for terms the index
+  gets wrong (measured by ``test_engine_coverage.py``).
+* **Not** the v2 semantic pipeline
   (:func:`mirobody.indicator.fhir.resolve.pipeline.resolve_many`), which adds
-  embedding recall + family rerank but requires the multi-GB embedding matrix
-  that does not ship in git. When a term misses here, the honest answer is
-  ``unresolved`` — never a guess.
+  embedding recall and family rerank but needs the multi-GB matrix that does
+  not ship in git. A term that misses here returns ``unresolved``, not a guess.
 * **Unit normalization** via :mod:`mirobody.units` (offline).
 
-The candidate picker is a lite heuristic (commonness prior, then a small
-preference for the plain Serum/Plasma/Blood variants over cord/capillary
-specials). It exists to give ONE good default answer; ``candidates`` carries
-the count so callers know when a term was ambiguous.
+The candidate picker is a heuristic: commonness prior, then a preference for
+plain Serum/Plasma/Blood variants over cord/capillary specials. It gives one
+default answer; ``candidates`` carries the match count so callers can tell
+when a term was ambiguous.
 """
 
 from __future__ import annotations
@@ -67,11 +62,10 @@ if TYPE_CHECKING:  # `_posting` names np.ndarray in its annotation; numpy itself
 
 logger = logging.getLogger(__name__)
 
-#: The stable surface of this module. `mirobody/__init__.py` re-exports all of
-#: it lazily, so `from mirobody import resolve` and `from mirobody.engine
-#: import resolve` are the same function; the short spelling is the documented
-#: one. Anything not listed here is internal — `OfflineResolver`'s underscore
-#: attributes especially, which are the loaded index and change shape freely.
+#: The stable surface. `mirobody/__init__.py` re-exports it lazily, so
+#: `from mirobody import resolve` and `from mirobody.engine import resolve`
+#: are the same function. Anything unlisted is internal and changes freely,
+#: `OfflineResolver`'s underscore attributes especially.
 __all__ = [
     "OfflineResolver",
     "Reading",
@@ -116,22 +110,21 @@ class Resolution:
     resolved: bool = False
     #: How the answer was reached, or why there is none:
     #:
-    #:   ``"lexical"``   shipped vocabularies — the only kind :func:`resolve`
+    #:   ``"lexical"``   shipped vocabularies: the only kind :func:`resolve`
     #:                   returns
     #:   ``"semantic"``  embedding recall, via
     #:                   :func:`resolve_with_semantic_fallback`
-    #:   ``"refused"``   a DECISION not to answer: a panel name, or a string
-    #:                   naming two different tests. Distinct from ``""``, which
-    #:                   means simply not found, because the two want opposite
-    #:                   treatment — a gap is worth a second opinion, a refusal
-    #:                   is the answer and must not be overturned by one.
+    #:   ``"refused"``   a decision not to answer: a panel name, or a string
+    #:                   naming two different tests. Distinct from ``""`` (not
+    #:                   found) because a gap is worth a second opinion and a
+    #:                   refusal must not be overturned by one.
     #:   ``""``          not found
     #:
-    #: **A caller that uses a code as an IDENTITY** — a grouping key, a decision
-    #: that two readings are the same series, a FHIR mirror — **must accept only
-    #: ``"lexical"``.** Semantic recall cannot abstain: measured on the LOINC
-    #: matrix, nonsense scored 0.78 while real terms went as low as 0.56, so no
-    #: threshold separates them. It is a suggestion to confirm, not an identity.
+    #: A caller using a code as an IDENTITY (a grouping key, a decision that two
+    #: readings are the same series, a FHIR mirror) must accept only
+    #: ``"lexical"``. Semantic recall cannot abstain: on the LOINC matrix
+    #: nonsense scored 0.78 while real terms went as low as 0.56, so no
+    #: threshold separates them. It suggests; it does not identify.
     method: str = ""
     score: float = 0.0              # cosine, semantic answers only
 
@@ -157,15 +150,13 @@ class OfflineResolver:
     Construction is one pass over the bundle: about 0.33 s and 156 MB
     resident. Use :func:`get_resolver` for the cached singleton.
 
-    Both numbers were 1.09 s and 514 MB, and neither was about the amount of
-    data — 77 MB of text. They were about its SHAPE. The artifacts stored the
-    tables as things that become Python objects when you read them (a pickled
-    object array, two CSVs), so a load allocated roughly 1.6 million `str`
-    for tables that answer a few hundred lookups per call. They are byte blobs
-    plus offset arrays now (`scripts/build_runtime_index.py` cuts them, on
-    disk it is a wash), and nothing here allocates per entry: `_posting`
-    bisects the alias blob, `_pick` matches its regexes against slices of the
-    corpus-name blob, and only the row that wins is ever decoded.
+    Both numbers were 1.09 s and 514 MB when the artifacts were a pickled
+    object array and two CSVs: reading those allocates ~1.6 million `str` for
+    tables that answer a few hundred lookups per call. Storage shape, not data
+    volume (77 MB of text either way). They are byte blobs plus offset arrays
+    now, cut by `scripts/build_runtime_index.py`, and nothing allocates per
+    entry: `_posting` bisects the alias blob, `_pick` matches regexes against
+    slices of the corpus-name blob, and only the winning row is decoded.
     """
 
     def __init__(self) -> None:
@@ -194,16 +185,12 @@ class OfflineResolver:
         )
         self._by_component: dict[bytes, list[int]] | None = None
 
-        # term -> a target the index resolves. Two sources, in precedence order
-        # (see `_bundle.alias_source_files` for the ordering rule and the bug
-        # that motivates it):
-        #
-        #   1. res/resolver_overrides.tsv — this resolver's own corrections,
-        #      where the target is guaranteed to be an index key.
-        #   2. res/aliases_src/*.tsv — the bundle build's curated inputs,
-        #      reused here as a broad fallback (~48k foreign-language terms).
-        #      Their targets are descriptive phrases meant for the index BUILD,
-        #      so they resolve only sometimes; that is why (1) exists.
+        # term -> a target the index resolves, from two sources in precedence
+        # order (`_bundle.alias_source_files` has the ordering rule):
+        #   1. res/resolver_overrides.tsv, whose targets are index keys.
+        #   2. res/aliases_src/*.tsv, the bundle build's curated inputs (~48k
+        #      foreign-language terms). Their targets are phrases meant for the
+        #      index build, so they resolve only sometimes; hence (1).
         self._skip: set[bytes] | None = None
         self._system_values: set[str] | None = None
         self._src = load_alias_sources(fold=index_fold)
@@ -219,11 +206,10 @@ class OfflineResolver:
         """Load one blob member plus its offset/order arrays.
 
         The blob is a plain tar member and arrives as `bytes` in one
-        allocation. Putting it inside the .npz instead would cost more than
-        twice its size in resident memory — `np.load` decompresses to an
-        ndarray and `.tobytes()` copies it, and the allocator keeps both
-        arenas. Measured at 75 MB versus 2 MB for the 30 MB alias blob, which
-        is why the offsets go in an .npz and the text does not.
+        allocation. Inside the .npz it would cost more than twice its size
+        resident: `np.load` decompresses to an ndarray, `.tobytes()` copies
+        it, and the allocator keeps both arenas. 75 MB versus 2 MB for the
+        30 MB alias blob, so offsets go in an .npz and the text does not.
         """
         import numpy as np
 
@@ -281,7 +267,7 @@ class OfflineResolver:
         Bisects the key blob rather than consulting a dict built from it: the
         shipped table is already sorted, and materialising it as 921k Python
         strings plus a dict cost 285 MB to turn a 0.9 us bisect into a 0.02 us
-        hash — inside a `resolve()` that takes tens of microseconds either way.
+        hash, inside a `resolve()` that takes tens of microseconds either way.
         """
         i = self._alias.find(key.encode("utf-8"))
         if i < 0:
@@ -291,30 +277,24 @@ class OfflineResolver:
     def _candidate_keys(self, term: str) -> list[str]:
         """The lookup keys to try, most-specific first.
 
-        The alias-table hop goes FIRST, ahead of the raw index lookup. A row in
-        ``self._src`` is a statement about what one term *means* — one term,
-        one concept, written by a person. A hit in the big alias index is a bag
-        of every corpus row sharing a surface string, which ``_pick`` then
-        guesses among by commonness. When both are available the written
-        statement wins, because it is the one carrying human intent.
+        The alias-table hop goes FIRST. A row in ``self._src`` is one person's
+        statement that one term means one concept; a hit in the big alias index
+        is every corpus row sharing a surface string, which ``_pick`` then
+        guesses among by commonness.
 
-        This ordering is not cosmetic. ``血红蛋白`` matches 301 rows in the index,
-        of which the commonness prior likes *Hemoglobin A1c* best — so the
-        index-first order answered "hemoglobin" with the code for a completely
-        different test, silently and confidently. The alias table says plainly
-        ``血红蛋白 -> Hemoglobin``. See test_engine_coverage.py, which exists
-        largely to keep this class of near-miss from coming back.
+        Index-first got this wrong: ``血红蛋白`` matches 301 index rows, of which
+        the commonness prior likes *Hemoglobin A1c* best, so "hemoglobin"
+        resolved to a different test entirely. The alias table says
+        ``血红蛋白 -> Hemoglobin``. test_engine_coverage.py guards the class.
 
-        Both hops are then repeated for each surface variant from
-        :func:`mirobody.lexical.surface_variants`. The bundle's own
-        normalizer is NFKC + casefold and nothing more — it has to be, it folded
-        the index keys at build time — so a full-width ``ＦＢＧ``, an en-dashed
-        ``LDL–C`` and a snake_case ``fasting_glucose`` each sat one invisible
-        codepoint away from a key that already exists. (snake_case is not a
-        corner case: it is the convention the platform API documents in every
-        ``POST /data`` example.) Variants come LAST, after the term as written
-        has missed, so they can only turn a miss into a hit — never overrule an
-        answer that was already correct.
+        Both hops then repeat for each surface variant from
+        :func:`mirobody.lexical.surface_variants`. The bundle normalizer is
+        NFKC + casefold and nothing more (it folded the index keys at build
+        time), so a full-width ``ＦＢＧ``, an en-dashed ``LDL–C`` and a
+        snake_case ``fasting_glucose`` each sat one codepoint away from an
+        existing key. snake_case is the convention the platform API documents
+        in every ``POST /data`` example. Variants come last, after the term as
+        written has missed, so they can only turn a miss into a hit.
         """
         keys: list[str] = []
         for surface in surface_variants(term):
@@ -328,7 +308,7 @@ class OfflineResolver:
         # `甘油三酯 TG` all returned nothing while their bare stems answered.
         #
         # The strip used to be applied to the alias table's TARGET value, inside
-        # `_keys_for` — so it could only fire on inputs that were already alias
+        # `_keys_for`, so it could only fire on inputs that were already alias
         # keys, which are exactly the inputs that already resolved. The comment
         # there gave an input-side example for target-side code; this is that
         # example, on the input, where it was always meant to be.
@@ -336,7 +316,7 @@ class OfflineResolver:
         # Tested on the RAW term because the pattern is a case test and
         # `normalize` lowercases. Appended LAST, after every other key has
         # missed, so like the surface variants above it can only turn a miss
-        # into a hit — never overrule an answer that was already right.
+        # into a hit, never overrule an answer that was already right.
         stem = _TRAILING_ACRONYM.sub("", term).strip()
         if stem and stem != term.strip():
             if self._trailing_token_is_an_abbreviation(stem, term.strip()[len(stem):].strip()):
@@ -359,7 +339,7 @@ class OfflineResolver:
         * **does the token name a SPECIMEN?** `CSF` is a SYSTEM axis value, so
           dropping it changes what was measured, not how it was spelled. `TC`,
           `TG` and `FPG` are not, which is why "is this token anywhere in the
-          axis table" is too coarse a test — it fires on the abbreviations too.
+          axis table" is too coarse a test, it fires on the abbreviations too.
         * **does the token mean something else on its own?** `HDL` answers
           2085-9 against `胆固醇`'s 2093-3, `ION` answers ionized calcium
           against total, `OGTT` answers a tolerance-test glucose against a
@@ -368,7 +348,7 @@ class OfflineResolver:
           exactly their stem's code, which is what makes them redundant.
 
         A token that resolves to nothing and is no specimen is treated as an
-        abbreviation — `FPG` reaches its stem through the alias table, and
+        abbreviation: `FPG` reaches its stem through the alias table, and
         refusing the strip on "unknown" would give back the misses this exists
         to fix. Recursion is not a concern: the pattern needs whitespace before
         the token, and neither argument here has any.
@@ -382,7 +362,7 @@ class OfflineResolver:
         return base is None or not base.loinc or base.loinc == own.loinc
 
     def _systems(self) -> set[str]:
-        """Every SYSTEM axis value — the specimens a trailing token could name.
+        """Every SYSTEM axis value: the specimens a trailing token could name.
 
         2,467 of them over 97k rows. Built on first use and only ever from the
         trailing-token test, which is itself the coldest path in `resolve`:
@@ -408,7 +388,7 @@ class OfflineResolver:
         and it only does because the check flattens too.
 
         Found the hard way on blood pressure, which is no longer blocked (it has
-        a panel code — see resolver_overrides.tsv): ``blood_pressure`` skipped
+        a panel code, see resolver_overrides.tsv): ``blood_pressure`` skipped
         the block written for ``blood pressure``, tokenized to it anyway, hit
         183 index rows and came back 8462-4, the DIASTOLIC code. Same back door,
         and the terms still on the block list use the same spellings.
@@ -427,7 +407,7 @@ class OfflineResolver:
             # The same strip on the alias table's TARGET: 429 of 48,366 targets
             # end in an acronym, and the stem is sometimes the better index key.
             # Its example used to be an INPUT ("Fasting plasma glucose FPG"),
-            # which is not what this line can see — that case is handled in
+            # which is not what this line can see, that case is handled in
             # `_candidate_keys`. Both are real: deleting this one costs 0.003
             # coverage and RAISES the wrong-rate 0.032 -> 0.034.
             stripped = _TRAILING_ACRONYM.sub("", eng).strip()
@@ -449,7 +429,7 @@ class OfflineResolver:
         **It was built for `resolve()` and `resolve()` never consulted it.**
         Only `_component_index` did, so the list gated which sibling a
         unit-aware lookup could switch TO while leaving the first answer
-        ungated — `呼吸次数` came back as *First Respiration rate Set*, a nursing
+        ungated: `呼吸次数` came back as *First Respiration rate Set*, a nursing
         documentation item, and 52 of the 7,354 eval cases answered with a code
         LOINC has since retired.
         """
@@ -466,7 +446,7 @@ class OfflineResolver:
         Matches the two specimen patterns against raw blob slices. A hit like
         `血红蛋白` has 301 candidate rows, and decoding all of them to run a
         regex that only ever looks at ASCII would be 301 throwaway strings per
-        call — the loser rows are never needed as text.
+        call: the loser rows are never needed as text.
         """
         names = self._names
         rank = self._rank
@@ -511,7 +491,7 @@ class OfflineResolver:
         # "expect components", which is the very thing a refusal would only be
         # gesturing at. See resolver_overrides.tsv.
         #
-        # All surface variants are checked, not just the term as written — see
+        # All surface variants are checked, not just the term as written: see
         # `_is_blocked` for the back door that requires.
         if self._is_blocked(term):
             return Resolution(term=term, method="refused")
@@ -520,7 +500,7 @@ class OfflineResolver:
         if hit is not None:
             return hit
 
-        # "名称(缩写)" — the shape a lab report prints more often than not. On
+        # "名称(缩写)": the shape a lab report prints more often than not. On
         # the hosted platform's production data, 147 of 868 distinct indicator
         # names are this shape and 70 of them carried no code at all.
         #
@@ -528,7 +508,7 @@ class OfflineResolver:
         # guessed. ``空腹血糖(GLU)`` means the stem; ``血糖(HbA1c)`` means the
         # parenthetical, and answering that one with glucose would file an HbA1c
         # reading into the glucose series. So both halves are resolved, and when
-        # they disagree the term stays unresolved — the same trade the
+        # they disagree the term stays unresolved: the same trade the
         # ``!unresolved`` sentinel makes, applied to a shape rather than a word.
         stem, inside = split_trailing_parenthetical(term)
         if not stem and not inside:
@@ -603,20 +583,20 @@ class OfflineResolver:
         * the VALUE'S KIND picks the ``SCALE_TYP``. `尿糖 阴性` is not a number,
           and answering it with *Glucose [Mass/volume] in Urine* files a
           dipstick result into a quantitative assay. Measured on the everyday
-          qualitative panel, ten of thirty indicators did exactly that —
+          qualitative panel, ten of thirty indicators did exactly that:
           尿糖, 尿酮体, 类风湿因子, 抗核抗体, 妊娠试验 and their English forms.
           Half the shipped corpus is non-``Qn`` (38,687 rows), so this is not
           an edge.
 
         Both constraints are applied to the sibling with the same **full**
-        COMPONENT — `Glucose^post CFst`, not `Glucose`, so a fasting reading
+        COMPONENT: `Glucose^post CFst`, not `Glucose`, so a fasting reading
         cannot decay into plain glucose. Prefers the same SYSTEM and a
         method-less variant.
 
         Deterministic and reversible: no embedding, no scoring, still
         `method="lexical"`, because the analyte came from the alias table and
         the variant from a table lookup. Returns `loinc` unchanged whenever the
-        reading says nothing, already agrees, or has no sibling — "leave it
+        reading says nothing, already agrees, or has no sibling: "leave it
         alone" is always available and always safe.
         """
         if not loinc:
@@ -625,7 +605,7 @@ class OfflineResolver:
         from .value_scale import scales_for_value
 
         # `20%` and `("20", "%")` are the same reading written two ways, and a
-        # stored value routinely carries its unit inline — `th_series_data.value`
+        # stored value routinely carries its unit inline: `th_series_data.value`
         # holds "3.9 mmol/L". Without this the unit gate did not fire at all on
         # half the shapes real data arrives in.
         if not unit and value:
@@ -660,7 +640,7 @@ class OfflineResolver:
             # A differential percentage and a differential count are two
             # COMPONENTs, not two properties of one: `neutrophils/leukocytes`
             # (NFr) and `neutrophils` (NCnc). So `中性粒细胞` reported as
-            # `4.2 10*9/L` could not reach its own count code — the analyte
+            # `4.2 10*9/L` could not reach its own count code: the analyte
             # resolves to the ratio, which is what a bare differential term
             # means on a CBC, and the unit had no way to say otherwise.
             #
@@ -708,8 +688,8 @@ class OfflineResolver:
                 #     vocabularies and carries 4,991 `Deprecated …` names, so a
                 #     tenth of all alias hits came back `resolved=True,
                 #     method="lexical", loinc=""`. A caller following this
-                #     module's own identity rule — accept only
-                #     `method == "lexical"` — got `""` as a grouping key and
+                #     module's own identity rule (accept only
+                #     `method == "lexical"`) got `""` as a grouping key and
                 #     merged every such reading into one bucket. Two consumers
                 #     in this repo read that state opposite ways:
                 #     `resolve_with_semantic_fallback` treated it as answered
@@ -756,7 +736,7 @@ def resolve_reading(name: str, value: str | None = None, unit: str | None = None
 
     This is where the value and unit earn their keep. Upstream, an LLM
     extraction pass has already decided the content is health data and emitted
-    `{indicator, value, unit}` — so by the time a name reaches the resolver it
+    `{indicator, value, unit}`, so by the time a name reaches the resolver it
     is a measurement with a magnitude, and throwing that away to match on the
     name alone discards the strongest disambiguator available.
     """
@@ -770,7 +750,7 @@ def resolve_reading(name: str, value: str | None = None, unit: str | None = None
     return Resolution(
         term=hit.term,
         # No `or hit.canonical` fallback: `switched` is a code read out of the
-        # axis table, so the lookup cannot miss — and the fallback was not
+        # axis table, so the lookup cannot miss, and the fallback was not
         # inert, it was the mask. A duplicate docstring-only `_name_for` left
         # behind by a refactor shadowed the real one and returned None for
         # every code, so EVERY switched reading reported the pre-switch name:
@@ -798,12 +778,12 @@ async def resolve_with_semantic_fallback(
     the alias tables never heard of, and it also answers `绝对不存在的指标名xyzzy`
     with a confident code, because it has no way to say "I don't know". Measured
     on the LOINC matrix, nonsense scored 0.78 while genuine indicator names went
-    as low as 0.56 — the ranges overlap, so `min_score` cannot make it honest.
+    as low as 0.56: the ranges overlap, so `min_score` cannot make it honest.
     It is exposed anyway because a suggested code a human or a model can confirm
     beats a blank, but every one of them comes back marked ``method="semantic"``
     and must not be used as an identity. :func:`resolve` never returns one.
 
-    Falls back silently to the lexical answer when no matrix is installed —
+    Falls back silently to the lexical answer when no matrix is installed,
     that is the normal state of a `pip install`, not a failure.
 
     `min_score` is offered for callers who want a floor anyway (e.g. to cut the
@@ -816,7 +796,7 @@ async def resolve_with_semantic_fallback(
     # `method="refused"` is a decision, not a gap. `血脂` is four analytes with
     # no single panel code; `血糖(HbA1c)` names two different tests in one
     # string. Neither has a right answer, and
-    # the embedding tier will supply one anyway — measured, it answered all nine
+    # the embedding tier will supply one anyway: measured, it answered all nine
     # refusals in the eval set and got all nine wrong. Letting the second tier
     # overturn the first tier's refusal is the one thing this design must not
     # do, so only genuine misses go on.
@@ -861,7 +841,7 @@ values; skip section headers and non-measurements."""
 
 
 async def parse_text(document: str, *, resolve_names: bool = True) -> list[Reading]:
-    """Parse report TEXT into readings — the same one LLM call as
+    """Parse report TEXT into readings: the same one LLM call as
     :func:`parse_file`, without a file.
 
     Split out of ``parse_file`` for ``POST /api/standardize``, which is handed
@@ -881,7 +861,7 @@ async def parse_text(document: str, *, resolve_names: bool = True) -> list[Readi
         # `None` is "no model answered", not "the model answered nothing":
         # either no provider is configured, or every configured one failed.
         # Feeding it to the JSON parser produced "extraction returned non-JSON
-        # output: " — an empty quote where the cause should be.
+        # output: ", an empty quote where the cause should be.
         from .utils.config.llm import no_provider_message, resolve_route
 
         if resolve_route("text") is None:
@@ -899,14 +879,14 @@ async def parse_file(path: str, *, resolve_names: bool = True) -> list[Reading]:
 
     The document becomes TEXT first (`mirobody.documents.extract`): a PDF's
     embedded text layer page by page, a spreadsheet or Word file as a table,
-    and only a scanned page or a photo through the vision provider — one image
+    and only a scanned page or a photo through the vision provider: one image
     at a time, never the whole file. Then the same one extraction call as
     :func:`parse_text`. A born-digital PDF therefore needs a text model key
     only. Raises RuntimeError with a plain message when no provider key is
     configured or nothing readable was found.
     """
     # The provider auto-detection reads keys through the config system (which
-    # also loads .env); standalone callers — the CLI, a bare library user —
+    # also loads .env); standalone callers (the CLI, a bare library user) 
     # haven't initialized it. Init is idempotent and works with zero yaml files.
     from .utils import Config
 
@@ -950,7 +930,7 @@ def _readings_from_json(raw: str, *, resolve_names: bool) -> list[Reading]:
                 unit=unit,
                 reference_range=str(it.get("reference_range") or "").strip(),
                 # The unit is right here, and LOINC codes the unit into the
-                # identity — resolving on the name alone would file a mmol/L
+                # identity: resolving on the name alone would file a mmol/L
                 # reading under the mg/dL code.
                 resolution=(
                     resolve_reading(name, value, unit) if resolver else None

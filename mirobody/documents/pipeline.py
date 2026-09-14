@@ -1,10 +1,10 @@
-"""The two-phase upload: store now, read later — with every product decision a port.
+"""The two-phase upload: store now, read later, with every product decision a port.
 
 An upload has one shape wherever health documents are accepted. Phase one, in
 the request: store the originals and answer, so a slow scan never holds the
 client. Phase two, in the background: turn each stored file into text
 (`extract`), keep that text beside the file, hand the text to whatever mines
-it (indicators, a summary), and leave a STATUS the user can see — ``pending``
+it (indicators, a summary), and leave a STATUS the user can see: ``pending``
 while it runs, ``ok`` when done, ``empty_text`` for a blank scan, ``partial``
 when some pages failed, ``failed`` with the stage and the reason. A silent
 failure is the failure this exists to prevent: an upload that produced no
@@ -13,7 +13,7 @@ readings must be distinguishable from a report that had none.
 What differs between deployments is where things live and what "mine" means,
 so those are `Ports`: the object store, the text sidecar, the status table, the
 ingest. What is the same is here: per-file isolation (one bad file never fails
-the batch), the status transitions, the skip rules — a file whose text already
+the batch), the status transitions, the skip rules: a file whose text already
 exists is not OCR'd again, a file already ingested (or being ingested right
 now) is not mined again, except when the caller says ``force`` or scopes the
 result to a session that must get its own rows.
@@ -38,11 +38,11 @@ FAILED = "failed"
 
 #: How long a ``pending`` row counts as "in flight". Extracting a large PDF can
 #: run for minutes, but not forever: every failure path writes ``failed``, so a
-#: ``pending`` that never moves means the process died mid-way — after this
+#: ``pending`` that never moves means the process died mid-way: after this
 #: window it is retried, or the file is never extracted at all.
 IN_FLIGHT_MS = 10 * 60 * 1000
 
-#: ``(filename, content_type, data)`` — one uploaded part.
+#: ``(filename, content_type, data)``: one uploaded part.
 Part = tuple[str, str, bytes]
 #: ``extract(filename, content_type, data, key) -> (text, error)``; ``error`` is
 #: non-empty when the extractor raised (a blank scan is ``("", "")``).
@@ -67,7 +67,7 @@ class Ports(Protocol):
 
     async def has_text(self, user_id: int, key: str) -> bool:
         """Whether extracted text already exists for this key (content-addressed
-        stores make a re-upload the same key — and the same text)."""
+        stores make a re-upload the same key, and the same text)."""
 
     async def store_text(self, user_id: int, key: str, text: str) -> None:
         """Keep the extracted text beside the original."""
@@ -86,7 +86,7 @@ class Ports(Protocol):
 
 @dataclass
 class Plan:
-    """Which parts take which path — decided once, before any I/O."""
+    """Which parts take which path: decided once, before any I/O."""
 
     convertible: list[int] = field(default_factory=list)  # a parser or OCR produces text
     textual: list[int] = field(default_factory=list)  # decodable as is; no sidecar
@@ -106,12 +106,12 @@ def plan(parts: Iterable[Part], *, is_convertible: Callable[[str, str], bool], i
 
 
 def already_ingesting(prior: dict | None, *, in_flight_ms: int = IN_FLIGHT_MS, now_ms: int | None = None) -> str:
-    """Why this file's text must NOT be mined again — ``""`` when it may be.
+    """Why this file's text must NOT be mined again: ``""`` when it may be.
 
     ``ok`` means it was: mining the same text twice makes duplicate rows (a
     model does not always find the collection date twice, and a natural key
     with a calendar day in it cannot dedupe a row dated today against one dated
-    correctly). A fresh ``pending`` means someone is mining it now — ``ok`` is
+    correctly). A fresh ``pending`` means someone is mining it now: ``ok`` is
     written AFTER the ingest, so a client re-uploading in that window would
     otherwise slip past an ok-only check (observed). An unreadable timestamp
     skips conservatively: a duplicate is harder to repair than a delay.
@@ -145,7 +145,7 @@ async def store_parts(user_id: int, parts: list[Part], ports: Ports) -> list[str
 
 
 async def snapshot_done(subject: int, keys: Iterable[str | None], ports: Ports) -> frozenset[str]:
-    """The keys whose text is already mined or being mined — taken BEFORE this
+    """The keys whose text is already mined or being mined: taken BEFORE this
     run writes its own ``pending``, or the run would read itself and skip its
     own first extraction (observed: an upload with zero indicators)."""
     done: set[str] = set()
@@ -171,7 +171,7 @@ async def extract_phase(
     sidecar for the convertible ones, statuses for all of them. Returns
     ``(index, text)`` for the ingest half. Parts already extracted (text on
     file, unless ``force``) and parts already mined (``skip_keys``) are left as
-    they are — a re-run must never overwrite an ``ok`` with an ``empty_text``.
+    they are: a re-run must never overwrite an ``ok`` with an ``empty_text``.
     """
     started = time.monotonic()
     already_extracted: set[int] = set()
@@ -288,7 +288,7 @@ async def extract_and_wire(
 ) -> None:
     """Phase two, whole: extract, sidecar, statuses, ingest. ``subject`` is who
     the mined rows belong to (``None`` = extract only). ``snapshot=False`` mines
-    even files mined before — for a run scoped to a session that must get its
+    even files mined before: for a run scoped to a session that must get its
     own rows. A failure of the whole task still leaves every affected file a
     ``failed`` status rather than a ``pending`` forever."""
     the_plan = plan(parts, is_convertible=is_convertible, is_text=is_text)

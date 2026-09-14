@@ -5,7 +5,7 @@ classmethod (no instance needed), `consume` + `run` are the
 consumer hooks. Subclasses override what they're responsible for; unoverridden
 methods raise `NotImplementedError`.
 
-`BaseRedisTask` is the concrete Redis-list implementation — `enqueue` LPUSHes
+`BaseRedisTask` is the concrete Redis-list implementation: `enqueue` LPUSHes
 via a class-level shared async client (lazily resolved from `global_config()`
 so producers never thread redis through); `run` drain-batches via
 BLPOP on an instance-owned redis. Domain subclasses extend `BaseRedisTask`,
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 class BaseTask:
     @classmethod
     async def enqueue(cls, payload: Any) -> None:
-        """Enqueue a task payload. Producer-side API — no instance needed."""
+        """Enqueue a task payload. Producer-side API, no instance needed."""
         raise NotImplementedError(f"{cls.__name__}.enqueue({payload!r})")
 
     async def consume(self, messages: list[str]) -> None:
@@ -48,11 +48,11 @@ class BaseTask:
 class BaseRedisTask(BaseTask):
     """Redis-list-backed task.
 
-    Producer: `await SomeTask.enqueue(payload)` — zero setup, shared redis.
-    Consumer: `SomeTask(redis).run(stop_event)` — subclasses override
+    Producer: `await SomeTask.enqueue(payload)`, zero setup, shared redis.
+    Consumer: `SomeTask(redis).run(stop_event)` (subclasses override
     only class constants and `consume`."""
 
-    # Class-level config — per-subclass constants, not per-instance state.
+    # Class-level config) per-subclass constants, not per-instance state.
     queue_key: ClassVar[str] = ""
     max_queue_len: ClassVar[int] = 0  # 0 = unlimited; >0 causes enqueue to raise when queue is at/over cap
     drain_cap: ClassVar[int] = 500
@@ -60,7 +60,7 @@ class BaseRedisTask(BaseTask):
     retry_sleep_sec: ClassVar[int] = 5
     heartbeat_sec: ClassVar[int] = 600  # log "still alive" every N seconds while idle
 
-    # Shared across all BaseRedisTask subclasses — one connection pool per process.
+    # Shared across all BaseRedisTask subclasses: one connection pool per process.
     # Subclasses wanting a dedicated client can override `_get_producer_redis`.
     _producer_redis: ClassVar[Redis | None] = None
 
@@ -94,7 +94,7 @@ class BaseRedisTask(BaseTask):
         anything else is JSON-serialized first.
 
         Raises `RuntimeError` if `max_queue_len > 0` and the queue is already
-        at/over capacity — callers should treat this as "consumer is falling
+        at/over capacity: callers should treat this as "consumer is falling
         behind, back off". Other errors (redis unreachable, etc.) are logged
         and swallowed so that transient infra failures don't fail ingest."""
         if not cls.queue_key:

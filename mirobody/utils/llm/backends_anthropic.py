@@ -1,4 +1,4 @@
-"""The utility surfaces on Anthropic's own API — `llm_type: anthropic`.
+"""The utility surfaces on Anthropic's own API: `llm_type: anthropic`.
 
 Why not the OpenAI-compatible endpoint, which this project speaks everywhere
 else. Anthropic documents that layer as a way to *test and compare model
@@ -6,11 +6,11 @@ capabilities*, not as a production API, and the difference shows on exactly
 the thing extraction depends on. Measured against the live endpoint,
 2026-09-10:
 
-* `response_format: {"type": "json_object"}` is REFUSED — 400, "Input should
+* `response_format: {"type": "json_object"}` is REFUSED: 400, "Input should
   be 'json_schema'". Not ignored, as the compatibility page says: refused.
 * `response_format: {"type": "json_schema", ...}` is accepted only in OpenAI
-  strict mode — `strict: true` plus `additionalProperties: false` on every
-  object — which the extraction schemas do not carry.
+  strict mode: `strict: true` plus `additionalProperties: false` on every
+  object, which the extraction schemas do not carry.
 * So the only channel left there is asking for JSON in the prompt, and the
   answer comes back inside a ```json fence, parsed or not depending on the
   model's mood. An indicator extractor that depends on a mood is issue #68
@@ -19,12 +19,12 @@ the thing extraction depends on. Measured against the live endpoint,
 The native API has the real thing: `output_config.format` constrains decoding
 to the schema, so the text block IS valid JSON (`structured_output` below).
 `anthropic.transform_schema` adapts our schemas to what the grammar compiler
-accepts — it adds `additionalProperties: false`, drops the constraints the
+accepts, it adds `additionalProperties: false`, drops the constraints the
 compiler rejects (`minimum`, `maxLength`, …) and folds them into descriptions.
 
 Everything else is deliberately the same as `file_processors/backends_openai`:
 PDFs are rendered to page images and merged page by page, a failed page inside
-a multi-page PDF is a warning, a failed single image is an ERROR — never an
+a multi-page PDF is a warning, a failed single image is an ERROR, never an
 empty string that reads like a blank page.
 """
 
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 #: The native API REQUIRES `max_tokens`; the OpenAI-compatible one defaults it.
 #: The vision path names none, and one page of a dense panel is a few thousand
-#: tokens of JSON — with a constrained grammar, hitting the cap truncates into
+#: tokens of JSON: with a constrained grammar, hitting the cap truncates into
 #: invalid JSON rather than into a short answer, so the default is generous.
 DEFAULT_MAX_TOKENS = 16384
 
@@ -69,7 +69,7 @@ def client_for(spec: RouteSpec):
 
 def _split_system(messages: list[dict]) -> tuple[str, list[dict]]:
     """Anthropic takes ONE system prompt, out of the message list. Every
-    system/developer message is concatenated into it in order — the same rule
+    system/developer message is concatenated into it in order: the same rule
     the vendor's own compatibility layer applies."""
     system: list[str] = []
     rest: list[dict] = []
@@ -85,18 +85,18 @@ def _split_system(messages: list[dict]) -> tuple[str, list[dict]]:
 
 @lru_cache(maxsize=1)
 def _accepted_params() -> frozenset[str]:
-    """What THIS installed SDK's `messages.stream` takes — the call `_create`
+    """What THIS installed SDK's `messages.stream` takes: the call `_create`
     actually makes.
 
     Not a hardcoded allow-list, because the parameter set moves: 1.5.0 has no
-    `temperature`, `top_p` or `top_k` at all — they were removed, and passing
+    `temperature`, `top_p` or `top_k` at all, they were removed, and passing
     one raises `TypeError` before a request is built. Every caller in this
     repository still hands us `temperature=0` (`indicator_extractor`,
     `handlers/base`, `summary`, `profile`), which is how an ANTHROPIC_API_KEY
     deployment extracted zero indicators out of a report it had just accepted.
 
     Reading the signature means the next removal costs a DEBUG line rather than
-    an outage, and it lets the project follow the newest SDK — which is where
+    an outage, and it lets the project follow the newest SDK, which is where
     the newest models are supported.
     """
     import inspect
@@ -111,7 +111,7 @@ def _request_params(spec: RouteSpec, kwargs: dict[str, Any]) -> dict[str, Any]:
     anything this SDK will not take.
 
     An `extra_body` on an `llm_type: anthropic` entry holds NATIVE top-level
-    parameters (`thinking`, `output_config`, …) — which is what `extra_body`
+    parameters (`thinking`, `output_config`, …), which is what `extra_body`
     means on the OpenAI SDK too: fields merged into the request body.
     """
     out: dict[str, Any] = dict(spec.extra_body or {})
@@ -137,8 +137,8 @@ async def _create(spec: RouteSpec, **params):
     """One request, always through the streaming helper.
 
     Not `messages.create(...)`: the non-streaming call refuses a `max_tokens`
-    large enough that the request "may take longer than 10 minutes" — measured
-    on claude-haiku-4-5, 20000 passes and 32000 raises — and the extraction
+    large enough that the request "may take longer than 10 minutes" (measured
+    on claude-haiku-4-5, 20000 passes and 32000 raises) and the extraction
     callers ask for 32000 (`indicator_extractor`, `handlers/base`). Clamping
     would silently truncate a long report into invalid JSON under a
     constrained grammar; streaming removes the ceiling instead, and
@@ -235,7 +235,7 @@ async def file_extract(
     json_mode: bool = True,
 ) -> str:
     """An image or PDF read by a Claude model. Raises with the entry named on
-    failure — the contract `backends_openai` established for #68."""
+    failure: the contract `backends_openai` established for #68."""
     import asyncio
 
     from .file_processors.media import _convert_pdf_to_base64_images, _read_and_optimize_image

@@ -122,7 +122,7 @@ class AbstractStorage:
 
     @staticmethod
     def get_content_type_from_filename(filename: str) -> str:
-        """MIME type for a filename — the `Content-Type` stored on the object.
+        """MIME type for a filename: the `Content-Type` stored on the object.
 
         Delegates to `utils.file_types.guess_mime` so a bare container and a
         developer laptop store the same value. Reading `mimetypes` directly made

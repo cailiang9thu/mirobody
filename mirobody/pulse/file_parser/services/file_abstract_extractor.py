@@ -43,7 +43,7 @@ async def _read_original_text_cache(content_hash: str) -> str | None:
     ``content_hash`` and ``original_text`` onto the same row, so a dedicated
     hash->text table stored a second copy of the same health text and bought
     nothing: it was never normalised away, nothing ever deleted from it, and no
-    foreign key tied it to the file it came from — so a user's extracted report
+    foreign key tied it to the file it came from, so a user's extracted report
     text outlived the file they deleted, in a table with no ``user_id``. Reading
     through ``th_files`` (``is_del = false``) makes "delete the file, lose the
     text" true.
@@ -567,13 +567,13 @@ Please return strictly in JSON format, do not include any markdown code block ma
     ) -> str:
         """The document's text (`mirobody.documents.extract`): the PDF text layer
         page by page with only scanned pages OCR'd, images downscaled then
-        OCR'd, spreadsheets and Word/PowerPoint as markdown, text decoded — cached
+        OCR'd, spreadsheets and Word/PowerPoint as markdown, text decoded: cached
         by content hash through `th_files`, so the same bytes are never OCR'd
         twice. ``""`` for a kind nothing reads.
 
         Failures RAISE. This used to catch everything and return "", so a
-        photo uploaded to a deployment with no vision provider — or with a
-        text-only model as the vision default — was indistinguishable from a
+        photo uploaded to a deployment with no vision provider (or with a
+        text-only model as the vision default) was indistinguishable from a
         blank photo, and the upload above it reported success (#68). The
         callers decide what a failure means for them: the upload handler fails
         the file with the reason, the agent's file reader answers ""."""

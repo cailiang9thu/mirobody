@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 # health_app_user.id integer); we pass str(losing)/str(winning).
 #
 # Tables that DON'T appear here have UNIQUE / PRIMARY KEY constraints over
-# the user_id column and need conflict-aware handling — see _merge_*().
+# the user_id column and need conflict-aware handling: see _merge_*().
 #
 # This list is deliberately WIDER than `mirobody/schema`: it covers whatever
 # user-scoped tables the running deployment happens to have, including ones
 # provisioned outside this project. Several entries name tables our own DDL no
 # longer creates (`th_task_flow`, `health_data_epic`, `health_data_oracle`,
-# `health_data_libre`, `health_vital_webhook`) — that is correct, not stale:
+# `health_data_libre`, `health_vital_webhook`), that is correct, not stale:
 # every access is guarded by `_table_exists`, so an entry costs one catalogue
 # lookup where the table is absent and keeps a merge honest where it is
 # present. Do not prune this list by diffing it against our schema.
@@ -93,7 +93,7 @@ async def _merge_care_circle_members(cur, losing_id: int, winning_id: int) -> in
 
     Conflict policy: if the winning account is already a live member of a circle
     the losing account is also in, the losing row is soft-deleted rather than
-    moved — and `health_access` is taken as the MAX of the two, because that is
+    moved, and `health_access` is taken as the MAX of the two, because that is
     the rule `care_circle.accepted_membership` already reads by. Anything else
     would let a merge silently revoke access the surviving account had, or grant
     access neither had.
@@ -246,7 +246,7 @@ async def merge_accounts(
                     )
                     affected["health_app_user"] = cur.rowcount or 0
 
-                    # 5. Audit log (skip where the table isn't provisioned —
+                    # 5. Audit log (skip where the table isn't provisioned,
                     # it is not part of this project's own DDL).
                     if await _table_exists(cur, "user_account_merge_log"):
                         await cur.execute(

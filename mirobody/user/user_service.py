@@ -201,7 +201,7 @@ class UserService:
     # Why this exists at all: the email-code path needs Mandrill or SMTP, which
     # someone who cloned the repo to try it out does not have. Without this the
     # only accounts that could ever sign in were the hardcoded ones in
-    # EMAIL_PREDEFINE_CODES — a demo, not a sign-up.
+    # EMAIL_PREDEFINE_CODES: a demo, not a sign-up.
     #
     # Hashing is bcrypt inside Postgres (`pgcrypto`), so no hash is ever built,
     # compared or logged in Python. See `a1_add_password_login.sql`.
@@ -211,7 +211,7 @@ class UserService:
 
     @staticmethod
     def _read_credentials(data: dict) -> tuple[str, str]:
-        """`email` or `username` — both name the same column; whichever arrived."""
+        """`email` or `username`: both name the same column; whichever arrived."""
         email = (data.get("email") or data.get("username") or "").strip().lower()
         return email, data.get("password") or ""
 
@@ -288,7 +288,7 @@ class UserService:
         )
         if not rows:
             # One message for "no such account", "no password set" and "wrong
-            # password" alike — telling them apart is an account-enumeration gift.
+            # password" alike: telling them apart is an account-enumeration gift.
             return json_response_with_code(-3, "Incorrect email or password.", request=request)
 
         return await self._generate_auth_response(rows[0]["id"], email, "password", request)
@@ -351,7 +351,7 @@ class UserService:
         #-------------------------------------------------
 
         if existing_owner == current_user_id:
-            # Already bound to me — nothing to do, just refresh token.
+            # Already bound to me: nothing to do, just refresh token.
             return await self._generate_auth_response(current_user_id, lower_email, "email_bind", request)
 
         if existing_owner and existing_owner != current_user_id:
@@ -477,7 +477,7 @@ class UserService:
             if code:
                 # The authorization code is a live credential (exchangeable for
                 # tokens until it expires); fingerprint it like the JWT below
-                # instead of writing it verbatim — DEBUG logs are not a safe
+                # instead of writing it verbatim: DEBUG logs are not a safe
                 # place for it either.
                 logger.debug("Apple authorization code: %s", secret_fingerprint(code))
 
@@ -599,7 +599,7 @@ class UserService:
                         mfa_challenge["refresh_token"] = fallback_refresh
                 return json_response_with_code(data=mfa_challenge, request=request)
 
-        # No MFA required — issue AAL1 token directly.
+        # No MFA required: issue AAL1 token directly.
         aal_level = 1 if self._webauthn_service else None
 
         access_token, refresh_token, err = await self._token_validator.generate_tokens(

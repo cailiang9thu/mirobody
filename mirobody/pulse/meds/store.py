@@ -7,8 +7,8 @@ Three rules the SQL here follows, all of them from `mirobody.kernel.meds`:
   adherence is what `meds.adherence` counts. A `status` column holding
   `missed` would be wrong the moment the person marks the dose taken.
 * **Free text is encrypted, keys are not.** The drug name, the strength and
-  the reason for a skip go through `encrypt_content`; `concept_key` — a code
-  list or a hash of the normalised name — is what the indexes and the logs
+  the reason for a skip go through `encrypt_content`; `concept_key` (a code
+  list or a hash of the normalised name) is what the indexes and the logs
   carry.
 * **Corrections are a layer.** `th_override` is append-only and the stored
   row is never rewritten; `overrides()` hands the layer back so a reader can
@@ -54,7 +54,7 @@ def _dose_from_json(raw: object) -> meds.Dose | None:
 def instruction_to_json(instr: meds.DoseInstruction) -> dict:
     """One `DoseInstruction` as JSON. `as_needed_for` and `text` are the
     person's own words and ride encrypted with the rest of the schedule
-    column — the whole `schedule` jsonb is written through `encrypt_content`
+    column: the whole `schedule` jsonb is written through `encrypt_content`
     is NOT possible (jsonb is not text), so those two fields are dropped here
     and kept in `concept_text` territory instead: a plan's free text lives in
     the encrypted columns, the schedule column carries only structure."""
@@ -179,7 +179,7 @@ class PostgresMedicationStore:
 
     async def put(self, plan: meds.MedicationPlan) -> None:
         """Insert or replace one plan. The natural key is `plan_id`, which
-        `meds.plan_id_for` derives from `(subject, concept_key, start)` — so a
+        `meds.plan_id_for` derives from `(subject, concept_key, start)`, so a
         re-import of the same statement updates rather than duplicates."""
         await execute_query(
             """

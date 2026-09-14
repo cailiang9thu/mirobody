@@ -1,13 +1,13 @@
 """Direct per-provider LLM access (`utils.py`, `file_processors/`, `clients.py`)
-— the utility surfaces: vision, structured extraction, text.
+the utility surfaces: vision, structured extraction, text.
 
 Which model each surface uses is `config.llm.yaml`'s decision
 (`UTILS_VISION_MODEL`, `UTILS_TEXT_MODEL`; see `mirobody.utils.config.llm`).
 The agent's own model access goes through LangChain (`agent/agent.py`); this
 package is the direct-SDK path for extraction and utility calls.
 
-The other half that used to live here — `batch_ai_response`/`interface.py`
-and the `adapters/` stack — was deleted along with its single caller,
+The other half that used to live here (`batch_ai_response`/`interface.py`
+and the `adapters/` stack) was deleted along with its single caller,
 `pulse/file_parser/services/file_llm_analyzer.py` (the orphaned
 /ws/upload-with-llm-analysis flow).
 """

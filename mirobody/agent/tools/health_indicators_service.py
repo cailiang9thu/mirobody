@@ -1,4 +1,4 @@
-"""`query_health_indicators` — the one tool for a person's readings.
+"""`query_health_indicators`: the one tool for a person's readings.
 
 The model sees ONE readings tool, and it has one JSON schema
 (`query.TOOL_SCHEMA`) whether it arrives over MCP or in a chat turn. It
@@ -10,12 +10,12 @@ different data class with a different grammar and their own tool
 
 Three things make the flat schema safe:
 
-* **eight parameters, all applicable to every call** — no mode switch, so a
+* **eight parameters, all applicable to every call**, no mode switch, so a
   wrong combination is a refused `(resolution, aggregate)` cell, never a
   parameter that is silently ignored (`query.validate_request`);
-* **a dispatch table** — `(resolution, aggregate)` maps to exactly one
+* **a dispatch table**: `(resolution, aggregate)` maps to exactly one
   `HealthQuery` method (`query.DISPATCH`);
-* **an envelope** — the model reads rendered text, but everything a *program*
+* **an envelope**: the model reads rendered text, but everything a *program*
   needs (did it work, is a retry pointless, how much was cut, where each number
   came from) travels beside it in a `tools.Envelope`. Governance reads the
   envelope, never the text, because a harness may truncate or evict text.
@@ -27,13 +27,13 @@ columns hoisted into one `(constants: unit=mmol/L)` line, because a third-party
 MCP client pays per token for the unit repeated on 200 rows. `render_rest` is
 what a browser gets: arrays of objects it can sort and paginate. Both are
 generic over an envelope, so the medications and genetics tools render through
-them too — each says which columns its rows have (`columns`), or lets the
+them too: each says which columns its rows have (`columns`), or lets the
 readings shapes be derived.
 
 ## It never raises
 
 The `eval` REPL can call this tool directly (PTC), and a PTC call bypasses the
-tool middleware entirely — there is nothing above it to contain a fault. So
+tool middleware entirely: there is nothing above it to contain a fault. So
 every path returns an envelope, including the ones that failed.
 """
 
@@ -59,7 +59,7 @@ DEFAULT_HOURS = 24 * 90
 MAX_HOURS = 24 * 366 * 5
 
 #: The character budget for one rendered result. Past this the tool truncates
-#: and tells the model how to ask again — an answer that blows the context
+#: and tells the model how to ask again: an answer that blows the context
 #: window is not an answer.
 MAX_RENDER_CHARS = 40_000
 
@@ -92,7 +92,7 @@ class HealthIndicatorsService:
     `__tools__` is the whole published surface. `envelope` is public because
     the REST route and the chat adapter both need the envelope rather than a
     rendering, and `load_tools_from_class` would otherwise publish it as a
-    second, undocumented MCP tool — which is exactly what it did until this
+    second, undocumented MCP tool, which is exactly what it did until this
     list existed.
     """
 
@@ -118,21 +118,21 @@ class HealthIndicatorsService:
 
     async def query_health_indicators(self, user_info: dict[str, Any], **args: Any) -> dict[str, Any]:
         """
-        Read this person's health readings: labs, vitals, wearable metrics —
+        Read this person's health readings: labs, vitals, wearable metrics:
         anything with a value and a time.
 
-        USE IT when the question is about their own numbers — "how has my LDL
+        USE IT when the question is about their own numbers: "how has my LDL
         moved", "what did I weigh in March", "average resting heart rate this
         month". With no `keywords`/`indicators` it returns the CATALOGUE of
         what this person actually has, which is the right first call when you
         do not know the names. Ask for the shape you need: `aggregate="stats"`
         for change or a baseline, `resolution="day"` for a trend line,
-        `aggregate="latest"` for "what is it now" — never raw rows you would
+        `aggregate="latest"` for "what is it now", never raw rows you would
         reduce yourself.
 
         DO NOT use it for medications (`query_medications`), for general
         medical knowledge or reference ranges, or for a person outside the
-        caller's care circle. Do not call it twice with the same arguments —
+        caller's care circle. Do not call it twice with the same arguments:
         the second call returns the same rows and costs another round trip.
 
         The parameters are documented in the schema, not here: `input_schema`
@@ -144,7 +144,7 @@ class HealthIndicatorsService:
             A compact table plus a `meta` block saying which window was read,
             in which time zone, at what resolution, how many rows came back and
             whether they were cut. `truncated` means narrow the window or
-            aggregate — never raise `limit` and call again. No dates means the
+            aggregate, never raise `limit` and call again. No dates means the
             whole record. Row cap: 500 raw rows per indicator, 200 catalogue
             names.
 
@@ -157,7 +157,7 @@ class HealthIndicatorsService:
         return {"result": render_compact(envelope), **envelope_meta(envelope)}
 
     async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
-        """The same call, returning the envelope rather than a rendering — for
+        """The same call, returning the envelope rather than a rendering: for
         the REST route, and for the chat tool's `content_and_artifact`."""
         caller_id = caller_of(user_info)
         if not caller_id:
@@ -341,7 +341,7 @@ def _method_columns(rows: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
 
 def render_compact(envelope: tools.Envelope, columns: Sequence[str] | None = None) -> str:
     """What the model reads: the table, then the methodology. Never prose about
-    findings — the model narrates, the tool reports. `columns` is for a tool
+    findings: the model narrates, the tool reports. `columns` is for a tool
     whose rows are not readings; a readings result derives its own."""
     if envelope.status == tools.STATUS_ERROR:
         return _render_error(envelope)
@@ -390,7 +390,7 @@ def _render_error(envelope: tools.Envelope) -> str:
 def _meta_line(meta: tools.Meta) -> str:
     # A tool whose data has no time axis (genetics) reports no zone, and gets
     # no window line: "window=all recorded data, tz=, dates=tz_exact" on a
-    # genotype answer is three tokens of noise and one false claim — a
+    # genotype answer is three tokens of noise and one false claim: a
     # genotype is not dated at all, exactly or otherwise.
     bits: list[str] = []
     if meta.tz or any(meta.window):

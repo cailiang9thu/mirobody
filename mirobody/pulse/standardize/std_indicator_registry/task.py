@@ -7,7 +7,7 @@ downstream consumers (UI, FHIR mapping, monitoring) have a queryable
 catalog instead of needing to import Python enums.
 
 Idempotent UPSERT by `id` (camelCase indicator name). If the target table
-does not exist the task no-ops cleanly — environments that haven't run
+does not exist the task no-ops cleanly: environments that haven't run
 migration 94 will simply skip registration on every tick.
 """
 
@@ -57,7 +57,7 @@ def _collect_source_rows() -> list[dict]:
     _collect_aggregation_rows() because the aggregated rows do land in
     th_series_data.
 
-    SUMMARY and MIX indicators are kept — both land in th_series_data
+    SUMMARY and MIX indicators are kept: both land in th_series_data
     (MIX writes to both tables).
     """
     rows: list[dict] = []
@@ -110,7 +110,7 @@ def _collect_aggregation_rows() -> list[dict]:
         unit = _AGG_UNIT_OVERRIDES.get(rule.aggregation_type, source_info.standard_unit)
 
         # Aggregation rows borrow the source indicator's description verbatim
-        # — the source description describes the underlying physiological
+        #: the source description describes the underlying physiological
         # measure, which is still what each daily-aggregation computes. The
         # aggregation method (avg/max/min/...) is already encoded in the id.
         rows.append({
@@ -164,7 +164,7 @@ ON CONFLICT (id) DO UPDATE SET
 class RegisterStandardIndicatorsTask(PullTask):
     """
     Publish StandardIndicator enum + derived aggregation rules into
-    standard_indicators_device. Runs once a day — catalog data
+    standard_indicators_device. Runs once a day: catalog data
     only changes when code is deployed.
     """
 
@@ -173,7 +173,7 @@ class RegisterStandardIndicatorsTask(PullTask):
             provider_slug="register_standard_indicators",
             schedule_type=ScheduleType.INTERVAL,
             interval_minutes=60,  # scheduler checks hourly
-            execution_interval_hours=2400.0,  # ~100 days — effectively manual-trigger only
+            execution_interval_hours=2400.0,  # ~100 days: effectively manual-trigger only
         )
 
     async def execute(self) -> bool:
@@ -190,7 +190,7 @@ class RegisterStandardIndicatorsTask(PullTask):
                 logger.info("[StdIndicatorRegistry] No rows to register")
                 return True
 
-            # Dedupe by id — defensive: if a source and an aggregation
+            # Dedupe by id, defensive: if a source and an aggregation
             # ever collide on the same camelCase name, the later (agg)
             # would silently overwrite the former. Drop dupes upfront so
             # the loser is logged rather than mysteriously absent.

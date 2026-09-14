@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Tool names reserved by the native deepagents harness. The agent gets these
 # from middleware, so a same-named global MCP tool (from any source) would shadow
-# or collide with the native one — filter them out here:
+# or collide with the native one: filter them out here:
 #   - FilesystemMiddleware provides ls/read_file/write_file/edit_file/glob/grep
 #     over the CompositeBackend (multimodal read for pdf/image/...).
 #
@@ -55,7 +55,7 @@ def _accepted_params(func) -> tuple[set[str], bool]:
     The second half is load-bearing: a tool whose parameters are a declared
     schema takes them as ``**kwargs``, so its only named parameter is the
     catch-all itself. Filtering against that name alone dropped every real
-    argument and the tool ran on its defaults — a confident, wrong answer the
+    argument and the tool ran on its defaults: a confident, wrong answer the
     model had no way to attribute to the wrapper.
     """
     try:
@@ -78,14 +78,14 @@ def _filtered(kwargs: dict, valid: set[str], takes_kwargs: bool) -> dict:
 
 #: Tools that answer with a `mirobody.kernel.tools.Envelope` and are therefore wired as
 #: `content_and_artifact`. A name, not a duck-type check, because the decision
-#: has to be made at LOAD time — `response_format` is a constructor argument.
+#: has to be made at LOAD time: `response_format` is a constructor argument.
 _ENVELOPE_TOOLS = frozenset({query.TOOL_NAME, meds.TOOL_NAME, genetics.TOOL_NAME})
 
 
 def _envelope_wrapper(bound_method, user_info: dict):
     """An envelope-returning tool as LangChain's `(text, artifact)` pair.
 
-    `bound_method` is the loaded MCP tool — a bound method of the service
+    `bound_method` is the loaded MCP tool: a bound method of the service
     instance the registry already built, so the same object answers both
     surfaces. The MCP path keeps the plain dict (an MCP client has no artifact
     channel); the split lives here, in the chat adapter.
@@ -196,7 +196,7 @@ async def load_global_tools(
                         return wrapper
                     tool_func = create_sync_filter_wrapper(tool_func)
                 
-                # The MCP schema — enums, bounds, defaults — reaches the chat model
+                # The MCP schema (enums, bounds, defaults) reaches the chat model
                 # as-is (langchain-core accepts a JSON-Schema dict as args_schema).
                 # Rebuilding it as `Any | None` fields erased every enum, which is
                 # why the model sent `aggregate: none` and a repair middleware had

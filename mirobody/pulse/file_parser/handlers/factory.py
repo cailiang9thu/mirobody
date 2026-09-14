@@ -3,7 +3,7 @@ from __future__ import annotations
 
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING
@@ -77,7 +77,7 @@ class FileHandlerFactory:
         # `text/csv` lands here too, and that is the fix for a real bug: it used
         # to be routed to a `CSVHandler` that only delegated to an injected
         # `csv_processor`, which nothing in this project ever injected. The
-        # factory therefore returned None for every .csv — no handler at all —
+        # factory therefore returned None for every .csv (no handler at all) 
         # while `SUPPORTED_EXTENSIONS` accepted `.csv` and
         # `file_types.TEXT_MIME_TYPES` already called it text. A lab CSV is text:
         # extract it, then run the same indicator extraction as everything else.
@@ -102,7 +102,7 @@ class FileHandlerFactory:
                 abstract_extractor=self.abstract_extractor,
             )
 
-        # 6. Check for Excel — built-in openpyxl extraction. The
+        # 6. Check for Excel: built-in openpyxl extraction. The
         # `excel_processor` override parameter is gone with the same seam: it
         # was documented as "injected from mcp_server", and no such injector
         # exists here, so the branch was unreachable.

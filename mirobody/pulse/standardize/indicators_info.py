@@ -1,7 +1,7 @@
 """The indicator catalogue as the reference implementation has always seen it.
 
 ``StandardIndicator``, ``Categories``, ``IndicatorInfo`` and the helper
-functions keep their names, members and shapes — every provider, the
+functions keep their names, members and shapes: every provider, the
 aggregator, the Apple upload path and two downstream repositories reference
 ``StandardIndicator.HEART_RATE.value.name``. What changed is where the data
 lives: this module used to BE the catalogue (3,131 lines of hand-written
@@ -13,8 +13,8 @@ enum never had.
 The Chinese labels (``name_zh`` / ``description_zh``) come from
 ``res/labels/zh.tsv`` through ``metrics.register_labels``: the catalogue is
 English, and a deployment injects the languages it serves. Loading the
-shipped ``zh`` file here is what keeps ``get_all_indicators_info()`` — the
-payload the web client renders — byte-for-byte what it was.
+shipped ``zh`` file here is what keeps ``get_all_indicators_info()`` (the
+payload the web client renders) byte-for-byte what it was.
 """
 
 from __future__ import annotations

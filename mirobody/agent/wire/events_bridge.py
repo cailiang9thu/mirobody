@@ -1,11 +1,11 @@
-"""LangGraph's stream → `kernel.events` — the conversion every wire adapter
+"""LangGraph's stream → `kernel.events`: the conversion every wire adapter
 needs and none should write again.
 
 An agent turn streams two things from LangGraph: ``stream_mode="messages"``
 chunks (tokens, as they arrive) and ``stream_mode="updates"`` items (a node's
 completed messages: the model's tool calls, the tools' results, an interrupt).
-Every surface that renders a turn — this repository's chat chunks, a
-consumer's SSE, an OpenAI-compatible relay — used to read those raw objects
+Every surface that renders a turn (this repository's chat chunks, a
+consumer's SSE, an OpenAI-compatible relay) used to read those raw objects
 itself and each got a different subset right. This module reads them once,
 into the wire-neutral `AgentEvent` vocabulary; a renderer maps events to its
 wire.
@@ -58,7 +58,7 @@ def content_text(content: Any) -> str:
 
 def result_status(message: Any) -> dict:
     """``{"status": …}`` (plus ``error_kind``, ``truncated`` when they apply) from
-    a tool message's ARTIFACT — a `kernel.tools.Envelope` when the tool answers
+    a tool message's ARTIFACT: a `kernel.tools.Envelope` when the tool answers
     with one. Never from its text: the envelope exists so a reader does not have
     to recover the machine-readable half from a rendering. A tool with no
     envelope makes no claim; one that RAISED (LangChain sets ``status="error"``
@@ -185,7 +185,7 @@ def updates_item_events(
     single `Interrupted` returned then is terminal and the caller stops.
     ``nodes`` limits which graph nodes are read (a renderer that only wants the
     ``model`` and ``tools`` nodes passes them); every message of a node update
-    is read — a tools node that ran several calls in parallel reports all of
+    is read: a tools node that ran several calls in parallel reports all of
     its results, not the last.
     """
     if "__interrupt__" in data:

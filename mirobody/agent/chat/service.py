@@ -63,7 +63,7 @@ def public_endpoint(fn):
 
 
 def self_authenticating(fn):
-    """Preflight only — the handler does its own, non-standard auth.
+    """Preflight only: the handler does its own, non-standard auth.
 
     One endpoint needs this and it does not fit `requires_auth`: `chat_handler`
     reads `request.state.user_id`, populated by middleware, rather than
@@ -97,7 +97,7 @@ def requires_auth(fn):
     """Preflight, then a verified bearer token; passes `user_id` to the handler.
 
     This preamble was copy-pasted into 13 handlers. Beyond the repetition, it
-    made authentication a thing you had to remember to write — a new handler
+    made authentication a thing you had to remember to write: a new handler
     was authenticated only if its author happened to paste the right four
     lines. Here it is the decorator, so leaving it off is visible.
     """
@@ -164,7 +164,7 @@ class ChatService:
 
     @public_endpoint
     async def model_handler(self, request: Request) -> Response:
-        """Provider names whose key resolves — bare names, no `Agent/` prefix.
+        """Provider names whose key resolves: bare names, no `Agent/` prefix.
 
         The shipped web client splits each entry on `/` into `{agent, provider}`
         and falls back to the whole string as the provider when there is no
@@ -185,7 +185,7 @@ class ChatService:
 
         One list, from config, the same for every caller. `{"system": [...]}` is
         the shape the shipped web client reads; it used to carry a `user` list
-        too (prompts a person saved through `/api/user/prompt/*`) — nothing in
+        too (prompts a person saved through `/api/user/prompt/*`): nothing in
         the shipped client could create one, and a framework's system prompt is
         not something a user edits from a settings box, so that surface is gone.
         A deployment with no configured templates gets an empty list.
@@ -206,7 +206,7 @@ class ChatService:
         try:
             params = await request.json()
             query_user_id = params.get("query_user_id", user_id)
-            session_id = params.get("session_id")  # Optional — clients may
+            session_id = params.get("session_id")  # Optional: clients may
                                                    # supply a structured id
                                                    # (e.g. a client encoding
                                                    # compare pane info into it).

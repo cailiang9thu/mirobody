@@ -2,10 +2,10 @@
 Reusable OAuth2 client for providers.
 
 Encapsulates the standard OAuth2 authorization-code flow:
-  1. generate_authorization_url  — build auth URL, store state in Redis
-  2. exchange_code_for_tokens    — code → tokens, save credentials to DB
-  3. get_valid_access_token      — auto-refresh expired tokens
-  4. refresh_access_token        — refresh_token grant
+  1. generate_authorization_url  build auth URL, store state in Redis
+  2. exchange_code_for_tokens    code → tokens, save credentials to DB
+  3. get_valid_access_token      auto-refresh expired tokens
+  4. refresh_access_token        refresh_token grant
 
 Providers use this via composition (not inheritance):
     self.oauth = OAuth2Client(client_id=..., ...)

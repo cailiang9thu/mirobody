@@ -25,11 +25,11 @@ def secret_fingerprint(secret: str | None) -> str:
     and in one case returned to the caller in an HTTP 401 body. Truncation
     (`token[:50]`, used elsewhere in this repo) is not a fix for a JWT: the
     first 50 characters are the header plus the start of the *payload*, which
-    is base64 of the claims — email, subject, issuer. It hides the signature,
+    is base64 of the claims: email, subject, issuer. It hides the signature,
     which is the one part that is not sensitive on its own.
 
-    A digest prefix keeps what logging a token is actually for — correlating
-    "this same token failed here and here" across lines — while carrying none
+    A digest prefix keeps what logging a token is actually for (correlating
+    "this same token failed here and here" across lines) while carrying none
     of the claims.
     """
     if not secret or not isinstance(secret, str):
@@ -39,7 +39,7 @@ def secret_fingerprint(secret: str | None) -> str:
 #-----------------------------------------------------------------------------
 
 #: How the pseudonym salt is found. A user id is a small integer, and any
-#: UNKEYED hash of it is reversed by enumerating 1..1e7 in milliseconds — so the
+#: UNKEYED hash of it is reversed by enumerating 1..1e7 in milliseconds, so the
 #: salt must be a real secret. The reference server reads `LOG_PSEUDONYM_SALT`
 #: from the environment; a deployment with other secrets already in the process
 #: installs a reader with `use_pseudonym_salt` rather than adding a config key.
@@ -63,7 +63,7 @@ def _pseudonym_salt() -> str:
         _pseudonym_warned = True
         logging.getLogger(__name__).warning("pseudonym: no salt configured; using a per-process one")
     # Still aligns within one process (enough for one investigation) and dies with
-    # it — never the fixed-salt kind that is enumerable.
+    # it, never the fixed-salt kind that is enumerable.
     return _pseudonym_fallback
 
 
@@ -71,7 +71,7 @@ def user_tag(user_id: int | str | None) -> str:
     """``45`` → ``u#3f2a9c14``: a keyed pseudonym for LOG LINES only.
 
     It aligns the same person across lines while a reader of the logs cannot
-    recover who. One-way by design: never use it to query or authorise —
+    recover who. One-way by design: never use it to query or authorise:
     operators look someone up by computing the tag from a known id and grepping,
     not by decrypting. Empty input → ``u#-``; never raises.
     """
@@ -206,7 +206,7 @@ class JsonFormatter(logging.Formatter):
                 # Fail CLOSED. This used to fall back to the plaintext, so with
                 # no LOG_ENCRYPT_KEY configured every "encrypted_info" payload
                 # was written in the clear under a field name that promises the
-                # opposite — the worst of both, since a reader trusts the name.
+                # opposite: the worst of both, since a reader trusts the name.
                 encrypted_encrypted_info = (
                     "<unencrypted: LOG_ENCRYPT_KEY not configured>"
                 )

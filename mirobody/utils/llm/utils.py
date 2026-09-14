@@ -2,7 +2,7 @@
 `UTILS_TEXT_MODEL` routes to.
 
 Both functions resolve the route once, build the request for that one entry
-and return `None` when no model answered — never trying another entry (see
+and return `None` when no model answered, never trying another entry (see
 `config.llm`: two reports of one person must not be read by two models).
 """
 
@@ -20,7 +20,7 @@ from ..config.llm import (
 logger = logging.getLogger(__name__)
 
 # `PROJECT_DIR`, `os` and `uuid` used to be here to give `async_get_openai_tts`
-# somewhere to write its .mp3 — the only thing in this module that ever touched
+# somewhere to write its .mp3: the only thing in this module that ever touched
 # the filesystem, and a function no caller ever invoked. All four went together.
 # `get_openai_chat` (a hardcoded `["gpt-4o", "gpt-4.1"]` allowlist, zero
 # callers) and `async_get_doubao_structured_output` (a vendor SDK declared and
@@ -59,7 +59,7 @@ def _for_endpoint(spec: RouteSpec, messages: list[dict], response_format: dict) 
 
     `json_schema` passes through. Otherwise the schema goes into the system
     prompt and the parameter is downgraded to `json_object` (DeepSeek, whose
-    JSON mode also REQUIRES the word "json" and an example in the prompt —
+    JSON mode also REQUIRES the word "json" and an example in the prompt,
     which the schema text provides) or dropped entirely (`none`: Anthropic's
     compatibility endpoint rejects `json_object`, so the prompt is the only
     channel left).
@@ -111,7 +111,7 @@ async def async_get_structured_output(
     `provider`, an entry name or `provider/model`, with `model_name`
     overriding its model).
 
-    Returns the parsed dict, or None — for "no route is configured" (logged at
+    Returns the parsed dict, or None: for "no route is configured" (logged at
     ERROR with the sentence that fixes it), for a failed call, and for a
     refusal. Callers that must tell "no route" from "the call failed" ask
     `resolve_route("text")` first.
@@ -161,7 +161,7 @@ async def async_get_structured_output(
             logger.error(f"structured output from {provider_name} ({model_name}) was empty")
             return None
         # A model told to answer in JSON by the PROMPT (every entry below
-        # `response_format: json_schema`) wraps it in a ```json fence — measured
+        # `response_format: json_schema`) wraps it in a ```json fence: measured
         # on Anthropic's compatibility endpoint, 2026-09-10. The vision path has
         # always stripped it; this one used to hand the fence to `json.loads`.
         # A no-op on a real json_schema answer, which never starts with a fence.

@@ -330,7 +330,7 @@ class StandardHealthService(BaseHealthService):
         try:
             logger.info(f"About to save {len(summary_records)} summary records to th_series_data")
             for record in summary_records[:2]:  # Log first 2 records for debugging
-                # `comment` (and the value itself) are user health data — the
+                # `comment` (and the value itself) are user health data: the
                 # write encrypts `comment` at rest, so logging the full record
                 # would put in plaintext exactly what the column encryption is
                 # there to protect. Log structure, not content.
@@ -368,7 +368,7 @@ class StandardHealthService(BaseHealthService):
             end_time_ms = common_data.get("original_end_time_ms")
 
             # Fallback: providers that don't carry an explicit time range are
-            # treated as point-in-time samples — use the record timestamp for
+            # treated as point-in-time samples: use the record timestamp for
             # both bounds. This routes every record through the timezone
             # conversion below, so th_series_data.start_time always reflects
             # the user's local wall clock (not UTC). (TH-403)

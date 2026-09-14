@@ -23,12 +23,12 @@ def parse_stored_content(raw: Any) -> Any:
 
     ``save_message`` writes this column, and it writes exactly two shapes: a
     ``json.dumps`` of the assistant's element_list / the user's file bubble, or
-    a plain string (the user's question). So strict parsing is the whole job —
+    a plain string (the user's question). So strict parsing is the whole job:
     valid JSON parses, prose does not, and there is no third case.
 
     This replaced a 78-line "repair" pair (``repair_json_string`` /
     ``safe_json_parse``) written for *LLM output*: it stripped markdown fences,
-    swapped smart quotes, removed trailing commas, and — the damaging part —
+    swapped smart quotes, removed trailing commas, and (the damaging part) 
     fell back to pulling the first ``[...]``/``{...}`` substring out of the
     text. Nothing here parses model output; the sole caller reads back what
     this module itself wrote. On its own writer's output every repair step was
@@ -208,16 +208,16 @@ async def get_chat_history(user_id: str, session_id: str) -> list[dict[str, Any]
     Renderable message types only. There used to be a `filter_message_type`
     flag selecting between this query and an unfiltered one, and it was
     inverted: passing True removed the filter, while the default False applied
-    it. No caller ever passed it, so the flag was a trap with one live branch —
+    it. No caller ever passed it, so the flag was a trap with one live branch:
     dropped along with the branch.
     """
     history = []
     try:
         # `input_prompt` used to be selected here and surfaced on the response
-        # when truthy. Nothing in the project ever writes that column — not
+        # when truthy. Nothing in the project ever writes that column (not
         # save_message, not the one UPDATE path (file_parser's
         # update_message_content, which can set content/reasoning/message_type)
-        # — so it is NULL on every row and the branch never fired.
+        #) so it is NULL on every row and the branch never fired.
         session_sql = """
             SELECT
                 id, decrypt_content(content) AS content, reasoning, role, agent, provider,
@@ -297,7 +297,7 @@ async def get_chat_history(user_id: str, session_id: str) -> list[dict[str, Any]
             # duplicate-write bug, which dropped any user message whose
             # `provider` was empty. The bug is gone; the workaround was not,
             # and it silently hid every user message written by a path that
-            # does not set `provider` — a filter on the wrong field for a
+            # does not set `provider`: a filter on the wrong field for a
             # problem that no longer exists.
             for user_msg in user_messages:
                 history.append(user_msg)

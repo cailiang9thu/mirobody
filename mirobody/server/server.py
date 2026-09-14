@@ -143,8 +143,8 @@ class Server:
 
         # The shipped web client reads six flags off /mirobody.json and treats a
         # MISSING key as an off switch. Only the three above were ever emitted,
-        # so `__IS_MOBILE_SOURCE_ON__` — which gates the whole device-provider
-        # UI (Garmin / Oura / Whoop / Apple Health) — read as False on every
+        # so `__IS_MOBILE_SOURCE_ON__` (which gates the whole device-provider
+        # UI (Garmin / Oura / Whoop / Apple Health)) read as False on every
         # deployment, and ① Collect, the README's headline stage, was invisible
         # in the client (docs/roadmap.md, 2026-08-17). Derive the defaults from
         # what is actually installed rather than hardcoding them; an overlay's
@@ -255,7 +255,7 @@ class Server:
             )
 
             # The static client itself is mounted by `add_htdoc_routes` in
-            # `start()`, after every router — its SPA fallback must lose to
+            # `start()`, after every router: its SPA fallback must lose to
             # all real routes. Only the config endpoint the client fetches
             # at boot (/mirobody.json) lives here.
 
@@ -409,7 +409,7 @@ class Server:
         # docs/apple-health.md documents POST /apple/health, and a self-hosted
         # deployment's uploader may point at either surface; keep both mounts.
         # (The former import alias `old_router` was misleading: the actual legacy
-        # /api/v1/health/apple-health router was never registered here — its dead
+        # /api/v1/health/apple-health router was never registered here: its dead
         # remains were removed from apple_router.py.)
         app.include_router(apple_router)
         app.include_router(file_router)

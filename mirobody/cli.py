@@ -1,25 +1,25 @@
-"""Console entry point — ``mirobody <command>``.
+"""Console entry point: ``mirobody <command>``.
 
 Installed via ``[project.scripts]`` so a plain ``pip install mirobody`` gets a
-runnable command (deployments use ``python -m mirobody`` — see __main__.py).
+runnable command (deployments use ``python -m mirobody``: see __main__.py).
 
 Commands:
 
-* ``mirobody parse <file>``             — the engine's party trick: lab report
+* ``mirobody parse <file>``             the engine's party trick: lab report
   in, standardized LOINC table out. One LLM key, no database, no server.
   Requires the ``[parse]`` extra.
-* ``mirobody resolve <terms...>``       — offline indicator-name resolution
+* ``mirobody resolve <terms...>``       offline indicator-name resolution
   against the shipped bundles. Needs NOTHING: no key, no config, no network.
-* ``mirobody dev [--pg-url URL]``       — the same server in ONE command, with
+* ``mirobody dev [--pg-url URL]``       the same server in ONE command, with
   no config file, no Redis requirement and generated dev secrets. `config.yaml`
   is not in the wheel, so this is the only shape in which
   ``pip install 'mirobody[app]'`` alone can start something.
-* ``mirobody serve [config.yaml ...]``  — the full HTTP server (chat, MCP,
+* ``mirobody serve [config.yaml ...]``  the full HTTP server (chat, MCP,
   API). Requires the ``[app]`` extra; checked up front with a plain message
   instead of a traceback from deep inside an import chain.
-* ``mirobody worker [config.yaml ...]`` — the background task worker
+* ``mirobody worker [config.yaml ...]``: the background task worker
   (IndicatorSync, ProfileRefresh queues).
-* ``mirobody doctor [config.yaml ...]`` — which LLM provider each surface
+* ``mirobody doctor [config.yaml ...]``, which LLM provider each surface
   (chat, vision, structured extraction, text, embeddings) would select with
   the current configuration, and what to set where one has none. Needs no
   database and no extra.
@@ -43,7 +43,7 @@ def _require_extra(command: str, extra: str, marker: str, what: str) -> None:
     opaque ``ModuleNotFoundError``. Checking one marker dependency up front and
     naming the pip command is the entire fix.
 
-    ``pip install mirobody`` is ② Translate — ``resolve``, units, lexical,
+    ``pip install mirobody`` is ② Translate: ``resolve``, units, lexical,
     numpy and nothing else. That is deliberate: it is the surface other
     software depends ON, and it used to drag 93 packages and 245 MB behind it.
     """
@@ -67,7 +67,7 @@ def _cmd_serve(args: argparse.Namespace) -> None:
 
 #: What `mirobody dev` needs that a git checkout gets from `config.yaml` and a
 #: deployment gets from `./deploy.sh`. Written as a YAML overlay in MEMORY, not
-#: to a file: `config.yaml` is not in the wheel (checked — no `config.y*ml`
+#: to a file: `config.yaml` is not in the wheel (checked, no `config.y*ml`
 #: member), so `pip install 'mirobody[app]' && mirobody serve` has no
 #: configuration at all, and that is the actual reason "one command" did not
 #: work. Writing a config into someone's working directory is a side effect a
@@ -134,7 +134,7 @@ def _pg_from_url(url: str) -> dict[str, str]:
 
 
 def _cmd_dev(args: argparse.Namespace) -> None:
-    """One command, one process, no config file — the local-development path.
+    """One command, one process, no config file: the local-development path.
 
     `serve` is the deployment shape: it reads `config.{ENV}.yaml`, expects
     Redis, and expects the secrets to already exist. Every one of those is a
@@ -142,7 +142,7 @@ def _cmd_dev(args: argparse.Namespace) -> None:
     a fresh machine, and four of them are things a developer should not have to
     produce by hand to see the thing run.
 
-    What this does NOT change: Redis stays optional because it already was —
+    What this does NOT change: Redis stays optional because it already was:
     `RedisConfig.get_async_client` returns None when it cannot ping, and
     `Server` logs "local memory mode" and carries on. `dev` just stops treating
     that as a failure worth blocking on.
@@ -171,7 +171,7 @@ def _cmd_dev(args: argparse.Namespace) -> None:
     # Put into the ENVIRONMENT, not only into the overlay, and that is not a
     # workaround: `Config.__init__` builds its `FernetEncrypter` from
     # `get_fernet_key("CONFIG_ENCRYPTION_KEY")` BEFORE it loads any YAML, so a
-    # value supplied in config can never satisfy it — the run just logs
+    # value supplied in config can never satisfy it: the run just logs
     # "CONFIG_ENCRYPTION_KEY is not set" at ERROR and encrypts with a
     # publicly-known key. `LOG_ENCRYPTION_KEY` reads the same way.
     generated = []
@@ -235,7 +235,7 @@ def _width(text: str) -> int:
     `f"{term:<{n}}"` pads by `len()`, and every CJK character occupies two
     columns in every terminal. So `血红蛋白` was billed as 4 and drawn as 8, and
     the LOINC column drifted four places right on exactly the rows that make the
-    point — this command's whole pitch is that four languages land on one code,
+    point, this command's whole pitch is that four languages land on one code,
     and it showed that as a table which did not line up.
     """
     return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
@@ -267,7 +267,7 @@ def _cmd_parse(args: argparse.Namespace) -> None:
     The no-key case gets the same treatment as the missing extra in
     `_require_extra`, and for the same reason. It used to surface as a
     twenty-line traceback ending in a `ValueError` from four frames inside
-    `unified_file_extract` — the message was correct and nobody would read it
+    `unified_file_extract`: the message was correct and nobody would read it
     there. `parse` is the second command the README hands a new user, right
     after `resolve`, which needs no key at all; being told which environment
     variable to set is the entire content of the failure.

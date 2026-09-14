@@ -12,7 +12,7 @@ from typing import Any
 # with it: imperial mass/length definitions and substance molar masses. This
 # table used to carry its own literals and they had already drifted (lb was
 # 2.20462 here vs the NIST-exact 2.2046226… there; glucose said 18.0182 here
-# vs 18.016 there) — two conversions for the same physical fact in one
+# vs 18.016 there): two conversions for the same physical fact in one
 # codebase. `mirobody/tests/test_units.py` gates that the drift stays at zero.
 from mirobody.units.convert import MOLAR_MASS, conversion_factor
 
@@ -331,7 +331,7 @@ def _populate_indicator_specific_conversions():
 
     # Blood Glucose: standard unit is mg/dL. Molar mass from the engine's
     # MOLAR_MASS (C6H12O6 = 180.16 g/mol, keyed by LOINC): 1 mmol/L =
-    # 18.016 mg/dL. This block used to say 18.0182 — a fourth-copy drift.
+    # 18.016 mg/dL. This block used to say 18.0182: a fourth-copy drift.
     glucose_g_per_mol = MOLAR_MASS["2345-7"][0]
     INDICATOR_SPECIFIC_CONVERSIONS[StandardIndicator.BLOOD_GLUCOSE] = {
         "conversions": {
@@ -347,7 +347,7 @@ def _populate_indicator_specific_conversions():
     #
     # Triglycerides are NOT in this list. An earlier version applied the
     # cholesterol factor (387 g/mol) to triglycerides too, so TG 150 mg/dL
-    # (upper normal) converted to 3.879 mmol/L — read as "severely elevated"
+    # (upper normal) converted to 3.879 mmol/L: read as "severely elevated"
     # instead of the correct ~1.69 mmol/L (a 2.29x error).
     cholesterol_g_per_mol = MOLAR_MASS["2093-3"][0]
     for cholesterol_indicator in [
@@ -368,7 +368,7 @@ def _populate_indicator_specific_conversions():
             }
         }
 
-    # Triglycerides: standard unit is mmol/L, but the molar mass is its own —
+    # Triglycerides: standard unit is mmol/L, but the molar mass is its own:
     # the conventional average the engine keys to LOINC 2571-8 (~885.4 g/mol,
     # triolein): 1 mmol/L = 88.54 mg/dL.
     tg_g_per_mol = MOLAR_MASS["2571-8"][0]

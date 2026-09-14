@@ -1,7 +1,7 @@
 """Backing-service bootstrap for the HTTP server.
 
-Everything else that used to live here — `register_middleware`, `lifespan`,
-and eight `get_*` request helpers — was dead: the only symbol any caller ever
+Everything else that used to live here (`register_middleware`, `lifespan`,
+and eight `get_*` request helpers) was dead: the only symbol any caller ever
 imported was `init` (`server/server.py`). The helpers were also a near-verbatim
 duplicate of the live copies in `server/middlewares.py`, so the file was both
 unused and a second source of truth for the same logic.
@@ -29,7 +29,7 @@ async def init():
         logger.error(f"Failed to start aggregate indicator scheduler: {str(e)}")
         raise  # Re-raise to prevent service from starting if tests fail
 
-    # Start standard indicator registry task — publishes in-code
+    # Start standard indicator registry task: publishes in-code
     # StandardIndicator enum + derived aggregation rules to
     # standard_indicators_device once a day.
     try:

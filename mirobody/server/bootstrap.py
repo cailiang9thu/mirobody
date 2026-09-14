@@ -2,23 +2,23 @@
 
 Extracted from `Server.start`, which mixed this with binding the socket. The
 composition root should register routers, middleware, exception handlers and
-lifespan — a 40-line DDL replay is not that, and it is the part most likely to
+lifespan: a 40-line DDL replay is not that, and it is the part most likely to
 be read by someone asking "where do my tables come from?".
 
 Two explicit switches govern deployment posture; `ENV` is only an overlay
 selector (`config.{ENV}.yaml`) and a log field, and may be any name:
 
-* ``BOOTSTRAP_SCHEMA`` (default true) — replay `mirobody/schema/` at boot.
+* ``BOOTSTRAP_SCHEMA`` (default true): replay `mirobody/schema/` at boot.
   Real deployments provision the schema ahead of time and set it false; see
   `mirobody/schema/README.md` for the contract those files satisfy.
-* ``PRODUCTION`` (default false) — declare that this deployment faces real
+* ``PRODUCTION`` (default false): declare that this deployment faces real
   users. Refuses to start while demo affordances remain (below), and skips
   the demo seed.
 
 Both are explicit switches rather than something inferred from the
 environment NAME, because name-based gating is an allowlist doing a safety
-gate's job: `ENV=production`, `ENV=live`, `ENV=prod-eu` — any name an
-operator picks that the list did not anticipate — silently gets the DEV
+gate's job: `ENV=production`, `ENV=live`, `ENV=prod-eu` (any name an
+operator picks that the list did not anticipate) silently gets the DEV
 posture: DDL replayed against a provisioned database, demo login codes
 accepted, demo data seeded.
 """
@@ -50,14 +50,14 @@ def enforce_production_auth_safety(config) -> None:
     Two refusals, both for things that are exactly right in the one-command
     local demo and exactly wrong on the public internet:
 
-    * `EMAIL_PREDEFINE_CODES` non-empty — a predefined code lets anyone who
+    * `EMAIL_PREDEFINE_CODES` non-empty: a predefined code lets anyone who
       knows a listed address sign in (the short-circuit works in the
       production Mandrill/SMTP verifiers too, not just the demo stub). The
       default config ships a code, so a demo box later promoted to production
       would silently keep its anonymous login if only SECURITY.md asked for
       its removal.
     * any config value still reading the `REPLACE_THIS_VALUE_IN_PRODUCTION`
-      placeholder — the sentinel's own name says when it must be gone.
+      placeholder: the sentinel's own name says when it must be gone.
 
     Failing the boot makes the operator fix these deliberately instead of us
     guessing which of them were intentional.
@@ -102,7 +102,7 @@ async def create_schema(config) -> None:
     """Replay every DDL file in `mirobody/schema/`, in filename order.
 
     Every file is written to be safely re-runnable, because this replays all of
-    them on each start — there is no ledger of what has been applied. Verified by
+    them on each start: there is no ledger of what has been applied. Verified by
     running the set three times against a clean database: zero errors.
 
     A failing file is logged and rolled back on its own; the rest still run. That
@@ -127,7 +127,7 @@ async def create_schema(config) -> None:
             # The DDL ships INSIDE the package: `mirobody serve` creating its own
             # tables is a capability, so it has to travel with the wheel. It is
             # deliberately not under `mirobody/res/`, which LICENSE-3RD-PARTY
-            # describes as derived from UMLS/SNOMED/LOINC — our DDL is not.
+            # describes as derived from UMLS/SNOMED/LOINC: our DDL is not.
             if not os.path.isdir(_SCHEMA_DIR):
                 logger.warning(
                     "schema bootstrap skipped: %s is missing. Provision the schema "
@@ -152,7 +152,7 @@ async def create_schema(config) -> None:
 
     # The DDL adds the day columns; this fills them on the rows that predate
     # them, so a day-grained read never has to fall back to padding a naive
-    # timestamp a day each way. Idempotent and bounded — see pulse/backfill.py.
+    # timestamp a day each way. Idempotent and bounded: see pulse/backfill.py.
     try:
         from ..pulse.backfill import backfill_day_columns
         await backfill_day_columns()
@@ -168,7 +168,7 @@ async def seed_demo_data(config) -> None:
     different questions: `BOOTSTRAP_SCHEMA` is about who provisions tables,
     while whether you want demo data is a deliberate choice a demo deployment
     makes either way. `compose.yaml` sets it. `PRODUCTION: true` overrides
-    both flags' demo-friendliness — synthetic patients never seed there.
+    both flags' demo-friendliness: synthetic patients never seed there.
 
     Failure is logged and swallowed. A demo that cannot load is a disappointing
     first run; a server that will not boot because of one is worse.

@@ -4,7 +4,7 @@
 device ACCESS platform: twelve provider strategies, four mobile SDKs,
 webhooks, multi-account sync, a developer portal. It is very good at the half
 of the problem this project deliberately does not solve, and its own
-standardization document is honest about the half it does not solve — no
+standardization document is honest about the half it does not solve, no
 terminology system, unit labels rather than a unit engine, an offset rather
 than a time zone.
 
@@ -23,7 +23,7 @@ daylight saving, quality gates, medications and the query tools here.
   twenty-six spellings; the crosswalk carries the rest. The one that bites is
   VO2 max: open-wearables publishes mL/kg/min and this catalogue carries
   L/min/kg, so a value passed through unconverted is out by a factor of a
-  thousand — which looks like a plausible number, not like an error.
+  thousand, which looks like a plausible number, not like an error.
 * **`zone_offset` is an offset, not a zone.** `+08:00` cannot say whether a
   day was 23, 24 or 25 hours long, so the caller supplies the IANA zone name
   and the offset is kept only to place the instant.
@@ -120,7 +120,7 @@ UNIT_ALIASES: dict[str, str] = {
     "degrees": "deg",
 }
 
-#: Every catalogue metric this decoder can emit — from the crosswalk plus the
+#: Every catalogue metric this decoder can emit: from the crosswalk plus the
 #: sleep stages, so `connect.Coverage` cannot claim one it does not produce.
 METRICS: frozenset[str] = frozenset(c.metric for c in CROSSWALK.values() if c.metric) | frozenset(
     SLEEP_STAGES.values()
@@ -132,7 +132,7 @@ def resolve_unit(ow_unit: str) -> str:
 
     Normalised on the way out, both for the aliases and for the spellings the
     engine already knows, so `mL/kg/min` and `mL/min/kg` are ONE unit here
-    rather than two strings that happen to mean the same thing — which is the
+    rather than two strings that happen to mean the same thing, which is the
     difference between a conversion happening and a value being relabelled.
     """
     alias = UNIT_ALIASES.get(ow_unit)
@@ -204,7 +204,7 @@ def _instant_ms(item: dict, tz: str) -> int:
     because an offset cannot say how long a day was.
 
     A record with no timestamp decodes to nothing. It is never stamped with
-    `now()` — a synthetic time is indistinguishable from a measured one
+    `now()`: a synthetic time is indistinguishable from a measured one
     afterwards, and one of the platforms this reads from does exactly that.
     """
     raw = item.get("timestamp") or item.get("recorded_at") or ""
@@ -279,7 +279,7 @@ def _sleep(item: dict, tz: str, record_id: str, ingested_at_ms: int) -> list[Fac
 
 def _workout(item: dict, tz: str, record_id: str, ingested_at_ms: int) -> list[Fact]:
     """A workout's own numbers. The workout ITSELF is an event with a type and
-    a name, and this catalogue has no vocabulary for that — so the numbers
+    a name, and this catalogue has no vocabulary for that, so the numbers
     come through and the event does not, rather than being flattened into a
     metric called `workout`."""
     source = item.get("source") if isinstance(item.get("source"), dict) else {}

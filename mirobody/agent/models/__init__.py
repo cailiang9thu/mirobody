@@ -11,6 +11,6 @@
 This is the half of the agent layer a consumer running its own agent imports
 most: none of it touches this repository's database, HTTP surface or storage.
 Not to be confused with `mirobody/utils/llm/`, which is the ENGINE's one-shot
-LLM path — vision extraction and structured output on the provider SDKs, with
+LLM path: vision extraction and structured output on the provider SDKs, with
 no LangChain in it.
 """

@@ -1,4 +1,4 @@
-"""Prompt shaping and result merging — the pure half of vision extraction.
+"""Prompt shaping and result merging: the pure half of vision extraction.
 
 No provider, no network, no filesystem: strings in, strings out. Which is why
 these are the functions the tests can pin exhaustively, and why they are the
@@ -61,7 +61,7 @@ def _merge_json_results(json_strings: list[str]) -> str:
 
     Handles BOTH top-level shapes, because both are real. This used to be
     `merged = {}` plus `if not isinstance(data, dict): continue`, which meant a
-    page answering with a top-level ARRAY was dropped on the floor — and the
+    page answering with a top-level ARRAY was dropped on the floor, and the
     engine's own extraction prompt (`engine._EXTRACT_PROMPT`) asks for exactly
     that. The visible symptom was `mirobody parse report.pdf` raising
     "extraction returned dict, expected a JSON array" on every multi-page PDF;
@@ -70,8 +70,8 @@ def _merge_json_results(json_strings: list[str]) -> str:
     never hit it (`_merge_page_results` returns their content unmerged), which
     is why a JPG worked and a 9-page scan did not.
 
-    A dict page whose only list-valued key holds the rows — `{"readings": [...]}`,
-    the other shape json_mode commonly produces — is unwrapped rather than
+    A dict page whose only list-valued key holds the rows: `{"readings": [...]}`,
+    the other shape json_mode commonly produces: is unwrapped rather than
     dropped, so a model that answers inconsistently across pages still costs
     nothing.
     """

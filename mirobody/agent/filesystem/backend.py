@@ -1,7 +1,7 @@
 """Rendering half of the agent's filesystem: how a stored file READS.
 
 This module no longer owns any storage. It used to be a Postgres-backed
-filesystem — a `deep_agent_workspace` table with four scopes, one of which was
+filesystem: a `deep_agent_workspace` table with four scopes, one of which was
 the agent's scratch space and three of which were copies of data another table
 already owned. The copies are what let a deleted health document keep answering,
 twice: once as an uploaded-file row that outlived `th_files`, once as a health
@@ -14,7 +14,7 @@ So sourcing moved out and only rendering stayed. Subclasses supply rows through
     deep/profile_backend.ProfileBackend /memories/, over the health profile
     deepagents StateBackend             /, the scratch space, checkpointed
 
-What stayed here is the part that is expensive to relearn — how a file becomes
+What stayed here is the part that is expensive to relearn: how a file becomes
 something a model can actually read:
 
   * text-extractable documents (ppt/pptx/xlsx) serve their extracted text;
@@ -23,7 +23,7 @@ something a model can actually read:
   * images/audio/video serve base64 from object storage, capped, so the
     middleware emits a multimodal block;
   * a document whose text has never been extracted is extracted on first read,
-    synchronously, and cached into `th_files.original_text` — the column the
+    synchronously, and cached into `th_files.original_text`: the column the
     rest of the system reads, rather than a copy only the agent could see.
 
 Writes are refused. The scratch space that needed them is StateBackend's now.
@@ -70,7 +70,7 @@ _READONLY = (
     "the workspace root (/) instead."
 )
 
-# 256 KB cap — larger payloads (even utf-8 text) go to object storage to avoid
+# 256 KB cap: larger payloads (even utf-8 text) go to object storage to avoid
 # bloating PG rows / index pages.
 _DEFAULT_READ_LIMIT = 2000
 # Cap for serving raw bytes back as base64 for a multimodal read. Beyond this we
@@ -120,7 +120,7 @@ class PgFilesystemBackend(BackendProtocol):
         # block (Claude / Gemini …), so pdf/ppt are served as raw base64 bytes
         # (preserving tables/figures/layout) rather than flattened to extracted
         # text. When False (qwen/deepseek/… reject file blocks), they read as
-        # extracted text — extracted on that first read. See aread's
+        # extracted text: extracted on that first read. See aread's
         # _TEXT_DOC_EXTS branch.
         self._supports_file_block = bool(supports_file_block)
 
@@ -202,10 +202,10 @@ class PgFilesystemBackend(BackendProtocol):
         model has not opened before, the first ``read_file`` lands here.
 
         Three sources, cheapest first:
-          1. the ``th_files`` parse cache by ``file_key`` — the upload pipeline's
+          1. the ``th_files`` parse cache by ``file_key``: the upload pipeline's
              own parse may have completed since this row was registered;
           2. the raw bytes in object storage, deduplicated by SHA256 inside
-             ``extract_text`` — bytes extracted before never pay twice;
+             ``extract_text``: bytes extracted before never pay twice;
           3. failing both, a real extraction (Vision LLM for scanned pages).
 
         On success the text is written back to `th_files` so subsequent
@@ -242,7 +242,7 @@ class PgFilesystemBackend(BackendProtocol):
         It used to be written back into the agent's own copy of the file, which
         meant the Files tab, the library listing and every other reader stayed
         ignorant of an extraction the agent had already paid for. `th_files`
-        owns the file, so `original_text` is the cache — and the read path picks
+        owns the file, so `original_text` is the cache, and the read path picks
         it up on the next turn through the ordinary projection.
 
         Best-effort: an extraction that cannot be cached is still returned to the
@@ -298,7 +298,7 @@ class PgFilesystemBackend(BackendProtocol):
         err = self._validate_path(file_path)
         if err:
             return ReadResult(error=err)
-        # LLMs frequently send offset/limit as strings or None — coerce so the
+        # LLMs frequently send offset/limit as strings or None: coerce so the
         # slice below never raises a TypeError.
         offset = coerce_to_int(offset, 0)
         limit = coerce_to_int(limit, _DEFAULT_READ_LIMIT)
@@ -315,11 +315,11 @@ class PgFilesystemBackend(BackendProtocol):
 
         # Text-extractable documents (pdf/ppt/pptx/excel): rendering is capability-aware.
         #  * PDF on a file-block-capable model (Claude/Gemini/GPT/…): fall through
-        #    to the base64 branch below so the model gets the NATIVE file block —
+        #    to the base64 branch below so the model gets the NATIVE file block:
         #    preserving tables, figures, layout, scanned pages (what vision models
         #    are best at, and what matters for lab reports / scanned medical docs).
-        #  * everything else here (ppt/pptx and Excel — no provider accepts these
-        #    as file blocks — and PDF on text-only models like qwen/deepseek that
+        #  * everything else here (ppt/pptx and Excel, no provider accepts these
+        #    as file blocks, and PDF on text-only models like qwen/deepseek that
         #    reject `{'type':'file'}` with HTTP 400): serve the extracted text,
         #    extracting it now if this is the file's first read. We drop these
         #    extensions from deepagents' multimodal
@@ -333,11 +333,11 @@ class PgFilesystemBackend(BackendProtocol):
                 # Inline text not present (the file was registered by reference
                 # before its text was extracted). Extract on-demand NOW, fetching
                 # the bytes from object storage and running the parser
-                # synchronously — so the read returns the text in this call rather
+                # synchronously, so the read returns the text in this call rather
                 # than asking the model to poll.
                 content = await self._lazy_extract_doc_text(row, file_path) or ""
             if not content.strip():
-                # Synchronous extraction produced nothing — retrying would not
+                # Synchronous extraction produced nothing: retrying would not
                 # help (it is not a timing issue). Report a clear, terminal
                 # outcome so the model stops re-reading and tells the user.
                 name = PurePosixPath(file_path).name
@@ -362,7 +362,7 @@ class PgFilesystemBackend(BackendProtocol):
         # Binary / multimodal file: serve the raw bytes as base64 so the
         # deepagents read_file tool emits a multimodal content block (image /
         # audio / video). The `content` column holds extracted text for
-        # grep only — never returned here, or the middleware would ship text as
+        # grep only, never returned here, or the middleware would ship text as
         # base64. Offset/limit are ignored for binary (pagination is text-only).
         if encoding == "base64":
             if oss_key:
@@ -379,7 +379,7 @@ class PgFilesystemBackend(BackendProtocol):
                     )
                 b64 = base64.b64encode(raw).decode("ascii")
             else:
-                # Binary is NEVER stored inline in Postgres — it always lives in
+                # Binary is NEVER stored inline in Postgres, it always lives in
                 # object storage. A base64 row without an object_storage_key is a
                 # corrupt/legacy record.
                 return ReadResult(error="binary content unavailable (missing object_storage_key)")
@@ -412,7 +412,7 @@ class PgFilesystemBackend(BackendProtocol):
     async def awrite(self, file_path: str, content: str) -> WriteResult:
         """Refused. This class renders read-only projections.
 
-        It used to own a write path — classify the payload, offload large bytes,
+        It used to own a write path: classify the payload, offload large bytes,
         upsert a row. That path existed to back the agent's scratch space, which
         is now deepagents' checkpointed `StateBackend`, so nothing writes here any
         more and a stub that silently did nothing would be worse than a refusal.
@@ -426,18 +426,18 @@ class PgFilesystemBackend(BackendProtocol):
         new_string: str,
         replace_all: bool = False,
     ) -> EditResult:
-        """Refused — see `awrite`."""
+        """Refused: see `awrite`."""
         return EditResult(error=_READONLY)
 
     async def aglob(self, pattern: str, path: str | None = None) -> GlobResult:
         # `None` is the protocol default as of deepagents 0.7 (it used to be
-        # "/"), and qwen has always been capable of sending it explicitly —
+        # "/"), and qwen has always been capable of sending it explicitly:
         # both collapse to the scope root here.
         path = path or "/"
         err = self._validate_path(path)
         if err:
             return GlobResult(error=err)
-        # qwen may send pattern as None/empty — nothing to match, return empty.
+        # qwen may send pattern as None/empty: nothing to match, return empty.
         if not isinstance(pattern, str) or not pattern:
             return GlobResult(matches=[])
         base = path if path.endswith("/") or path == "/" else path + "/"
@@ -468,7 +468,7 @@ class PgFilesystemBackend(BackendProtocol):
         backend: ``CompositeBackend`` splits the caller's budget across routes
         and stops asking once it is spent, so a mount that ignored the cap would
         swallow the whole allowance and starve the mounts queried after it.
-        ``truncated`` reports that matches were dropped — exactly ``max_count``
+        ``truncated`` reports that matches were dropped: exactly ``max_count``
         matches with none dropped is complete, not truncated.
         """
         scope_path = path or "/"
@@ -503,7 +503,7 @@ class PgFilesystemBackend(BackendProtocol):
             # `encoding` describes the BYTES, not the text beside them. Skipping
             # base64 rows here made grep useless for exactly the files it matters
             # for: a PDF is `base64` (so read can serve a native file block) and
-            # its extracted text sits in `content` — which the schema comment
+            # its extracted text sits in `content`, which the schema comment
             # called "extracted/greppable text" while this line dropped it.
             # grep searches text wherever there is text.
             content = str(row.get("content") or "")

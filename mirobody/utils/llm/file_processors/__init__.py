@@ -8,7 +8,7 @@ along are the ones that already existed inside it as comment banners:
     backends_openai.py  the one request shape: chat/completions with an image part
     dispatch.py         the route (`UTILS_VISION_MODEL`) + the unified entry point
 
-The names below that start with an underscore are re-exported deliberately —
+The names below that start with an underscore are re-exported deliberately,
 they are internal to the package but `test_file_processors.py` pins their
 behaviour, and the merge rules they implement are the ones a multi-page
 extraction bug lands in.

@@ -12,7 +12,7 @@ Supports multiple rule_sets for extensibility:
 - healthy_range: future healthy reference ranges
 - diabetic_range: future condition-specific ranges
 
-Out-of-range values are NOT dropped — they are marked with
+Out-of-range values are NOT dropped, they are marked with
 task_id='filtered_out_of_range' so W3.2 statistics exclude them
 while keeping the data traceable and reversible.
 """
@@ -129,7 +129,7 @@ class ValueRangeValidator:
     def validate(self, indicator: str, value: Any) -> ValidationResult:
         """Check if value satisfies all rules for the given indicator.
 
-        This is a pure in-memory operation — no DB access. Rules must be
+        This is a pure in-memory operation, no DB access. Rules must be
         loaded via load() before calling this method.
 
         Args:
@@ -172,7 +172,7 @@ class ValueRangeValidator:
 
         Total: returns None for ANYTHING it cannot parse. `indicator_valid_rules`
         is a hand-edited table and the character class `[\\d.]+` happily matches
-        `1.2.3` or a lone `.` — strings `float()` then rejects. That ValueError
+        `1.2.3` or a lone `.`: strings `float()` then rejects. That ValueError
         used to escape load()'s loop, so one typo'd rule for one indicator
         killed rule loading for ALL indicators, the opposite of the
         skip-and-warn contract the surrounding code keeps.

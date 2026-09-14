@@ -1,4 +1,4 @@
-"""Assembling a deepagents agent — the part that is the same for every agent.
+"""Assembling a deepagents agent: the part that is the same for every agent.
 
 Two agents built on deepagents (this repository's reference agent and the
 first production consumer's) each carried the same forty lines: register the
@@ -7,7 +7,7 @@ key deepagents will *actually* look up for this model instance, mount the
 read-only projections into a ``CompositeBackend`` and deny writes to each
 mount, order the middleware stack, call ``create_deep_agent`` with
 ``subagents=[]``, set the recursion limit. What differs between agents is what
-goes IN — the tools, the mounts, the prompt, the limits — and that stays with
+goes IN (the tools, the mounts, the prompt, the limits) and that stays with
 each agent. This module is the assembly.
 
 Two facts about deepagents that this module exists to remember:
@@ -18,7 +18,7 @@ Two facts about deepagents that this module exists to remember:
   ``create_deep_agent``. Either half alone leaves ``task`` reachable.
 * **That key is not the config's ``llm_type``.** deepagents asks the model
   instance (``get_model_provider``), and a class that does not override
-  ``_get_ls_params`` falls back to a class-name derivation — ``ChatAnthropicVertex``
+  ``_get_ls_params`` falls back to a class-name derivation: ``ChatAnthropicVertex``
   → ``anthropicvertex``. Registering under the wrong key is a silent no-op; it
   happened in production once, and the model called ``task``.
 """
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 def provider_key(model: Any) -> str | None:
-    """The provider key deepagents resolves for this model instance — asked of
+    """The provider key deepagents resolves for this model instance: asked of
     deepagents itself, with the langchain-core ``ls_provider`` as the fallback."""
     try:
         from deepagents._models import get_model_provider
@@ -52,7 +52,7 @@ def provider_key(model: Any) -> str | None:
 def disable_general_purpose_subagent(model: Any, *, excluded_tools: Iterable[str] = ()) -> str | None:
     """Register, for the key this model resolves to, a harness profile without the
     general-purpose subagent and without ``excluded_tools`` (native tools the
-    agent must not expose — ``delete`` on a backend that does not implement it).
+    agent must not expose: ``delete`` on a backend that does not implement it).
     Returns the key, or ``None`` when it could not be derived (logged: the
     subagent may then stay enabled for this build). Idempotent: registration is a
     field-wise merge."""
@@ -103,20 +103,20 @@ def standard_middleware(
 ) -> list:
     """The middleware stack every agent here runs, outermost first.
 
-    1. fault containment — contains faults from every tool AND from the
+    1. fault containment: contains faults from every tool AND from the
        wrappers below it (`ToolFaultMiddleware` unless one is injected);
-    2. retry governance — refuses a repeat of a call that already failed
+    2. retry governance: refuses a repeat of a call that already failed
        unrecoverably, inside the fault middleware so its own bugs are
        contained, reading the envelope that middleware attaches;
-    3. invalid-call repair — a call whose JSON never parsed reaches no tool;
+    3. invalid-call repair: a call whose JSON never parsed reaches no tool;
        this feeds the parse error back instead of ending the turn empty;
     4. the per-turn model-call budget, ending the run *gracefully* so the model
-       still writes its answer — a legitimate multi-step task runs to
+       still writes its answer: a legitimate multi-step task runs to
        completion while a pathological loop still terminates;
     5. one cap per named tool (``exit_behavior="continue"``: the tool is
        removed for the rest of the turn, the turn goes on);
     6. the code interpreter, if given;
-    7. ``tail`` — whatever the agent adds last (skills, prompt caching).
+    7. ``tail``: whatever the agent adds last (skills, prompt caching).
 
     A fresh stack per build is a fresh retry ledger per turn, which is what
     "already tried that" has to mean.

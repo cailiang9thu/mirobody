@@ -7,7 +7,7 @@ in a separate service, and this docstring still said so long after the worker
 here took it over.
 
 Weak consistency with IndicatorSyncTask: profile may occasionally refresh
-before the latest dim sync completes and read slightly stale dim data — the
+before the latest dim sync completes and read slightly stale dim data: the
 next signal for that user cleans it up.
 """
 

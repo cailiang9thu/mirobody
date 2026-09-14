@@ -1,7 +1,7 @@
 """Jinja for prompts: one environment, strict.
 
 Every prompt a model sees is a ``.jinja`` file in a ``prompts/`` package next
-to the code that uses it — reviewed, diffed and tuned without touching Python.
+to the code that uses it: reviewed, diffed and tuned without touching Python.
 Each such package exposes ``render = make_renderer(__file__)``.
 
 Rendering is strict (``StrictUndefined``): a misspelled or missing variable
@@ -20,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 
 def environment(**overrides) -> Environment:
-    """The one way a prompt is rendered — strict, plain text, block tags
+    """The one way a prompt is rendered: strict, plain text, block tags
     that do not leave blank lines behind. ``overrides`` reach the
     ``Environment`` constructor (``loader=``, ``enable_async=True``)."""
     options: dict = {

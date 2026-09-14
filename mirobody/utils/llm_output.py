@@ -1,4 +1,4 @@
-"""Normalising a model's free-text output — the other half of `utils.prompts`:
+"""Normalising a model's free-text output: the other half of `utils.prompts`:
 the prompt goes out, text comes back.
 
 **A prompt asks a model only for what it does well; edge cases are
@@ -10,12 +10,12 @@ nothing" and "add not one extra character". Two rules follow:
 * When "nothing to say" is a meaningful outcome, the prompt names a
   **sentinel** the model copies verbatim, and this module translates it back
   to empty. Never write "output an empty string": that is a contract a model
-  cannot keep, so it improvises — in one production sample of sixty daily
+  cannot keep, so it improvises: in one production sample of sixty daily
   summaries, eleven spelled emptiness as ``空字符串``, ``（空字符串）`` and
   ``""``, the last of which contains none of the words the prompt used. The
   root cause is not the wording; it is the absence of a definite form.
-* Models wrap answers anyway — code fences, quotes, brackets, a "Summary:"
-  label — with "no quotes" in the prompt. **The wrapper is peeled here, not
+* Models wrap answers anyway: code fences, quotes, brackets, a "Summary:"
+  label: with "no quotes" in the prompt. **The wrapper is peeled here, not
   banned there.**
 
 The sentinel also makes "nothing to say" a positive, verifiable signal: the
@@ -23,7 +23,7 @@ sentinel means the model looked and found nothing; a genuinely empty string
 means unclear (an API failure, a truncation), and the caller keeps treating
 that as a failure rather than overwriting what it had.
 
-The sentinel's spelling is the caller's — it is a promise between one prompt
+The sentinel's spelling is the caller's, it is a promise between one prompt
 and one parser, so each passes its own via ``sentinel=``. The defensive net
 underneath (`_NOTHING_TO_SAY_FALLBACKS`) is shared: it lists how models spell
 "nothing" when they ignore the protocol, and it is finite, closed and pinned
@@ -36,7 +36,7 @@ from __future__ import annotations
 import json
 import re
 
-#: How models spell "nothing" when they ignore the protocol — the forms
+#: How models spell "nothing" when they ignore the protocol: the forms
 #: observed after peeling wrappers. A defensive net, not a contract.
 _NOTHING_TO_SAY_FALLBACKS = frozenset(
     {
@@ -90,7 +90,7 @@ _TRIM_CHARS = " \t\r\n。.！!？?，,；;：:"
 #: ```lang ... ``` around the whole text. ``(?s)`` lets ``.`` cross newlines;
 #: the language tag is optional.
 _FENCE_RE = re.compile(r"(?s)^\s*```[^\n`]*\n?(.*?)```\s*$")
-#: An opening fence with no close — what an answer cut off at max_tokens looks like.
+#: An opening fence with no close: what an answer cut off at max_tokens looks like.
 _OPEN_FENCE_RE = re.compile(r"^\s*```[^\n`]*\n?")
 
 #: Label prefixes models like to add ("Summary:", "摘要："). Only the one at the
@@ -160,7 +160,7 @@ def clean_text(raw: str | None, *, sentinel: str | None = None, limit: int | Non
     becomes the empty string.
 
     Fixed order: the fence goes first (it is the outermost wrapper), then HTML
-    comment markers (generated text never carries a comment — a rewrite
+    comment markers (generated text never carries a comment: a rewrite
     watermark lives in one, and a model writing its own would corrupt the
     schedule), then the sentinel check.
 
@@ -182,7 +182,7 @@ def parse_json_object(raw: str | None) -> dict | None:
     Three attempts, each more lenient: the whole text, the text without its
     fence, then the outermost ``{...}`` cut out of it. The third is for a
     model that adds pleasantries around the JSON with "no prose" in the
-    prompt — caught here rather than relied on the prompt to prevent.
+    prompt: caught here rather than relied on the prompt to prevent.
     """
     body = (raw or "").strip()
     if not body:

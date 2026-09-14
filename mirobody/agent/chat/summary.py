@@ -24,7 +24,7 @@ def _reply_text(content):
     A message row holds either plain text or the JSON element_list the adapter
     persisted (reply / thinking / tool chunks). For a title we want only what
     was actually said, so non-reply elements are dropped. Anything that is not
-    that shape is returned untouched — this runs over very old rows too.
+    that shape is returned untouched, this runs over very old rows too.
     """
     if not isinstance(content, str):
         return content

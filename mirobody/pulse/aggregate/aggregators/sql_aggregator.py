@@ -30,8 +30,8 @@ def _union_over_windows(branch_sql: str) -> str:
     `branch_sql` is the query with two holes: `{day_begin}`, the expression
     that computes the local day's beginning as a UTC instant, and
     `{window_predicate}`, the filter that selects the names on that window.
-    The branches partition the input — the last one is the negation of every
-    other — so every reading is counted exactly once.
+    The branches partition the input: the last one is the negation of every
+    other, so every reading is counted exactly once.
     """
     parts = [
         branch_sql.format(day_begin=windows.day_begin_expression(window), window_predicate=predicate)
@@ -155,7 +155,7 @@ class SQLAggregator:
             since_time = datetime.fromtimestamp(since_timestamp)
 
             # One branch per day window the CATALOGUE declares, not per name
-            # that happens to contain "sleep" — see ../windows.py. `time` is a
+            # that happens to contain "sleep": see ../windows.py. `time` is a
             # UTC timestamp, so each branch reads it in the subject's zone
             # first.
             query = _union_over_windows(
@@ -353,13 +353,13 @@ class SQLAggregator:
             # 1. `CAST(:user_id AS text)`. Written as a bare `(:user_id IS NULL OR
             #    user_id = :user_id)` this raises
             #    `psycopg.errors.AmbiguousParameter: could not determine data type of
-            #    parameter $1` — Postgres cannot infer a type for a parameter whose
+            #    parameter $1`: Postgres cannot infer a type for a parameter whose
             #    only context is `IS NULL`. Reproduced against Postgres 15 through this
             #    project's own driver, and it failed for a real user_id as well as for
             #    None, so this function returned [] on EVERY call. The blanket
             #    `except Exception` below turned that into an empty task list, which
             #    `recalculate_date_range` reports as
-            #    {"status": "success", "summaries_created": 0} — a recalculation that
+            #    {"status": "success", "summaries_created": 0}: a recalculation that
             #    silently does nothing.
             #
             # 2. `time < :end_date`, not `<=`. Every other range in this file is
@@ -385,14 +385,14 @@ class SQLAggregator:
                 """
             ) + "\nORDER BY min_update_time ASC"
 
-            # The public contract is INCLUSIVE of end_date's calendar day —
+            # The public contract is INCLUSIVE of end_date's calendar day:
             # `calculate_time_range_aggregations` computes
             # `(end_date - start_date).days + 1`. The SQL above is half-open, so
             # translate here rather than asking every caller to remember which
             # shape it has to send. `repair_reconcile` pads to 23:59:59.999999; a
             # bare `date` arrives at midnight. Normalising to the start of the
             # following day covers both, and under `<=` they behaved completely
-            # differently — 1 row versus 3, verified against Postgres.
+            # differently: 1 row versus 3, verified against Postgres.
             end_exclusive = (end_date + timedelta(days=1)).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )
@@ -757,7 +757,7 @@ class SQLAggregator:
         #
         # 1. `WITH chosen_source_id AS MATERIALIZED (...)`: PG 12+ inlines
         #    CTEs by default, which here turned the CTE into a correlated
-        #    subquery that ran once per outer row of series_data — 700+x
+        #    subquery that ran once per outer row of series_data: 700+x
         #    slowdown (165s vs 232ms on a 1-user/3-indicator/24h test).
         #    Forcing MATERIALIZED keeps the CTE as a one-shot temp result.
         #
@@ -776,7 +776,7 @@ class SQLAggregator:
         apple_sources_in = ",".join(f"'{s}'" for s in APPLE_SOURCES)
         # Inner subquery uses `sd.` table alias to disambiguate against the
         # JOINed CTE. Build the prefixed version of user_filter explicitly
-        # rather than via string replace — `user_filter` contains `:user_ids`
+        # rather than via string replace: `user_filter` contains `:user_ids`
         # which would be corrupted by a naive replace("user_id", "sd.user_id").
         sd_user_filter = "sd.user_id = ANY(:user_ids)"
         query = f"""
@@ -1006,7 +1006,7 @@ class SQLAggregator:
         return {"event_count": 0, "event_times": "[]", "event_details": "[]"}
 
     # ------------------------------------------------------------------
-    # GMI (Glucose Management Indicator) — 14-day rolling window
+    # GMI (Glucose Management Indicator): 14-day rolling window
     # ------------------------------------------------------------------
 
     async def _process_gmi_tasks(

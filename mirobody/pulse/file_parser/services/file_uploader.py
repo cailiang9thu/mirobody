@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING
@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 # Supported file extensions. This gate must match what the handler factory can
 # actually route, in BOTH directions, and it has been wrong both ways:
 #
-#   too narrow — it rejected .md while TextHandler happily parses it.
-#   too wide   — .doc/.docx/.ppt/.pptx were accepted here with no handler in
+#   too narrow, it rejected .md while TextHandler happily parses it.
+#   too wide   .doc/.docx/.ppt/.pptx were accepted here with no handler in
 #                existence, so the picker let you choose one, the upload ran,
 #                and `file_processor` then answered "file not supported". They
 #                are removed until there is something that parses them, so the
@@ -49,7 +49,7 @@ SUPPORTED_EXTENSIONS = {
     # and python-pptx read only the zip-based formats and accepting a file we
     # then refuse is the defect this set exists to prevent.
     ".pdf", ".xls", ".xlsx", ".docx", ".pptx",
-    # Plain text: lab exports, genetic raw data, notes. `.csv` belongs here —
+    # Plain text: lab exports, genetic raw data, notes. `.csv` belongs here:
     # TextHandler owns it now that the never-injected CSVHandler is gone.
     ".txt", ".md", ".markdown", ".csv", ".json", ".xml",
     # Archives: accepted for their contents, not parsed as themselves
@@ -186,8 +186,8 @@ def validate_file_extension(file: UploadFile) -> tuple[bool, str]:
     return True, ""
 
 
-#: A folder prefix is one or more `[A-Za-z0-9._-]` segments. Everything else —
-#: absolute paths, backslashes, NUL, unicode separators — is rejected rather
+#: A folder prefix is one or more `[A-Za-z0-9._-]` segments. Everything else (
+#: absolute paths, backslashes, NUL, unicode separators) is rejected rather
 #: than sanitized, because sanitizing invites the next bypass.
 #:
 #: The segment check is NOT redundant with the pattern. `.` is a legitimate
@@ -211,7 +211,7 @@ def generate_file_key(filename: str, folder_prefix: str = "uploads") -> str:
     parameter on `POST /files/upload`, so it is attacker-controlled. It used to
     be interpolated as-is, and `AbstractStorage._build_object_key` only does
     `lstrip("/")`, so `?folder=../secrets` produced the key
-    `../secrets/<ts>_<id>.pdf` and `LocalStorage` wrote it there — arbitrary
+    `../secrets/<ts>_<id>.pdf` and `LocalStorage` wrote it there: arbitrary
     file write outside `base_path`, reproduced in
     `test_upload_paths.py::test_a_traversing_folder_is_rejected`.
 

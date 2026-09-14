@@ -31,8 +31,8 @@ _result_status = result_status
 
 
 class StreamConverter:
-    """This repository's chunk dialect — ``reply`` / ``thinking`` / ``queryTitle``
-    / ``queryArguments`` / ``queryDetail`` / ``costStatistics`` — rendered from
+    """This repository's chunk dialect (``reply`` / ``thinking`` / ``queryTitle``
+    / ``queryArguments`` / ``queryDetail`` / ``costStatistics``) rendered from
     the wire-neutral events `events_bridge` reads out of LangGraph's stream.
 
     What is this dialect's own: only the ``model`` and ``tools`` nodes are
@@ -115,7 +115,7 @@ class StreamConverter:
                             # The result is the user's health data: log its size, never its text.
                             logger.info("[Tool Result] trace_id=%s tool_id=%s result_len=%d", trace_id, message.tool_call_id, len(str(message.content)))
                             # Content VERBATIM (a client parses it; multimodal blocks
-                            # ride through), status off the artifact — additive keys
+                            # ride through), status off the artifact: additive keys
                             # existing clients ignore.
                             yield {"type": "queryDetail", "content": message.content, "tool_id": message.tool_call_id, **result_status(message)}
         except Exception as e:
@@ -149,7 +149,7 @@ class TokenUsageCallback(AsyncCallbackHandler):
     `usage.UsageAccumulator` for the turn. The provider-specific parsing that
     used to live here (``llm_output.token_usage``, Anthropic's
     ``cache_read_input_tokens``, OpenAI's ``prompt_tokens_details``) is what
-    LangChain's ``usage_metadata`` already normalises — see `agent/models/usage.py`."""
+    LangChain's ``usage_metadata`` already normalises: see `agent/models/usage.py`."""
 
     def __init__(self):
         self.usage = UsageAccumulator()

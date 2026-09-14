@@ -32,7 +32,7 @@ class ProviderPlatform(Platform):
 
     @property
     def name(self) -> str:
-        """Platform name — deliberately still `theta`, not `providers`.
+        """Platform name: deliberately still `theta`, not `providers`.
 
         The package, this class and every provider class were renamed off
         their original name because that name explained nothing. This string
@@ -54,7 +54,7 @@ class ProviderPlatform(Platform):
         return True
 
     def get_provider(self, provider_slug: str) -> BasePullProvider | None:
-        """Narrowed return type — ProviderPlatform only registers BasePullProvider."""
+        """Narrowed return type: ProviderPlatform only registers BasePullProvider."""
         return self._providers.get(provider_slug)  # type: ignore[return-value]
 
     def register_provider(self, provider: BasePullProvider) -> None:
@@ -85,14 +85,14 @@ class ProviderPlatform(Platform):
 
         # Providers that ship INSIDE this package must be imported by their real
         # dotted path. The sys.path branch below makes `mirobody_oura` a
-        # TOP-LEVEL package, and a top-level package has no parent — so
+        # TOP-LEVEL package, and a top-level package has no parent, so
         # `provider_oura.py`'s `from ....utils.tasks import spawn` died with
         # "attempted relative import beyond top-level package" and the loader
         # swallowed it as a warning. All three packaged providers carry that
         # import: the platform logged "loaded 0 providers" on every boot and
         # the whole device-integration surface was silently absent.
         #
-        # sys.path is still right for EXTERNAL `PROVIDER_DIRS` — those are not
+        # sys.path is still right for EXTERNAL `PROVIDER_DIRS`, those are not
         # inside any package and have nothing to be relative to.
         packaged_dir = Path(__file__).resolve().parent.parent
         packaged_pkg = __package__.rsplit(".", 1)[0]  # mirobody.pulse.providers
@@ -148,7 +148,7 @@ class ProviderPlatform(Platform):
 
         Discovery is by SUBCLASS, not by name. This used to require
         `attr_name.startswith(...)` against a fixed class-name prefix, which
-        silently skipped any provider not sharing that old naming scheme — a
+        silently skipped any provider not sharing that old naming scheme: a
         trap for the next contributor, and the reason renaming the classes had
         to touch this line.
         `endswith("Provider")` stays as a cheap pre-filter; the issubclass test

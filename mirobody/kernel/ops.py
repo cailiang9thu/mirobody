@@ -1,7 +1,7 @@
 """Observability without health data in it.
 
 A log line, a metric tag or a trace attribute may carry identifiers, counts,
-durations, status codes and type names — and nothing else. Not a reading's
+durations, status codes and type names, and nothing else. Not a reading's
 value, not a comment, not a drug name, not a chat message, not an email, and
 not a database driver's exception text (which quotes the statement with its
 bound parameters). Three layers enforce it: a static lint over the source
@@ -74,7 +74,7 @@ def is_driver_exception(exc: BaseException) -> bool:
 
 
 def redact(record: Mapping[str, object], allowed: Iterable[str] = LOG_FIELDS) -> dict[str, object]:
-    """A mapping reduced to its allowed keys — for structured logs, metric
+    """A mapping reduced to its allowed keys: for structured logs, metric
     tags and trace attributes alike."""
     allow = set(allowed)
     return {k: v for k, v in record.items() if k in allow}
@@ -91,7 +91,7 @@ class PHIPolicy:
     driver_prefixes: tuple[str, ...] = DRIVER_EXCEPTION_PREFIXES
 
     def install(self, logger: logging.Logger | None = None) -> PHIFilter:
-        """Attach the filter to ``logger`` (the root by default) — once; a
+        """Attach the filter to ``logger`` (the root by default): once; a
         second install returns the existing filter."""
         target = logger or logging.getLogger()
         for f in target.filters:

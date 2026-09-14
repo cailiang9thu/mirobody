@@ -269,7 +269,7 @@ async def process_files_from_storage(
         # Detect the scene the same way the drive upload path does
         # (file_upload_manager: genetic > excel > csv > report) so a file
         # uploaded in chat lands in /drive with the same scene/handling as one
-        # uploaded in the drive page — instead of always "report".
+        # uploaded in the drive page, instead of always "report".
         scene = _detect_batch_scene(files_info)
         inserted_ids = await FileDbService.insert_files_batch(
             user_id=user_id,

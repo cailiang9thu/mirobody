@@ -1,1 +1,1 @@
-"""Oura Provider — Smart ring for sleep, activity, and readiness tracking"""
+"""Oura Provider: Smart ring for sleep, activity, and readiness tracking"""

@@ -44,7 +44,7 @@ def parse_ts_smart(text: str | None, tz: str) -> int:
 
     1. An explicit non-UTC offset is taken as is.
     2. A date-only string, or a midnight with no offset, is the user's local
-       day start — that is what ``"day": "2026-06-01"`` means.
+       day start, that is what ``"day": "2026-06-01"`` means.
     3. Anything else is UTC.
     """
     if not text:
@@ -93,7 +93,7 @@ def fact(
     source_record_id: str = "",
     panel_id: str = "",
 ) -> Fact:
-    """A fact in the catalogue's unit for ``metric`` — the tables only say
+    """A fact in the catalogue's unit for ``metric``: the tables only say
     how to convert *into* it, so no decoder can disagree with the aggregator
     about what unit a value is in. Unknown metrics raise: a typo in a mapping
     table is a programming error, not a data-quality event."""

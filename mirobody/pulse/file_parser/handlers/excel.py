@@ -11,16 +11,16 @@ logger = logging.getLogger(__name__)
 class ExcelHandler(BaseFileHandler):
     """Excel handler: built-in openpyxl extraction, nothing pluggable.
 
-    An ``excel_processor`` injection point used to sit here — documented as
+    An ``excel_processor`` injection point used to sit here: documented as
     "injected from mcp_server" so a downstream service could override
-    extraction — but nothing in this project ever injected one, so the branch
+    extraction, but nothing in this project ever injected one, so the branch
     was unreachable and has been removed along with the seam in the factory.
 
     What remains is the shared ``AbstractExtractor`` path (the same one
     PDF/text use), which works for *any* workbook with no extra dependency:
     the workbook is converted to text (``original_text``), an abstract is
     generated, and indicator extraction is auto-triggered by
-    ``BaseFileHandler.process`` — identical treatment to a report PDF, on
+    ``BaseFileHandler.process``: identical treatment to a report PDF, on
     both the drive and chat upload paths.
     """
 

@@ -66,7 +66,7 @@ class FileDbService:
             query_user_id: Query user ID (defaults to user_id)
             original_text: Original text content extracted from file (for rerank)
             text_length: Length of original text (for rerank strategy)
-            content_hash: SHA256 of the raw bytes — the dedup key that lets a
+            content_hash: SHA256 of the raw bytes, the dedup key that lets a
                 later upload of the same file reuse this row's original_text
             
         Returns:
@@ -288,8 +288,8 @@ class FileDbService:
             # Build WHERE clause. The listing answers "which files are attached
             # to the TARGET's record" (query_user_id = whose record), matching
             # the endpoint's docstring and what the agent's VFS serves. It used
-            # to also require user_id = viewer — "files the VIEWER uploaded for
-            # the target" — which made a shared member's file tab permanently
+            # to also require user_id = viewer ("files the VIEWER uploaded for
+            # the target") which made a shared member's file tab permanently
             # empty while the agent quoted her documents. Authorization is the
             # router's job (resolve_subject), not this query's.
             where_conditions = [
@@ -429,7 +429,7 @@ class FileDbService:
                     # Why a file is `upload_status: "failed"`, when it is. The row
                     # has carried this since the status did; it was withheld from
                     # the API "for backward compatibility", so a client could show
-                    # the failure and never its cause — a report photo uploaded
+                    # the failure and never its cause: a report photo uploaded
                     # to a zero-key deployment read "processing failed" with the
                     # one-sentence fix sitting in the database (#68). Empty
                     # otherwise. `status`/`progress` stay internal.

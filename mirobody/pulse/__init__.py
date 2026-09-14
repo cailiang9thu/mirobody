@@ -1,4 +1,4 @@
-"""① Collect — every way a reading gets into Mirobody, and what happens next.
+"""① Collect: every way a reading gets into Mirobody, and what happens next.
 
 Three source shapes, one convergence point, then meaning:
 
@@ -13,15 +13,15 @@ Three source shapes, one convergence point, then meaning:
 
 `core/` is what those stand on, not a stage: the provider contract types, the
 scheduler, the DB base classes, the distributed lock. Sub-package sizes and
-entry points are in README.md, ordered the same way — the directory listing
+entry points are in README.md, ordered the same way: the directory listing
 cannot show this order, since `aggregate/` sorts before `providers/`.
 
 Providers are discovered by file scan, so deleting one takes it offline.
 
-Exports resolve lazily (PEP 562). ``import mirobody.pulse`` is the ENGINE —
+Exports resolve lazily (PEP 562). ``import mirobody.pulse`` is the ENGINE,
 it must not eagerly construct the platform singletons, and it carries no HTTP
 routers at all: those were platform assembly, not engine logic, and now live
-where they always belonged — ``mirobody/server/routers/``. Every existing
+where they always belonged: ``mirobody/server/routers/``. Every existing
 ``from mirobody.pulse import X`` keeps working unchanged; each export simply
 pays its own import cost at first use.
 """

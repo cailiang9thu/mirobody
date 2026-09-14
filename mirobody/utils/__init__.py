@@ -1,7 +1,7 @@
 """Shared helpers, imported one module at a time.
 
 This package is consumed by two very different installs: the ``[app]`` server,
-which uses everything here, and the ``[agent]`` library extra — or a consumer
+which uses everything here, and the ``[agent]`` library extra, or a consumer
 that wants only ``utils.sse`` / ``utils.net`` / ``utils.llm_output`` /
 ``utils.prompts``. A package ``__init__`` that eagerly imported the config
 loader, the HTTP helpers and the database module would make ``import

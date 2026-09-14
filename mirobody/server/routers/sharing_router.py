@@ -4,22 +4,22 @@ Seven endpoints where there were seventeen. The seventeen were a symptom of the
 model underneath: because a share was a DIRECTED row (owner O grants member M),
 every operation needed a "by me" copy and a "with me" copy, and nicknames needed
 three (`shared-by-me/update-nickname`, `shared-with-me/update-nickname`,
-`shared/update-nickname`) for one job. A circle is symmetric — the row that says
-"you were invited" is the row that says "you are a member" — so one endpoint
+`shared/update-nickname`) for one job. A circle is symmetric: the row that says
+"you were invited" is the row that says "you are a member", so one endpoint
 answers where two did.
 
 **The endpoint this adds is the one the product always promised.**
 `docs/images/your-care-circle.svg` says "health stays off until you allow it ·
-your switch — off by default · mutual — each member controls their own". There
+your switch (off by default · mutual) each member controls their own". There
 was no API for that switch. The only way permissions were ever set was
 `shared-by-me/authorize`, where the INVITER chose them, defaulting to
-`{"all": 1}` — read everything. `POST /invitation/health-access` is the member's
+`{"all": 1}`: read everything. `POST /invitation/health-access` is the member's
 own switch, and `care_circle_members.health_access` defaults to 0.
 
 Two paths are byte-identical to what the web client calls, because it calls
 exactly two: `shared-by-me/list` and `shared-by-me/remove` (grep of
-`frontend/assets/*.js`). Their response fields — `status: "authorized"`,
-`share_id`, `query_user_id` — are the client's vocabulary, mapped here from the
+`frontend/assets/*.js`). Their response fields: `status: "authorized"`,
+`share_id`, `query_user_id`: are the client's vocabulary, mapped here from the
 integers the table stores. The wire stays; the storage got fixed.
 """
 
@@ -87,7 +87,7 @@ async def shared_by_me_list(user_id: str = Depends(verify_token)):
         # Under a NAMED key, like shared-with-me/list's `invitations`:
         # `StandardResponse.data` is `dict[str, Any]`, so a bare list failed
         # validation, the `except` below caught it, and every single call
-        # answered `code: -1, "Could not list your circle."` — invisible
+        # answered `code: -1, "Could not list your circle."`: invisible
         # because on an empty circle a failure and a success look alike.
         return ok({"members": [
             {
@@ -113,7 +113,7 @@ async def shared_by_me_list(user_id: str = Depends(verify_token)):
 async def shared_by_me_remove(request: RemoveRequest, user_id: str = Depends(verify_token)):
     """Remove a member from a circle I administer.
 
-    Authorization is not "did you send a share_id" — the row that the handle
+    Authorization is not "did you send a share_id": the row that the handle
     resolves to names its circle, and the caller must be a maintainer of THAT
     circle. The endpoint this replaces ran `UPDATE ... WHERE share_id = :id`
     with no predicate naming the caller.
@@ -192,7 +192,7 @@ async def respond(request: RespondRequest, user_id: str = Depends(verify_token))
     """Accept or decline an invitation addressed to me.
 
     Scoped to the caller's own pending row, so this cannot accept on anyone
-    else's behalf — which the endpoint it replaces could, for any `share_id`.
+    else's behalf, which the endpoint it replaces could, for any `share_id`.
     """
     moved = await cc.respond_to_invitation(user_id, request.circle_id, accept=request.accept)
     if not moved:
@@ -206,7 +206,7 @@ async def respond(request: RespondRequest, user_id: str = Depends(verify_token))
 async def set_health_access(request: HealthAccessRequest, user_id: str = Depends(verify_token)):
     """Choose what MY record shows to one circle. 0 none, 1 read, 2 read-write.
 
-    Always the caller's own row — there is no parameter for whose access this
+    Always the caller's own row: there is no parameter for whose access this
     sets. Before this endpoint existed, the level lived on a row the *other*
     party wrote, defaulting to read-everything.
     """
@@ -225,7 +225,7 @@ async def update_label(request: NicknameRequest, user_id: str = Depends(verify_t
     """Set the label or picture a member carries in the circle.
 
     One endpoint. There were three, for one job, because `th_share_user_config`
-    keyed nicknames by (setter, target, context) — a nickname per viewer, with a
+    keyed nicknames by (setter, target, context): a nickname per viewer, with a
     `context` column nothing ever set to anything but `'default'`.
     """
     if not (request.share_id or "").strip().isdigit():

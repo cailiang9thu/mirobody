@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class OuraProvider(BasePullProvider):
-    """Oura Provider — Oura Ring OAuth2 Data Integration"""
+    """Oura Provider: Oura Ring OAuth2 Data Integration"""
 
     # API constants
     API_BASE_URL = "https://api.ouraring.com"
@@ -58,7 +58,7 @@ class OuraProvider(BasePullProvider):
         {"path": "/v2/usercollection/heartrate", "data_type": "heartrate", "paginated": False},
         {"path": "/v2/usercollection/daily_spo2", "data_type": "daily_spo2", "paginated": True},
         {"path": "/v2/usercollection/daily_stress", "data_type": "daily_stress", "paginated": True},
-        # Disabled: returns 401 — likely requires Oura Membership ($5.99/mo) subscription
+        # Disabled: returns 401, likely requires Oura Membership ($5.99/mo) subscription
         # {"path": "/v2/usercollection/daily_resilience", "data_type": "daily_resilience", "paginated": True},
         # {"path": "/v2/usercollection/daily_cardiovascular_age", "data_type": "daily_cardiovascular_age", "paginated": True},
         {"path": "/v2/usercollection/vo2_max", "data_type": "vo2_max", "paginated": True},
@@ -95,7 +95,7 @@ class OuraProvider(BasePullProvider):
 
     @classmethod
     def create_provider(cls, config: dict[str, Any]) -> Optional['OuraProvider']:
-        """Factory method — return None if config insufficient"""
+        """Factory method: return None if config insufficient"""
         try:
             client_id = safe_read_cfg("OURA_CLIENT_ID")
             client_secret = safe_read_cfg("OURA_CLIENT_SECRET")
@@ -121,7 +121,7 @@ class OuraProvider(BasePullProvider):
         )
 
     # =========================================================================
-    # OAuth2 Flow — delegates to OAuth2Client
+    # OAuth2 Flow: delegates to OAuth2Client
     # =========================================================================
 
     async def link(self, request: Any) -> dict[str, Any]:
@@ -173,7 +173,7 @@ class OuraProvider(BasePullProvider):
         try:
             # Always go through get_valid_access_token: it consults expires_at
             # and refreshes on the fly when needed. The previous `if not access_token`
-            # guard only triggered for missing tokens — expired-but-present tokens
+            # guard only triggered for missing tokens: expired-but-present tokens
             # silently slipped through and hit Oura with a dead Bearer header.
             access_token = await self.get_valid_access_token(user_id)
             if not access_token:

@@ -2,7 +2,7 @@
 
 The dispatch is `extract_text`; the readers are the module's public functions
 so a caller with a known kind can call one directly. Everything CPU-bound
-(rendering a page, decoding a photo, parsing a workbook) runs in a thread —
+(rendering a page, decoding a photo, parsing a workbook) runs in a thread:
 on the event loop it starves everything else, including a server's WebSocket
 keepalive, which is how a multi-page scan once took a connection down.
 
@@ -39,7 +39,7 @@ Ocr = Callable[[bytes, str], Awaitable[str]]
 MIN_PAGE_TEXT = 40
 #: Rendering resolution for scanned pages. DPI buys input-token cost, not speed.
 RENDER_DPI = 150
-#: Scanned pages OCR'd concurrently — the main speed lever on a multi-page scan
+#: Scanned pages OCR'd concurrently: the main speed lever on a multi-page scan
 #: (a 9-page scan: ~15 s at 4 in flight, ~5 s at 9).
 OCR_CONCURRENCY = 8
 #: Vision endpoints reject very large payloads (~10 MB base64 is a common cap,
@@ -125,8 +125,8 @@ async def pdf_text(
     dpi: int = RENDER_DPI,
     concurrency: int = OCR_CONCURRENCY,
 ) -> str:
-    """A PDF's full text: each page's text layer, or — for a page whose layer is
-    empty or too thin (a scan) — the OCR of the rendered page, concurrently.
+    """A PDF's full text: each page's text layer, or (for a page whose layer is
+    empty or too thin (a scan)) the OCR of the rendered page, concurrently.
     Without an ``ocr`` the scanned pages are left out."""
     texts, to_ocr = await asyncio.to_thread(_pdf_pages, data, min_page_text=min_page_text, dpi=dpi)
     if to_ocr and ocr is not None:
@@ -144,8 +144,8 @@ async def pdf_text(
         await asyncio.gather(*(_one(i, png) for i, png in to_ocr))
         # One bad page must not lose the other twenty, so a page failure is a
         # warning. But a scan whose EVERY page failed, with no text layer to
-        # fall back on, would come back as "" — the same answer as a blank
-        # document — and the cause (no vision provider, a model that cannot
+        # fall back on, would come back as "": the same answer as a blank
+        # document, and the cause (no vision provider, a model that cannot
         # read images) would be visible only in this log line (#68). That
         # case is the OCR's error, raised.
         if len(failures) == len(to_ocr) and not any(texts):
@@ -332,10 +332,10 @@ async def extract_text(
 ) -> str:
     """The text of one document, by `detect.kind`; ``""`` when nothing here reads
     that kind (or ``kinds`` excludes it). Cached by content digest for the kinds
-    that cost a parser or a model call — never for plain text. The PDF knobs
+    that cost a parser or a model call, never for plain text. The PDF knobs
     (scan threshold, render DPI, OCR concurrency) pass through to `pdf_text`.
     """
-    # The WebSocket upload — the only path the web client uses — accumulates
+    # The WebSocket upload (the only path the web client uses) accumulates
     # chunks into a `bytearray` (`file_upload_manager`), and pypdfium2 answers
     # `TypeError: Invalid input type 'bytearray'`, so EVERY PDF uploaded through
     # the product failed to extract, on every key. Normalised here because this

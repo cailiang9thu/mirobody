@@ -7,7 +7,7 @@ from the request's `Accept-Language` (`server/middlewares.py`) through the
 request context, and `LANGUAGE_CODES` folds their spellings.
 
 This used to be an `I18n` class with a global instance, a module-level wrapper
-around each method and — when `module` was omitted — an `inspect` walk up the
+around each method and (when `module` was omitted) an `inspect` walk up the
 stack to guess the calling file from its filename. Every caller now names its
 module. The JSON never changes while the process runs, so the cache is a
 `functools.cache` and the `clear_translation_cache` that one upload path called on

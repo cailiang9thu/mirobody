@@ -11,7 +11,7 @@ from typing import Any
 from collections.abc import Callable
 
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
-# functionality — a bare `pip install mirobody` must import this module. Every
+# functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as
 # strings and the real symbol is only needed by type checkers.
 from typing import TYPE_CHECKING
@@ -40,8 +40,8 @@ class FileProcessor:
     def __init__(self):
         """Wire the extraction services and the handler factory.
 
-        The two optional parameters that stood here — `excel_processor` and
-        `csv_processor` — plus the `file_parser/config.py` module that stored
+        The two optional parameters that stood here (`excel_processor` and
+        `csv_processor`) plus the `file_parser/config.py` module that stored
         them globally, were an injection seam with no injector: both callers
         construct `FileProcessor()` with no arguments and nothing ever called
         the setters, so both attributes were always None. For Excel that made a

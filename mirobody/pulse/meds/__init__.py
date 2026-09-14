@@ -1,8 +1,8 @@
-"""The reference application's medication storage — `mirobody.kernel.meds` on Postgres.
+"""The reference application's medication storage: `mirobody.kernel.meds` on Postgres.
 
 `mirobody.kernel.meds` is the vocabulary and the arithmetic: what a plan is, how a
 schedule projects into dose slots, what state a slot is in at a given instant,
-how adherence is counted. It has no tables, on purpose — a consumer with an
+how adherence is counted. It has no tables, on purpose: a consumer with an
 EHR behind it, a consumer with a phone-local SQLite and this repository's own
 reference application all need the same rules and none of the same storage.
 

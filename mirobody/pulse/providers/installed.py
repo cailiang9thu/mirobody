@@ -1,20 +1,20 @@
 """Which providers are installed, without importing any of them.
 
 `ProviderPlatform.load_providers()` answers the same question authoritatively, but
-it imports every provider module and calls `create_provider(config)` — it needs
+it imports every provider module and calls `create_provider(config)`, it needs
 configuration, and transitively a database. Reading the directory names instead
 is a filesystem call with no imports, which is what makes this answerable from
 a bare wheel with nothing configured.
 
 The directory name is enough: the platform's own convention is one
 `mirobody_<slug>/provider_<slug>.py` per provider, which is exactly what
-`load_providers` scans for. `test_installed.py` guards that convention — a
+`load_providers` scans for. `test_installed.py` guards that convention: a
 `mirobody_*/` directory holding no `provider_*.py` loads nothing, silently.
 
 This module also had `installed_vendor_ids`, which mapped these slugs onto the
 `pulse/vendor` catalogue so `mirobody vendors` could mark the sources served by
 a real provider. Both the catalogue and that command are gone, and the mapping
-went with them — it described nothing that still exists.
+went with them, it described nothing that still exists.
 """
 
 from __future__ import annotations

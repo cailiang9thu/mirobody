@@ -77,8 +77,8 @@ class AbstractTokenValidator:
         str,        # Refresh token.
         str | None  # Error message.
     ]:
-        # Not implemented. An earlier stub returned ("", "", None) — success
-        # with EMPTY tokens — for any non-empty refresh_token, which is a
+        # Not implemented. An earlier stub returned ("", "", None) (success
+        # with EMPTY tokens) for any non-empty refresh_token, which is a
         # landmine for whoever wires this endpoint up: the caller sees no
         # error and hands the client blank credentials. Fail honestly until
         # a real rotation flow exists.
@@ -260,7 +260,7 @@ def validator_from_config() -> "JwtTokenValidator":
     downgrading a session to AAL1, hardcoding `iss: ""` and `aud: ""` while
     every other token in the system carries the configured JWT_ISS/JWT_AUD.
     Nothing rejected it, because `verify_token` runs with `verify_iss` and
-    `verify_aud` both False — so the divergence was invisible right up until
+    `verify_aud` both False, so the divergence was invisible right up until
     someone hardens verification, at which point exactly one token type in the
     system stops validating and only for users who just disabled MFA.
 

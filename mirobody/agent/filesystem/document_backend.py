@@ -5,14 +5,14 @@ agent should be able to `ls` and `read_file` are one document that some other
 process writes and this process only reads. The deepagents `BackendProtocol`
 needs eight methods to serve that; the eight are the same every time and only
 the document differs. So the protocol lives here once, and a backend is a
-subclass with a `document()` — or an instance handed a coroutine function.
+subclass with a `document()`, or an instance handed a coroutine function.
 
 Two rules that came from production and are easy to get wrong again:
 
 * An empty document lists NOTHING rather than an empty file. Otherwise the
   model sees a file, reads it expecting content, and reasons from nothing.
-* `adownload_files` — the method deepagents' MemoryMiddleware actually calls,
-  not `aread` — must answer a missing document with the error string
+* `adownload_files` (the method deepagents' MemoryMiddleware actually calls,
+  not `aread`) must answer a missing document with the error string
   ``file_not_found`` exactly. The middleware skips a source that says that and
   raises on anything else, so a user who simply has no document yet would
   otherwise take the conversation down with them.

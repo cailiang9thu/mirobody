@@ -1,4 +1,4 @@
-"""What kind of document is this — by name and type, then by bytes.
+"""What kind of document is this: by name and type, then by bytes.
 
 Two callers hand in different evidence: an upload carries a filename and a
 content type; a multipart part on an API often carries neither reliably (a
@@ -37,7 +37,7 @@ _XLSX_MIME = {
 _DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 _PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
-#: Every suffix `extract.extract_text` turns into text through a parser or OCR —
+#: Every suffix `extract.extract_text` turns into text through a parser or OCR:
 #: i.e. the files that SHOULD end up with extracted text. The one source of
 #: truth: a hand-copied list once missed `.heic`/`.heif` and `.xlsm`, so a
 #: same-turn read did not wait for OCR and handed the model container bytes
@@ -99,7 +99,7 @@ def looks_image(data: bytes) -> bool:
 def zip_kind(data: bytes) -> str | None:
     """Which Office-family document a zip is, by the part names near its start:
     ``xl/`` (workbook), ``word/`` (document), ``ppt/`` (presentation). ``None``
-    for anything else — including a zip that is none of them."""
+    for anything else: including a zip that is none of them."""
     if data[:2] != b"PK":
         return None
     head = data[:65536]
@@ -131,7 +131,7 @@ def kind(filename: str | None, content_type: str | None = None, data: bytes | No
     """The document kind, or ``None`` when nothing here can read it.
 
     Name and type first; bytes when given and the name/type said nothing
-    (or lied — a `.pdf` whose bytes are a JPEG is an image).
+    (or lied: a `.pdf` whose bytes are a JPEG is an image).
     """
     if data:
         if looks_pdf(data):
@@ -158,7 +158,7 @@ def kind(filename: str | None, content_type: str | None = None, data: bytes | No
 
 def is_extractable(filename: str | None, content_type: str | None = None) -> bool:
     """Whether this file is turned into text by a parser or OCR (so it should
-    end up with extracted text) — everything but plain text and the unknown."""
+    end up with extracted text): everything but plain text and the unknown."""
     return kind(filename, content_type) not in (None, KIND_TEXT)
 
 

@@ -64,7 +64,7 @@ def _to_transport_enums(transports: list[str] | None) -> list[AuthenticatorTrans
     # Product decision: no cross-device passkey (web is demo, mobile uses
     # the native app). Strip "hybrid" so Chrome/Safari never surface the CDA
     # QR prompt and authentication stays on-device (Touch ID / Face ID /
-    # Windows Hello). AAL2 compliance is unaffected — transports is only a
+    # Windows Hello). AAL2 compliance is unaffected: transports is only a
     # UX hint, not a security claim.
     if not transports:
         return [AuthenticatorTransport.INTERNAL]
@@ -465,7 +465,7 @@ class WebAuthnService:
         if not mfa_ticket:
             return json_response_with_code(-1, "MFA ticket is required", request=request)
 
-        # Peek at the ticket (don't consume yet — will be consumed on verify).
+        # Peek at the ticket (don't consume yet: will be consumed on verify).
         if not self._redis:
             return json_response_with_code(-2, "Redis unavailable", request=request)
 
@@ -547,7 +547,7 @@ class WebAuthnService:
         except Exception:
             # Fail closed: a credential we cannot parse leaves `matched_cred`
             # None, and the check below rejects the request. Swallowing is safe
-            # here for that reason and that reason only — do not move this block
+            # here for that reason and that reason only: do not move this block
             # below the `if not matched_cred` guard.
             pass
 
@@ -680,7 +680,7 @@ class WebAuthnService:
         except Exception:
             # Fail closed: a credential we cannot parse leaves `matched_cred`
             # None, and the check below rejects the request. Swallowing is safe
-            # here for that reason and that reason only — do not move this block
+            # here for that reason and that reason only: do not move this block
             # below the `if not matched_cred` guard.
             pass
 
@@ -888,7 +888,7 @@ class WebAuthnService:
         except Exception:
             # Fail closed: a credential we cannot parse leaves `matched_cred`
             # None, and the check below rejects the request. Swallowing is safe
-            # here for that reason and that reason only — do not move this block
+            # here for that reason and that reason only: do not move this block
             # below the `if not matched_cred` guard.
             pass
 

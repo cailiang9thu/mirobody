@@ -1,8 +1,8 @@
 """`mirobody doctor`, and the boot-time self-check: which model does each surface use?
 
 Until this existed a deployment with zero usable keys started, issued tokens,
-accepted uploads and answered "indicators: none" — the only hint was one INFO
-line, "no models loaded — the agent may be disabled intentionally"
+accepted uploads and answered "indicators: none" (the only hint was one INFO
+line, "no models loaded) the agent may be disabled intentionally"
 (#68's reporter had one key, in the wrong table, and saw nothing at all).
 The same judgement now runs at boot (a WARNING per surface with nothing, an
 ERROR when no surface has anything) and on demand from the CLI, from the
@@ -124,7 +124,7 @@ def format_report(rows: list[SurfaceStatus]) -> str:
 
 def log_report(rows: list[SurfaceStatus], log: logging.Logger) -> None:
     """The boot-time version: one line per surface without a provider, and an
-    ERROR when nothing at all is usable — a zero-key server used to boot in
+    ERROR when nothing at all is usable: a zero-key server used to boot in
     silence."""
     missing = [r for r in rows if not r.provider]
     for name in retired_model_keys():
@@ -141,7 +141,7 @@ def log_report(rows: list[SurfaceStatus], log: logging.Logger) -> None:
         log.warning("no LLM model for %s: %s", surface_type, reason)
     for alias, fields in unread_entry_keys().items():
         # `openai-utils` declared `reasoning_effort: none`, nothing read it, and
-        # the deployment extracted zero indicators from every report — the
+        # the deployment extracted zero indicators from every report: the
         # field was right and invisible. A declaration no code consumes is
         # worth one line at boot, named.
         # Bound to names `phi_lint` recognises, like the retired-key line above:

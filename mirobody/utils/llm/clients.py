@@ -1,8 +1,8 @@
 """One cached OpenAI-compatible client per resolved route.
 
 Every utility surface (vision, text, structured extraction) ends in a
-`RouteSpec` — an entry from `config.llm.yaml` with its key and endpoint
-resolved — and this is the only place that turns one into an SDK client. A
+`RouteSpec`: an entry from `config.llm.yaml` with its key and endpoint
+resolved, and this is the only place that turns one into an SDK client. A
 call site that constructs `AsyncOpenAI(base_url=...)` itself is how issue #52
 happened (vision hardcoded openrouter.ai while everything else followed
 `OPENROUTER_BASE_URL`), so there is one constructor, keyed on the endpoint
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class AIClientManager:
-    """AI client manager — one cached async client per (endpoint, key)."""
+    """AI client manager: one cached async client per (endpoint, key)."""
 
     def __init__(self):
         self._async_clients: dict[tuple[str, str], AsyncOpenAI] = {}
@@ -41,7 +41,7 @@ class AIClientManager:
 
     @staticmethod
     def sync_for_spec(spec: RouteSpec) -> OpenAI:
-        """The sync twin, for a future sync call site — the alternative it
+        """The sync twin, for a future sync call site: the alternative it
         replaces is an inline `OpenAI(base_url="https://...")`."""
         key = spec.key
         if spec.api_key_env and not key:

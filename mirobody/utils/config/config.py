@@ -17,7 +17,7 @@ from .log import LogConfig
 from .http import HttpConfig
 from .llm import LLMConfig, LLMProvider, _OPENAI_COMPAT
 
-if TYPE_CHECKING:  # heavy drivers — imported lazily inside the accessors below
+if TYPE_CHECKING:  # heavy drivers: imported lazily inside the accessors below
     from .postgresql import PostgreSQLConfig
     from .redis import RedisConfig
 
@@ -38,17 +38,17 @@ PLACEHOLDER_SENTINEL = "REPLACE_THIS_VALUE_IN_PRODUCTION"
 # Keys 1.4.0 and 1.4.1 renamed, and the one place that knows every spelling.
 #
 # When the agent stopped being "the DeepAgent" its config keys lost the `_DEEP`
-# suffix (1.4.0); when the model table stopped being called `PROVIDERS` — in
-# this project a provider is a device — it became `MODELS` (1.4.1). The upgrade
+# suffix (1.4.0); when the model table stopped being called `PROVIDERS` (in
+# this project a provider is a device) it became `MODELS` (1.4.1). The upgrade
 # failure that motivates this table was SILENT: an overlay written for 1.3.x
 # still said `PROVIDERS_DEEP`, the new key was simply absent from it, and the
-# agent booted with zero models and an empty `/api/models` — nothing raised,
+# agent booted with zero models and an empty `/api/models`: nothing raised,
 # nothing logged, and the deployment looked healthy. Owner's call
 # (2026-09-07): map the old spelling onto the new one.
 #
 # It has to happen at LOAD time, not read time. The shipped `config.llm.yaml`
 # declares `MODELS`, `PROMPTS`, `ALLOWED_TOOLS` and `DISALLOWED_TOOLS` itself,
-# so a "fall back when the new key is missing" alias would never fire — the
+# so a "fall back when the new key is missing" alias would never fire: the
 # shipped default shadows the user's overlay, which is the whole bug.
 # Renaming as each file merges means ordinary layering decides: a later file's
 # old spelling overrides an earlier file's new one, exactly as it did in 1.3.x.
@@ -304,7 +304,7 @@ class Config:
                     # Encrypt it.
                     #
                     # An empty result means the encrypter is a no-op (an
-                    # unusable key — see `get_fernet_key`). Writing that back
+                    # unusable key: see `get_fernet_key`). Writing that back
                     # would REPLACE the user's real secret with "" in the
                     # config file. `self._raw` keeps the plaintext, so the
                     # process keeps working and the loss only surfaces on the
@@ -358,7 +358,7 @@ class Config:
 
         # The pre-1.4.0 spelling, if the deployment sets it in the environment
         # rather than in an overlay. Before `self._raw`, because environment
-        # beats file — and the shipped `config.yaml` declares four of these, so
+        # beats file, and the shipped `config.yaml` declares four of these, so
         # checking after would mean the default always won.
         s = _legacy_env(upper_key)
         if s is not None:
@@ -384,7 +384,7 @@ class Config:
         if s is not None:
             return s
 
-        # The pre-1.4.0 spelling — see `get`.
+        # The pre-1.4.0 spelling: see `get`.
         s = _legacy_env(upper_key)
         if s is not None:
             return s
@@ -429,7 +429,7 @@ class Config:
         """Config keys whose value is still the shipped placeholder sentinel.
 
         The demo runs fine on placeholders; a deployment that declared
-        `PRODUCTION: true` must not — `server/bootstrap.py` refuses to start
+        `PRODUCTION: true` must not: `server/bootstrap.py` refuses to start
         while this list is non-empty.
         """
         return sorted(
@@ -497,15 +497,15 @@ class Config:
         truncate to 32 CHARACTERS and then pad to 32 BYTES, which are the same
         operation only for ASCII. A passphrase with any CJK, accented or emoji
         character produced 33-96 bytes, `ljust(32)` padded nothing, `Fernet()`
-        rejected the result, and the encrypter silently became a no-op — see
+        rejected the result, and the encrypter silently became a no-op: see
         `FernetEncrypter.__init__`, and `_load_data` for what a no-op encrypter
         then did to the config file.
 
         Slicing the ENCODED bytes fixes it and changes nothing for an ASCII
         passphrase, so no existing deployment has to re-encrypt.
 
-        The all-zeros fallback when the passphrase is empty is kept — changing
-        the derivation would strand every config already encrypted under it —
+        The all-zeros fallback when the passphrase is empty is kept (changing
+        the derivation would strand every config already encrypted under it) 
         but it is no longer silent. It is a publicly known key; anything
         "encrypted" with it is plaintext with extra steps.
         """
@@ -586,11 +586,11 @@ class Config:
     def get_agent_settings(self) -> dict[str, Any]:
         """The agent's runtime settings from the four plain keys, cached.
 
-        `MODELS`, `PROMPTS`, `ALLOWED_TOOLS`, `DISALLOWED_TOOLS` — one agent,
+        `MODELS`, `PROMPTS`, `ALLOWED_TOOLS`, `DISALLOWED_TOOLS`: one agent,
         one set of keys (they used to carry the agent's name as a suffix). The
-        two halves that do real work — resolving `PROMPTS` path references into
+        two halves that do real work (resolving `PROMPTS` path references into
         template text, and normalising the three accepted shapes of `MODELS`
-        — live in `agent_options.py`, testable without a Config or a
+) live in `agent_options.py`, testable without a Config or a
         filesystem. What is left here is the caching.
         """
         if self._agent_options:
@@ -649,8 +649,8 @@ class Config:
 
     def get_postgresql(self, key: str="") -> "PostgreSQLConfig":
         # Imported here, not at module scope. `mirobody.utils.config` is on the
-        # import path of the whole ENGINE — `mirobody.engine`, `indicator`,
-        # `pulse` — so a module-level `from .postgresql import …` made psycopg +
+        # import path of the whole ENGINE (`mirobody.engine`, `indicator`,
+        # `pulse`) so a module-level `from .postgresql import …` made psycopg +
         # SQLAlchemy a hard requirement of `resolve()`, which touches no
         # database at all. Only a caller that actually wants a DB handle pays.
         from .postgresql import PostgreSQLConfig
@@ -684,7 +684,7 @@ class Config:
     #-----------------------------------------------------
 
     def get_redis(self, key: str="") -> "RedisConfig":
-        from .redis import RedisConfig          # lazy — see get_postgresql
+        from .redis import RedisConfig          # lazy: see get_postgresql
 
         upper_key = key.strip().upper()
         if upper_key in self._redises:
@@ -722,7 +722,7 @@ class Config:
             api_key_env, default_base_url = _OPENAI_COMPAT[provider]
             # `<PROVIDER>_BASE_URL` (OPENROUTER_BASE_URL, DASHSCOPE_BASE_URL, …)
             # redirects the provider to a self-hosted OpenAI-compatible
-            # endpoint — the mechanism behind the README's "serve the same
+            # endpoint: the mechanism behind the README's "serve the same
             # embedding model yourself and point the provider's base_url at
             # it". Config.get reads the environment first, so an env var or a
             # config key both work.
@@ -918,7 +918,7 @@ class Config:
         # `env` and `load_dotenv` used to run HERE, ~25 lines after
         # `init_log_console` had already been handed `log_extra`. The `env`
         # field still reached the log records, but only because JsonFormatter
-        # stores the dict it is given by reference rather than copying it —
+        # stores the dict it is given by reference rather than copying it,
         # so adding a defensive `dict(extra)` to the formatter, an obviously
         # safe-looking change, would have silently dropped `env` from every log
         # line in production. Ordering, not aliasing, now makes it work.
@@ -946,7 +946,7 @@ class Config:
 
         for yaml_filename in yaml_file_list:
             # A stream (config built in memory) has no path to stat. Only a
-            # filename is checked for existence — dropping the stream here was
+            # filename is checked for existence: dropping the stream here was
             # the second half of why an in-memory overlay never applied.
             if not isinstance(yaml_filename, str) or os.path.exists(yaml_filename):
                 final_yaml_file_list.append(yaml_filename)
@@ -973,7 +973,7 @@ def global_config() -> Config | None:
 
     Took `*args, **kargs` and discarded them. That is not harmless: callers
     reasonably read `global_config(path)` as "load this config file", and one
-    did — `pulse/setup.py` threaded a `config_file_path` parameter down from its
+    did: `pulse/setup.py` threaded a `config_file_path` parameter down from its
     public signature into this call, where it evaporated. Accepting arguments
     you ignore turns a wrong call into a silent no-op instead of a TypeError.
     """
@@ -984,7 +984,7 @@ def global_config() -> Config | None:
 def safe_read_cfg(key: str, default: str = "") -> str:
     """A config value as a string, or `default`.
 
-    With no Config loaded — a library caller, `mirobody parse`, a test — the
+    With no Config loaded (a library caller, `mirobody parse`, a test) the
     ENVIRONMENT still answers, as it does first when a Config is loaded
     (`Config.get_str`). Before this the no-Config case returned the default
     outright, so `OPENROUTER_API_KEY=... mirobody parse x.pdf` needed a

@@ -378,7 +378,7 @@ def _concept_or_none(entry: dict) -> "meds.MedicationConcept | None":
 
 
 def _plan_from_prescription(prescription, *, subject_id: str, today: date):
-    """A clinician's ORDER is not yet a plan the person follows — but an order
+    """A clinician's ORDER is not yet a plan the person follows, but an order
     imported from the person's own health record is the only evidence there is
     that they were told to take it, so it lands as an unconfirmed plan for them
     to accept or delete."""
@@ -406,7 +406,7 @@ def _plan_from_flat(entry: dict, *, subject_id: str, today: date):
     # The sig is the whole instruction when the exporter kept one; the separate
     # `dose`/`unit` fields fill in when it did not. `parse_dose_instruction`
     # returns None rather than half a regimen, and an unparsed instruction is
-    # still a plan worth keeping — the text stays on the entry.
+    # still a plan worth keeping: the text stays on the entry.
     schedule = meds.parse_dose_instruction(str(entry.get("frequency") or entry.get("sig") or ""))
     if schedule is None:
         schedule = (meds.DoseInstruction(),)

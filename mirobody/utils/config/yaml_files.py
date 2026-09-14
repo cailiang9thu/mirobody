@@ -18,7 +18,7 @@ else, and the reader sees the order.
 
 So one requested filename fans out to as many as four candidates, order
 matters (later wins), and duplicates must not be loaded twice. That expansion
-is pure — filenames and an env name in, an ordered list out — but it used to
+is pure (filenames and an env name in, an ordered list out) but it used to
 live inside `Config.init`, an async staticmethod that also configures logging
 and fetches remote config over the network. 100 of that method's 170 lines
 were this, and none of it could be exercised without the other two thirds.
@@ -43,7 +43,7 @@ _KEY_YAML_SUFFIX_LEN = len(".key.yaml")
 def _clean(names) -> list:
     """Non-empty stripped strings, in order, without duplicates.
 
-    A READABLE entry — an ``io.StringIO`` holding config built in memory — is
+    A READABLE entry (an ``io.StringIO`` holding config built in memory) is
     passed THROUGH rather than dropped. `Config.__init__` has always accepted a
     stream, and this function discarding one meant `Config.init` (and so
     `Server.start`) could only ever be given files: `mirobody dev` handed it an
@@ -70,7 +70,7 @@ def _with_key_files(names: list[str]) -> list[str]:
 
     This is the split that keeps secrets out of the file checked into git.
     A name that IS already a `.key.yaml` is passed through (it has no sibling
-    of its own), and anything not ending in `.yaml` is dropped — the historical
+    of its own), and anything not ending in `.yaml` is dropped: the historical
     behaviour, which quietly ignores a non-YAML entry rather than failing the
     boot on it.
     """
@@ -125,7 +125,7 @@ def include_paths(base: str | None, includes) -> list[str]:
     declared them (or against the working directory when the declaring
     "file" was a stream), in the order written, without duplicates. Neither
     `.key.yaml` siblings nor `{env}` variants are expanded for an included
-    file — it is a plain file; environment differences go in the overlay."""
+    file, it is a plain file; environment differences go in the overlay."""
     if not isinstance(includes, list):
         return []
     directory = os.path.dirname(base) if isinstance(base, str) else ""
@@ -142,7 +142,7 @@ def include_paths(base: str | None, includes) -> list[str]:
 def expand_yaml_filenames(yaml_filenames: str | list[str] | None, env: str) -> list[str]:
     """The ordered candidate list for `yaml_filenames` under `env`.
 
-    Existence is NOT checked here — the caller filters, because one of the
+    Existence is NOT checked here: the caller filters, because one of the
     entries it adds is a remote config that has no path at all.
 
     With no filenames and an env, the convention applies on its own:
@@ -156,7 +156,7 @@ def expand_yaml_filenames(yaml_filenames: str | list[str] | None, env: str) -> l
         requested = []
 
     # An open STREAM is a candidate too, and `_clean` used to drop it for not
-    # being a string — so `Config.init(yaml_filenames=[some_io])` silently
+    # being a string, so `Config.init(yaml_filenames=[some_io])` silently
     # loaded the shipped defaults instead, while `Config(...)`, which has
     # always accepted one, honoured it. Passed through in place: a stream has
     # no `.key.yaml` sibling and no `{env}` variant, and its POSITION is what

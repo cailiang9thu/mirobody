@@ -1,6 +1,6 @@
 """③ Answer: the agent, its tools, and the chat surface.
 
-    agent.py        `MirobodyAgent` — one turn, end to end (LangChain +
+    agent.py        `MirobodyAgent`: one turn, end to end (LangChain +
                     deepagents)
     registry.py     how `AGENT_DIRS` picks the agent, and how a deployment
                     REPLACES it (there is no switching between agents)
@@ -21,13 +21,13 @@
     skills/         Agent Skills, mounted read-only at `/skills/`
 
 `models/`, `filesystem/document_backend.py`, `filesystem/naming.py`, `wire/events_bridge.py`,
-`harness.py` and `middleware/` are the LIBRARY half — what
+`harness.py` and `middleware/` are the LIBRARY half: what
 `pip install 'mirobody[agent]'` exists for, and what a consumer running its
 own agent imports. The rest is this reference agent and its product surface.
 
 Exports resolve lazily (PEP 562), and that is load-bearing: the MCP layer
 imports `mirobody.agent.tools.*` to serve the tools, which executes THIS
-`__init__` — an eager `from .agent import MirobodyAgent` here would make
+`__init__`: an eager `from .agent import MirobodyAgent` here would make
 `/mcp` require langchain. import-linter cannot see that chain (a submodule
 import creates no graph edge to the parent package), so the release workflow's
 bare-wheel smoke test is the gate that keeps this honest.

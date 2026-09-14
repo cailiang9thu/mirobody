@@ -21,7 +21,7 @@ class _ToolRegistry:
 
     The dicts were module-level and only ever added to, so discovery results
     outlived whatever imported them: a test could not load one directory,
-    assert, and load another — it inherited every tool the previous test had
+    assert, and load another, it inherited every tool the previous test had
     published, and the only reliable isolation was a fresh process. `reset()`
     is the whole reason this is a class.
 
@@ -94,7 +94,7 @@ def parse_function(function: FunctionType) -> tuple[dict, bool, dict]:
     # A tool whose parameters are a declared CONTRACT takes them as `**kwargs`,
     # so its annotations name only `user_info` and the catch-all. `call_tool`
     # builds its call from `parameters` and REJECTS anything not listed there,
-    # so the schema's property names have to be the list — otherwise every real
+    # so the schema's property names have to be the list: otherwise every real
     # argument of such a tool comes back as "unknown argument".
     declared_schema = getattr(function, "input_schema", None)
     if isinstance(declared_schema, dict) and declared_schema.get("properties"):
@@ -104,7 +104,7 @@ def parse_function(function: FunctionType) -> tuple[dict, bool, dict]:
 
     # A tool that takes `user_id` instead of `user_info` is not authenticated and
     # does not know it. `user_info` is the injection hook; anything else stays in
-    # the schema, so the MODEL supplies it — and an MCP client can then ask for
+    # the schema, so the MODEL supplies it, and an MCP client can then ask for
     # another person's data by sending a different id. The main README told
     # authors to do exactly this until it was corrected, so warn rather than
     # assume nobody followed it.
@@ -122,7 +122,7 @@ def parse_function(function: FunctionType) -> tuple[dict, bool, dict]:
     # A tool whose parameters are a CONTRACT, not a signature, declares the
     # schema itself: `input_schema` on the function (or on the class, which
     # `load_tools_from_class` binds onto it) is published verbatim. That is how
-    # `query_health_indicators` publishes `kernel.query.TOOL_SCHEMA` — one object,
+    # `query_health_indicators` publishes `kernel.query.TOOL_SCHEMA`: one object,
     # shared by the MCP surface and the chat model, so the two cannot drift and
     # a `**kwargs` body does not become an empty schema. Deep-copied because
     # the docstring parser below writes descriptions into it.
@@ -199,11 +199,11 @@ def parse_function(function: FunctionType) -> tuple[dict, bool, dict]:
             except Exception as e:
                 logger.warning(str(e), extra={"line": line})
 
-        # Return value — and anything after it (Notes, caveats, examples).
+        # Return value, and anything after it (Notes, caveats, examples).
         #
         # This used to be `pass`: everything from `Returns:` onward was parsed
         # and thrown away. Tool descriptions are prompt engineering, not
-        # documentation — the model only ever sees `description` plus the
+        # documentation: the model only ever sees `description` plus the
         # per-argument strings, so a documented return shape and any
         # "Notes for LLMs" guidance never reached it, and the model had to guess
         # what a tool gives back. Collected here and appended to the
@@ -260,7 +260,7 @@ def _declared_tool_names(obj) -> frozenset[str] | None:
     `__tools__`, or `None` when it declares none.
 
     Without it the rule is "every public method of a `*Service` class, and
-    every public module-level function, is a tool" — and that rule publishes
+    every public module-level function, is a tool", and that rule publishes
     whatever a refactor happens to leave public. `health_indicators_service` has three
     such names (`envelope`, `render_compact`, `render_rest`): all three are
     real API for the REST route and the chat adapter, and all three appeared in
@@ -526,7 +526,7 @@ async def call_tool(tools: dict, tool_name: str, arguments: dict | None = None, 
     Unknown argument names are rejected rather than ignored. The generated
     JSON Schema governs what the model *sees*; nothing enforced it at call
     time, so `keyword=` instead of `keywords=` used to be dropped on the floor
-    and the tool ran on its defaults — returning a confident, wrong answer that
+    and the tool ran on its defaults: returning a confident, wrong answer that
     the model had no way to attribute to its own typo. An error naming the
     accepted parameters is something it can act on.
 
@@ -556,7 +556,7 @@ async def call_tool(tools: dict, tool_name: str, arguments: dict | None = None, 
             # `user_info` is INJECTED below from the caller's JWT and is kept
             # out of the generated inputSchema for that reason. Listing it here
             # contradicted the schema in the one message a model is most likely
-            # to act on — it reads "Accepted: …, user_info" and spends a turn
+            # to act on, it reads "Accepted: …, user_info" and spends a turn
             # passing the caller identity it does not have. (Passing it is
             # harmless: the injection happens AFTER `arguments` is applied, so a
             # supplied value is overwritten, and a tool without `user_info` in
@@ -616,7 +616,7 @@ def get_global_descriptions() -> list:
 
     Kept as public API even though nothing inside the package calls it: for a
     project whose MCP tool surface IS the product, this is the only way to see
-    what a model actually gets — description text, generated inputSchema and
+    what a model actually gets: description text, generated inputSchema and
     all. It is the check that caught the docstring parser silently dropping
     every `Returns:` section, and the four types the old schema generator got
     wrong. Removing it once cost real debugging time; don't remove it again.
@@ -633,7 +633,7 @@ def reset_global_tools() -> None:
 
     For tests: the module dicts this replaced could only grow, so a test that
     loaded a tool directory changed what every later test saw. Not used by the
-    package itself — discovery happens once, at start-up.
+    package itself: discovery happens once, at start-up.
     """
     _registry.reset()
 

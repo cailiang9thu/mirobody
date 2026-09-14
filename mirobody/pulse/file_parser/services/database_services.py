@@ -27,7 +27,7 @@ class FileParserDatabaseService:
     ) -> bool:
         """Update message content, reasoning or type.
 
-        There was a fourth field, `comment`, that no caller ever passed — and
+        There was a fourth field, `comment`, that no caller ever passed, and
         `th_messages.comment` is no longer part of the schema (01_basedata), so
         writing it would now fail on a fresh database.
         """
@@ -126,12 +126,12 @@ class FileParserDatabaseService:
         """Parallel task: save to th_series_data table.
 
         The unique (user, indicator, start, end) key counts soft-deleted rows,
-        and this used to be a bare ON CONFLICT DO NOTHING — so a report
+        and this used to be a bare ON CONFLICT DO NOTHING, so a report
         re-uploaded after its file was deleted wrote NOTHING (every reading
         collided with its own deleted copy) while the log said "Write
         complete: 9 records" and the file row said 9 indicators. A collision
         with a DELETED row now revives that row as the new reading; a
-        collision with a live row is still left alone — that is what
+        collision with a live row is still left alone, that is what
         `on_conflict="revive_deleted"` means in `pulse/readings.py`.
         """
         if not db_params:
@@ -199,7 +199,7 @@ class FileParserDatabaseService:
 
         A date the model wrote in a shape `parse_date` does not know counts as
         no date. It used to raise, and the raise threw away every reading on
-        the file — an unknown date is a reason to ask, not to drop the data.
+        the file: an unknown date is a reason to ask, not to drop the data.
         """
         if exam_date and exam_date.strip():
             start_time = parse_date(exam_date)
@@ -504,7 +504,7 @@ class FileParserDatabaseService:
         if "csv" in mime_lower:
             return "csv"
 
-        # Markdown / rich text — the upload dropzone advertises "text/Markdown"
+        # Markdown / rich text: the upload dropzone advertises "text/Markdown"
         # as accepted, so a .md upload must not render as "unknown".
         if "markdown" in mime_lower:
             return "text"

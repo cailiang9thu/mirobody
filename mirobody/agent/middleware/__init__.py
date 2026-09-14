@@ -2,13 +2,13 @@
 
 Mirobody-specific middleware on top of the deepagents stack:
 
-- `UniversalPromptCachingMiddleware` — prompt caching across providers (upstream
+- `UniversalPromptCachingMiddleware`: prompt caching across providers (upstream
   deepagents only wires caching for Anthropic/Bedrock/Fireworks).
-- `ToolFaultMiddleware` — a crashing tool becomes an error ToolMessage instead of
+- `ToolFaultMiddleware`: a crashing tool becomes an error ToolMessage instead of
   killing the turn.
-- `InvalidToolCallRepairMiddleware` — a tool call with unparseable JSON arguments
+- `InvalidToolCallRepairMiddleware`: a tool call with unparseable JSON arguments
   becomes an error ToolMessage + retry instead of silently ending the turn.
-- `RetryGovernanceMiddleware` — a call that already failed unrecoverably is
+- `RetryGovernanceMiddleware`: a call that already failed unrecoverably is
   refused before it runs again (`mirobody.kernel.tools.RetryLedger`).
 
 The rest of the stack (FilesystemMiddleware, SummarizationMiddleware,

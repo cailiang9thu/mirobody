@@ -711,7 +711,7 @@ class WhoopProvider(BasePullProvider):
             for raw_data in raw_data_list:
                 try:
                     # Inject system user ID (from credentials DB).
-                    # No need to inject external user ID — _extract_external_user_id
+                    # No need to inject external user ID: _extract_external_user_id
                     # override reads it from data[0]["user_id"] at every call site.
                     raw_data["theta_user_id"] = user_id
                     msg_id = str(uuid.uuid4())

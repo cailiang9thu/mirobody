@@ -210,12 +210,12 @@ class BasePullProvider(Provider):
         `fmt_input.context` carries everything already resolved by the caller
         (`build_format_context`: internal user id, vendor user id, timezone,
         msg_id), so this method needs no database access and is a pure
-        transformation — which is what makes it snapshot-testable against a
+        transformation, which is what makes it snapshot-testable against a
         recorded payload. `fmt_input.payload` is the vendor's data, untouched.
 
         (This used to be two methods, `format_data(raw)` and `format_data_v2(
         fmt_input)`, each detecting whether the subclass had overridden the other
-        and forwarding — a migration that stopped halfway. Every provider now
+        and forwarding: a migration that stopped halfway. Every provider now
         implements this signature and nothing else.)
         """
         raise NotImplementedError(f"{type(self).__name__} must implement format_data")
@@ -325,7 +325,7 @@ class BasePullProvider(Provider):
             password = credentials["password"]
 
             # A credential whose password the person changed fails on every
-            # tick, forever, at the loop's full rate — and some vendors count
+            # tick, forever, at the loop's full rate, and some vendors count
             # that as an attack and lock the account the person still uses.
             # `mirobody.kernel.connect` is the state machine: consecutive
             # authorization failures expire the credential, and a retry waits

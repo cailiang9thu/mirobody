@@ -3,7 +3,7 @@
 `.docx` and `.pptx` sat in `file_uploader.SUPPORTED_EXTENSIONS` with no handler
 in existence: the picker accepted the file, the upload ran, and `file_processor`
 answered "file not supported" at the end. This is the handler that closes that,
-and it is the same shape as `ExcelHandler` on purpose — extract to markdown,
+and it is the same shape as `ExcelHandler` on purpose: extract to markdown,
 persist it as `original_text`, generate an abstract, and let
 `BaseFileHandler.process` trigger indicator extraction. A lab report saved as a
 Word document gets exactly the treatment a lab report saved as a PDF gets.

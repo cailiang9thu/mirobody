@@ -1,6 +1,6 @@
 """Load task modules so their `BaseRedisTask` subclasses self-register.
 
-Built-in tasks in `mirobody/task/` are always loaded — unlike MCP tools or
+Built-in tasks in `mirobody/task/` are always loaded: unlike MCP tools or
 agents, task built-ins should run in every deployment, so callers don't
 need to re-declare this package in their `TASK_DIRS`.
 
@@ -43,7 +43,7 @@ def _load_tasks_from_directory(dir: str, skip: set[str] | None = None) -> None:
     if not target:
         return
 
-    # Same resolution as MCP tools and chat agents — see utils/plugin_dirs.py
+    # Same resolution as MCP tools and chat agents: see utils/plugin_dirs.py
     # for why the path-string-to-module-name rule this replaces was unsound.
     target, module_prefix = resolve_plugin_dir(target)
 
