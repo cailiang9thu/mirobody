@@ -16,7 +16,7 @@ how a reader comes to believe a boundary does not exist.
 |---|---|---|---|
 | 1 | **Connect** | a credential, its state machine, when to stop retrying | `kernel/connect.py` |
 | 2 | **Pull** | ask the vendor for a window; keep the raw payload | `pulse/providers/` |
-| 3 | **Decode** | vendor JSON → `series.Fact`, in the catalogue's units | `kernel/vendors/` |
+| 3 | **Decode** | vendor JSON → `series.Fact`, in the catalogue's units | `kernel/decoders/` |
 | 4 | **Resolve** | which metric IS this — name, code, shape | `kernel/metrics.py`, `engine.py` |
 | 5 | **Gate** | reject the impossible; convert what is convertible | `kernel/quality.py`, applied in `pulse/readings.py` |
 | 6 | **Store** | one writer, one day column, one fingerprint | `pulse/readings.py` |
@@ -55,7 +55,7 @@ see `docs/provider-guide.md` for when to put open-wearables in front of it.
 
 ## 3. Decode
 
-**Implemented.** `vendors.decode(vendor, data_type, item, tz)` → `list[Fact]`,
+**Implemented.** `decoders.decode(vendor, data_type, item, tz)` → `list[Fact]`,
 pure. A decode table maps a vendor's field path to a catalogue metric and a
 function that converts into **the catalogue's** unit — the unit itself is never
 written in the table, so a decoder cannot disagree with the aggregator about
@@ -230,4 +230,4 @@ in this pipeline decides whether a number is good news.
 
 Each one is a test. `tests/test_series.py`, `tests/test_quality.py`,
 `tests/test_metrics.py`, `tests/pulse/test_readings.py`, `tests/pulse/aggregate/test_election.py`,
-`tests/test_vendors.py`, `tests/test_phi_baseline.py`.
+`tests/test_decoders.py`, `tests/test_phi_baseline.py`.

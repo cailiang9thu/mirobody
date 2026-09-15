@@ -36,7 +36,7 @@ REQUIRED = {
     "mirobody/res/metrics.tsv": 40_000,
     "mirobody/res/labels/zh.tsv": 10_000,
     "mirobody/res/dose_forms.tsv": 300,
-    "mirobody/kernel/vendors/samples/garmin/dailies.json": 500,
+    "mirobody/kernel/decoders/samples/garmin/dailies.json": 500,
 }
 
 # The other direction, and it is worth a gate of its own: the package-data globs

@@ -26,7 +26,7 @@ from mirobody.pulse.ingest.models.requests import (
 )
 from mirobody.pulse.providers.platform.base import BasePullProvider
 from mirobody.pulse.providers.platform.normalize import records_from_facts
-from mirobody.kernel import vendors
+from mirobody.kernel import decoders
 from mirobody.utils import execute_query
 from mirobody.utils.config import safe_read_cfg, global_config
 from mirobody.utils.tasks import spawn
@@ -464,7 +464,7 @@ class GarminProvider(BasePullProvider):
             raise RuntimeError(f"Failed to unlink provider: {api_error_message or 'Unknown error'}") from db_error
 
     async def format_data(self, fmt_input: FormatDataInput) -> StandardPulseData:
-        """Garmin summaries → standard records, via ``mirobody.kernel.vendors.garmin``.
+        """Garmin summaries → standard records, via ``mirobody.kernel.decoders.garmin``.
 
         The payload is ``{data_type: [summary, ...], ...}`` for one user (a
         webhook push or an active pull, already split per user). Every data
@@ -487,9 +487,9 @@ class GarminProvider(BasePullProvider):
             for item in items:
                 if key == "activityDetails":
                     item = item.get("summary") if isinstance(item, dict) else None
-                    facts = vendors.decode("garmin", "activities", item, tz, source_record_id=msg_id) if item else []
+                    facts = decoders.decode("garmin", "activities", item, tz, source_record_id=msg_id) if item else []
                 else:
-                    facts = vendors.decode("garmin", key, item, tz, source_record_id=msg_id)
+                    facts = decoders.decode("garmin", key, item, tz, source_record_id=msg_id)
                 records.extend(records_from_facts(facts, slug=self.info.slug, tz=tz, source_id=msg_id))
         if not types:
             return self._create_empty_response(request_id, ctx.theta_user_id)

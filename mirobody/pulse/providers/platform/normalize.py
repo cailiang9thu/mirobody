@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def records_from_facts(facts: Iterable[Fact], *, slug: str, tz: str, source_id: str = "") -> list[StandardPulseRecord]:
-    """``mirobody.kernel.vendors`` facts → the ingest records this platform stores.
+    """``mirobody.kernel.decoders`` facts → the ingest records this platform stores.
 
     A fact's ``effective_start_ms`` is the record timestamp; an interval fact
     (sleep stage, daily summary, workout) also carries ``startTime``/``endTime``

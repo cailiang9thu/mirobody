@@ -12,7 +12,7 @@ far as its own reference application needs.
 webhooks, multi-account fan-out — put
 [open-wearables](https://github.com/the-momentum/open-wearables) in front:
 twelve provider strategies, iOS/Android/Flutter/React Native SDKs, a developer
-portal, Celery sync. Then decode its API here (`mirobody.kernel.vendors.open_wearables`)
+portal, Celery sync. Then decode its API here (`mirobody.kernel.decoders.open_wearables`)
 and you get UCUM units, LOINC where the code is public, day windows that survive
 daylight saving, quality gates, corrections, medications and the two query
 tools on top. **Run open-wearables to connect devices; run
@@ -25,10 +25,10 @@ deployment must hold its own credentials.
 
 | Piece | Pure? | Where |
 |---|---|---|
-| **the decode table** | yes | `mirobody/kernel/vendors/<vendor>.py` |
+| **the decode table** | yes | `mirobody/kernel/decoders/<vendor>.py` |
 | **the IO shell** | no | `mirobody/pulse/providers/<vendor>/` |
-| **the samples** | data | `mirobody/kernel/vendors/samples/<vendor>/` |
-| **the coverage** | generated | `vendors.coverage_of("<vendor>")` |
+| **the samples** | data | `mirobody/kernel/decoders/samples/<vendor>/` |
+| **the coverage** | generated | `decoders.coverage_of("<vendor>")` |
 
 A provider does not have to live in this repository. Ship it as a package that
 declares a `mirobody.providers` entry point pointing at the module with your
@@ -73,7 +73,7 @@ Three more rules:
 ### 2. The IO shell
 
 `format_data(self, fmt_input: FormatDataInput) -> StandardPulseData` calls
-`vendors.decode` and wraps the facts with `records_from_facts`. Everything else
+`decoders.decode` and wraps the facts with `records_from_facts`. Everything else
 in the class is authentication, pagination and storage. The credential state
 machine is `mirobody.kernel.connect`: the base pull loop already backs off after an
 authorization failure and stops after a threshold, so a changed password does
@@ -81,7 +81,7 @@ not become an account lockout.
 
 ### 3. The samples
 
-`mirobody/kernel/vendors/samples/<vendor>/*.json`: payloads shaped like the vendor's
+`mirobody/kernel/decoders/samples/<vendor>/*.json`: payloads shaped like the vendor's
 PUBLIC documentation, each with its expected facts **computed by hand**. Never
 by running the decoder — a sample generated from the code under test asserts
 that the code does what it does.
@@ -105,7 +105,7 @@ from it cannot promise data the code does not produce.
 | `whoop` | 25 | `body`, `cycle`, `profile`, `recovery`, `sleep`, `workout` |
 <!-- coverage:end -->
 
-Regenerate with `mirobody.testing.coverage.gen_coverage(vendors.coverage_matrix())`
+Regenerate with `mirobody.testing.coverage.gen_coverage(decoders.coverage_matrix())`
 and embed with `coverage.embed`; `coverage.stale` is the CI check that fails
 the build when a decoder gains a metric and this table has not caught up.
 

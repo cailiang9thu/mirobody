@@ -9,7 +9,7 @@ connection, reads a clock it was not handed, or imports a third-party package
 
 What a reading passes through, and which module decides each step:
 
-    vendor payload ─ vendors.decode ──▶ series.Fact      the vendor's JSON becomes facts
+    vendor payload ─ decoders.decode ──▶ series.Fact      the vendor's JSON becomes facts
     Fact ─────────── metrics ──────────▶ shape            what this metric IS: state_class,
                                                           aggregation policy, canonical unit,
                                                           local-day window (res/metrics.tsv)
@@ -32,7 +32,7 @@ event vocabulary a consumer's own runtime emits and its adapters translate),
 trend / recovery / gap detection under an injected policy, and the narrative
 rules a summary must obey), `memory` (the profile document a rewrite
 regenerates and an agent reads, with the watermark that says what is fresh),
-and `vendors/` (one decode table per vendor, with samples shipped for a
+and `decoders/` (one decode table per vendor, with samples shipped for a
 consumer to run against its own decoder).
 
 The vocabulary layer (a lab name to a LOINC code) is the sibling

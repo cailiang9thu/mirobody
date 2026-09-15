@@ -13,7 +13,7 @@ diff, so a decoder that gains a metric fails the build until the page is
 regenerated.
 
 Pure; stdlib only, and it takes the coverages as an argument rather than
-importing `vendors`, so a consumer can run it over its OWN connectors.
+importing `decoders`, so a consumer can run it over its OWN connectors.
 """
 
 from __future__ import annotations

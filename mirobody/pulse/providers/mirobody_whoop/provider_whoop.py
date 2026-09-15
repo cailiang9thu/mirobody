@@ -26,7 +26,7 @@ from mirobody.pulse.ingest.models.requests import (
 from mirobody.pulse.providers.platform.base import BasePullProvider
 from mirobody.pulse.providers.platform.oauth2 import OAuth2Client
 from mirobody.pulse.providers.platform.normalize import records_from_facts
-from mirobody.kernel import vendors
+from mirobody.kernel import decoders
 from mirobody.utils import execute_query
 from mirobody.utils.config import safe_read_cfg
 from mirobody.utils.tasks import spawn
@@ -218,7 +218,7 @@ class WhoopProvider(BasePullProvider):
         return ""
 
     async def format_data(self, fmt_input: FormatDataInput) -> StandardPulseData:
-        """WHOOP records → standard records, via ``mirobody.kernel.vendors.whoop``.
+        """WHOOP records → standard records, via ``mirobody.kernel.decoders.whoop``.
 
         The payload is ``{"data_type": ..., "data": [...], "timestamp": pulled_at_ms}``;
         body measurements have no time of their own and are filed at the
@@ -241,7 +241,7 @@ class WhoopProvider(BasePullProvider):
         pulled_at = int(payload.get("timestamp") or 0)
         records: list[StandardPulseRecord] = []
         for item in items:
-            facts = vendors.decode("whoop", data_type, item, tz, pulled_at_ms=pulled_at, source_record_id=msg_id)
+            facts = decoders.decode("whoop", data_type, item, tz, pulled_at_ms=pulled_at, source_record_id=msg_id)
             records.extend(records_from_facts(facts, slug=self.info.slug, tz=tz, source_id=msg_id))
         logger.info("Formatted %d Whoop records from %d %s items", len(records), len(items), data_type)
         return StandardPulseData(

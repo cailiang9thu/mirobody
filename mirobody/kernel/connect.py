@@ -162,7 +162,7 @@ class Coverage:
     different claims, and conflating them is how a documentation page comes to
     promise data nobody's integration produces.
 
-    Derived from the decoder's own table (`vendors.coverage_of`), never
+    Derived from the decoder's own table (`decoders.coverage_of`), never
     hand-written, so it cannot drift from the code. Two consequences worth
     stating: a metric here is one the decoder can EMIT (whether a given
     person's device records it is a different question again) and a

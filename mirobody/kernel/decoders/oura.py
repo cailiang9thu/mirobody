@@ -121,7 +121,7 @@ def record_time_ms(data_type: str, item: dict, tz: str, pulled_at_ms: int) -> in
 
 #: Every catalogue metric this table can emit: derived from MAPPING, so it
 #: cannot drift from what `decode` actually produces. `connect.Coverage` is
-#: built from it (`vendors.coverage_of`).
+#: built from it (`decoders.coverage_of`).
 METRICS: frozenset[str] = frozenset(
     metric for fields in MAPPING.values() for metric, _convert in fields.values()
 )

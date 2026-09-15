@@ -420,7 +420,7 @@ source_modules = [
     "mirobody.kernel.sink",
     "mirobody.kernel.tools",
     "mirobody.units",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.value_scale",
     "mirobody.zh_fold",
     # The rest of the engine.
@@ -478,7 +478,7 @@ source_modules = [
     "mirobody.kernel.sink",
     "mirobody.kernel.tools",
     "mirobody.units",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.value_scale",
     "mirobody.zh_fold",
 ]
@@ -523,7 +523,7 @@ source_modules = [
     "mirobody.kernel.tools",
     "mirobody.units",
     "mirobody.value_scale",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.zh_fold",
 ]
 forbidden_modules = [
@@ -603,7 +603,7 @@ source_modules = [
     "mirobody.kernel.sink",
     "mirobody.kernel.tools",
     "mirobody.units",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.value_scale",
     "mirobody.zh_fold",
     "mirobody.indicator",

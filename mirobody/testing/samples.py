@@ -1,7 +1,7 @@
 """Run vendor sample payloads through a decoder and compare with the facts a
 human worked out.
 
-A sample document (``mirobody/kernel/vendors/samples/<vendor>/*.json``) is either
+A sample document (``mirobody/kernel/decoders/samples/<vendor>/*.json``) is either
 one case or a ``cases`` list; each case has ``data_type``, ``tz``, ``input``
 and an ``expected`` block whose keys are checked here:
 

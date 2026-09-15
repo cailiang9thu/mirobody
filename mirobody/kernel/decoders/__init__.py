@@ -1,5 +1,9 @@
 """Vendor payload decoders: the part of a provider that is pure.
 
+Decoding here means field mapping, not byte decoding: the bytes are already
+a dict by the time a decoder sees them. Elsewhere in this ecosystem (the
+Airbyte CDK, for one) ``decoders`` names the byte-to-structure step instead.
+
 A provider integration is two very different things glued together: the
 OAuth dance, token storage, rate limits and pull windows (IO, per
 deployment) and the translation of a vendor's JSON into standardised facts
@@ -7,15 +11,15 @@ deployment) and the translation of a vendor's JSON into standardised facts
 part as three near-copies inside their IO classes, each fixing bugs the
 others still had. This package is the second part on its own:
 
-    from mirobody.kernel import vendors
-    facts = vendors.decode("garmin", "dailies", item, tz="Asia/Shanghai")
+    from mirobody.kernel import decoders
+    facts = decoders.decode("garmin", "dailies", item, tz="Asia/Shanghai")
 
 Each decoder module exposes ``DATA_TYPES``, ``decode(data_type, item, tz,
 ...) -> list[series.Fact]`` and a ``synthesize`` helper (``synthetic.py``)
 that produces plausible payloads for demos and tests. ``samples/`` holds
 public-documentation-shaped sample payloads with their expected facts; they
 ship in the wheel so a consumer's ``mirobody.testing.FormatTestRunner`` can
-run them against its own decoders, and ``test_vendors.py`` runs them here.
+run them against its own decoders, and ``test_decoders.py`` runs them here.
 
 Adding a vendor: one module here (table + ``decode``), one sample set, one
 entry in ``DECODERS``: the IO half lives with whoever runs it.

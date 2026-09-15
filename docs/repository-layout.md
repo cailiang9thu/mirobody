@@ -15,7 +15,7 @@ mirobody/
 ├── kernel/      what health data MEANS, as pure functions:       │
 │                metrics · series · quality · overlay · meds ·    │
 │                query · tools · ops · connect · sink · events ·  │
-│                evidence · memory · vendors/                     ┘ 2 packages
+│                evidence · memory · decoders/                     ┘ 2 packages
 ├── documents/   a file becomes text, by kind — PDF text layer, OCR for scanned pages only, Office, text   [parse]
 ├── pulse/       ① Collect     — providers, file parsing, store, aggregate, read (Postgres)
 ├── indicator/   ② Translate (standardize) — resolver internals, concept graph, bundle build
