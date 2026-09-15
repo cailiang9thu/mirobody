@@ -53,7 +53,40 @@ QUANTITY: dict[str, str] = {
     "HKQuantityTypeIdentifierBodyMassIndex": "bmis",
     "HKQuantityTypeIdentifierBodyFatPercentage": "bodyFatPercentages",
     "HKQuantityTypeIdentifierHeight": "heights",
+    "HKQuantityTypeIdentifierLeanBodyMass": "bodyFatFreeWeight",
+    "HKQuantityTypeIdentifierWaistCircumference": "waistCircumferences",
+    "HKQuantityTypeIdentifierWalkingSpeed": "walkingSpeeds",
+    "HKQuantityTypeIdentifierCyclingSpeed": "cyclingSpeeds",
+    "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute": "recoveryes",
+    "HKQuantityTypeIdentifierUVExposure": "uvExposures",
+    "HKQuantityTypeIdentifierDietaryEnergyConsumed": "energyes",
+    "HKQuantityTypeIdentifierDietaryProtein": "proteins",
+    "HKQuantityTypeIdentifierDietaryCarbohydrates": "carbohydrates",
+    "HKQuantityTypeIdentifierDietaryFatTotal": "fats",
+    "HKQuantityTypeIdentifierDietaryWater": "waters",
 }
+
+#: Category types whose reading is a name, not a number. `export.xml` carries
+#: the `HKCategoryValue*` string in the same `value` attribute a quantity uses,
+#: so the fact is text and the catalogue unit for these is `enum`.
+CATEGORY: dict[str, str] = {
+    "HKCategoryTypeIdentifierMenstrualFlow": "reproductiveMenstruationFlow",
+    "HKCategoryTypeIdentifierCervicalMucusQuality": "reproductiveCervicalMucusQuality",
+    "HKCategoryTypeIdentifierOvulationTestResult": "reproductiveOvulationTestResult",
+    "HKCategoryTypeIdentifierPregnancyTestResult": "reproductivePregnancyTestResult",
+    "HKCategoryTypeIdentifierProgesteroneTestResult": "reproductiveProgEstrogenTestResult",
+    "HKCategoryTypeIdentifierSexualActivity": "reproductiveSexualActivity",
+    "HKCategoryTypeIdentifierIntermenstrualBleeding": "reproductiveIntermenstrualBleeding",
+    "HKCategoryTypeIdentifierLactation": "reproductiveLactation",
+    "HKCategoryTypeIdentifierPregnancy": "reproductivePregnancy",
+    "HKCategoryTypeIdentifierContraceptive": "reproductiveContraceptive",
+}
+
+#: Not here on purpose: `bodyWater`, `bodyBone`, `bodyMuscle`, `bodySubFat`,
+#: `bodyVisFat`, `bodyProtein`, `bodySinew`, `bodyAge`. A body-composition
+#: scale writes those through HealthKit, but HealthKit itself declares no such
+#: identifiers, so nothing in an Apple export can produce them. They belong to
+#: whichever scale integration reads that vendor's own API.
 
 #: `HKCategoryValueSleepAnalysis*` → catalogue metric. A sleep record carries
 #: no number: its value is the stage and its measurement is the span, so the
@@ -71,11 +104,13 @@ SLEEP_STAGES: dict[str, str] = {
 SLEEP_TYPE = "HKCategoryTypeIdentifierSleepAnalysis"
 BLOOD_PRESSURE = "HKCorrelationTypeIdentifierBloodPressure"
 
-DATA_TYPES: tuple[str, ...] = (*QUANTITY, SLEEP_TYPE, BLOOD_PRESSURE)
+DATA_TYPES: tuple[str, ...] = (*QUANTITY, *CATEGORY, SLEEP_TYPE, BLOOD_PRESSURE)
 
 #: Every catalogue metric this table can emit. Derived, so it cannot drift
 #: from what `decode` produces; `connect.Coverage` is built from it.
-METRICS: frozenset[str] = frozenset(QUANTITY.values()) | frozenset(SLEEP_STAGES.values())
+METRICS: frozenset[str] = (
+    frozenset(QUANTITY.values()) | frozenset(CATEGORY.values()) | frozenset(SLEEP_STAGES.values())
+)
 
 #: Conversions `mirobody.units` declines, measured 2026-09-15. Fahrenheit is
 #: affine and the library is factor-based (`convertible("[degF]", "Cel")` is
@@ -115,14 +150,21 @@ def _to_catalogue(metric: str, value: float, unit: str) -> float | None:
     return units.convert_value(value, got, want, loinc_code=loinc)
 
 
-def record_time_ms(text: str | None) -> int:
-    """An Apple timestamp → unix ms, or ``0`` when it cannot be parsed. Never
-    "now": a fabricated time files a reading under the wrong day."""
-    if not text:
+def record_time_ms(value: str | int | float | None) -> int:
+    """An Apple timestamp → unix ms, or ``0`` when it cannot be read. Never
+    "now": a fabricated time files a reading under the wrong day.
+
+    `export.xml` writes `"2014-09-13 10:27:54 +0100"`. A client that already
+    holds epoch milliseconds sends the number instead, and both reach the same
+    decode table.
+    """
+    if isinstance(value, bool) or value is None:
         return 0
+    if isinstance(value, int | float):
+        return int(value) if value > 0 else 0
     try:
-        return int(datetime.strptime(text.strip(), _TS).timestamp() * 1000)
-    except ValueError:
+        return int(datetime.strptime(value.strip(), _TS).timestamp() * 1000)
+    except (ValueError, AttributeError):
         return 0
 
 
@@ -160,6 +202,14 @@ def decode(
         if not metric or end <= start:
             return []
         return [fact(metric, float(end - start), start, end, **common)]
+
+    metric = CATEGORY.get(data_type)
+    if metric:
+        #: The reading is the stage or result name Apple wrote, kept verbatim:
+        #: renaming it here would put this module in the business of deciding
+        #: what "eggWhite" means, which is the answer layer's job.
+        text = str(item.get("value") or "").strip()
+        return [fact(metric, None, start, end, text=text, **common)] if text else []
 
     metric = QUANTITY.get(data_type)
     if not metric:
