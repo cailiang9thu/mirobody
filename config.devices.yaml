@@ -7,6 +7,13 @@
 # credentials declines to start — normal, not an error. The vendor endpoints
 # below are the defaults; change one only to pin another environment. Full
 # walkthrough, including the callback URL to register: docs/provider-setup.md.
+#
+# The callback path below says `pulse` because that was the package's name when
+# the first deployments registered these URIs with the vendors. Registration
+# happens in the vendor's console against your own host, so we cannot change it
+# for you. If you have registered nothing yet, set COLLECT_API_PREFIX in the
+# environment (e.g. /api/v1/collect) and register that instead; every path below
+# moves with it.
 
 #-----------------------------------------------------------------------------
 # Oura (OAuth 2.0) — https://cloud.ouraring.com/oauth/applications

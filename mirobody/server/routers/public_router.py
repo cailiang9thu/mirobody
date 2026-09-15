@@ -23,6 +23,7 @@ SECTION INDEX (line numbers are approximate):
 
 import json
 import logging
+import os
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -40,8 +41,17 @@ from mirobody.server.auth import verify_token, verify_token_optional
 
 logger = logging.getLogger(__name__)
 
-# Create router
-router = APIRouter(prefix="/api/v1/pulse", tags=["pulse"])
+#: Where these routes answer. The path says `pulse` because that was the
+#: package's name when deployments first registered their OAuth redirect URIs
+#: with Garmin, Oura and Whoop: those are registered in the vendor's console,
+#: against the deployment's own host, and we cannot change them from here.
+#: A deployment that has registered nothing yet, or is willing to re-register,
+#: can set COLLECT_API_PREFIX. It is read from the environment rather than the
+#: config object because the router is built at import time, before
+#: `Config.init` has run.
+API_PREFIX = os.environ.get("COLLECT_API_PREFIX", "/api/v1/pulse").rstrip("/")
+
+router = APIRouter(prefix=API_PREFIX, tags=["collect"])
 
 
 class AuthType(str, Enum):
@@ -432,7 +442,7 @@ async def link_provider(request: LinkProviderRequest, req: Request, current_user
 
         host = req.headers.get("Host", "unknown")
         scheme = req.url.scheme if req.url.scheme else "https"
-        options["default_return_url"] = f"{scheme}://{host}/api/v1/pulse/{actual_platform}/{provider_slug}/callback"
+        options["default_return_url"] = f"{scheme}://{host}{API_PREFIX}/{actual_platform}/{provider_slug}/callback"
 
         # Call PlatformManager's simplified interface (business logic has been delegated)
         result_data = await platform_manager.link_provider(
