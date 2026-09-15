@@ -31,9 +31,10 @@ from types import ModuleType
 
 from mirobody.kernel.connect import Coverage
 from mirobody.kernel.series import Fact
-from . import garmin, open_wearables, oura, whoop
+from . import apple, garmin, open_wearables, oura, whoop
 
 DECODERS: dict[str, ModuleType] = {
+    "apple": apple,
     "garmin": garmin,
     "whoop": whoop,
     "oura": oura,

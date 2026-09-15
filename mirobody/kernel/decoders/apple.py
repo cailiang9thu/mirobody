@@ -1,0 +1,173 @@
+"""Apple HealthKit records → facts. Pure; the type names are Apple's own.
+
+Two front doors produce the item this module decodes: the mobile app's JSON
+and the `export.zip` a person makes in the Health app. Both are keyed by the
+HealthKit identifier (`HKQuantityTypeIdentifierStepCount`), because that is
+what `export.xml` carries natively and what the Flutter enum is generated
+from.
+
+The unit is per record, not per type: `unit` is CDATA in Apple's DTD and
+follows the device's region, so one file can hold `mg/dL` and `mmol/L` for
+the same type. Every value is converted by reading its own unit, never by
+assuming the type's.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from mirobody import units
+from mirobody.kernel import metrics
+from mirobody.kernel.series import Fact
+from ._common import fact, number
+
+#: Apple writes `"2014-09-13 10:27:54 +0100"`: a space, and a numeric offset
+#: rather than an IANA zone. The offset is what the device's clock said, so
+#: it is taken literally and the account timezone is not consulted.
+_TS = "%Y-%m-%d %H:%M:%S %z"
+
+#: HealthKit identifier → catalogue metric. The same targets the mobile path
+#: already maps to, so both front doors agree on the name.
+QUANTITY: dict[str, str] = {
+    "HKQuantityTypeIdentifierHeartRate": "heartRates",
+    "HKQuantityTypeIdentifierRestingHeartRate": "restingHeartRates",
+    "HKQuantityTypeIdentifierWalkingHeartRateAverage": "walkingHeartRates",
+    "HKQuantityTypeIdentifierHeartRateVariabilitySDNN": "hrvDatas",
+    "HKQuantityTypeIdentifierRespiratoryRate": "respiratoryRates",
+    "HKQuantityTypeIdentifierOxygenSaturation": "oxygenSaturations",
+    "HKQuantityTypeIdentifierBodyTemperature": "bodyTemperatures",
+    "HKQuantityTypeIdentifierBasalBodyTemperature": "reproductiveBasalBodyTemperature",
+    "HKQuantityTypeIdentifierAppleSleepingWristTemperature": "wristTemperatures",
+    "HKQuantityTypeIdentifierBloodGlucose": "bloodGlucoses",
+    "HKQuantityTypeIdentifierBloodPressureSystolic": "systolicPressures",
+    "HKQuantityTypeIdentifierBloodPressureDiastolic": "diastolicPressures",
+    "HKQuantityTypeIdentifierStepCount": "steps",
+    "HKQuantityTypeIdentifierFlightsClimbed": "floors",
+    "HKQuantityTypeIdentifierDistanceWalkingRunning": "walkingRunningDistances",
+    "HKQuantityTypeIdentifierDistanceCycling": "cyclingDistances",
+    "HKQuantityTypeIdentifierActiveEnergyBurned": "activeCalories",
+    "HKQuantityTypeIdentifierBasalEnergyBurned": "basalCalories",
+    "HKQuantityTypeIdentifierAppleExerciseTime": "exerciseMinutes",
+    "HKQuantityTypeIdentifierVO2Max": "vo2Maxs",
+    "HKQuantityTypeIdentifierBodyMass": "bodyMasss",
+    "HKQuantityTypeIdentifierBodyMassIndex": "bmis",
+    "HKQuantityTypeIdentifierBodyFatPercentage": "bodyFatPercentages",
+    "HKQuantityTypeIdentifierHeight": "heights",
+}
+
+#: `HKCategoryValueSleepAnalysis*` → catalogue metric. A sleep record carries
+#: no number: its value is the stage and its measurement is the span, so the
+#: duration is `endDate - startDate` in milliseconds.
+SLEEP_STAGES: dict[str, str] = {
+    "HKCategoryValueSleepAnalysisInBed": "sleepAnalysis_InBed",
+    "HKCategoryValueSleepAnalysisAsleepUnspecified": "sleepAnalysis_Asleep(Unspecified)",
+    "HKCategoryValueSleepAnalysisAsleep": "sleepAnalysis_Asleep(Unspecified)",
+    "HKCategoryValueSleepAnalysisAwake": "sleepAnalysis_Awake",
+    "HKCategoryValueSleepAnalysisAsleepDeep": "sleepAnalysis_Asleep(Deep)",
+    "HKCategoryValueSleepAnalysisAsleepCore": "sleepAnalysis_Asleep(Core)",
+    "HKCategoryValueSleepAnalysisAsleepREM": "sleepAnalysis_Asleep(REM)",
+}
+
+SLEEP_TYPE = "HKCategoryTypeIdentifierSleepAnalysis"
+BLOOD_PRESSURE = "HKCorrelationTypeIdentifierBloodPressure"
+
+DATA_TYPES: tuple[str, ...] = (*QUANTITY, SLEEP_TYPE, BLOOD_PRESSURE)
+
+#: Every catalogue metric this table can emit. Derived, so it cannot drift
+#: from what `decode` produces; `connect.Coverage` is built from it.
+METRICS: frozenset[str] = frozenset(QUANTITY.values()) | frozenset(SLEEP_STAGES.values())
+
+#: Conversions `mirobody.units` declines, measured 2026-09-15. Fahrenheit is
+#: affine and the library is factor-based (`convertible("[degF]", "Cel")` is
+#: False); `mi` folds to the US survey mile, which has no metre factor there,
+#: while Apple means the international mile.
+_MI_TO_M = 1609.344
+#: `mmol/L` → `mg/dL` needs the molar mass, which the library reaches through
+#: a LOINC code. 2339-0 is glucose in blood.
+_GLUCOSE_LOINC = "2339-0"
+
+
+def _to_catalogue(metric: str, value: float, unit: str) -> float | None:
+    """`value` in the metric's catalogue unit, or ``None`` when this record's
+    unit cannot be converted. Both units are folded to UCUM first: the
+    catalogue writes `°C` and `count/min` where Apple writes `degC` and
+    `count/min`, and only the folded forms are comparable.
+
+    ``None`` is skipped and counted, never stored. An unconverted number
+    filed as if it were converted is the silent wrong number this table
+    exists to prevent.
+    """
+    raw = (unit or "").strip()
+    target = metrics.METRICS[metric].standard_unit
+    if not raw or raw == target:
+        return value
+    want = units.normalize_unit(target) or target
+    if raw in ("mi", "[mi_i]", "[mi_us]") and want == "m":
+        return value * _MI_TO_M
+    if raw in ("degF", "[degF]") and want == "Cel":
+        return (value - 32.0) * 5.0 / 9.0
+    got = units.normalize_unit(raw)
+    if not got:
+        return None
+    if got == want:
+        return value
+    loinc = _GLUCOSE_LOINC if metric == "bloodGlucoses" else ""
+    return units.convert_value(value, got, want, loinc_code=loinc)
+
+
+def record_time_ms(text: str | None) -> int:
+    """An Apple timestamp → unix ms, or ``0`` when it cannot be parsed. Never
+    "now": a fabricated time files a reading under the wrong day."""
+    if not text:
+        return 0
+    try:
+        return int(datetime.strptime(text.strip(), _TS).timestamp() * 1000)
+    except ValueError:
+        return 0
+
+
+def decode(
+    data_type: str, item: dict, tz: str, *, pulled_at_ms: int = 0, source_record_id: str = "", ingested_at_ms: int = 0
+) -> list[Fact]:
+    """Facts from one HealthKit record. Unknown types and records without a
+    parsable time decode to nothing, never to a guessed time. ``tz`` and
+    ``pulled_at_ms`` are accepted for signature parity: an Apple record
+    carries its own offset, so neither is consulted.
+    """
+    if not isinstance(item, dict):
+        return []
+    start = record_time_ms(item.get("startDate"))
+    if not start:
+        return []
+    end = record_time_ms(item.get("endDate")) or start
+    common = {"source_record_id": source_record_id, "ingested_at_ms": ingested_at_ms}
+
+    if data_type == BLOOD_PRESSURE:
+        panel = f"blood_pressure:{start}"
+        out: list[Fact] = []
+        for key, metric in (("systolic", "systolicPressures"), ("diastolic", "diastolicPressures")):
+            v = number(item.get(key))
+            if v is None:
+                continue
+            converted = _to_catalogue(metric, v, str(item.get("unit") or ""))
+            if converted is None:
+                continue
+            out.append(fact(metric, float(converted), start, end, panel_id=panel, **common))
+        return out
+
+    if data_type == SLEEP_TYPE:
+        metric = SLEEP_STAGES.get(str(item.get("value") or ""))
+        if not metric or end <= start:
+            return []
+        return [fact(metric, float(end - start), start, end, **common)]
+
+    metric = QUANTITY.get(data_type)
+    if not metric:
+        return []
+    v = number(item.get("value"))
+    if v is None:
+        return []
+    converted = _to_catalogue(metric, v, str(item.get("unit") or ""))
+    if converted is None:
+        return []
+    return [fact(metric, float(converted), start, end, **common)]
