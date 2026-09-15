@@ -2,7 +2,7 @@
 
 # Mirobody
 
-**AI 原生的健康数据引擎 —— 收集 · 转译 · 智能体（Collect · Translate · Agent）。**
+**AI 原生的健康数据引擎 —— 收集 · 转译 · 问答（Collect · Translate · Agent）。**
 
 一份报告写"谷丙转氨酶"，另一份写"ALT"，第三份写"丙氨酸氨基转移酶"——同一项指标，换一家
 医院就换一种写法，单位也未必一致。Mirobody 把体检报告、穿戴设备和基因数据都落到同一套
@@ -71,11 +71,11 @@ resolve("血脂").resolved                                 # False    类别，�
   序列画进同一张图，并告诉你结论出自哪一页。
 - **自己托管，用公开标准，Apache-2.0。** `./deploy.sh` 一条命令在自己机器上跑起整套；
   数据以 LOINC 编码、FHIR 就绪的形式留在你手里，想带走随时能带走。同一组工具也通过
-  MCP 给 Claude Desktop、Cursor 或你自己的 agent 用。**不需要 GPU：自己托管的是应用，
-  不是模型。** 你只需要一把 API key 接到云端模型，本机不跑推理。这里说的"离线"指的是
-  解析器——名称到编码，不联网、不用 key——不是在本地跑大模型。
+  MCP 给 Claude Desktop、Cursor 或你自己的 agent 用。**自己托管的是这套应用，不是
+  模型。** 模型在云端，你出一把 key 就行，本机不跑推理，也不用 GPU。上面说"解析器离线"，
+  指的是名称到编码那一步不联网、不用 key——和在本地跑大模型是两回事。
 
-## 收集 · 转译 · 智能体
+## 收集 · 转译 · 问答
 
 <p align="center">
   <img src="docs/images/where-your-data-comes-from.zh-CN.svg" alt="从穿戴设备到饭菜照片 —— 一种标准格式，AI 可直接读取。" width="920">
@@ -87,7 +87,7 @@ resolve("血脂").resolved                                 # False    类别，�
 | --- | --- | --- |
 | **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（`mirobody import apple export.zip`，或由已签名的 iOS 客户端推送进来） | [`pulse/`](mirobody/pulse/) |
 | **② 转译 Translate**（standardize） | 归到一套标准：任意写法的读数解析成标准编码（LOINC · SNOMED CT · RxNorm），单位统一成 UCUM，用的都是 FHIR 认可的编码体系 | [`indicator/`](mirobody/indicator/) |
-| **③ 智能体 Agent** | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
+| **③ 问答 Agent** | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
 
 ## 用数字说话
 
@@ -165,7 +165,7 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 `export` 传不进去。key 只存在于 `.env`：`config.llm.yaml` 里写的是变量名
 （`api_key: OPENROUTER_API_KEY`），不是密钥本身。
 
-**一把 key 跑通全部，而且和你的硬件无关**：本机不跑模型、不需要 GPU，key 指向的是云端。
+**一把 key 跑通全部，跟你的机器配置无关**：模型在云端，本机不跑推理，不用 GPU。
 哪一把都行：[OpenRouter](https://openrouter.ai/keys)（`OPENROUTER_API_KEY`，推荐）、
 DashScope、Google、[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_API_KEY`）、
 [Anthropic](https://platform.claude.com/settings/keys)（`ANTHROPIC_API_KEY`）、DeepSeek，
@@ -184,7 +184,7 @@ DashScope、Google、[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_AP
        alt="把化验单 PDF 拖到 Data 页；十二个分析物被抽取出来，每一个都链回它的原文件" width="880">
 </p>
 
-**③ 智能体。** 问她的糖化血红蛋白，agent 自己找到数据，把三次化验值和 104 个传感器
+**③ 问答。** 问她的糖化血红蛋白，agent 自己找到数据，把三次化验值和 104 个传感器
 估算值画在一起，然后直说：那次改善没有保持住。再问一遍你刚上传的那份报告，它读的就换成
 那一份——这是[四分钟完整演示](docs/walkthrough.md)的第四幕。
 

@@ -179,8 +179,8 @@ handing over a record. [`examples/06_care_circle_rules.py`](examples/06_care_cir
 prints the whole decision table offline. Set `SEED_DEMO_DATA=false` for a
 deployment that will hold real data.
 
-**One key runs everything, and it is not your hardware.** Nothing runs on your
-GPU; the key points at a hosted model. Browsing the seeded record needs no key; the upload
+**One key runs everything, and none of it is your GPU.** The key points at a
+hosted model; your machine runs no inference. Browsing the seeded record needs no key; the upload
 and the questions below ride one. Put ONE key in the `.env` next to `compose.yaml`
 and `docker compose restart` — the app re-reads `/app/.env`; a shell `export` does
 not reach the containers. The `.env` is the only place for the key:
