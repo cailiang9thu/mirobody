@@ -114,7 +114,24 @@ async def create_schema(config) -> None:
 
     pg_config = config.get_postgresql()
 
-    async with await pg_config.get_async_client(cursor_factory=None) as conn:
+    try:
+        conn_ctx = await pg_config.get_async_client(cursor_factory=None)
+    except Exception as e:
+        # A first run with no Postgres used to end here, in a bare
+        # OperationalError printed BEFORE the config banner: the first thing a
+        # new reader saw was a database traceback. Outside production the
+        # server runs fine without the replay, so it says so and continues.
+        # Production still fails loudly: a real outage must not become a quiet
+        # half-written schema.
+        if is_production(config):
+            raise
+        logger.warning(  # phi: ok a host, a port and a connection error, not a record
+            f"schema bootstrap skipped: Postgres at {pg_config.host}:{pg_config.port} is unreachable ({e}). "
+            "Start it, or set BOOTSTRAP_SCHEMA=false to stop trying."
+        )
+        return
+
+    async with conn_ctx as conn:
         async with conn.cursor() as cur:
             for schema in pg_config.schema.split(","):
                 if schema and isinstance(schema, str) and schema != "public":
