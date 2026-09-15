@@ -26,7 +26,7 @@ deployment must hold its own credentials.
 | Piece | Pure? | Where |
 |---|---|---|
 | **the decode table** | yes | `mirobody/kernel/decoders/<vendor>.py` |
-| **the IO shell** | no | `mirobody/pulse/providers/<vendor>/` |
+| **the IO shell** | no | `mirobody/collect/providers/<vendor>/` |
 | **the samples** | data | `mirobody/kernel/decoders/samples/<vendor>/` |
 | **the coverage** | generated | `decoders.coverage_of("<vendor>")` |
 
@@ -197,7 +197,7 @@ CREATE INDEX idx_health_data_<provider>_msg_id
 ### Directory Structure
 
 ```
-providers/                       # or mirobody/pulse/providers/ for a core provider
+providers/                       # or mirobody/collect/providers/ for a core provider
 └── mirobody_<provider>/
     ├── __init__.py
     └── provider_<provider>.py
@@ -206,7 +206,7 @@ providers/                       # or mirobody/pulse/providers/ for a core provi
 ### Class Hierarchy
 
 ```
-BasePullProvider (from mirobody.pulse.providers.platform.base)
+BasePullProvider (from mirobody.collect.providers.platform.base)
     ↓
 YourProvider (your implementation)
 ```
@@ -226,7 +226,7 @@ YourProvider (your implementation)
 
 Two locations work, and the choice is about ownership rather than mechanism:
 a **custom** provider goes in a root `providers/` directory (nothing in this
-repo to fork), a **core** one in `mirobody/pulse/providers/`. The loader globs
+repo to fork), a **core** one in `mirobody/collect/providers/`. The loader globs
 `mirobody_*/provider_*.py` in both.
 
 ```bash
@@ -239,7 +239,7 @@ The module file name need not match the directory slug — the shipped Garmin
 provider is `mirobody_garmin_connect/provider_garmin.py`. A `mirobody_*/`
 directory with no `provider_*.py` fails `test_installed.py` rather than loading
 nothing silently. See
-[`mirobody/pulse/providers/README.md`](../mirobody/pulse/providers/README.md).
+[`mirobody/collect/providers/README.md`](../mirobody/collect/providers/README.md).
 
 ### Step 2: Define Provider Class
 
@@ -262,20 +262,20 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
 # Core imports
-from mirobody.pulse.base import ProviderInfo
-from mirobody.pulse.core import LinkType, ProviderStatus
-from mirobody.pulse.standardize.indicators_info import StandardIndicator
-from mirobody.pulse.core.push_service import push_service
-from mirobody.pulse.standardize.units import UNIT_CONVERSIONS
-from mirobody.pulse.ingest.models.requests import (
+from mirobody.collect.base import ProviderInfo
+from mirobody.collect.core import LinkType, ProviderStatus
+from mirobody.collect.standardize.indicators_info import StandardIndicator
+from mirobody.collect.core.push_service import push_service
+from mirobody.collect.standardize.units import UNIT_CONVERSIONS
+from mirobody.collect.ingest.models.requests import (
     FormatDataContext,
     FormatDataInput,
     StandardPulseData,
     StandardPulseMetaInfo,
     StandardPulseRecord,
 )
-from mirobody.pulse.providers.platform.base import BasePullProvider
-from mirobody.pulse.providers.platform.normalize import DataFormatter, TimeUtils
+from mirobody.collect.providers.platform.base import BasePullProvider
+from mirobody.collect.providers.platform.normalize import DataFormatter, TimeUtils
 from mirobody.utils import execute_query
 from mirobody.utils.config import safe_read_cfg, global_config
 
@@ -1590,7 +1590,7 @@ Create `test_provider_<provider>.py`:
 
 ```python
 import pytest
-from mirobody.pulse.providers.mirobody_<provider>.provider_<provider> import YourProvider
+from mirobody.collect.providers.mirobody_<provider>.provider_<provider> import YourProvider
 
 @pytest.fixture
 def provider():
@@ -1725,7 +1725,7 @@ async def test_data_pipeline():
 2. **Data Pull**:
    ```python
    # In Python console
-   from mirobody.pulse.providers.mirobody_<provider>.provider_<provider> import YourProvider
+   from mirobody.collect.providers.mirobody_<provider>.provider_<provider> import YourProvider
    
    provider = YourProvider()
    
@@ -2087,15 +2087,15 @@ Common indicators you'll map to:
 ## Support & Resources
 
 - **Example providers** (read these first — they are the real thing, not samples):
-   - Garmin: `mirobody/pulse/providers/mirobody_garmin_connect/provider_garmin.py`
-   - Whoop: `mirobody/pulse/providers/mirobody_whoop/provider_whoop.py`
-   - Oura: `mirobody/pulse/providers/mirobody_oura/provider_oura.py`
-- **Platform internals**: `mirobody/pulse/providers/platform/` — `base.py` is the
+   - Garmin: `mirobody/collect/providers/mirobody_garmin_connect/provider_garmin.py`
+   - Whoop: `mirobody/collect/providers/mirobody_whoop/provider_whoop.py`
+   - Oura: `mirobody/collect/providers/mirobody_oura/provider_oura.py`
+- **Platform internals**: `mirobody/collect/providers/platform/` — `base.py` is the
   contract you implement, `platform.py` does discovery and pull scheduling.
 - **Testing**: `docs/testing.md`. The maintainers' internal suite (not
   published in this repository) additionally snapshots `format_data()` output
   for every shipped provider.
-- **Data contract**: `mirobody/pulse/ingest/models/requests.py` — `StandardPulseData`
+- **Data contract**: `mirobody/collect/ingest/models/requests.py` — `StandardPulseData`
   and friends, the shape every provider must produce.
 
 For questions or assistance, contact the platform team or create an issue in the repository.

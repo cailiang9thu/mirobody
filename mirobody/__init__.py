@@ -16,7 +16,7 @@ application, not a library surface: ``git clone && ./deploy.sh``.
 **What is stable.** The names in ``__all__`` here, plus ``__all__`` in
 :mod:`mirobody.units`, :mod:`mirobody.lexical`, :mod:`mirobody.engine` and
 :mod:`mirobody.bundle`. Everything else: ``mirobody.indicator``,
-``mirobody.pulse``, ``mirobody.server``, ``mirobody.agent``, anything
+``mirobody.collect``, ``mirobody.server``, ``mirobody.agent``, anything
 underscore-prefixed: is internal and moves without notice.
 
 :mod:`mirobody.bundle` is the build-time half of that surface: the axis table

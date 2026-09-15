@@ -4,7 +4,7 @@ Two things are fixed by the rows already written and must not change: the byte
 layout (12-byte nonce ‖ ciphertext ‖ 16-byte tag, then base64) and the key
 handling: the configured `DATABASE_DECRYPTION_KEY` string's UTF-8 bytes ARE the
 AES key (not hex-decoded, despite the parameter name). The one consumer is
-`pulse/providers/platform/database_service.py` (device credentials and OAuth
+`collect/providers/platform/database_service.py` (device credentials and OAuth
 tokens).
 
 Not to be confused with `utils/config/encrypt.py`, which is the Fernet encrypter

@@ -100,15 +100,15 @@ _SERVER_ONLY = [
 # Found the only way this class is ever found — in a clean clone, not in a
 # long-lived venv that has everything.
 _PARSE_ONLY = [
-    "tests/pulse/test_delete_is_deletion.py",
-    "tests/pulse/test_upload_authz.py",
-    "tests/pulse/test_upload_smoke.py",
+    "tests/collect/test_delete_is_deletion.py",
+    "tests/collect/test_upload_authz.py",
+    "tests/collect/test_upload_smoke.py",
     "tests/utils/test_content_type.py",
     "tests/test_one_key_defaults.py",
     "tests/test_readme_numbers.py",
-    "tests/pulse/file_parser/*",
-    "tests/pulse/file_parser/**/*",
-    "tests/pulse/aggregate/*",
+    "tests/collect/file_parser/*",
+    "tests/collect/file_parser/**/*",
+    "tests/collect/aggregate/*",
     "tests/documents/*",
     "tests/documents/**/*",
     "tests/utils/test_prompts.py",

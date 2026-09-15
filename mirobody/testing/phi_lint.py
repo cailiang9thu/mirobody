@@ -274,7 +274,7 @@ def lint_paths(paths: Iterable[Path | str], *, root: Path | None = None) -> tupl
 DEFAULT_TREES: tuple[str, ...] = (
     "mirobody/agent",
     "mirobody/mcp",
-    "mirobody/pulse",
+    "mirobody/collect",
     "mirobody/server",
     "mirobody/task",
     "mirobody/user",

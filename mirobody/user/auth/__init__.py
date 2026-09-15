@@ -15,7 +15,7 @@ lands the answer in an identity record.
 
 Nothing in this subpackage is imported eagerly by `mirobody.user`: `email`
 pulls in mandrill and `oauth_service` reaches the database, both `[app]`-only,
-and `mirobody.pulse` imports `mirobody.user` at engine level. The parent's
+and `mirobody.collect` imports `mirobody.user` at engine level. The parent's
 lazy `__getattr__` is what keeps that honest: see its docstring for the
 install this once broke.
 """

@@ -133,7 +133,7 @@ class FhirAdapter(DomainAdapter):
         over Git LFS. `./deploy.sh` and `scripts/fetch_data.sh` fetch it into
         ``mirobody/res/`` from the release named in ``res/EXTERNAL.tsv``.
 
-        Absent, this raises, and `pulse/query.py` turns that into one warning
+        Absent, this raises, and `collect/query.py` turns that into one warning
         and a lexical answer — the documented degradation, not an outage.
         (This docstring used to say the bin was "~9 MB" and "stays in the
         wheel by default". Both stopped being true and nothing caught it,

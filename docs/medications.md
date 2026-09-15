@@ -246,7 +246,7 @@ medication list as evidence of what was swallowed. And a dose missing from
 The schedule column carries structure only — times, counts, weekdays, dose
 amounts. The person's own words live in the encrypted columns.
 
-`pulse/meds/store.py` implements `MedicationStore` and `DoseLogStore` and asks
+`collect/meds/store.py` implements `MedicationStore` and `DoseLogStore` and asks
 `mirobody.kernel.meds` every question that has an answer there, rather than
 re-deriving one in SQL.
 
@@ -256,5 +256,5 @@ re-deriving one in SQL.
 
 `tests/test_meds.py` — 74 cases across four groups: **G** the grammar, **A**
 adherence, **S** schedule projection and DST, **K** identity and FHIR
-round-trips. `tests/pulse/apple/test_medications.py` — the import path,
+round-trips. `tests/collect/apple/test_medications.py` — the import path,
 against a synthetic sample that ships with the package.

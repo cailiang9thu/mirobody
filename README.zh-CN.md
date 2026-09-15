@@ -85,7 +85,7 @@ resolve("血脂").resolved                                 # False    类别，�
 
 | 阶段 | 含义 | 位置 |
 | --- | --- | --- |
-| **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（`mirobody import apple export.zip`，或由已签名的 iOS 客户端推送进来） | [`pulse/`](mirobody/pulse/) |
+| **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（`mirobody import apple export.zip`，或由已签名的 iOS 客户端推送进来） | [`collect/`](mirobody/collect/) |
 | **② 转译 Translate**（standardize） | 归到一套标准：任意写法的读数解析成标准编码（LOINC · SNOMED CT · RxNorm），单位统一成 UCUM，用的都是 FHIR 认可的编码体系 | [`indicator/`](mirobody/indicator/) |
 | **③ 问答 Agent** | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
 
@@ -206,7 +206,7 @@ DashScope、Google、[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_AP
 | 把 agent 框架当库用 | `pip install 'mirobody[agent]'`——中间件、虚拟文件系统后端、checkpointer | [接入你自己的 agent](CONTRIBUTING.md#-bringing-your-own-agent) |
 | 在 Claude Desktop、Cursor 或你自己的循环里用这些工具 | 设置 → MCP：每个 agent 工具同时通过 `/mcp` 提供，按用户鉴权 | [MCP 服务](https://docs.mirobody.ai/zh/api-reference/mcp-servers/) · [`examples/07_claude_agent_sdk.py`](examples/07_claude_agent_sdk.py) |
 | 你的应用对接一个部署 | HTTP API，或 backbone 模式：你的 agent，我们的数据层 | [API 概览](https://docs.mirobody.ai/zh/api-reference/overview/) · [Backbone](https://docs.mirobody.ai/zh/api-reference/backbone-mode/) |
-| 新工具、新技能或新设备接入 | 把文件放进 `mirobody/agent/tools/`、`mirobody/agent/skills/` 或 `mirobody/pulse/providers/` 然后重启——或者 `pip install` 一个声明了 `mirobody.providers` / `mirobody.tools` / `mirobody.agents` 入口点的包 | [添加工具](https://docs.mirobody.ai/zh/tools/adding-tools/) · [技能](https://docs.mirobody.ai/zh/tools/skills/) · [提供者](https://docs.mirobody.ai/zh/development/provider-integration/) |
+| 新工具、新技能或新设备接入 | 把文件放进 `mirobody/agent/tools/`、`mirobody/agent/skills/` 或 `mirobody/collect/providers/` 然后重启——或者 `pip install` 一个声明了 `mirobody.providers` / `mirobody.tools` / `mirobody.agents` 入口点的包 | [添加工具](https://docs.mirobody.ai/zh/tools/adding-tools/) · [技能](https://docs.mirobody.ai/zh/tools/skills/) · [提供者](https://docs.mirobody.ai/zh/development/provider-integration/) |
 | 换掉整个 agent | `AGENT_DIRS` → 你的目录替换内置 agent | [`mirobody/agent/README.md`](mirobody/agent/README.md) |
 | 构建期拿 LOINC 轴表和别名来源 | `mirobody.bundle`——用来生成种子或语料 | [`mirobody/bundle.py`](mirobody/bundle.py) |
 

@@ -93,8 +93,8 @@ def parse_date_answer(answer: str, today: datetime | None = None) -> tuple[str, 
 async def apply_report_date_answer(user_id: str, file_keys: list[str], answer: str) -> str:
     """File the attachments under the user's answer; return the tool result
     the resumed model reads. Authorization per file, the endpoint's rule."""
-    from mirobody.pulse.file_parser.services.file_db_service import FileDbService
-    from mirobody.pulse.file_parser.services.report_date import set_file_report_date
+    from mirobody.collect.file_parser.services.file_db_service import FileDbService
+    from mirobody.collect.file_parser.services.report_date import set_file_report_date
     from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
     kind, when = parse_date_answer(answer)

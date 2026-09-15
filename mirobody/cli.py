@@ -103,7 +103,7 @@ MCP_TOOL_DIRS:
 AGENT_DIRS:
   - mirobody/agent
 PROVIDER_DIRS:
-  - mirobody/pulse/providers
+  - mirobody/collect/providers
 PROMPTS:
   - agent/prompts/mirobody.jinja
 

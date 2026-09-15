@@ -11,7 +11,7 @@ machine-checked (`lint-imports`, contracts in `pyproject.toml`):
 | Layer | Where | Installs with | May import |
 |---|---|---|---|
 | ② Translate + the kernel (the library) | vocabulary: `engine.py`, `lexical.py`, `units/`, `value_scale.py`, `zh_fold.py`, `_bundle.py`, `_strtab.py`; semantics: **`kernel/`** (`metrics`, `series`, `quality`, `overlay`, `meds`, `query`, `tools`, `ops`, `connect`, `sink`, `events`, `evidence`, `memory`, `vendors/`); toolbox: `testing/` | `pip install mirobody` (numpy only) | each other, nothing else |
-| ① Collect + storage + MCP | `mirobody/documents/`, `pulse/`, `indicator/`, `utils/`, `user/`, `task/`, `mcp/` | `[parse]` / `[app]` | no `langchain*`, `langgraph`, `deepagents` |
+| ① Collect + storage + MCP | `mirobody/documents/`, `collect/`, `indicator/`, `utils/`, `user/`, `task/`, `mcp/` | `[parse]` / `[app]` | no `langchain*`, `langgraph`, `deepagents` |
 | ③ Agent | `mirobody/agent/` (one agent: `MirobodyAgent`, on `deepagents`), `server/` | `[agent]` (the harness as a library) / `[app]` | anything |
 
 There is one agent, and it is not switched at request time. `BaseAgent`,
@@ -74,7 +74,7 @@ wheel in the same venv — otherwise they pass vacuously.
 - **Verify, don't reason.** Before deleting "unused" code compute reachability
   transitively (a sibling may call it). Before repeating a claim from a README,
   run the command.
-- **Every `th_series_data` write goes through `pulse/readings.py`.** Every
+- **Every `th_series_data` write goes through `collect/readings.py`.** Every
   FastAPI router answers with `server/envelope.py`. Every read of a person's
   readings goes through `query.HealthQuery`. Don't add a sixth INSERT, a fourth
   envelope, or a second copy of the query — when there were two, the chat

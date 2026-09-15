@@ -18,17 +18,17 @@ from mirobody.utils.req_ctx import set_req_ctx
 from mirobody.server.auth import verify_token, verify_token_string
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
-from mirobody.pulse.file_parser.file_upload_manager import get_websocket_file_upload_manager
-from mirobody.pulse.file_parser.services.database_services import FileParserDatabaseService
-from mirobody.pulse.file_parser.services.list_my_data import MyDataService
+from mirobody.collect.file_parser.file_upload_manager import get_websocket_file_upload_manager
+from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
+from mirobody.collect.file_parser.services.list_my_data import MyDataService
 
 # Additional imports for async file processing
-from mirobody.pulse.file_parser.services.file_processing_service import (
+from mirobody.collect.file_parser.services.file_processing_service import (
     delete_files_from_message,
     delete_all_files_from_message,
     upload_files_to_storage
 )
-from mirobody.pulse.file_parser.services.file_processing_service import FileUploadData
+from mirobody.collect.file_parser.services.file_processing_service import FileUploadData
 from mirobody.utils.log import secret_fingerprint
 
 logger = logging.getLogger(__name__)

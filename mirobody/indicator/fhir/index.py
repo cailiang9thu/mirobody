@@ -7,7 +7,7 @@ its dozen `_load_*` helpers answer what `FhirAdapter` asks on every semantic
 lookup, and `adapter.py` ships in the wheel. `fhir/embeddings/` does not — it
 is pruned from the artifact, being the passes that MINT what this reads. So a
 `pip install mirobody` shipped an adapter that raised `ModuleNotFoundError` on
-import, and the one caller (`pulse/query.py`) swallowed it and quietly fell
+import, and the one caller (`collect/query.py`) swallowed it and quietly fell
 back to lexical recall.
 
 This is the same split :mod:`mirobody._bundle` records for the tarball: reads

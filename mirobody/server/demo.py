@@ -214,7 +214,7 @@ async def _seed_member_own_data(execute_query, member_id: str, email: str) -> in
     """Give a sign-in account its own thin record. Returns readings written."""
     # Imported here, not at module top: the sibling `_member_series` test runs
     # on a bare `pip install mirobody`, and `pulse.readings` pulls in `utils`.
-    from mirobody.pulse.readings import upsert_readings
+    from mirobody.collect.readings import upsert_readings
 
     rows = _member_series(member_id, email)
     await upsert_readings(rows, on_conflict="update_revive")
@@ -279,7 +279,7 @@ async def seed(member_emails: list[str]) -> None:
 
     # A replay must bring the shared record back whatever a walkthrough did to
     # it: hence "update_revive", not the device-sync "update".
-    from mirobody.pulse.readings import upsert_readings
+    from mirobody.collect.readings import upsert_readings
 
     series = fixture.get("series") or []
     written_count = await upsert_readings([dict(r, user_id=owner_id) for r in series], on_conflict="update_revive")

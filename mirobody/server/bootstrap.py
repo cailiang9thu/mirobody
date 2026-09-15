@@ -169,9 +169,9 @@ async def create_schema(config) -> None:
 
     # The DDL adds the day columns; this fills them on the rows that predate
     # them, so a day-grained read never has to fall back to padding a naive
-    # timestamp a day each way. Idempotent and bounded: see pulse/backfill.py.
+    # timestamp a day each way. Idempotent and bounded: see collect/backfill.py.
     try:
-        from mirobody.pulse.backfill import backfill_day_columns
+        from mirobody.collect.backfill import backfill_day_columns
         await backfill_day_columns()
     except Exception as e:
         # A history that is not backfilled still reads correctly, with

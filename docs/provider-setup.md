@@ -20,7 +20,7 @@ credentials there, or in your `config.{env}.yaml` overlay, which overrides it
 > only from a signed iOS app, on-device, after per-type user consent — there is
 > no web OAuth flow and no server-to-server API. This server *receives* Apple
 > data (`/apple/health`, `/apple/statistics`, `/apple/cda`) from a client that
-> already has it. See [`pulse/apple/`](../mirobody/pulse/apple/README.md).
+> already has it. See [`collect/apple/`](../mirobody/collect/apple/README.md).
 
 ---
 
@@ -113,7 +113,7 @@ Optional, with defaults: `GARMIN_AUTH_URL`, `GARMIN_TOKEN_URL`,
 **1. The provider starts.** Restart and read the boot log:
 
 ```
-Loaded provider from /app/mirobody/pulse/providers/mirobody_oura/provider_oura.py
+Loaded provider from /app/mirobody/collect/providers/mirobody_oura/provider_oura.py
   - provider platform loaded 1 providers
 ```
 
@@ -125,7 +125,7 @@ Provider OuraProvider declined to start (not configured)
 
 Both are INFO. A `Failed to load provider …` at WARNING is a different problem —
 that is an import error, and there is a regression test for it
-(`pulse/providers/test_provider_loading.py`).
+(`collect/providers/test_provider_loading.py`).
 
 **2. It is offered to users.**
 
@@ -177,8 +177,8 @@ scope configured.
 The provider contract is one directory:
 `mirobody_<slug>/provider_<slug>.py`, exporting a `BasePullProvider` subclass
 with `create_provider(config)` returning `None` when unconfigured.
-[`mirobody_whoop/`](../mirobody/pulse/providers/mirobody_whoop/) is the OAuth2
-reference; [`mirobody_oura/`](../mirobody/pulse/providers/mirobody_oura/) is the
+[`mirobody_whoop/`](../mirobody/collect/providers/mirobody_whoop/) is the OAuth2
+reference; [`mirobody_oura/`](../mirobody/collect/providers/mirobody_oura/) is the
 same shape with a different vendor. Full guide: [provider-guide.md](provider-guide.md).
 
 Providers outside the package go in `PROVIDER_DIRS`; those are loaded by file

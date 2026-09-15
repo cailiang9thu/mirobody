@@ -37,7 +37,7 @@ two trees, and a third that is neither:
   member of it turns up in the wheel.
 - `tests/` at the repo root — the maintainers' regression suite, mirroring the
   package (`tests/test_series.py` for `mirobody/kernel/series.py`,
-  `tests/pulse/test_readings.py` for `mirobody/pulse/readings.py`). It is
+  `tests/collect/test_readings.py` for `mirobody/collect/readings.py`). It is
   gitignored, so it is simply absent from a clone, and pytest skips a testpath
   that does not exist.
 - `benchmarks/` — the resolver scoring harness (`run_eval.py`). Not a test
@@ -106,7 +106,7 @@ gate tests compare each vendor's real payload against a recorded
 goes stale at once — that is expected, and the fix is:
 
 ```bash
-pytest tests/pulse/gate_tests --update-snapshots   # maintainers only
+pytest tests/collect/gate_tests --update-snapshots   # maintainers only
 ```
 
 Read the diff before committing it. A stale snapshot and a real regression
@@ -163,7 +163,7 @@ helpers raise.
 snapshot is reviewed before it becomes the baseline. Updating one is explicit:
 
 ```bash
-MIROBODY_UPDATE_GOLDEN=1 pytest tests/pulse/standardize/test_indicators_info.py
+MIROBODY_UPDATE_GOLDEN=1 pytest tests/collect/standardize/test_indicators_info.py
 ```
 
 A behaviour change is then a visible diff in review, never a silent

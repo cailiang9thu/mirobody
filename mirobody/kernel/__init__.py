@@ -1,6 +1,6 @@
 """The kernel: what health data *means*, as pure functions. stdlib + numpy.
 
-A reading travels through the reference application in `pulse/` (collect,
+A reading travels through the reference application in `collect/` (collect,
 store, aggregate) and is answered from `agent/`; this package is the part of
 that path that is not a database or a model call: the rules, and only the
 rules, so any other application can run the same ones. Nothing here opens a
@@ -14,7 +14,7 @@ What a reading passes through, and which module decides each step:
                                                           aggregation policy, canonical unit,
                                                           local-day window (res/metrics.tsv)
     Fact ─────────── quality ──────────▶ admit / reject   only the impossible is rejected,
-                                                          with a reason code (pulse/readings.py)
+                                                          with a reason code (collect/readings.py)
     facts of a day ─ series.aggregate ─▶ one number       deltas summed, spans unioned,
                                                           provider dailies projected
     sources of a day series.elect ────▶ one authority     measurer > echo, coverage, freshness

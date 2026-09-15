@@ -449,7 +449,7 @@ class.
   `prompt.py` (both are text the harness writes for the model), `filetype.py`
   into `filesystem/naming.py`, and `cache_config.py` is gone — four of its five constants
   had no reader. The `HealthQuery` implementation left `agent/tools/`, where
-  every other file is a tool the MCP loader publishes, for `mirobody/pulse/
+  every other file is a tool the MCP loader publishes, for `mirobody/collect/
   query.py`, beside `readings.py`, the one WRITER of the table it reads.
 - **The artifact carries only what an install can run.** Five modules were
   shipping that raise on import from a wheel: `indicator/main.py` (it imports

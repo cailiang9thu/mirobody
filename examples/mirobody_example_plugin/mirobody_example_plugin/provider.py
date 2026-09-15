@@ -1,6 +1,6 @@
 """A device provider from a plugin.
 
-The contract is `mirobody.pulse.providers.platform.base.BasePullProvider`:
+The contract is `mirobody.collect.providers.platform.base.BasePullProvider`:
 `create_provider(config)` returns an instance or None (declining because a
 credential is absent is normal), `format_data(fmt_input)` turns the vendor's
 payload into `StandardPulseData`. This one declines unless
@@ -12,10 +12,10 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from mirobody.pulse.base import ProviderInfo
-from mirobody.pulse.core import LinkType, ProviderStatus
-from mirobody.pulse.ingest.models.requests import FormatDataInput, StandardPulseData
-from mirobody.pulse.providers.platform.base import BasePullProvider
+from mirobody.collect.base import ProviderInfo
+from mirobody.collect.core import LinkType, ProviderStatus
+from mirobody.collect.ingest.models.requests import FormatDataInput, StandardPulseData
+from mirobody.collect.providers.platform.base import BasePullProvider
 
 
 class ExampleProvider(BasePullProvider):

@@ -31,11 +31,11 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from mirobody.pulse.core import LinkType
-from mirobody.pulse.core import ProviderStatus
-from mirobody.pulse.core.user import get_platform_user_service
+from mirobody.collect.core import LinkType
+from mirobody.collect.core import ProviderStatus
+from mirobody.collect.core.user import get_platform_user_service
 # Import platform manager
-from mirobody.pulse.manager import platform_manager
+from mirobody.collect.manager import platform_manager
 from mirobody.server.auth import verify_token, verify_token_optional
 
 logger = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ from mirobody.server.envelope import ErrorResponse, StandardResponse
 
 # Import ConnectInfoField for type hints
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
-from mirobody.pulse.core.models import ConnectInfoField as CoreConnectInfoField
+from mirobody.collect.core.models import ConnectInfoField as CoreConnectInfoField
 
 
 # ProviderInfo model - Unified definition
@@ -904,7 +904,7 @@ async def get_theta_indicators():
     """
     try:
         # Use manage data source but maintain theta filtering logic
-        from mirobody.pulse.standardize import get_all_indicators_info
+        from mirobody.collect.standardize import get_all_indicators_info
 
         # Get complete manage data
         manage_data = get_all_indicators_info()

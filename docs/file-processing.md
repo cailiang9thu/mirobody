@@ -553,7 +553,7 @@ as not found.
 ### Data Storage
 
 Extracted indicator data is stored in the `th_series_data` table. The write goes
-through `pulse/readings.py:upsert_readings(rows, on_conflict="revive_deleted")`
+through `collect/readings.py:upsert_readings(rows, on_conflict="revive_deleted")`
 — the one writer of that table — which means a report re-uploaded after its
 file was deleted revives its own soft-deleted rows, while a collision with a
 live reading leaves the live reading alone:

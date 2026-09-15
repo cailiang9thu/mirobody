@@ -116,7 +116,7 @@ class MedicationsService(RecordTool):
 
     def _stores(self) -> tuple[Any, Any]:
         if self._store is None or self._dose_log is None:
-            from mirobody.pulse.meds import PostgresDoseLogStore, PostgresMedicationStore
+            from mirobody.collect.meds import PostgresDoseLogStore, PostgresMedicationStore
             self._store = self._store or PostgresMedicationStore()
             self._dose_log = self._dose_log or PostgresDoseLogStore()
         return self._store, self._dose_log

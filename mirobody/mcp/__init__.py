@@ -1,8 +1,8 @@
 
 from typing import TYPE_CHECKING
 
-# Lazy (PEP 562), matching `mirobody/pulse/__init__.py`,
-# `mirobody/agent/__init__.py` and `mirobody/pulse/providers/__init__.py`.
+# Lazy (PEP 562), matching `mirobody/collect/__init__.py`,
+# `mirobody/agent/__init__.py` and `mirobody/collect/providers/__init__.py`.
 # Importing `mirobody.mcp.tool` ran this __init__, which imported `.service`
 # and with it psycopg_pool and redis. Generating a tool's JSON Schema needs
 # neither; only serving it over HTTP does. Every `from mirobody.mcp import X`

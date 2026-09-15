@@ -31,7 +31,7 @@ import logging
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from mirobody.pulse.query import REST_CATALOG_MAX, PostgresHealthQuery
+from mirobody.collect.query import REST_CATALOG_MAX, PostgresHealthQuery
 from mirobody.agent.tools._render import render_rest
 from mirobody.agent.tools.health_indicators_service import HealthIndicatorsService
 from mirobody.utils import execute_query
@@ -196,9 +196,9 @@ async def patch_file_date(patch: FileDatePatch, user_id: str = Depends(verify_to
     has a row on the target date staying put and being counted as `skipped`) 
     is `services.report_date.set_file_report_date`, shared with the agent tool.
     """
-    from mirobody.pulse.file_parser.services.db_utils import parse_date
-    from mirobody.pulse.file_parser.services.file_db_service import FileDbService
-    from mirobody.pulse.file_parser.services.report_date import set_file_report_date
+    from mirobody.collect.file_parser.services.db_utils import parse_date
+    from mirobody.collect.file_parser.services.file_db_service import FileDbService
+    from mirobody.collect.file_parser.services.report_date import set_file_report_date
 
     row = await FileDbService.get_file_by_key(patch.file_key)
     if not row:

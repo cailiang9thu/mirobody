@@ -49,7 +49,7 @@ _RENAMED_KEYS = {
     "DISALLOWED_TOOLS_DEEP": "DISALLOWED_TOOLS",
     "DEFAULT_PROVIDER_DEEP": "DEFAULT_MODEL",
     # 1.4.1: in this project a "provider" is a device or data source
-    # (PROVIDER_DIRS, mirobody/pulse/providers); the model table is MODELS.
+    # (PROVIDER_DIRS, mirobody/collect/providers); the model table is MODELS.
     "PROVIDERS": "MODELS",
     "DEFAULT_PROVIDER": "DEFAULT_MODEL",
     "EMBEDDING_PROVIDER": "UTILS_EMBEDDING_MODEL",
@@ -961,7 +961,7 @@ def global_config() -> Config | None:
 
     Took `*args, **kargs` and discarded them. That is not harmless: callers
     reasonably read `global_config(path)` as "load this config file", and one
-    did: `pulse/setup.py` threaded a `config_file_path` parameter down from its
+    did: `collect/setup.py` threaded a `config_file_path` parameter down from its
     public signature into this call, where it evaporated. Accepting arguments
     you ignore turns a wrong call into a silent no-op instead of a TypeError.
     """

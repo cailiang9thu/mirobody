@@ -60,7 +60,7 @@ Next day     00:00:00 → value=999  (should be excluded)
 > **Which indicators get this window changed in 1.4.0.** It was
 > `LOWER(indicator) LIKE '%sleep%'`; it is now the catalogue's own
 > `metrics.METRICS[name].window`, generated into the SQL by
-> `pulse/aggregate/windows.py`. The predicate matched 58 `daily…Sleep…`
+> `collect/aggregate/windows.py`. The predicate matched 58 `daily…Sleep…`
 > metrics that are `provider_daily` — a vendor's own figure, already dated —
 > and re-anchoring those moved every one of them a day; and it missed
 > `napDuration`, which is a real interval belonging to the night. A test that
@@ -125,10 +125,10 @@ Insert 10 records: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
 ```bash
 # Against a running stack
-docker compose exec mirobody python3 -m mirobody.pulse.aggregate.test_aggregator
+docker compose exec mirobody python3 -m mirobody.collect.aggregate.test_aggregator
 
 # Or on the host, from the repo root
-python3 -m mirobody.pulse.aggregate.test_aggregator
+python3 -m mirobody.collect.aggregate.test_aggregator
 ```
 
 This is an integration script with its own `main()`, not a pytest module —
@@ -139,7 +139,7 @@ in this repository.
 ### Method 2: Run as Python Script
 
 ```bash
-docker compose exec mirobody python3 /app/mirobody/pulse/aggregate/test_aggregator.py
+docker compose exec mirobody python3 /app/mirobody/collect/aggregate/test_aggregator.py
 ```
 
 ## Test Flow
@@ -309,7 +309,7 @@ async def test_new_scenario(self):
 
 ## Related Documentation
 
-- [Aggregate Indicator README](../mirobody/pulse/aggregate/README.md)
+- [Aggregate Indicator README](../mirobody/collect/aggregate/README.md)
 - [Testing Guide](testing.md)
 
 
