@@ -1,6 +1,6 @@
 # Repository layout
 
-Where each of the three stages — ① Collect, ② Translate (standardize), ③ Answer (agent) — lives,
+Where each of the three stages — ① Collect, ② Translate (standardize), ③ Agent — lives,
 and the two forms the code ships in. Moved here from the README in 1.4.1; the
 README keeps the one-line map.
 
@@ -19,7 +19,7 @@ mirobody/
 ├── documents/   a file becomes text, by kind — PDF text layer, OCR for scanned pages only, Office, text   [parse]
 ├── pulse/       ① Collect     — providers, file parsing, store, aggregate, read (Postgres)
 ├── indicator/   ② Translate (standardize) — resolver internals, concept graph, bundle build
-├── agent/       ③ Answer (agent)     — the agent: models/ fs/ wire/ middleware/ tools/ chat/
+├── agent/       ③ Agent               — the agent: models/ fs/ wire/ middleware/ tools/ chat/
 ├── mcp/         the MCP server
 ├── server/      the HTTP application — routers, auth, the bundled web client
 ├── utils/       mechanisms a consumer binds: config, db, sse, net, llm_output, prompts, log

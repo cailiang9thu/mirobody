@@ -45,7 +45,7 @@ Short, and about *that package only*:
 
 - [`mirobody/pulse/`](../mirobody/pulse/README.md) — ① Collect
 - [`mirobody/indicator/`](../mirobody/indicator/README.md) — ② Translate (standardize)
-- [`mirobody/agent/`](../mirobody/agent/README.md) — ③ Answer (agent)
+- [`mirobody/agent/`](../mirobody/agent/README.md) — ③ Agent
 - [`mirobody/agent/tools/`](../mirobody/agent/tools/README.md) — the MCP tool surface
 - [`mirobody/pulse/apple/`](../mirobody/pulse/apple/README.md) — Apple Health import
 - [`mirobody/pulse/aggregate/`](../mirobody/pulse/aggregate/README.md) — daily rollups

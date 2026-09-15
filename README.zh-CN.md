@@ -2,7 +2,7 @@
 
 # Mirobody
 
-**AI 原生的健康数据引擎 —— 收集 · 转译 · 回答（Collect · Translate · Answer）。**
+**AI 原生的健康数据引擎 —— 收集 · 转译 · 智能体（Collect · Translate · Agent）。**
 
 一份报告写"谷丙转氨酶"，另一份写"ALT"，第三份写"丙氨酸氨基转移酶"——同一项指标，换一家
 医院就换一种写法，单位也未必一致。Mirobody 把体检报告、穿戴设备和基因数据都落到同一套
@@ -75,7 +75,7 @@ resolve("血脂").resolved                                 # False    类别，�
   不是模型。** 你只需要一把 API key 接到云端模型，本机不跑推理。这里说的"离线"指的是
   解析器——名称到编码，不联网、不用 key——不是在本地跑大模型。
 
-## 收集 · 转译 · 回答
+## 收集 · 转译 · 智能体
 
 <p align="center">
   <img src="docs/images/where-your-data-comes-from.zh-CN.svg" alt="从穿戴设备到饭菜照片 —— 一种标准格式，AI 可直接读取。" width="920">
@@ -87,7 +87,7 @@ resolve("血脂").resolved                                 # False    类别，�
 | --- | --- | --- |
 | **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（`mirobody import apple export.zip`，或由已签名的 iOS 客户端推送进来） | [`pulse/`](mirobody/pulse/) |
 | **② 转译 Translate**（standardize） | 归到一套标准：任意写法的读数解析成标准编码（LOINC · SNOMED CT · RxNorm），单位统一成 UCUM，用的都是 FHIR 认可的编码体系 | [`indicator/`](mirobody/indicator/) |
-| **③ 回答 Answer**（agent） | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
+| **③ 智能体 Agent** | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
 
 ## 用数字说话
 
@@ -184,7 +184,7 @@ DashScope、Google、[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_AP
        alt="把化验单 PDF 拖到 Data 页；十二个分析物被抽取出来，每一个都链回它的原文件" width="880">
 </p>
 
-**③ 回答（agent）。** 问她的糖化血红蛋白，agent 自己找到数据，把三次化验值和 104 个传感器
+**③ 智能体。** 问她的糖化血红蛋白，agent 自己找到数据，把三次化验值和 104 个传感器
 估算值画在一起，然后直说：那次改善没有保持住。再问一遍你刚上传的那份报告，它读的就换成
 那一份——这是[四分钟完整演示](docs/walkthrough.md)的第四幕。
 

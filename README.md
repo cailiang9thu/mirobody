@@ -2,7 +2,7 @@
 
 # Mirobody
 
-**The AI-native health data engine — Collect · Translate · Answer.**
+**The AI-native health data engine — Collect · Translate · Agent.**
 
 One lab prints `A1c`, the next `HbA1c`, a third `hemoglobin A1c` — one test,
 three spellings, and that is before the units disagree. Mirobody turns lab
@@ -81,7 +81,7 @@ look; `method="refused"` is a decision.
   your machine. "Offline" here means the resolver — name to code, with no network
   and no key — not a local LLM.
 
-## Collect · Translate · Answer
+## Collect · Translate · Agent
 
 <p align="center">
   <img src="docs/images/where-your-data-comes-from.svg" alt="From wearables to food photos — one standard format, ready for AI." width="920">
@@ -94,7 +94,7 @@ The engine does three things, and the codebase, the docs and
 | --- | --- | --- |
 | **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (`mirobody import apple export.zip`, or a signed iOS client POSTs it in) | [`pulse/`](mirobody/pulse/) |
 | **② Translate** (standardize) | One standard: resolve any reading to canonical codes (LOINC · SNOMED CT · RxNorm), normalize units to UCUM, land on FHIR-recognized code systems | [`indicator/`](mirobody/indicator/) |
-| **③ Answer** (agent) | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
+| **③ Agent** | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
 
 ## By the numbers
 
@@ -205,7 +205,7 @@ linking back to the page it was read from:
        alt="Dropping a lab-report PDF on the Data page; twelve analytes extracted, each linked to its source file" width="880">
 </p>
 
-**③ Answer (agent).** Ask about her HbA1c and the agent finds the data, charts
+**③ Agent.** Ask about her HbA1c and the agent finds the data, charts
 the three lab draws against 104 sensor-derived estimates, and says plainly that
 the improvement did not hold. Ask again about the report you just uploaded and it
 reads that instead — the fourth scene of

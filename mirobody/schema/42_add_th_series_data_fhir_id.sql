@@ -1,5 +1,5 @@
 -- th_series_data.fhir_id — the reading's terminology identity, and the only
--- part of ② Standardize that reaches a user: `JOIN fhir_indicators fi ON
+-- part of ② Translate that reaches a user: `JOIN fhir_indicators fi ON
 -- tsd.fhir_id = fi.id` is what lets `_coding_for`
 -- (agent/tools/health_indicator_service.py) hand the model a {system, code} per
 -- indicator. Filled on ingest from the FhirMapping cache (upload_health.py,
