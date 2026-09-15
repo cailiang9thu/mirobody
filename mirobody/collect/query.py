@@ -41,7 +41,9 @@ elected, `measured` when it was not.
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta
+from functools import lru_cache
 from typing import Any
 
 from mirobody.kernel import metrics, query, series
@@ -390,24 +392,34 @@ class PostgresHealthQuery:
     async def _coding_for(self, subject_id: str, names: list[str]) -> dict[str, dict]:
         """indicator → `{system, code}`: the terminology identity, which is
         what makes two differently-named results comparable. It used to be
-        computed by the search pipeline and dropped before the model saw it."""
+        computed by the search pipeline and dropped before the model saw it.
+
+        The registry join is first and `_identity` answers the rest, the same
+        funnel `_catalog_row` runs. Two copies of this question is how the same
+        indicator carried a code in a keyword search and none in the catalogue
+        listing."""
         if not names:
             return {}
         rows = await execute_query(
-            "SELECT DISTINCT tsd.indicator, fi.indicator_standard AS system, fi.code"
-            "  FROM th_series_data tsd JOIN fhir_indicators fi ON tsd.fhir_id = fi.id"
-            " WHERE tsd.user_id = :uid AND tsd.deleted = 0 AND tsd.indicator = ANY(:names)",
+            "SELECT tsd.indicator,"
+            "       MAX(fi.indicator_standard) AS system, MAX(fi.code) AS code,"
+            "       (ARRAY_AGG(tsd.value ORDER BY tsd.start_time DESC))[1] AS latest_value,"
+            "       (ARRAY_AGG(tsd.fhir_mapping_info ->> 'unit' ORDER BY tsd.start_time DESC))[1] AS unit"
+            "  FROM th_series_data tsd"
+            "  LEFT JOIN fhir_indicators fi ON tsd.fhir_id = fi.id"
+            " WHERE tsd.user_id = :uid AND tsd.deleted = 0 AND tsd.indicator = ANY(:names)"
+            " GROUP BY tsd.indicator",
             {"uid": str(subject_id), "names": names},
             log_sql=False,
         ) or []
-        out = {r["indicator"]: {"system": r["system"] or "", "code": r["code"] or ""} for r in rows}
-        # The catalogue answers for anything the store could not: a metric with
-        # a public LOINC gets it, everything else gets this project's own
-        # namespace rather than an empty identity.
+        seen = {r["indicator"]: r for r in rows}
+        out: dict[str, dict] = {}
         for name in names:
-            if not (out.get(name) or {}).get("code"):
-                system, code = metrics.canonical(name)
-                out[name] = {"system": system, "code": code}
+            r = seen.get(name) or {}
+            system, code = r.get("system") or "", r.get("code") or ""
+            if not code:
+                system, code = _identity(name, r.get("latest_value"), r.get("unit"))
+            out[name] = {"system": system, "code": code}
         return out
 
     async def _subday_buckets(
@@ -521,11 +533,78 @@ def _date_of(ms: int, tz: str):
     return datetime.fromtimestamp(ms / 1000, series.zone(tz)).date()
 
 
+#: A value that opens with a magnitude. Leading rather than whole, because the
+#: value column often carries the unit inline ("3.9 mmol/L").
+_LEADING_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+
+
+def _is_measured(value: Any, unit: Any) -> bool:
+    """Whether a row is a MEASUREMENT, the only thing whose name may be
+    resolved to a code.
+
+    A checkup report prints findings beside analytes, and the resolver answers
+    on the NAME: `Abdomen` came back 11947-9 (abdominal circumference by US)
+    and `Ear` 8333-7 (tympanic membrane temperature), both confident, both
+    section headings, and downstream indistinguishable from a real code. So the
+    evidence comes from the value. `Negative`, `未见异常` and `Normal` carry
+    none; `38.1`, `17 U/L` and `120/80` all do.
+    """
+    return bool(str(unit or "").strip() or _LEADING_NUMBER.match(str(value or "").strip()))
+
+
+def _identity(name: str, value: Any = "", unit: Any = "") -> tuple[str, str]:
+    """`(system, code)` for one indicator, strongest signal first: the
+    catalogue, then the offline resolver, then this project's own namespace.
+
+    The catalogue is keyed on catalogue names (`SerumIron-SI`), so an analyte
+    off a lab report, which is free text an extractor wrote
+    (`Alanine Aminotransferase (ALT)`), never matches it and used to land in
+    the device namespace with no code at all.
+
+    The unit goes to the resolver rather than the name alone because LOINC
+    codes it into the identity: total cholesterol is 2093-3 in mg/dL and
+    14647-2 in mmol/L. Only `method == "lexical"` is accepted, per the contract
+    on `engine.Resolution.method`: semantic recall cannot abstain, so it must
+    never supply an identity.
+    """
+    metric = metrics.METRICS.get(name)
+    if metric:
+        return metric.canonical
+    if _is_measured(value, unit):
+        code = _resolved_code(name, str(value or ""), str(unit or ""))
+        if code:
+            return (metrics.SYSTEM_LOINC, code)
+    return (metrics.SYSTEM_DEVICE, name)
+
+
+@lru_cache(maxsize=8192)
+def _resolved_code(name: str, value: str, unit: str) -> str:
+    """The resolver's answer, or `""`. Cached because a catalogue listing
+    resolves every name a person has on every request: 2,000 distinct names
+    cost 36ms cold and 0.3ms on the next call. The bundle is static per
+    process, so a cached answer cannot go stale.
+    """
+    try:
+        from mirobody.engine import resolve_reading
+
+        hit = resolve_reading(name, value or None, unit or None)
+    except Exception as e:
+        # No resolver data (the bundle absent): the catalogue tier already ran,
+        # this one simply contributes nothing.
+        logger.warning("offline resolver unavailable for identity: error_type=%s", type(e).__name__)
+        return ""
+    return hit.loinc if hit.loinc and hit.method == "lexical" else ""
+
+
 def _catalog_row(r: dict) -> dict:
+    name = r.get("indicator") or ""
+    system, code = r.get("system") or "", r.get("code") or ""
+    if not code:
+        system, code = _identity(name, r.get("latest_value"), r.get("unit"))
     return {
-        "indicator": r.get("indicator") or "",
-        "system": r.get("system") or "",
-        "code": r.get("code") or "",
+        "indicator": name,
+        "system": system,
+        "code": code,
         "count": int(r.get("count") or 0),
         "unit": r.get("unit") or "",
         "latest_value": _text(r.get("latest_value")),

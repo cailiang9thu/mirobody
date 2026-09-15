@@ -270,7 +270,11 @@ class FileParserDatabaseService:
                     logger.warning(f"Failed to build comment JSON for indicator {original_indicator}: {str(e)}")
                     comment_json = ""
                 
-                # Build th_series_data parameters
+                # Build th_series_data parameters. `comment` is encrypted, so
+                # the read side cannot select out of it: the unit goes in
+                # `fhir_mapping_info` as well, the column every read path
+                # actually reads it from (`fhir_mapping_info ->> 'unit'`), and
+                # the one the device path has always written.
                 db_params.append(
                     {
                         "user_id": str(user_id),
@@ -281,6 +285,7 @@ class FileParserDatabaseService:
                         "source_table": source_table,
                         "source_table_id": source_table_id,
                         "comment": comment_json,
+                        "fhir_mapping_info": json.dumps({"unit": indicator.get("unit", "")}),
                     }
                 )
 
