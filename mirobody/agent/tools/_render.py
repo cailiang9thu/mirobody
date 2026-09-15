@@ -27,12 +27,17 @@ MAX_RENDER_CHARS = 40_000
 #: Columns each method renders, in order. Anything not listed never reaches the
 #: model: `row_id` is for the web client's edit button, `total` and `day_known`
 #: are bookkeeping, `provenance` rides in the envelope.
+#: `system`/`code` ride on every method that prints a VALUE: withheld, the model
+#: filled them in from memory and gave 1558-6, the [Mass/volume] glucose code,
+#: for a value it had just printed as 5.4 mmol/L. Both, never one: a
+#: device-namespace row carries the indicator's own name in `code`.
 _COLUMNS: dict[str, tuple[str, ...]] = {
     "catalog": ("indicator", "system", "code", "count", "first_date", "last_date"),
-    "readings": ("indicator", "time", "value", "unit", "file_key"),
-    "buckets": ("indicator", "period", "avg", "min", "max", "n", "unit"),
-    "stats": ("indicator", "count", "min", "max", "avg", "first", "first_date", "last", "last_date", "change", "unit"),
-    "latest": ("indicator", "date", "time", "value", "unit"),
+    "readings": ("indicator", "time", "value", "unit", "system", "code", "file_key"),
+    "buckets": ("indicator", "period", "avg", "min", "max", "n", "unit", "system", "code"),
+    "stats": ("indicator", "count", "min", "max", "avg", "first", "first_date", "last", "last_date",
+              "change", "unit", "system", "code"),
+    "latest": ("indicator", "date", "time", "value", "unit", "system", "code"),
 }
 
 
