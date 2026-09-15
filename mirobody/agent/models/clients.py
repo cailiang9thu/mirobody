@@ -54,7 +54,7 @@ from collections.abc import Callable
 from typing import Any
 
 from mirobody.utils.config import safe_read_cfg
-from mirobody.utils.config.llm import vertex_host
+from mirobody.utils.config.llm import vertex_host, vertex_location
 
 logger = logging.getLogger(__name__)
 
@@ -442,6 +442,11 @@ def _openai_kwargs(alias: str, entry: dict, thinking: str | None, resolve: Resol
     if auth == "azure_wif":
         kwargs.update(_azure_wif_kwargs(alias, base_url))
     elif auth == "gcp_adc":
+        # On this family the two keys are inputs to endpoint derivation, not
+        # request parameters. Left in kwargs, langchain-openai moves them to
+        # `model_kwargs` and posts them in the body of every call. (#75)
+        for field in ("project", "location"):
+            kwargs.pop(field, None)
         kwargs.update(_vertex_maas_kwargs(alias, entry, base_url, resolve))
     else:
         key = _resolve_key(alias, entry, resolve)
@@ -531,7 +536,7 @@ def _vertex_maas_kwargs(alias: str, entry: dict, base_url: Any, resolve: Resolve
         project = _resolve_ref(entry.get("project"), resolve)
         if not project:
             raise RuntimeError(f"provider {alias!r}: auth_type gcp_adc needs a resolvable project (or a base_url)")
-        location = str(_resolve_ref(entry.get("location"), resolve) or "global")
+        location = vertex_location(str(_resolve_ref(entry.get("location"), resolve) or ""))
         endpoint = (f"https://{vertex_host(location)}/v1"
                     f"/projects/{project}/locations/{location}/endpoints/openapi")
     return {"base_url": endpoint, "api_key": _gcp_access_token_provider()}

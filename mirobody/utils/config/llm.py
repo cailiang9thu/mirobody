@@ -134,6 +134,18 @@ _NOT_OPENAI_CLIENT = ("gemini", "anthropic")
 _VERTEX_MULTI_REGIONS = frozenset({"us", "eu"})
 
 
+def vertex_location(location: str) -> str:
+    """The canonical spelling of a Vertex location: stripped, lowercased, and
+    `global` when nothing is named.
+
+    Exists so a caller that needs the location in a URL PATH as well as in the
+    hostname normalises once and uses that value twice. `location: " US "`
+    otherwise built the right host and the path `/locations/ US /`, a 404 that
+    names nothing. (#75)
+    """
+    return (location or "").strip().lower() or "global"
+
+
 def vertex_host(location: str) -> str:
     """The `aiplatform` hostname for a Vertex location. THREE shapes, not two.
 
@@ -148,8 +160,8 @@ def vertex_host(location: str) -> str:
     silently: `us-aiplatform.googleapis.com` is not a host, so the failure is a
     name that does not resolve rather than an error naming the cause. (#73)
     """
-    loc = (location or "").strip().lower()
-    if not loc or loc == "global":
+    loc = vertex_location(location)
+    if loc == "global":
         return "aiplatform.googleapis.com"
     if loc in _VERTEX_MULTI_REGIONS:
         return f"aiplatform.{loc}.rep.googleapis.com"
@@ -593,9 +605,10 @@ class LLMConfig:
         elif provider == LLMProvider.VERTEX_AI and not base_url:
             # `vertex_host` rather than a `<loc>-` f-string: this one also got
             # `global` wrong, building `global-aiplatform.googleapis.com`.
+            loc = vertex_location(gcp_location)
             self.base_url = (
-                f"https://{vertex_host(gcp_location)}/v1"
-                f"/projects/{gcp_project}/locations/{gcp_location or 'global'}"
+                f"https://{vertex_host(loc)}/v1"
+                f"/projects/{gcp_project}/locations/{loc}"
             )
 
         self._client: Any = None
