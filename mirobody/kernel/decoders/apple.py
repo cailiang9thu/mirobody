@@ -170,4 +170,10 @@ def decode(
     converted = _to_catalogue(metric, v, str(item.get("unit") or ""))
     if converted is None:
         return []
-    return [fact(metric, float(converted), start, end, **common)]
+    #: Apple writes a blood pressure as two separate records. They are one
+    #: measurement when they share a start and a source, which is what a cuff
+    #: produces, so the panel is derived rather than carried.
+    panel = ""
+    if metric in ("systolicPressures", "diastolicPressures"):
+        panel = f"blood_pressure:{start}:{item.get('sourceName') or ''}"
+    return [fact(metric, float(converted), start, end, panel_id=panel, **common)]

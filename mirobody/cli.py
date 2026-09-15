@@ -309,6 +309,70 @@ def _cmd_parse(args: argparse.Namespace) -> None:
     print(f"\n{len(readings)} readings · {n_res} resolved to standard codes · offline lexical index")
 
 
+def _cmd_import(args: argparse.Namespace) -> None:
+    """Read a vendor's own export file into standardized readings.
+
+    No database, no server, no key, no extra: `zipfile`, `xml.etree` and the
+    decode tables are all stdlib or this package, so a bare `pip install
+    mirobody` can read an export. That is the point. A deployment that wants
+    live sync still registers a developer app with the vendor; a person who
+    wants their own data out of their own phone does not.
+    """
+    import json
+    from datetime import datetime
+
+    from mirobody.kernel import decoders
+    from mirobody.kernel.decoders import apple_export
+
+    if not os.path.exists(args.file):
+        sys.exit(f"mirobody import: no such file: {args.file}")
+
+    counts = apple_export.Counts()
+    seen: dict[str, list[float]] = {}
+    span: list[int] = []
+    unknown: dict[str, int] = {}
+    out = open(args.out, "w", encoding="utf-8") if args.out else None
+    try:
+        for kind, item in apple_export.iter_items(args.file, counts):
+            facts = decoders.decode("apple", kind, item, args.tz)
+            if not facts:
+                if kind:
+                    unknown[kind] = unknown.get(kind, 0) + 1
+                continue
+            for f in facts:
+                seen.setdefault(f.metric_key, []).append(f.value_num or 0.0)
+                span.append(f.effective_start_ms)
+                if out:
+                    out.write(json.dumps(f.__dict__, ensure_ascii=False) + "\n")
+    except (OSError, FileNotFoundError) as e:
+        sys.exit(f"mirobody import: {e}")
+    finally:
+        if out:
+            out.close()
+
+    if not seen:
+        print(f"Read {counts.records} records; none of them decoded to a known indicator.")
+        return
+    for metric in sorted(seen):
+        values = seen[metric]
+        print(f"  {metric:<36.36s}  {len(values):>7} readings   {min(values):g} … {max(values):g}")
+    days = ""
+    if span:
+        first = datetime.fromtimestamp(min(span) / 1000).date()
+        last = datetime.fromtimestamp(max(span) / 1000).date()
+        days = f" · {first} … {last}"
+    print(f"\n{sum(len(v) for v in seen.values())} readings · {len(seen)} indicators{days}")
+    if unknown:
+        total = sum(unknown.values())
+        names = ", ".join(sorted(unknown)[:3])
+        more = f" and {len(unknown) - 3} more" if len(unknown) > 3 else ""
+        print(f"{total} records skipped: {names}{more}. Nothing was dropped in silence.")
+    if counts.clinical_files:
+        print(f"{counts.clinical_files} clinical records are in this export; this release does not read them.")
+    if args.out:
+        print(f"Facts written to {args.out}")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="mirobody",
@@ -344,6 +408,16 @@ def main(argv: list[str] | None = None) -> None:
     p_parse.add_argument("file", help="path to a lab report (pdf/png/jpg/txt/csv)")
     p_parse.add_argument("--no-resolve", action="store_true", help="skip offline code resolution")
     p_parse.set_defaults(func=_cmd_parse)
+
+    p_import = sub.add_parser(
+        "import",
+        help="read a vendor export file (Apple Health export.zip) — no key, no database, no extra",
+    )
+    p_import.add_argument("vendor", choices=["apple"], help="which vendor's export this is")
+    p_import.add_argument("file", help="path to export.zip, export.xml, or the unpacked directory")
+    p_import.add_argument("--tz", default="UTC", help="fallback timezone; Apple records carry their own offset")
+    p_import.add_argument("--out", default="", help="write decoded facts to this file as JSON lines")
+    p_import.set_defaults(func=_cmd_import)
 
     p_resolve = sub.add_parser("resolve", help="resolve indicator names to standard codes — fully offline, no key needed")
     p_resolve.add_argument("terms", nargs="+", help="indicator names in any supported language")
