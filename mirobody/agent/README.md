@@ -16,7 +16,7 @@ What a turn has:
 | memory | [`checkpointer.py`](./checkpointer.py) | LangGraph Postgres checkpointer, `thread_id = session_id` |
 | governance | [`middleware/`](./middleware/) | fault containment, retry refusal keyed on the envelope, prompt caching; plus the model-call and tool-call budgets |
 | one question | [`hitl.py`](./hitl.py) | `ask_user`, the human-in-the-loop interrupt (never an MCP tool) |
-| prompt | [`prompts/mirobody.jinja`](./prompts/mirobody.jinja), [`prompt.py`](./prompt.py) | names only tools the harness provides — `tests/test_prompts.py` fails otherwise |
+| prompt | [`prompts/mirobody.jinja`](./prompts/mirobody.jinja), [`prompt.py`](./prompt.py) | names only tools the harness provides — the local suite fails otherwise |
 | skills | [`skills/`](./skills/) | Agent Skills, mounted read-only at `/skills/` |
 | wire | [`wire/`](./wire/), [`chat/`](./chat/) | LangGraph events → the chunk dicts below; sessions, messages, SSE |
 

@@ -802,8 +802,8 @@ finding nobody here will act on.
 echoes the agent back; BaseAgent honoured `PROMPTS_BASE` (BaseAgent has since
 been removed — `MirobodyAgent` is the one agent, see CHANGELOG 1.4.0); a user
 prompt is appended to the agent's own prompt instead of replacing it. Behaviour verified
-against the running deployment, and pinned by
-`tests/agent/test_prompt_resolution.py`. The prompt-selection design question
+against the running deployment, and pinned by the local suite. The
+prompt-selection design question
 they exposed — that a prompt belongs to an agent and should not be a
 user-facing axis at all — was resolved on the client side: the shipped web
 client no longer offers a prompt picker.

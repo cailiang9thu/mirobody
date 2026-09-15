@@ -228,6 +228,5 @@ in this pipeline decides whether a number is good news.
 9. Every answer states which window semantics produced it.
 10. A log line carries ids, counts, durations, status codes and type names — never a value.
 
-Each one is a test. `tests/test_series.py`, `tests/test_quality.py`,
-`tests/test_metrics.py`, `tests/collect/test_readings.py`, `tests/collect/aggregate/test_election.py`,
-`tests/test_decoders.py`, `tests/test_phi_baseline.py`.
+Each one is a test in the maintainers' local suite, one module per subject:
+series, quality, metrics, readings, election, decoders and the PHI baseline.

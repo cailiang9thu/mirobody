@@ -254,7 +254,7 @@ re-deriving one in SQL.
 
 ## Golden tests
 
-`tests/test_meds.py` — 74 cases across four groups: **G** the grammar, **A**
+The local suite holds 74 cases across four groups: **G** the grammar, **A**
 adherence, **S** schedule projection and DST, **K** identity and FHIR
-round-trips. `tests/collect/apple/test_medications.py` — the import path,
-against a synthetic sample that ships with the package.
+round-trips, plus the Apple import path against a synthetic sample that ships
+with the package.

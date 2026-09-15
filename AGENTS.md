@@ -22,7 +22,7 @@ pointing `AGENT_DIRS` at its own directory (`agent/registry.py`). External
 clients get the engine through `mirobody/mcp/` (six tools: `resolve_indicator`,
 `convert_unit`, `normalize_unit`, `query_health_indicators`, `query_medications`,
 `query_genetic_data`) —
-and that list is asserted exactly, in `tests/agent/test_tool_surface.py`.
+and that list is asserted exactly by the local suite.
 The agent's config keys are `MODELS`, `PROMPTS`, `ALLOWED_TOOLS`,
 `DISALLOWED_TOOLS`, `DEFAULT_MODEL`, `AGENT_NAME` — no suffix, and no "provider"
 (in this project a provider is a device; `PROVIDERS` was the 1.4.0 spelling).
@@ -47,8 +47,8 @@ running the minimal suite while reporting the full one. If a doc says `[agents]`
 ```bash
 ruff check mirobody examples   # rule set in pyproject.toml; 0 findings on main
 python -m compileall -q mirobody
-pytest -q               # 305 tests on a clone with [app,test]; 189 (+16 skipped)
-                        # on [test] alone, fewer by design, and the header says which
+pytest -q               # 33 in a clone: the shipped resolver benchmark, which
+                        # needs no extras. The regression suite is gitignored
 lint-imports            # 4 contracts, must say "0 broken"
 python3 -c "import mirobody.kernel.meds, mirobody.kernel.query"   # the library layer, bare interpreter
 ```
@@ -85,8 +85,7 @@ wheel in the same venv — otherwise they pass vacuously.
   nothing else — and it must not contain a `test_*.py` (a test inside the
   package drags pytest into the library layer).
 - **Logs carry ids, counts, durations, status codes and type names. Never a
-  value.** `tests/test_phi_baseline.py` fails on anything new; the baseline
-  may only shrink. An indicator NAME is not a value but it is still the answer
+  value.** The local PHI baseline fails on anything new; it may only shrink. An indicator NAME is not a value but it is still the answer
   to "what was measured", so it does not go in either. In a broad `except`,
   `exc_info=not is_driver_exception(e)` — a driver's message quotes the SQL
   with its bound parameters.

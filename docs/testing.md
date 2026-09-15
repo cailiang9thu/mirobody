@@ -35,11 +35,11 @@ two trees, and a third that is neither:
   It ships in the repository and is what `pytest mirobody` runs in a clone; the
   build prunes the directory, and `scripts/check_wheel_data.py` fails if a
   member of it turns up in the wheel.
-- `tests/` at the repo root — the maintainers' regression suite, mirroring the
-  package (`tests/test_series.py` for `mirobody/kernel/series.py`,
-  `tests/collect/test_readings.py` for `mirobody/collect/readings.py`). It is
-  gitignored, so it is simply absent from a clone, and pytest skips a testpath
-  that does not exist.
+- `tests/` at the repo root — the maintainers' regression suite, one module per
+  package module (`mirobody/kernel/series.py` and `mirobody/collect/readings.py`
+  each have one). It is gitignored, so it is simply absent from a clone, and
+  pytest skips a testpath that does not exist. Nothing in this document names a
+  file inside it: a clone cannot open one.
 - `benchmarks/` — the resolver scoring harness (`run_eval.py`). Not a test
   (nothing asserts), not library code (nothing imports it); it runs from a
   checkout against a test set you point it at.
@@ -138,8 +138,8 @@ helpers raise.
    `# phi: ok <reason>` escape.
 
    The baseline (`mirobody/testing/phi_baseline.txt`) records what was already
-   there. `tests/test_phi_baseline.py` fails on anything NEW, and the
-   baseline may only shrink:
+   there. The local suite fails on anything NEW, and the baseline may only
+   shrink:
 
    ```bash
    python -m mirobody.testing.phi_lint mirobody --write-baseline   # after removing some
@@ -206,11 +206,10 @@ The four import-linter contracts, and what each one is for:
 | the library layer is stdlib + numpy | and no third-party distribution this project declares, except numpy |
 | engine does not import the agent layer | no seams: the health profile moved to `user/profile.py` |
 
-The third is regenerated from `pyproject.toml`'s own dependency lists by
-`tests/test_library_layer.py`, so adding a dependency without adding it to
-the contract fails. **A new library-layer module must be added to all four
-contracts AND to `test_library_layer.py::LIBRARY_MODULES`**, or the test is
-green for the wrong reason.
+The third is regenerated from `pyproject.toml`'s own dependency lists by the
+local suite, so adding a dependency without adding it to the contract fails.
+**A new library-layer module must be added to all four contracts AND to that
+suite's list of library modules**, or the test is green for the wrong reason.
 
 `lint-imports` must analyse the repo source: run it from a venv with this repo
 installed editable. Inside a venv holding an older published wheel it passes

@@ -84,14 +84,18 @@ the mail client.
     ```
 
     `'.[test]'` alone is enough to work on the **library** — resolve, units,
-    lexical. On a clean clone that is 17 packages and runs 189 tests (16
-    skipped), printing a header naming what it skipped. Add `[parse]` for the
-    document-extraction and model-client tests (77 packages, 260) and `[app]`
-    for the server and agent layers (147 packages, the full 305, nothing
-    skipped). All three layers are dropped at COLLECTION time rather
-    than aborting the run: a module-level `importorskip` is too late, because
-    importing a test module imports its parent package first and that is what
-    pulls in the missing dependency.
+    lexical (17 packages). Add `[parse]` for document extraction and the model
+    clients (77), `[app]` for the server and agent layers (147).
+
+    A clone collects **33** tests whichever you install: the resolver benchmark
+    is the one suite that ships, and it needs no extras. The maintainers'
+    regression suite is gitignored, so the extras buy you the ability to RUN the
+    layer you are changing, not more tests. Write new tests under `tests/` at
+    the repo root and say in the PR what you ran. Everything there is dropped at
+    COLLECTION time when an extra is missing rather than aborting the run: a
+    module-level `importorskip` is too late, because importing a test module
+    imports its parent package first and that is what pulls in the missing
+    dependency.
 
     `lint-imports` must run against the repo source — inside a venv holding an
     installed older wheel it passes vacuously.
