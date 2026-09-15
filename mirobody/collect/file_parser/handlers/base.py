@@ -563,18 +563,25 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
                 # 3: reporting them as "complete" showed a green status over an
                 # empty list with the cause only in the server logs.
                 #   1. no provider can do structured extraction: configuration
-                #   2. a provider exists and every call failed: see the log
+                #   2. a provider was selected and its call failed: see the log
                 #   3. a model read the document and found none: normal
                 if count == 0 and llm_ret is None:
                     from mirobody.utils.config.llm import no_provider_message, resolve_route
 
-                    if resolve_route("text") is None:
+                    route = resolve_route("text")
+                    if route is None:
                         extraction_failed_reason = no_provider_message("text")
                     else:
+                        # ONE route is tried, never a second: config.llm.yaml
+                        # states it ("selection happens once; a failed call is
+                        # reported, never retried elsewhere"). Saying "every
+                        # configured provider" sent readers hunting for three
+                        # failures in a log that holds one.
                         extraction_failed_reason = (
-                            "indicator extraction failed: every configured provider "
-                            "returned an error (see the server log for the provider's "
-                            "message) — re-upload after fixing it"
+                            f"indicator extraction failed: {route.alias} ({route.model}) "
+                            "returned an error, and a failed call is not retried on another "
+                            "provider (see the server log for the provider's message) — "
+                            "re-upload after fixing it, or point UTILS_TEXT_MODEL elsewhere"
                         )
                     logger.warning(
                         f"Indicator extraction for {file_type} {file_key} produced 0 rows: "
