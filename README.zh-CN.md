@@ -71,7 +71,9 @@ resolve("血脂").resolved                                 # False    类别，�
   序列画进同一张图，并告诉你结论出自哪一页。
 - **自己托管，用公开标准，Apache-2.0。** `./deploy.sh` 一条命令在自己机器上跑起整套；
   数据以 LOINC 编码、FHIR 就绪的形式留在你手里，想带走随时能带走。同一组工具也通过
-  MCP 给 Claude Desktop、Cursor 或你自己的 agent 用。
+  MCP 给 Claude Desktop、Cursor 或你自己的 agent 用。**不需要 GPU：自己托管的是应用，
+  不是模型。** 你只需要一把 API key 接到云端模型，本机不跑推理。这里说的"离线"指的是
+  解析器——名称到编码，不联网、不用 key——不是在本地跑大模型。
 
 ## 收集 · 转译 · 回答
 
@@ -83,7 +85,7 @@ resolve("血脂").resolved                                 # False    类别，�
 
 | 阶段 | 含义 | 位置 |
 | --- | --- | --- |
-| **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（只接收：由已签名的 iOS 客户端推送进来） | [`pulse/`](mirobody/pulse/) |
+| **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（`mirobody import apple export.zip`，或由已签名的 iOS 客户端推送进来） | [`pulse/`](mirobody/pulse/) |
 | **② 转译 Translate**（standardize） | 归到一套标准：任意写法的读数解析成标准编码（LOINC · SNOMED CT · RxNorm），单位统一成 UCUM，用的都是 FHIR 认可的编码体系 | [`indicator/`](mirobody/indicator/) |
 | **③ 回答 Answer**（agent） | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
 
@@ -163,6 +165,7 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 `export` 传不进去。key 只存在于 `.env`：`config.llm.yaml` 里写的是变量名
 （`api_key: OPENROUTER_API_KEY`），不是密钥本身。
 
+**一把 key 跑通全部，而且和你的硬件无关**：本机不跑模型、不需要 GPU，key 指向的是云端。
 哪一把都行：[OpenRouter](https://openrouter.ai/keys)（`OPENROUTER_API_KEY`，推荐）、
 DashScope、Google、[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_API_KEY`）、
 [Anthropic](https://platform.claude.com/settings/keys)（`ANTHROPIC_API_KEY`）、DeepSeek，

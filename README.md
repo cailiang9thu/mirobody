@@ -76,7 +76,10 @@ look; `method="refused"` is a decision.
 - **Self-hosted, standards-based, Apache-2.0.** One `./deploy.sh` runs the whole
   stack on your own machine; what comes out is LOINC-coded, FHIR-ready records
   you can take anywhere, and the same tools are served over MCP to Claude
-  Desktop, Cursor or your own agent.
+  Desktop, Cursor or your own agent. **No GPU: the app is self-hosted, the model
+  is not.** You bring one API key to a hosted provider; nothing runs inference on
+  your machine. "Offline" here means the resolver — name to code, with no network
+  and no key — not a local LLM.
 
 ## Collect · Translate · Answer
 
@@ -89,7 +92,7 @@ The engine does three things, and the codebase, the docs and
 
 | Stage | What it means | Where |
 | --- | --- | --- |
-| **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (receive-only: a signed iOS client POSTs it in) | [`pulse/`](mirobody/pulse/) |
+| **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (`mirobody import apple export.zip`, or a signed iOS client POSTs it in) | [`pulse/`](mirobody/pulse/) |
 | **② Translate** (standardize) | One standard: resolve any reading to canonical codes (LOINC · SNOMED CT · RxNorm), normalize units to UCUM, land on FHIR-recognized code systems | [`indicator/`](mirobody/indicator/) |
 | **③ Answer** (agent) | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
 
@@ -176,7 +179,8 @@ handing over a record. [`examples/06_care_circle_rules.py`](examples/06_care_cir
 prints the whole decision table offline. Set `SEED_DEMO_DATA=false` for a
 deployment that will hold real data.
 
-**One key runs everything.** Browsing the seeded record needs no key; the upload
+**One key runs everything, and it is not your hardware.** Nothing runs on your
+GPU; the key points at a hosted model. Browsing the seeded record needs no key; the upload
 and the questions below ride one. Put ONE key in the `.env` next to `compose.yaml`
 and `docker compose restart` — the app re-reads `/app/.env`; a shell `export` does
 not reach the containers. The `.env` is the only place for the key:

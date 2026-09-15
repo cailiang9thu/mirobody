@@ -1,5 +1,12 @@
 # Apple Health Platform Integration Guide
 
+> **2026-09-15: the export file works now.** `mirobody import apple export.zip`
+> reads the archive the iOS Health app produces (Summary → your picture →
+> Export All Health Data). It needs no key, no database and no extra, so a
+> bare `pip install mirobody` can read it. The JSON contract below is the
+> other front door, used by the mobile client; both decode through
+> `mirobody/kernel/decoders/apple.py`.
+
 ## 📋 Overview
 
 The Apple Health Platform specializes in integrating Apple Health export data and CDA documents, using an event-based architecture to process different types of health data.
