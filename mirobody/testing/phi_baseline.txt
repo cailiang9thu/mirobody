@@ -58,58 +58,6 @@ mirobody/agent/middleware/tool_faults.py	interpolation	repairs
 mirobody/agent/models/clients.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/agent/tools/terminology_service.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/agent/tools/terminology_service.py	interpolation	e
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	chunk_end.strftime('%Y-%m-%d')
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	coverage
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	current_start.strftime('%Y-%m-%d')
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	data_begin_utc
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	e
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	end_date
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	end_date.date()
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	estimated_active_min / 60
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	gmi
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	indicator
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	mean_glucose
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	query_start
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	sampling_interval_min
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	since_time.isoformat()
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	since_timestamp
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	source
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	start_date
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	start_date.date()
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	timezone_str
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	total_window_min / 60
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	user_id or 'all users'
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	user_label
-mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	utc_time_str
-mirobody/collect/aggregate/database_service.py	interpolation	e
-mirobody/collect/aggregate/database_service.py	interpolation	total_processed
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	computed
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	day
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	denominator
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	e
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	numerator
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	result
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	rule.name
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	skipped
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	total_computed
-mirobody/collect/aggregate/derived_aggregator.py	interpolation	total_skipped
-mirobody/collect/aggregate/derived_task.py	interpolation	e
-mirobody/collect/aggregate/derived_task.py	interpolation	stats['total_computed']
-mirobody/collect/aggregate/derived_task.py	interpolation	stats['total_skipped']
-mirobody/collect/aggregate/rule_generator.py	interpolation	rule.source_indicator
-mirobody/collect/aggregate/rule_generator.py	interpolation	rule.target_indicator
-mirobody/collect/aggregate/service.py	interpolation	backfilled
-mirobody/collect/aggregate/service.py	interpolation	e
-mirobody/collect/aggregate/service.py	interpolation	end_date.isoformat()
-mirobody/collect/aggregate/service.py	interpolation	last_timestamp
-mirobody/collect/aggregate/service.py	interpolation	start_date.isoformat()
-mirobody/collect/aggregate/service.py	interpolation	user_id or 'all'
-mirobody/collect/aggregate/startup.py	interpolation	e
-mirobody/collect/aggregate/task.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/aggregate/task.py	interpolation	e
-mirobody/collect/aggregate/task.py	interpolation	stats_dict['execution_time_ms']
-mirobody/collect/aggregate/task.py	interpolation	stats_dict['summaries_created']
-mirobody/collect/aggregate/task.py	interpolation	stats_dict['users_affected']
 mirobody/collect/core/database.py	extra_key	records
 mirobody/collect/core/database.py	extra_key	time_cost
 mirobody/collect/core/database.py	interpolation	cache_key
@@ -349,6 +297,19 @@ mirobody/collect/readings.py	interpolation	on_conflict
 mirobody/collect/readings.py	interpolation	rejected
 mirobody/collect/readings.py	interpolation	sum(rejected.values())
 mirobody/collect/setup.py	interpolation	str(e)
+mirobody/derive/rules.py	interpolation	computed
+mirobody/derive/rules.py	interpolation	day
+mirobody/derive/rules.py	interpolation	denominator
+mirobody/derive/rules.py	interpolation	e
+mirobody/derive/rules.py	interpolation	numerator
+mirobody/derive/rules.py	interpolation	result
+mirobody/derive/rules.py	interpolation	rule.name
+mirobody/derive/rules.py	interpolation	skipped
+mirobody/derive/rules.py	interpolation	total_computed
+mirobody/derive/rules.py	interpolation	total_skipped
+mirobody/derive/task.py	interpolation	e
+mirobody/derive/task.py	interpolation	stats['total_computed']
+mirobody/derive/task.py	interpolation	stats['total_skipped']
 mirobody/mcp/service.py	extra_key	path
 mirobody/mcp/service.py	interpolation	e
 mirobody/mcp/service.py	interpolation	err
@@ -451,6 +412,44 @@ mirobody/task/profile_refresh.py	interpolation	result.get('last_execute_doc_id')
 mirobody/task/profile_refresh.py	interpolation	result.get('message')
 mirobody/task/profile_refresh.py	interpolation	result.get('profile_id')
 mirobody/task/profile_refresh.py	interpolation	result.get('version')
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	chunk_end.strftime('%Y-%m-%d')
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	coverage
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	current_start.strftime('%Y-%m-%d')
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	data_begin_utc
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	e
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	end_date
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	end_date.date()
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	estimated_active_min / 60
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	gmi
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	indicator
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	mean_glucose
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	query_start
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	sampling_interval_min
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	since_time.isoformat()
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	since_timestamp
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	source
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	start_date
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	start_date.date()
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	timezone_str
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	total_window_min / 60
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	user_id or 'all users'
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	user_label
+mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	utc_time_str
+mirobody/translate/aggregate/database_service.py	interpolation	e
+mirobody/translate/aggregate/database_service.py	interpolation	total_processed
+mirobody/translate/aggregate/rule_generator.py	interpolation	rule.source_indicator
+mirobody/translate/aggregate/rule_generator.py	interpolation	rule.target_indicator
+mirobody/translate/aggregate/service.py	interpolation	backfilled
+mirobody/translate/aggregate/service.py	interpolation	e
+mirobody/translate/aggregate/service.py	interpolation	end_date.isoformat()
+mirobody/translate/aggregate/service.py	interpolation	last_timestamp
+mirobody/translate/aggregate/service.py	interpolation	start_date.isoformat()
+mirobody/translate/aggregate/service.py	interpolation	user_id or 'all'
+mirobody/translate/aggregate/task.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/translate/aggregate/task.py	interpolation	e
+mirobody/translate/aggregate/task.py	interpolation	stats_dict['execution_time_ms']
+mirobody/translate/aggregate/task.py	interpolation	stats_dict['summaries_created']
+mirobody/translate/aggregate/task.py	interpolation	stats_dict['users_affected']
 mirobody/translate/fhir_mapping.py	interpolation	', '.join(sorted(self._pending))
 mirobody/translate/fhir_mapping.py	interpolation	FHIR_INDICATOR_STANDARD
 mirobody/translate/fhir_mapping.py	interpolation	FHIR_TABLE_NAME

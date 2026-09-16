@@ -617,7 +617,7 @@ that what it drops is never something a person would want back.
 
 ### The aggregation worker's statistics, against a live series
 
-`collect/aggregate` computes about twenty statistics in SQL — percentiles,
+`translate/aggregate` computes about twenty statistics in SQL — percentiles,
 time-in-range, CGM event detection, the derived sleep-onset methods. 1.4.0 put
 the DAY BOUNDARY and the SOURCE ELECTION on the kernel and left those
 statistics where they were, deliberately: routing them through

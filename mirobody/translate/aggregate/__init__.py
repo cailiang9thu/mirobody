@@ -15,7 +15,7 @@ Key Features:
 - Dependency injection for flexibility
 
 Example Usage:
-    from mirobody.collect.aggregate import AggregateIndicatorService
+    from mirobody.translate.aggregate import AggregateIndicatorService
     
     service = AggregateIndicatorService()
     await service.process_incremental()

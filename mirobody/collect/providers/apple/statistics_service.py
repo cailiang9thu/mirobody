@@ -14,8 +14,8 @@ from zoneinfo import ZoneInfo
 
 from .models import AppleHealthStatistic, AppleHealthStatisticsRequest
 from mirobody.kernel.decoders import apple as apple_decoder
-from mirobody.collect.aggregate.naming import build_indicator_name
-from mirobody.collect.aggregate.database_service import AggregateDatabaseService
+from mirobody.translate import build_indicator_name
+from mirobody.translate import AggregateDatabaseService
 
 logger = logging.getLogger(__name__)
 

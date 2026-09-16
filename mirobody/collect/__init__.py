@@ -8,7 +8,6 @@ Two source shapes, one convergence point, then meaning:
          ↓
     ingest/      all three converge on StandardPulseData → th_series_data
          ↓
-    aggregate/   series → daily summaries and derived indicators
 
 What a value MEANS is ② Translate's, not this stage's: the indicator
 catalogue, units, ranges and fhir_id are `mirobody.translate`.
@@ -16,7 +15,7 @@ catalogue, units, ranges and fhir_id are `mirobody.translate`.
 `core/` is what those stand on, not a stage: the provider contract types, the
 scheduler, the DB base classes, the distributed lock. Sub-package sizes and
 entry points are in README.md, ordered the same way: the directory listing
-cannot show this order, since `aggregate/` sorts before `providers/`.
+cannot show this order, since `core/` sorts before `providers/`.
 
 Providers are discovered by file scan, so deleting one takes it offline.
 
@@ -76,7 +75,6 @@ _EXPORTS = {
     # What `mirobody.server` needs. Named here so the modules behind them can
     # move without a router edit, which is the whole point: `db_utils`,
     # `database_services` and `providers/platform/` all moved in 1.4.4.
-    "start_aggregate_indicator_scheduler": "aggregate.startup",
     "start_theta_pull_scheduler": "providers._platform.startup",
     "backfill_day_columns": "backfill",
     "ConnectInfoField": "core.models",
@@ -127,7 +125,7 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .providers import BasePullProvider, ProviderPlatform
     from .providers.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
     from .providers.apple.statistics_service import process_apple_health_statistics
-    from .aggregate.startup import start_aggregate_indicator_scheduler
+    
     from .providers._platform.startup import start_theta_pull_scheduler
     from .backfill import backfill_day_columns
     from .core.models import ConnectInfoField

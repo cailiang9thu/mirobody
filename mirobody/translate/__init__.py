@@ -4,6 +4,8 @@
     units.py                 unit conversion
     value_range_validator.py what counts as a plausible value
     fhir_mapping.py          indicator to fhir_id
+    aggregate/               a day of points to one number, and which source
+                             publishes it
     std_indicator_registry/  publishes the catalogue to the database
 
 ① Collect stores what a device or a document said, verbatim and traceable.
@@ -15,12 +17,20 @@ The frame is up; the contents are 1.5.0's. That version brings LOINC coding,
 the comparability key and one standardized table, and these five modules are
 what it rewrites against.
 
-Still entangled, and named here rather than hidden: `collect/` imports this
-package in 26 places, because a provider declares its metrics with
-`StandardIndicator` and `ingest` converts units before it writes. Untangling
-that is content work, not a move. `mirobody.collect` therefore still
+`aggregate/` is here because a daily total is the SAME quantity on a different
+time axis, which is a LOINC axis change, and because the rules were already
+here: `IndicatorInfo.aggregation_methods` declares them and `aggregate/` only
+executes them. A ratio of two different components is a new quantity, not a
+meaning, and lives in `mirobody.derive`.
+
+Two couplings, named rather than hidden. `collect/` imports this package in 11
+files, because a provider declares its metrics with `StandardIndicator` and
+`ingest` converts units before writing; `mirobody.collect` therefore still
 re-exports `StandardIndicator` and `UNIT_CONVERSIONS`, so a provider plugin
-keeps one import path.
+keeps one import path. Back the other way, `aggregate/` writes through
+`collect.readings.upsert_readings`, because `th_series_data` has one writer and
+both stages write to it. 1.5.0 redesigns that table, which is where the second
+one gets settled.
 
 Nothing here is third-party: stdlib plus `mirobody` only. Keep it that way,
 the same rule the library layer lives by.
@@ -55,6 +65,11 @@ _EXPORTS = {
     "FhirMapping": "fhir_mapping",
     "get_fhir_id": "fhir_mapping",
     "start_std_indicator_registry": "std_indicator_registry.startup",
+    "start_aggregate_indicator_scheduler": "aggregate.startup",
+    "AggregateIndicatorService": "aggregate.service",
+    "AggregateDatabaseService": "aggregate.database_service",
+    "build_indicator_name": "aggregate.naming",
+    "get_all_aggregation_rules": "aggregate.rule_generator",
 }
 __all__ = [*_EXPORTS]
 
@@ -72,6 +87,11 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
         is_valid_indicator,
         normalize_indicator_name,
     )
+    from .aggregate.database_service import AggregateDatabaseService
+    from .aggregate.naming import build_indicator_name
+    from .aggregate.rule_generator import get_all_aggregation_rules
+    from .aggregate.service import AggregateIndicatorService
+    from .aggregate.startup import start_aggregate_indicator_scheduler
     from .std_indicator_registry.startup import start_std_indicator_registry
     from .units import UNIT_CONVERSIONS, convert_to_standard, get_all_units_info
     from .value_range_validator import ValueRangeValidator

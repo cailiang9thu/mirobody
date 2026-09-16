@@ -15,7 +15,7 @@ from typing import Any
 from collections.abc import Callable
 
 from mirobody.utils import execute_query
-from .database_service import AggregateDatabaseService
+from mirobody.translate import AggregateDatabaseService
 
 logger = logging.getLogger(__name__)
 

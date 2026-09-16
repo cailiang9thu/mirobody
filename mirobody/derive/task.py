@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 
 from mirobody.utils.scheduler import PullTask, ScheduleType
-from .derived_aggregator import DerivedAggregator
+from .rules import DerivedAggregator
 
 logger = logging.getLogger(__name__)
 
@@ -60,3 +60,24 @@ class DerivedCalculationTask(PullTask):
             "rules_count": len(self.aggregator.rules),
         })
         return full_status
+
+
+_task = None
+
+
+async def start_derived_scheduler() -> None:
+    """Register the derived-quantity job with the shared scheduler.
+
+    Separate from the aggregation job it used to ride along with: aggregation
+    produces a day's number for a measured quantity, this produces quantities
+    nothing measured, and a caller should be able to run one without the other.
+    """
+    global _task
+    from mirobody.utils.scheduler import scheduler
+
+    if _task is not None:
+        logger.warning("Derived indicator task already registered")
+        return
+    _task = DerivedCalculationTask()
+    scheduler.register_task(_task)
+    logger.info("Derived indicator task registered successfully")

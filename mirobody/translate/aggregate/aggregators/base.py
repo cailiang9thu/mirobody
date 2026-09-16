@@ -8,7 +8,7 @@ Uses Protocol (PEP 544) for duck typing instead of ABC for more flexibility.
 from datetime import datetime
 from typing import Any, Protocol
 
-from mirobody.collect.aggregate.models import CalculationTask
+from mirobody.translate.aggregate.models import CalculationTask
 
 
 class AggregatorProtocol(Protocol):

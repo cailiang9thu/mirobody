@@ -645,7 +645,7 @@ source_modules = [
     "mirobody.server",
 ]
 forbidden_modules = [
-    "mirobody.collect.aggregate",
+    "mirobody.translate.aggregate",
     "mirobody.collect.backfill",
     "mirobody.collect.base",
     "mirobody.collect.core",
@@ -678,9 +678,11 @@ allow_indirect_imports = true
 source_modules = [
     "mirobody.agent",
     "mirobody.collect",
+    "mirobody.derive",
     "mirobody.server",
 ]
 forbidden_modules = [
+    "mirobody.translate.aggregate",
     "mirobody.translate.fhir_mapping",
     "mirobody.translate.indicators_info",
     "mirobody.translate.std_indicator_registry",

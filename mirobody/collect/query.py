@@ -31,7 +31,7 @@ the 3rd".
 
 For `resolution=day` and coarser, the answer is the day's published authority:
 the `elected` row for that `(indicator, local_date)`. Election happens once, on
-the write side (`collect/aggregate`), which is what keeps the chat answer and the
+the write side (`translate/aggregate`), which is what keeps the chat answer and the
 dashboard identical by construction rather than by two implementations
 agreeing. Where nothing has been elected yet the query falls back to the rows
 themselves and says so in `provenance`: `elected:<rule>` when a row was

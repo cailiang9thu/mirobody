@@ -20,8 +20,9 @@ how a reader comes to believe a boundary does not exist.
 | 4 | **Resolve** | which metric IS this — name, code, shape | `kernel/metrics.py`, `engine.py` |
 | 5 | **Gate** | reject the impossible; convert what is convertible | `kernel/quality.py`, applied in `collect/readings.py` |
 | 6 | **Store** | one writer, one day column, one fingerprint | `collect/readings.py` |
-| 7 | **Aggregate** | a day of points → one number, under the metric's policy | `kernel/series.py`, `collect/aggregate/` |
-| 8 | **Elect** | which source the day publishes from | `series.elect`, `collect/aggregate/election.py` |
+| 7 | **Aggregate** | a day of points → one number, under the metric's policy | `kernel/series.py`, `translate/aggregate/` |
+| 8 | **Elect** | which source the day publishes from | `series.elect`, `translate/aggregate/election.py` |
+| 8b | **Derive** | quantities nothing measured: sleep efficiency, HR range | `derive/rules.py` |
 | 9 | **Correct** | a person's edit, as a layer over the row | `kernel/overlay.py` |
 | 10 | **Read** | one authority, one window semantics | `kernel/query.py` |
 | 11 | **Answer** | one tool, an envelope, a model that narrates | `agent/tools/` |
@@ -90,7 +91,7 @@ one writer, `collect/readings.py:gate`, before it is bound; a rejected row is
 counted in the log by reason code and not written. `reconcile_unit`,
 `overcount_suspect` and `is_echo` are the kernel's other gates: the first is
 what a decoder uses to land a value in the catalogue's unit, the last two are
-the aggregation pass's (`collect/aggregate/election.py` rejects an impossible
+the aggregation pass's (`translate/aggregate/election.py` rejects an impossible
 duration candidate rather than ranking it).
 
 **Not implemented.** A quarantine table. A rejected row is dropped with its
@@ -149,7 +150,7 @@ LIKE '%sleep%'`. That matched 58 `daily…Sleep…` metrics which are
 `provider_daily` — the vendor's own figure, already dated — and re-anchoring
 those moved every one a day; and it missed `napDuration`, which is a real
 interval belonging to the night. The catalogue's `window` answers both
-(`collect/aggregate/windows.py`).
+(`translate/aggregate/windows.py`).
 
 **Suggested extension.** `series.sessionize(segments, gap_ms)` — stitching stage
 fragments into one night before `duration_union` — is designed and not built.
@@ -162,7 +163,7 @@ overlap.
 themselves. `series.elect` ranks the sources — measurer over profile echo, then
 coverage, then the MEASUREMENT instant (never the row's update time: an echo is
 rewritten daily and looks fresh), then the deployment's own priority list — and
-`collect/aggregate/election.py` marks the winner's rows `elected`.
+`translate/aggregate/election.py` marks the winner's rows `elected`.
 
 A candidate is **rejected** rather than ranked when its numbers are impossible:
 a total sleep time longer than the night it was measured in is arithmetic, not

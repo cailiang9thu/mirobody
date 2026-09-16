@@ -37,8 +37,8 @@ LOWER(indicator) LIKE '%sleep%'
 3. Maintain a whitelist of sleep indicators
 
 **Important**: If modifying sleep data identification logic, must update simultaneously:
-- `get_trigger_tasks` method in `mirobody/collect/aggregate/aggregators/sql_aggregator.py`
-- `_get_tasks_for_user_date_range` method in `mirobody/collect/aggregate/aggregators/sql_aggregator.py`
+- `get_trigger_tasks` method in `mirobody/translate/aggregate/aggregators/sql_aggregator.py`
+- `_get_tasks_for_user_date_range` method in `mirobody/translate/aggregate/aggregators/sql_aggregator.py`
 - This document and `cursorrules` file
 
 #### data_begin Calculation Logic
@@ -307,14 +307,14 @@ project. What actually exists:
 | --- | --- | --- |
 | `test_date_range_query.py` | `pytest` | no |
 | `test_cgm_indicators.py` | `pytest` | one test does (`test_db_aggregation`) |
-| `test_aggregator.py` | `python3 -m mirobody.collect.aggregate.test_aggregator` | yes — it is a standalone integration script with its own `main()`, not a pytest module, so `pytest` collects nothing from it |
+| `test_aggregator.py` | `python3 -m mirobody.translate.aggregate.test_aggregator` | yes — it is a standalone integration script with its own `main()`, not a pytest module, so `pytest` collects nothing from it |
 
 ```bash
 # unit tests
-python3 -m pytest mirobody/collect/aggregate -q
+python3 -m pytest mirobody/translate/aggregate -q
 
 # the integration script, against a running stack
-docker compose exec mirobody python3 -m mirobody.collect.aggregate.test_aggregator
+docker compose exec mirobody python3 -m mirobody.translate.aggregate.test_aggregator
 ```
 
 ## Summary

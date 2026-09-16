@@ -14,9 +14,9 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from mirobody.utils import execute_query
-from mirobody.collect.aggregate import windows
-from mirobody.collect.aggregate.models import CalculationTask
-from mirobody.collect.aggregate.rule_generator import get_rules_by_source_indicator
+from mirobody.translate.aggregate import windows
+from mirobody.translate.aggregate.models import CalculationTask
+from mirobody.translate.aggregate.rule_generator import get_rules_by_source_indicator
 from .source_id_priority import APPLE_SOURCES, build_apple_priority_case
 from mirobody.translate import StandardIndicator
 from mirobody.translate import get_fhir_id

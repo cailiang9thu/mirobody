@@ -22,7 +22,7 @@
 --                 that changed nothing does not touch the row (`sink.changed`).
 --   elected       this row is the day's published authority for its
 --                 (indicator, local_date). Election happens ONCE, on the
---                 write side (`collect/aggregate`); every reader just filters.
+--                 write side (`translate/aggregate`); every reader just filters.
 --
 -- Re-runnable, as every file here must be.
 

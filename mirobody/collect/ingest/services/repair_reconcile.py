@@ -32,7 +32,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from mirobody.collect.ingest.repositories.health_data import HealthDataRepository
-from mirobody.collect.aggregate.service import AggregateIndicatorService
+from mirobody.translate import AggregateIndicatorService
 from mirobody.translate import HealthDataType, get_indicators_in_same_categories
 
 logger = logging.getLogger(__name__)
