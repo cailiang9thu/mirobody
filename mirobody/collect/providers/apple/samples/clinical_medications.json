@@ -1,5 +1,5 @@
 {
-  "_note": "Synthetic Apple clinical-record medications. NOT a decoders/ decoder sample — those are payloads for `decoders.decode` and this is an IMPORT fixture for the CDA provider, which is why it lives next to that provider. Apple's HKClinicalRecord carries the FHIR resource the provider published, so a MedicationStatement arrives as itself; the flat shape below is what an exporter that flattens CDA XML produces. Both are read by collect/apple/provider.py::_format_medications. No real person, no real prescription.",
+  "_note": "Synthetic Apple clinical-record medications. NOT a decoders/ decoder sample — those are payloads for `decoders.decode` and this is an IMPORT fixture for the CDA provider, which is why it lives next to that provider. Apple's HKClinicalRecord carries the FHIR resource the provider published, so a MedicationStatement arrives as itself; the flat shape below is what an exporter that flattens CDA XML produces. Both are read by collect/providers/apple/provider.py::_format_medications. No real person, no real prescription.",
   "medications": [
     {
       "resourceType": "MedicationStatement",

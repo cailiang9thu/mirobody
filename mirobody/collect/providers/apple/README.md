@@ -14,7 +14,7 @@ Document Architecture) documents.
 ## What is actually here
 
 ```
-mirobody/collect/apple/
+mirobody/collect/providers/apple/
 ├── platform.py               # AppleHealthPlatform — registers both providers,
 │                             #   post_data() drives format + store
 ├── provider.py               # AppleHealthProvider (health records)

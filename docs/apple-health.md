@@ -182,7 +182,7 @@ Failure response format:
 ## 🔧 Adding New Data Type Support
 
 There is no per-metric provider class. One enum and one mapping, both in
-[`mirobody/collect/apple/models.py`](../mirobody/collect/apple/models.py), decide
+[`mirobody/collect/providers/apple/models.py`](../mirobody/collect/providers/apple/models.py), decide
 what the endpoint accepts and where a record lands.
 
 **1. Declare the type** on `FlutterHealthTypeEnum`:

@@ -125,32 +125,32 @@ mirobody/collect/aggregate/task.py	interpolation	e
 mirobody/collect/aggregate/task.py	interpolation	stats_dict['execution_time_ms']
 mirobody/collect/aggregate/task.py	interpolation	stats_dict['summaries_created']
 mirobody/collect/aggregate/task.py	interpolation	stats_dict['users_affected']
-mirobody/collect/apple/platform.py	interpolation	e
-mirobody/collect/apple/platform.py	interpolation	last_ts
-mirobody/collect/apple/platform.py	interpolation	result.get('execution_time_ms', 0)
-mirobody/collect/apple/platform.py	interpolation	result.get('status')
-mirobody/collect/apple/platform.py	interpolation	result.get('summaries_created', 0)
-mirobody/collect/apple/platform.py	interpolation	result.get('users_affected', 0)
-mirobody/collect/apple/platform.py	interpolation	self.name
-mirobody/collect/apple/platform.py	interpolation	str(e)
-mirobody/collect/apple/provider.py	interpolation	(batch_t2 - batch_t1) * 1000
-mirobody/collect/apple/provider.py	interpolation	(t2 - t1) * 1000
-mirobody/collect/apple/provider.py	interpolation	(total_count - 1) // batch_size + 1
-mirobody/collect/apple/provider.py	interpolation	batch_end - 1
-mirobody/collect/apple/provider.py	interpolation	batch_start
-mirobody/collect/apple/provider.py	interpolation	batch_start // batch_size + 1
-mirobody/collect/apple/provider.py	interpolation	date_from
-mirobody/collect/apple/provider.py	interpolation	date_to
-mirobody/collect/apple/provider.py	interpolation	record.uuid
-mirobody/collect/apple/provider.py	interpolation	str(e)
-mirobody/collect/apple/provider.py	interpolation	unit_symbol
-mirobody/collect/apple/provider.py	interpolation	value_data
-mirobody/collect/apple/services/database_service.py	extra_key	error
-mirobody/collect/apple/services/database_service.py	interpolation	llm_access
-mirobody/collect/apple/services/database_service.py	interpolation	str(e)
-mirobody/collect/apple/statistics_service.py	interpolation	(t2 - t1) * 1e3
-mirobody/collect/apple/statistics_service.py	interpolation	(t3 - t2) * 1e3
-mirobody/collect/apple/statistics_service.py	interpolation	e
+mirobody/collect/providers/apple/platform.py	interpolation	e
+mirobody/collect/providers/apple/platform.py	interpolation	last_ts
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('execution_time_ms', 0)
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('status')
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('summaries_created', 0)
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('users_affected', 0)
+mirobody/collect/providers/apple/platform.py	interpolation	self.name
+mirobody/collect/providers/apple/platform.py	interpolation	str(e)
+mirobody/collect/providers/apple/provider.py	interpolation	(batch_t2 - batch_t1) * 1000
+mirobody/collect/providers/apple/provider.py	interpolation	(t2 - t1) * 1000
+mirobody/collect/providers/apple/provider.py	interpolation	(total_count - 1) // batch_size + 1
+mirobody/collect/providers/apple/provider.py	interpolation	batch_end - 1
+mirobody/collect/providers/apple/provider.py	interpolation	batch_start
+mirobody/collect/providers/apple/provider.py	interpolation	batch_start // batch_size + 1
+mirobody/collect/providers/apple/provider.py	interpolation	date_from
+mirobody/collect/providers/apple/provider.py	interpolation	date_to
+mirobody/collect/providers/apple/provider.py	interpolation	record.uuid
+mirobody/collect/providers/apple/provider.py	interpolation	str(e)
+mirobody/collect/providers/apple/provider.py	interpolation	unit_symbol
+mirobody/collect/providers/apple/provider.py	interpolation	value_data
+mirobody/collect/providers/apple/services/database_service.py	extra_key	error
+mirobody/collect/providers/apple/services/database_service.py	interpolation	llm_access
+mirobody/collect/providers/apple/services/database_service.py	interpolation	str(e)
+mirobody/collect/providers/apple/statistics_service.py	interpolation	(t2 - t1) * 1e3
+mirobody/collect/providers/apple/statistics_service.py	interpolation	(t3 - t2) * 1e3
+mirobody/collect/providers/apple/statistics_service.py	interpolation	e
 mirobody/collect/core/database.py	extra_key	records
 mirobody/collect/core/database.py	extra_key	time_cost
 mirobody/collect/core/database.py	interpolation	cache_key

@@ -74,7 +74,7 @@ _EXPORTS = {
 __all__ = [*_EXPORTS]
 
 if TYPE_CHECKING:  # static analyzers resolve the real symbols
-    from .apple import AppleHealthPlatform, AppleHealthProvider, CDAProvider
+    from .providers.apple import AppleHealthPlatform, AppleHealthProvider, CDAProvider
     from .base import LinkRequest, Platform, Provider, ProviderInfo, UserProvider
     from .manager import PlatformManager, platform_manager
     from .setup import get_platform_manager, setup_platform_system, setup_platform_system_async

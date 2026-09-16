@@ -5,7 +5,7 @@ Setup functions for the Pulse system
 import asyncio
 import logging
 
-from .apple.platform import AppleHealthPlatform
+from .providers.apple.platform import AppleHealthPlatform
 
 from .manager import platform_manager
 from mirobody.collect.providers.platform.base import BasePullProvider

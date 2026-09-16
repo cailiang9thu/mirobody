@@ -47,7 +47,7 @@ Short, and about *that package only*:
 - [`mirobody/indicator/`](../mirobody/indicator/README.md) — ② Translate (standardize)
 - [`mirobody/agent/`](../mirobody/agent/README.md) — ③ Agent
 - [`mirobody/agent/tools/`](../mirobody/agent/tools/README.md) — the MCP tool surface
-- [`mirobody/collect/apple/`](../mirobody/collect/apple/README.md) — Apple Health import
+- [`mirobody/collect/providers/apple/`](../mirobody/collect/providers/apple/README.md) — Apple Health import
 - [`mirobody/collect/aggregate/`](../mirobody/collect/aggregate/README.md) — daily rollups
 - [`mirobody/collect/standardize/`](../mirobody/collect/standardize/README.md) — health indicators, units & standardization
 - [`mirobody/schema/`](../mirobody/schema/README.md) — database schema, contract and bootstrap
