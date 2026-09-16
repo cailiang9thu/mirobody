@@ -34,7 +34,7 @@ how a reader comes to believe a boundary does not exist.
 expired → revoked`) with a failure counter. `connect.record_failure` /
 `may_attempt` back off after each authorization failure and stop entirely after
 a threshold; the reference pull loop consults them
-(`collect/providers/platform/base.py`).
+(`collect/providers/_platform/base.py`).
 
 *The failure this prevents:* a person changes their vendor password, every tick
 of the loop then fails, forever, at the loop's full rate — and some vendors read

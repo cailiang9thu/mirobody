@@ -1,24 +1,24 @@
-"""
-Provider platform Module
+"""Where a device or a health platform gets read.
 
-Provides the provider platform implementation with pluggable providers for direct
-device/service integrations (Garmin, Whoop, PostgreSQL, etc.).
+One underscore-prefixed directory is the machinery; every other directory is
+one integration:
 
-Architecture:
-    ProviderPlatform (platform/platform.py)
- (manages provider lifecycle, pull scheduling, and data routing
-    BasePullProvider (platform/base.py)
-) abstract base for all providers; subclasses implement
-          create_provider(), info, format_data(), pull_from_vendor_api(),
-          save_raw_data_to_db(), is_data_already_processed()
-    Providers (mirobody_*/provider_*.py)
-        one directory per device/service, self-contained implementations
+    _platform/   the base class, the loader, credential storage, the pull task
+                 factory, startup and normalize. Nobody outside implements
+                 against these directly.
+    mirobody_*/  a pulled integration: Garmin, Oura, WHOOP
+    apple/       a pushed one. Apple posts to an endpoint instead of being
+                 polled, and it registers its own platform, so it carries no
+                 `mirobody_` prefix: that prefix is the loader's glob.
 
-Provider loading:
-    ProviderPlatform.load_providers() scans mirobody_*/provider_*.py, calls
-    create_provider(config) on each, and registers successful instances.
-    Each provider is self-contained and can be added/removed by simply
-    adding/removing its directory.
+`BasePullProvider` is the contract. A subclass implements `create_provider()`,
+`info`, `format_data()`, `pull_from_vendor_api()`, `save_raw_data_to_db()` and
+`is_data_already_processed()`.
+
+Loading: `ProviderPlatform.load_providers()` scans `mirobody_*/provider_*.py`,
+calls `create_provider(config)` on each and registers what comes back, so a
+pulled integration is added or taken offline by adding or removing its
+directory. `installed.py` reads the same convention without importing anything.
 """
 
 # Lazy (PEP 562), matching `mirobody/collect/__init__.py` and
@@ -31,22 +31,22 @@ Provider loading:
 from typing import TYPE_CHECKING
 
 _EXPORTS = {
-    "ProviderPlatform"     : "platform.platform",
-    "BasePullProvider" : "platform.base",
+    "ProviderPlatform"     : "_platform.platform",
+    "BasePullProvider" : "_platform.base",
     # These four are submodules, not attributes: imported by path below.
-    "database_service"  : "platform.database_service",
-    "normalize"         : "platform.normalize",
-    "pull_task"         : "platform.pull_task",
-    "startup"           : "platform.startup",
+    "database_service"  : "_platform.database_service",
+    "normalize"         : "_platform.normalize",
+    "pull_task"         : "_platform.pull_task",
+    "startup"           : "_platform.startup",
     "installed_provider_slugs": "installed",
 }
 __all__ = [*_EXPORTS]
 
 if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .installed import installed_provider_slugs
-    from .platform import database_service, normalize, pull_task, startup
-    from .platform.base import BasePullProvider
-    from .platform.platform import ProviderPlatform
+    from ._platform import database_service, normalize, pull_task, startup
+    from ._platform.base import BasePullProvider
+    from ._platform.platform import ProviderPlatform
 
 
 def __getattr__(name: str):

@@ -53,7 +53,7 @@ provider.format_data(raw)          # vendor shape -> StandardPulseData
                         └─> convert_to_standard(indicator, value, unit)
 ```
 
-`ProviderPlatform.post_data()` drives it (`collect/providers/platform/platform.py`), so a
+`ProviderPlatform.post_data()` drives it (`collect/providers/_platform/platform.py`), so a
 **provider author has nothing to do**: report your vendor's native unit in
 `format_data()` and it is converted on the way in.
 

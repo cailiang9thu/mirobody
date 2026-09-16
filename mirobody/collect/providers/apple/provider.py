@@ -14,7 +14,7 @@ from mirobody.collect.base import LinkRequest, Provider, ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
 from mirobody.collect.standardize.indicators_info import StandardIndicator
 from mirobody.collect.ingest.models.requests import FormatDataInput, StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord
-from mirobody.collect.providers.platform.normalize import records_from_facts
+from mirobody.collect.providers._platform.normalize import records_from_facts
 
 logger = logging.getLogger(__name__)
 

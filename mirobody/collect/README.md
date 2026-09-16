@@ -40,7 +40,7 @@ providers are discovered at startup by `ProviderPlatform._load_providers_from_di
 | Subsystem | Directory | Size | Responsibility | Entry Point |
 |-----------|-----------|------:|---------------|-------------|
 | *— where data comes from —* | | | | |
-| **Providers** | `providers/` | ~6.4k | The live provider platform — plugin discovery, OAuth, pull scheduling | `providers/platform/platform.py` |
+| **Providers** | `providers/` | ~6.4k | The live provider platform — plugin discovery, OAuth, pull scheduling | `providers/_platform/platform.py` |
 | **Apple** | `apple/` | ~1.2k | Apple Health platform + CDA processing | `apple/platform.py` |
 | **File Parser** | `file_parser/` | ~8.5k | Files as a data source: upload, parse PDF/CSV/Excel/Office/image/text/genetic | `file_parser/file_upload_manager.py` |
 | *— what happens to it —* | | | | |
@@ -73,7 +73,7 @@ There is no `router/` here any more — the HTTP endpoints moved to
 ## Key Files by Task
 
 ### Adding a new provider
-- `providers/platform/base.py` — `BasePullProvider` (inherit from this)
+- `providers/_platform/base.py` — `BasePullProvider` (inherit from this)
 - `providers/mirobody_garmin_connect/` — full OAuth reference (OAuth1)
 - `providers/mirobody_whoop/` — OAuth2 reference
 - `providers/__init__.py` — add import here after creating provider
@@ -111,8 +111,8 @@ These files form the framework skeleton. Modifying them affects ALL providers an
 | :red_circle: | `core/constants.py` | Shared enums (`LinkType`, `ProviderStatus`) — used everywhere |
 | :red_circle: | `core/scheduler.py` | Global pull scheduler — timing affects all providers |
 | :red_circle: | `setup.py` | Platform registration sequence — startup order matters |
-| :yellow_circle: | `providers/platform/platform.py` | `ProviderPlatform` — provider loading and registration |
-| :yellow_circle: | `providers/platform/base.py` | `BasePullProvider` — shared provider logic |
+| :yellow_circle: | `providers/_platform/platform.py` | `ProviderPlatform` — provider loading and registration |
+| :yellow_circle: | `providers/_platform/base.py` | `BasePullProvider` — shared provider logic |
 
 ## Coding Constraints
 
@@ -219,8 +219,8 @@ from mirobody.collect.standardize.indicators_info import StandardIndicator
 from mirobody.collect.ingest.models.requests import (
     StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord,
 )
-from mirobody.collect.providers.platform.base import BasePullProvider
-from mirobody.collect.providers.platform.normalize import DataFormatter, TimeUtils
+from mirobody.collect.providers._platform.base import BasePullProvider
+from mirobody.collect.providers._platform.normalize import DataFormatter, TimeUtils
 from mirobody.utils.config import safe_read_cfg, global_config
 ```
 

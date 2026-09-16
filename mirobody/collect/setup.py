@@ -8,8 +8,8 @@ import logging
 from .providers.apple.platform import AppleHealthPlatform
 
 from .manager import platform_manager
-from mirobody.collect.providers.platform.base import BasePullProvider
-from mirobody.collect.providers.platform.platform import ProviderPlatform
+from mirobody.collect.providers._platform.base import BasePullProvider
+from mirobody.collect.providers._platform.platform import ProviderPlatform
 from mirobody.utils.config import global_config
 
 logger = logging.getLogger(__name__)

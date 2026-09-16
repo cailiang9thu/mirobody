@@ -14,7 +14,7 @@ from mirobody.collect.core import ProviderStatus
 from mirobody.collect.core.scheduler import scheduler
 from mirobody.collect.ingest.models.requests import FormatDataContext, FormatDataInput
 from mirobody.collect.ingest.services.upload_health import StandardHealthService
-from mirobody.collect.providers.platform.database_service import ProviderDatabaseService
+from mirobody.collect.providers._platform.database_service import ProviderDatabaseService
 from mirobody.utils.config import Config
 from .base import BasePullProvider
 from .pull_task import create_pull_task_for_provider

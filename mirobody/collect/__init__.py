@@ -49,7 +49,7 @@ _EXPORTS = {
     # The provider-plugin contract. A third party writing a provider needs
     # exactly these names, and used to need four internal paths to find them
     # (`collect.base`, `collect.core`, `collect.ingest.models.requests`,
-    # `collect.providers.platform.base`). They are one import now, so moving
+    # `collect.providers._platform.base`). They are one import now, so moving
     # any of those modules stops being a breaking change for plugins.
     "LinkType": "core",
     "ProviderStatus": "core",
@@ -59,9 +59,9 @@ _EXPORTS = {
     "StandardPulseData": "ingest.models.requests",
     "StandardPulseMetaInfo": "ingest.models.requests",
     "StandardPulseRecord": "ingest.models.requests",
-    "DataFormatter": "providers.platform.normalize",
-    "TimeUtils": "providers.platform.normalize",
-    "records_from_facts": "providers.platform.normalize",
+    "DataFormatter": "providers._platform.normalize",
+    "TimeUtils": "providers._platform.normalize",
+    "records_from_facts": "providers._platform.normalize",
     "StandardIndicator": "standardize.indicators_info",
     "UNIT_CONVERSIONS": "standardize.units",
     # Apple Health implementations
@@ -87,7 +87,7 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
         StandardPulseMetaInfo,
         StandardPulseRecord,
     )
-    from .providers.platform.normalize import DataFormatter, TimeUtils, records_from_facts
+    from .providers._platform.normalize import DataFormatter, TimeUtils, records_from_facts
     from .standardize.indicators_info import StandardIndicator
     from .standardize.units import UNIT_CONVERSIONS
     from .providers import BasePullProvider, ProviderPlatform

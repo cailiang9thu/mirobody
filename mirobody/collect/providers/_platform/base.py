@@ -20,7 +20,7 @@ from mirobody.collect.ingest.models.requests import (
     StandardPulseData,
     StandardPulseMetaInfo,
 )
-from mirobody.collect.providers.platform.database_service import ProviderDatabaseService
+from mirobody.collect.providers._platform.database_service import ProviderDatabaseService
 from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)

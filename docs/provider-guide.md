@@ -2094,7 +2094,7 @@ Common indicators you'll map to:
    - Garmin: `mirobody/collect/providers/mirobody_garmin_connect/provider_garmin.py`
    - Whoop: `mirobody/collect/providers/mirobody_whoop/provider_whoop.py`
    - Oura: `mirobody/collect/providers/mirobody_oura/provider_oura.py`
-- **Platform internals**: `mirobody/collect/providers/platform/` — `base.py` is the
+- **Platform internals**: `mirobody/collect/providers/_platform/` — `base.py` is the
   contract you implement, `platform.py` does discovery and pull scheduling.
 - **Testing**: `docs/testing.md`. The maintainers' internal suite (not
   published in this repository) additionally snapshots `format_data()` output

@@ -10,7 +10,7 @@ unused and a second source of truth for the same logic.
 import logging
 
 from mirobody.collect import setup_platform_system_async
-from mirobody.collect.providers.platform.startup import start_theta_pull_scheduler
+from mirobody.collect.providers._platform.startup import start_theta_pull_scheduler
 
 logger = logging.getLogger(__name__)
 
