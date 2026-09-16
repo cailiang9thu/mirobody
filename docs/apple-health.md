@@ -111,12 +111,19 @@ body age, protein percentage. Those are not HealthKit identifiers. They came
 from a body-scale vendor's own API, so nothing in an Apple export can produce
 them, and they belong to whichever scale integration reads that vendor.
 
-An identifier the table does not carry is dropped, not rejected. The upload
-still succeeds; the count and the type names are logged:
+An identifier the table does not carry is dropped, not rejected: the shape was
+right, this build just does not carry that type. The upload succeeds and the
+response says what happened:
 
+```json
+"processingInfo": {"accepted": 34, "unparsed": 0,
+                   "unmapped_types": ["HKQuantityTypeIdentifierX"]}
 ```
-dropped 12 Apple records of 2 unmapped types: HKQuantityTypeIdentifierX, ...
-```
+
+A batch where **every** record fails to parse is refused instead, because that
+is a client speaking the vocabulary this endpoint dropped rather than a batch
+of readings we happen not to know. Answering "success" to that would leave the
+client believing it uploaded.
 
 ## Adding a data type
 

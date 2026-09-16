@@ -99,6 +99,18 @@ class AppleHealthProvider(Provider):
                 if r.type in self._ASLEEP:
                     records.append(r.model_copy(update={"type": total_key}))
 
+        # A batch where EVERY record failed to parse is a client speaking the
+        # vocabulary this endpoint dropped in 1.4.4, not a batch of readings we
+        # happen not to know. Answering "success" to that leaves the client
+        # believing it uploaded. An unknown but well-formed type is different
+        # and still succeeds: the shape was right, the type is just not carried.
+        if health_data and invalid == len(health_data):
+            raise ValueError(
+                f"none of the {invalid} records parsed. `type` must be a HealthKit "
+                "identifier (HKQuantityTypeIdentifierHeartRate), the span "
+                "startDate/endDate, `value` the number itself and `unit` its unit. "
+                "See docs/apple-health.md."
+            )
         if unmapped:
             logger.warning(  # phi: ok type names and counts, no value and no time
                 "dropped %d Apple records of %d unmapped types: %s",
@@ -119,6 +131,11 @@ class AppleHealthProvider(Provider):
                 windowTo=meta.windowTo,
             ),
             healthData=records,
+            processingInfo={
+                "accepted": len(records),
+                "unparsed": invalid,
+                "unmapped_types": sorted(unmapped),
+            },
         )
 
 
