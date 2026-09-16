@@ -33,6 +33,8 @@ from __future__ import annotations
 import json
 import logging
 import pathlib
+
+from mirobody.documents import detect
 import time
 from functools import lru_cache
 from typing import Any
@@ -251,7 +253,7 @@ async def file_extract(
         if not file_path.exists():
             raise FileNotFoundError(local_file_path)
         suffix = file_path.suffix.lower()
-        if suffix == ".pdf":
+        if detect.is_pdf(file_path.name):
             pages = _convert_pdf_to_base64_images(str(file_path))
             logger.info(f"Processing PDF with {provider_name} ({model_name}): {len(pages)} pages, json_mode={json_mode}")
             semaphore = asyncio.Semaphore(5)

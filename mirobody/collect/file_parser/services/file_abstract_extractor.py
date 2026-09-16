@@ -5,16 +5,14 @@ Extracts file summaries for different file types, with special handling for PDF 
 
 import hashlib
 import os
-import io
 import csv
 import tempfile
 import logging
 import json
 
-from PIL import Image
 from mirobody.utils.llm import unified_file_extract
 from mirobody.collect.file_parser.services.prompts.file_abstract_prompt import FILE_ABSTRACT_PROMPT, FALLBACK_ABSTRACT_TEMPLATES
-from mirobody.documents import extract as documents
+from mirobody.documents import detect, extract as documents, render
 from mirobody.documents.ocr import vision_ocr
 
 logger = logging.getLogger(__name__)
@@ -215,12 +213,11 @@ class FileAbstractExtractor:
         vision model as an image, so a photo of a meal still gets a
         description."""
         try:
-            with Image.open(io.BytesIO(file_content)) as img:
-                width, height = img.size
-                format_info = img.format or "Unknown"
-            context = f"Image file: {filename} ({width}x{height}, {format_info} format)"
+            width, height, fmt = render.image_info(file_content)
+            context = f"Image file: {filename} ({width}x{height}, {fmt or 'Unknown'} format)"
             file_extension = self._infer_file_extension("image/jpeg", "image", filename)
-            text = await documents.extract_text(filename, f"image/{format_info.lower()}", file_content, ocr=vision_ocr, cache=ThFilesTextCache())
+            mime = detect.image_mime(filename, None, file_content)
+            text = await documents.extract_text(filename, mime, file_content, ocr=vision_ocr, cache=ThFilesTextCache())
             if text.strip():
                 result = await self._generate_llm_abstract_with_content(text, context, file_extension=file_extension, generate_filename=True)
             else:

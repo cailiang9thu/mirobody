@@ -61,6 +61,7 @@ from deepagents.backends.protocol import (
 
 from mirobody.utils.db import execute_query
 from .coercion import coerce_to_int
+from mirobody.documents import detect
 from .naming import MULTIMODAL_EXTS
 
 logger = logging.getLogger(__name__)
@@ -545,7 +546,12 @@ class PgFilesystemBackend(BackendProtocol):
     # ─── audit / registration (non-protocol public surface) ─────────────
 
 
-_TEXT_DOC_EXTS = {".pdf", ".ppt", ".pptx", ".xlsx", ".xls", ".xlsm", ".xlsb"}
+#: Asked of `mirobody.documents`, not retyped. The hand-kept copy this replaces
+#: was wrong in both directions: `.docx` was missing, so a Word file never took
+#: the extract branch even though `extract_text` reads it, and `.xls`/`.ppt`/
+#: `.xlsb` were present without `.doc`, which is arbitrary. `documents` decides
+#: what a document is; this module decides what to do with one.
+_TEXT_DOC_EXTS = frozenset(detect.DOCUMENT_SUFFIXES)
 
 
 def _is_text_mime(mime_type: str | None, path: str = "") -> bool:

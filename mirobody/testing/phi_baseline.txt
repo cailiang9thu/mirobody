@@ -576,15 +576,6 @@ mirobody/utils/llm/file_processors/backends_openai.py	interpolation	time.time() 
 mirobody/utils/llm/file_processors/backends_openai.py	interpolation	time.time() - conversion_start
 mirobody/utils/llm/file_processors/backends_openai.py	interpolation	time.time() - start_time
 mirobody/utils/llm/file_processors/backends_openai.py	interpolation	time.time() - total_start
-mirobody/utils/llm/file_processors/media.py	interpolation	conversion_time
-mirobody/utils/llm/file_processors/media.py	interpolation	e
-mirobody/utils/llm/file_processors/media.py	interpolation	len(optimized_data)/1024
-mirobody/utils/llm/file_processors/media.py	interpolation	new_height
-mirobody/utils/llm/file_processors/media.py	interpolation	new_width
-mirobody/utils/llm/file_processors/media.py	interpolation	original_height
-mirobody/utils/llm/file_processors/media.py	interpolation	original_size/1024
-mirobody/utils/llm/file_processors/media.py	interpolation	original_width
-mirobody/utils/llm/file_processors/media.py	interpolation	page_num + 1
 mirobody/utils/llm/file_processors/results.py	interpolation	dropped
 mirobody/utils/llm/file_processors/results.py	interpolation	e
 mirobody/utils/llm/file_processors/results.py	interpolation	json_str[:100]

@@ -46,6 +46,21 @@ EXTRACTABLE_SUFFIXES: tuple[str, ...] = tuple(
     sorted({*PDF_SUFFIXES, *IMAGE_SUFFIXES, *XLSX_SUFFIXES, *DOCX_SUFFIXES, *PPTX_SUFFIXES})
 )
 
+#: The Office formats that predate the zip-based ones. `extract` cannot read
+#: them: python-docx, python-pptx and openpyxl all read only the zip formats.
+LEGACY_OFFICE_SUFFIXES: tuple[str, ...] = (".doc", ".ppt", ".xls", ".xlsb")
+
+#: A document as opposed to a photo or a recording. Wider than
+#: `EXTRACTABLE_SUFFIXES` at one end (the legacy Office formats, which are
+#: documents we cannot read) and narrower at the other (no images, which are
+#: extractable only through OCR and are served to a model as pictures).
+#: A caller deciding "serve text or serve bytes" wants THIS set: handing a
+#: reader `.xls` container bytes decoded as prose is worse than telling them
+#: the file could not be read.
+DOCUMENT_SUFFIXES: tuple[str, ...] = tuple(sorted({
+    *PDF_SUFFIXES, *XLSX_SUFFIXES, *DOCX_SUFFIXES, *PPTX_SUFFIXES, *LEGACY_OFFICE_SUFFIXES
+}))
+
 
 def _ext(filename: str | None) -> str:
     return os.path.splitext(str(filename or ""))[1].lower()
@@ -154,6 +169,11 @@ def kind(filename: str | None, content_type: str | None = None, data: bytes | No
     if is_text(filename, content_type):
         return KIND_TEXT
     return None
+
+
+def is_document(filename: str | None, content_type: str | None = None) -> bool:
+    """Whether this is a document, readable or not. See `DOCUMENT_SUFFIXES`."""
+    return _ext(filename) in DOCUMENT_SUFFIXES
 
 
 def is_extractable(filename: str | None, content_type: str | None = None) -> bool:
