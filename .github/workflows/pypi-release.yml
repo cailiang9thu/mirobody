@@ -172,7 +172,7 @@ jobs:
         # ① The BARE install is the LIBRARY, and the gate says exactly that:
         # numpy is the only third-party package it may reach for. This replaced
         # a weaker check that only asserted "FastAPI is absent" while importing
-        # `mirobody.utils` / `pulse.file_parser` / `mcp` — modules that now need
+        # `mirobody.utils` / `collect.files` / `mcp` — modules that now need
         # the [parse] and [app] extras, and that were only importable before
         # because base carried 93 packages.
         "$VPY" -c "
@@ -199,7 +199,7 @@ jobs:
             'stands on its own'
         )
         import mirobody.utils, mirobody.utils.llm
-        import mirobody.collect, mirobody.collect.file_parser
+        import mirobody.collect, mirobody.collect.files
         import mirobody.indicator
         print('[parse] imports clean on a FastAPI-free install')
         "
@@ -207,7 +207,7 @@ jobs:
         # stay langchain-free. This catches the break import-linter provably
         # cannot see: a module-scope import of mirobody.agent.chat.* executes
         # agent/__init__, and if that __init__ is eager it drags langchain into
-        # an engine import. Exactly this happened to pulse.file_parser once.
+        # an engine import. Exactly this happened to the file pipeline once.
         #
         # The server packages are spelled out rather than installed via an
         # extra, and that is deliberate: [app] is everything INCLUDING the agent
