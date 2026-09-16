@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from mirobody.collect.file_parser.services.conversation_summary import update_message_content
+from mirobody.collect.file_parser.services.report_date import resolve_report_date
 import abc
 import asyncio
 import hashlib
@@ -386,8 +388,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
 
         if ctx.message_id:
             try:
-                from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
-                await FileParserDatabaseService.update_message_content(
+                await update_message_content(
                     message_id=ctx.message_id,
                     content=f"❌ {t('file_upload_failed', language, 'file_processor')}\n\n{t('error', language, 'file_processor')}: {error_msg}",
                     reasoning=f"Error occurred during file processing: {error_msg}",
@@ -532,11 +533,10 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
 
             try:
                 from mirobody.collect.file_parser.services.content_formatter import ContentFormatter
-                from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
                 from mirobody.collect.file_parser.services.file_db_service import FileDbService
 
                 probed = await self.indicator_extractor.probe_report_date(original_text)
-                probe_dt, probe_source = await FileParserDatabaseService.resolve_report_date(str(user_id), probed)
+                probe_dt, probe_source = await resolve_report_date(str(user_id), probed)
                 probe_report = {"report_date": probe_dt.strftime("%Y-%m-%d %H:%M:%S"), "date_source": probe_source}
                 # On the file row now, not after extraction: the bar's answer
                 # (set_file_report_date) reads and writes this row, and the

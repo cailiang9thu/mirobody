@@ -4,6 +4,8 @@ Indicator extraction service
 Responsible for extracting health indicators from medical documents
 """
 
+from mirobody.collect.file_parser.services.indicator_store import save_indicators_to_db
+from mirobody.collect.file_parser.services.report_date import manual_report_date, resolve_report_date
 import json
 import time
 import logging
@@ -12,8 +14,6 @@ from collections.abc import Callable
 
 from mirobody.utils.i18n import t
 from mirobody.utils.req_ctx import get_req_ctx
-
-from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
 from mirobody.collect.file_parser.services.prompts.file_indicator_extract import (
     get_extract_indicators_prompt,
     RESPONSE_SCHEMA_EXTRACT_INDICATORS,
@@ -114,7 +114,7 @@ class IndicatorExtractor:
         Returns:
             (indicators, LLM response, report): `report` is
             `{"report_date", "date_source"}` as resolved by
-            `FileParserDatabaseService.resolve_report_date` when readings were
+            `resolve_report_date` when readings were
             saved, else None; the handler records it on the th_files row.
 
             The LLM response is ``None`` when the extraction call itself
@@ -198,15 +198,15 @@ class IndicatorExtractor:
                 if report_date and report_date[1] == "extracted":
                     start_time_dt, date_source = report_date
                 else:
-                    start_time_dt, date_source = await FileParserDatabaseService.resolve_report_date(str(user_id), exam_date)
+                    start_time_dt, date_source = await resolve_report_date(str(user_id), exam_date)
                 # The user may have answered "which date?" while this ran (the
                 # Data page bar, or the agent's set_report_date): the file row
                 # then already says `manual`, and that answer outranks anything
                 # read off the document.
-                manual = await FileParserDatabaseService.manual_report_date(file_key) if file_key else None
+                manual = await manual_report_date(file_key) if file_key else None
                 if manual is not None:
                     start_time_dt, date_source = manual, "manual"
-                saved_count = await FileParserDatabaseService.save_indicators_to_db(
+                saved_count = await save_indicators_to_db(
                     str(user_id),
                     indicators,
                     start_time_dt,

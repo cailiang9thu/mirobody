@@ -126,13 +126,6 @@ mirobody/collect/core/scheduler.py	interpolation	e
 mirobody/collect/core/scheduler.py	interpolation	force
 mirobody/collect/core/scheduler.py	interpolation	persisted.isoformat()
 mirobody/collect/core/scheduler.py	interpolation	str(e)
-mirobody/user/platform.py	interpolation	active
-mirobody/user/platform.py	interpolation	email
-mirobody/user/platform.py	interpolation	error_msg
-mirobody/user/platform.py	interpolation	link['user_id']
-mirobody/user/platform.py	interpolation	result
-mirobody/user/platform.py	interpolation	str(e)
-mirobody/user/platform.py	interpolation	user['id']
 mirobody/collect/file_parser/file_processor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/collect/file_parser/file_processor.py	interpolation	e
 mirobody/collect/file_parser/file_processor.py	interpolation	file.filename
@@ -184,20 +177,16 @@ mirobody/collect/file_parser/handlers/pdf.py	interpolation	e
 mirobody/collect/file_parser/handlers/pdf.py	interpolation	unique_filename
 mirobody/collect/file_parser/services/content_extractor.py	interpolation	str(e)
 mirobody/collect/file_parser/services/content_formatter.py	interpolation	str(e)
-mirobody/collect/file_parser/services/database_services.py	interpolation	', '.join(update_fields)
-mirobody/collect/file_parser/services/database_services.py	interpolation	e
-mirobody/collect/file_parser/services/database_services.py	interpolation	err
-mirobody/collect/file_parser/services/database_services.py	interpolation	exam_date
-mirobody/collect/file_parser/services/database_services.py	interpolation	file_key
-mirobody/collect/file_parser/services/database_services.py	interpolation	original_indicator
-mirobody/collect/file_parser/services/database_services.py	interpolation	result.get('total', 0)
-mirobody/collect/file_parser/services/database_services.py	interpolation	source_table
-mirobody/collect/file_parser/services/database_services.py	interpolation	str(e)
-mirobody/collect/file_parser/services/database_services.py	interpolation	summary
-mirobody/collect/file_parser/services/database_services.py	interpolation	target_user_id or uploader_user_id
-mirobody/collect/file_parser/services/database_services.py	interpolation	total_categories
-mirobody/collect/file_parser/services/database_services.py	interpolation	total_records
-mirobody/collect/file_parser/services/database_services.py	interpolation	update_result
+mirobody/collect/file_parser/services/conversation_summary.py	interpolation	', '.join(update_fields)
+mirobody/collect/file_parser/services/conversation_summary.py	interpolation	e
+mirobody/collect/file_parser/services/conversation_summary.py	interpolation	str(e)
+mirobody/collect/file_parser/services/conversation_summary.py	interpolation	summary
+mirobody/collect/file_parser/services/conversation_summary.py	interpolation	update_result
+mirobody/collect/file_parser/services/drive_listing.py	interpolation	err
+mirobody/collect/file_parser/services/drive_listing.py	interpolation	file_key
+mirobody/collect/file_parser/services/drive_listing.py	interpolation	result.get('total', 0)
+mirobody/collect/file_parser/services/drive_listing.py	interpolation	str(e)
+mirobody/collect/file_parser/services/drive_listing.py	interpolation	target_user_id or uploader_user_id
 mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	content_hash[:16]
 mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	e
 mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	file_name
@@ -245,10 +234,19 @@ mirobody/collect/file_parser/services/genetic_processor.py	interpolation	total_s
 mirobody/collect/file_parser/services/genetic_processor.py	interpolation	update_error
 mirobody/collect/file_parser/services/genetic_processor.py	interpolation	valid_records
 mirobody/collect/file_parser/services/genetic_processor.py	interpolation	ws_error
+mirobody/collect/file_parser/services/genetic_store.py	interpolation	source_table
 mirobody/collect/file_parser/services/indicator_extractor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/collect/file_parser/services/indicator_extractor.py	interpolation	e
 mirobody/collect/file_parser/services/indicator_extractor.py	interpolation	file_name
+mirobody/collect/file_parser/services/indicator_store.py	interpolation	e
+mirobody/collect/file_parser/services/indicator_store.py	interpolation	original_indicator
+mirobody/collect/file_parser/services/indicator_store.py	interpolation	str(e)
+mirobody/collect/file_parser/services/list_my_data.py	interpolation	str(e)
+mirobody/collect/file_parser/services/list_my_data.py	interpolation	total_categories
+mirobody/collect/file_parser/services/list_my_data.py	interpolation	total_records
 mirobody/collect/file_parser/services/report_date.py	interpolation	e
+mirobody/collect/file_parser/services/report_date.py	interpolation	exam_date
+mirobody/collect/file_parser/services/report_date.py	interpolation	file_key
 mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	filename
 mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	str(e)
 mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	str(ex)
@@ -285,6 +283,35 @@ mirobody/collect/manager.py	interpolation	platform.name
 mirobody/collect/manager.py	interpolation	platform_name
 mirobody/collect/manager.py	interpolation	result
 mirobody/collect/manager.py	interpolation	str(e)
+mirobody/collect/providers/_platform/base.py	interpolation	auth_type.value
+mirobody/collect/providers/_platform/base.py	interpolation	cred['user_id']
+mirobody/collect/providers/_platform/base.py	interpolation	e
+mirobody/collect/providers/_platform/base.py	interpolation	str(e)
+mirobody/collect/providers/_platform/base.py	interpolation	table_name
+mirobody/collect/providers/_platform/base.py	interpolation	user_timezone
+mirobody/collect/providers/_platform/database_service.py	interpolation	error_msg
+mirobody/collect/providers/_platform/database_service.py	interpolation	expires_at
+mirobody/collect/providers/_platform/database_service.py	interpolation	llm_access
+mirobody/collect/providers/_platform/database_service.py	interpolation	row['user_id']
+mirobody/collect/providers/_platform/database_service.py	interpolation	str(e)
+mirobody/collect/providers/_platform/normalize.py	interpolation	e
+mirobody/collect/providers/_platform/normalize.py	interpolation	effective_timezone
+mirobody/collect/providers/_platform/normalize.py	interpolation	str(e)
+mirobody/collect/providers/_platform/normalize.py	interpolation	time_str
+mirobody/collect/providers/_platform/normalize.py	interpolation	timestamp_str
+mirobody/collect/providers/_platform/oauth2.py	interpolation	e
+mirobody/collect/providers/_platform/platform.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/collect/providers/_platform/platform.py	interpolation	directory
+mirobody/collect/providers/_platform/platform.py	interpolation	e
+mirobody/collect/providers/_platform/platform.py	interpolation	page
+mirobody/collect/providers/_platform/platform.py	interpolation	provider_file
+mirobody/collect/providers/_platform/platform.py	interpolation	provider_file.stem
+mirobody/collect/providers/_platform/platform.py	interpolation	str(e)
+mirobody/collect/providers/_platform/platform.py	interpolation	total_records
+mirobody/collect/providers/_platform/pull_task.py	interpolation	execution_interval
+mirobody/collect/providers/_platform/pull_task.py	interpolation	schedule_type.value
+mirobody/collect/providers/_platform/pull_task.py	interpolation	str(e)
+mirobody/collect/providers/_platform/startup.py	interpolation	str(e)
 mirobody/collect/providers/apple/platform.py	interpolation	e
 mirobody/collect/providers/apple/platform.py	interpolation	last_ts
 mirobody/collect/providers/apple/platform.py	interpolation	result.get('execution_time_ms', 0)
@@ -328,35 +355,6 @@ mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	self.c
 mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	self.redirect_url
 mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	str(e)
 mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	text
-mirobody/collect/providers/_platform/base.py	interpolation	auth_type.value
-mirobody/collect/providers/_platform/base.py	interpolation	cred['user_id']
-mirobody/collect/providers/_platform/base.py	interpolation	e
-mirobody/collect/providers/_platform/base.py	interpolation	str(e)
-mirobody/collect/providers/_platform/base.py	interpolation	table_name
-mirobody/collect/providers/_platform/base.py	interpolation	user_timezone
-mirobody/collect/providers/_platform/database_service.py	interpolation	error_msg
-mirobody/collect/providers/_platform/database_service.py	interpolation	expires_at
-mirobody/collect/providers/_platform/database_service.py	interpolation	llm_access
-mirobody/collect/providers/_platform/database_service.py	interpolation	row['user_id']
-mirobody/collect/providers/_platform/database_service.py	interpolation	str(e)
-mirobody/collect/providers/_platform/normalize.py	interpolation	e
-mirobody/collect/providers/_platform/normalize.py	interpolation	effective_timezone
-mirobody/collect/providers/_platform/normalize.py	interpolation	str(e)
-mirobody/collect/providers/_platform/normalize.py	interpolation	time_str
-mirobody/collect/providers/_platform/normalize.py	interpolation	timestamp_str
-mirobody/collect/providers/_platform/oauth2.py	interpolation	e
-mirobody/collect/providers/_platform/platform.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/providers/_platform/platform.py	interpolation	directory
-mirobody/collect/providers/_platform/platform.py	interpolation	e
-mirobody/collect/providers/_platform/platform.py	interpolation	page
-mirobody/collect/providers/_platform/platform.py	interpolation	provider_file
-mirobody/collect/providers/_platform/platform.py	interpolation	provider_file.stem
-mirobody/collect/providers/_platform/platform.py	interpolation	str(e)
-mirobody/collect/providers/_platform/platform.py	interpolation	total_records
-mirobody/collect/providers/_platform/pull_task.py	interpolation	execution_interval
-mirobody/collect/providers/_platform/pull_task.py	interpolation	schedule_type.value
-mirobody/collect/providers/_platform/pull_task.py	interpolation	str(e)
-mirobody/collect/providers/_platform/startup.py	interpolation	str(e)
 mirobody/collect/readings.py	interpolation	on_conflict
 mirobody/collect/readings.py	interpolation	rejected
 mirobody/collect/readings.py	interpolation	sum(rejected.values())
@@ -499,6 +497,13 @@ mirobody/user/auth/oauth_service.py	interpolation	err
 mirobody/user/auth/oauth_service.py	interpolation	str(e)
 mirobody/user/auth/webauthn.py	interpolation	e
 mirobody/user/auth/webauthn.py	interpolation	self._origin
+mirobody/user/platform.py	interpolation	active
+mirobody/user/platform.py	interpolation	email
+mirobody/user/platform.py	interpolation	error_msg
+mirobody/user/platform.py	interpolation	link['user_id']
+mirobody/user/platform.py	interpolation	result
+mirobody/user/platform.py	interpolation	str(e)
+mirobody/user/platform.py	interpolation	user['id']
 mirobody/user/profile.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/user/profile.py	interpolation	current_lock_str
 mirobody/user/profile.py	interpolation	e

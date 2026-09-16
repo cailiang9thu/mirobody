@@ -5,6 +5,7 @@ render. It is NOT the agent's conversation memory: that is the LangGraph
 checkpointer (agent/checkpointer.py), keyed on thread_id = session_id.
 """
 
+from mirobody.collect.file_parser.services.drive_listing import regenerate_file_url
 import json
 import logging
 import uuid
@@ -162,15 +163,13 @@ async def _refresh_file_urls_in_content(content_json_obj: Any) -> None:
     """
     if not content_json_obj:
         return
-
-    from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
     from mirobody.utils.file_types import guess_mime
 
     async def _sign(file_key: str, file_name: str = "") -> str:
         if not file_key:
             return ""
         content_type = guess_mime(file_name) if file_name else "application/octet-stream"
-        return await FileParserDatabaseService.regenerate_file_url(
+        return await regenerate_file_url(
             file_key, file_name, content_type
         )
 

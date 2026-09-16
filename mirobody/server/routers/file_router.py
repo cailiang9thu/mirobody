@@ -2,6 +2,7 @@
 WebSocket routes for data_server with file upload progress and real-time communication
 """
 
+from mirobody.collect.file_parser.services.drive_listing import get_uploaded_files_paginated
 import asyncio
 import json
 import logging
@@ -19,8 +20,7 @@ from mirobody.server.auth import verify_token, verify_token_string
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
 from mirobody.collect.file_parser.file_upload_manager import get_websocket_file_upload_manager
-from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
-from mirobody.collect.file_parser.services.list_my_data import MyDataService
+from mirobody.collect.file_parser.services.list_my_data import get_user_data_distribution
 
 # Additional imports for async file processing
 from mirobody.collect.file_parser.services.file_processing_service import (
@@ -74,7 +74,6 @@ class FileDeleteResponse(BaseModel):
     data: dict[str, Any] | None
 
 
-my_data_service = MyDataService()
 
 async def _authorize_file_read(file_key: str, caller_id: str) -> bool:
     """Can `caller_id` read the object stored under `file_key`?
@@ -435,7 +434,7 @@ async def get_data_distribution(
         logger.info(f"Get data distribution: user_id={target_user_id}")
 
         # Call service to get data distribution
-        result = await my_data_service.get_user_data_distribution(target_user_id)
+        result = await get_user_data_distribution(target_user_id)
 
         return JSONResponse(
             content={"code": 0, "msg": "ok", "data": result},
@@ -488,7 +487,7 @@ async def get_uploaded_files(
 
         # Use database service to get uploaded files
         # Pass current_user for permission checking and target_user_id to determine which user's files to query
-        result = await FileParserDatabaseService.get_uploaded_files_paginated(
+        result = await get_uploaded_files_paginated(
             uploader_user_id=str(current_user),  # For permission checking
             target_user_id=target_user_id,       # Determines which user's files to query
             limit=limit,

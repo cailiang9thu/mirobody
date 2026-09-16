@@ -6,6 +6,7 @@ Integrates various atomic services to provide complete file processing functiona
 
 from __future__ import annotations
 
+from mirobody.collect.file_parser.services.conversation_summary import update_message_content
 import logging
 from typing import Any
 from collections.abc import Callable
@@ -22,7 +23,6 @@ from mirobody.utils.i18n import t
 from mirobody.utils.req_ctx import get_req_ctx
 
 from mirobody.collect.file_parser.services.content_extractor import ContentExtractor
-from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
 from mirobody.collect.file_parser.services.file_uploader import FileUploader
 from mirobody.collect.file_parser.services.indicator_extractor import IndicatorExtractor
 from mirobody.collect.file_parser.services.temp_file_manager import TempFileManager
@@ -135,7 +135,7 @@ class FileProcessor:
             # If there's a message ID, update message status to failed
             if message_id:
                 try:
-                    await FileParserDatabaseService.update_message_content(
+                    await update_message_content(
                         message_id=message_id,
                         content=f"❌ {t('file_upload_failed', language, 'file_processor')}\n\n{t('error', language, 'file_processor')}: {str(e)}",
                         reasoning=f"Error occurred during file processing: {str(e)}",

@@ -172,7 +172,7 @@ class FileDatePatch(BaseModel):
     a time and cannot tell "page 2 of the same report" from "a second report
     whose date did not come out", so it must not inherit a date on its own,
     it labels the guess (`date_source: upload_time`, see
-    `FileParserDatabaseService.resolve_report_date`) and the Data page asks.
+    `report_date.resolve_report_date`) and the Data page asks.
     The three answers (a sibling file's extracted date, a typed date, or
     "keep the upload time") all land here.
     """

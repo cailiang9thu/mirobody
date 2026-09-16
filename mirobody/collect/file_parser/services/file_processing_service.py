@@ -4,6 +4,7 @@ File processing service for async file operations
 
 from __future__ import annotations
 
+from mirobody.collect.file_parser.services.genetic_store import delete_genetic_data_by_source
 import asyncio
 import logging
 from datetime import datetime
@@ -21,7 +22,6 @@ from pydantic import BaseModel
 
 from mirobody.collect.file_parser.file_processor import FileProcessor
 from mirobody.collect.file_parser.memory_upload_file import MemoryUploadFile
-from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
 from mirobody.collect.file_parser.services.file_uploader import (
     generate_file_key,
     validate_file_extension,
@@ -565,7 +565,7 @@ async def _delete_genetic_data_background(user_id: str, file_key: str) -> bool:
     """
     try:
         # Use file_key as source_table_id with source_table = "th_files"
-        delete_success = await FileParserDatabaseService.delete_genetic_data_by_source(
+        delete_success = await delete_genetic_data_by_source(
             user_id, 
             "th_files", 
             file_key

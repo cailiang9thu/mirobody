@@ -31,6 +31,7 @@ SECTION INDEX (line numbers are approximate):
 
 from __future__ import annotations
 
+from mirobody.collect.file_parser.services.conversation_summary import generate_and_save_summary
 import asyncio
 import json
 import logging
@@ -46,8 +47,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fastapi import WebSocket
 from mirobody.collect.file_parser.file_processor import FileProcessor
-
-from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
 from mirobody.collect.file_parser.services.file_db_service import FileDbService
 from mirobody.utils.file_types import guess_mime
 from mirobody.collect.file_parser.handlers.genetic import GeneticHandler
@@ -287,7 +286,7 @@ class WebSocketFileUploadManager:
                     file_names_str = ", ".join(file_names) if file_names else "unknown files"
                     summary_message = f"file: {file_names_str}"
 
-                    await FileParserDatabaseService.generate_and_save_summary(
+                    await generate_and_save_summary(
                         user_id=real_user_id,
                         session_id=session_id,
                         user_message=summary_message,
@@ -1014,7 +1013,7 @@ class WebSocketFileUploadManager:
             async def update_embedding_task():
                 try:
                     # Dim sync + embedding backfill is now handled automatically by
-                    # FileParserDatabaseService.save_indicators_to_db(), no need to call here.
+                    # `indicator_store.save_indicators_to_db`, no need to call here.
 
                     # Start user profile creation. Lazy import, this is
                     # documented seam #4 (see pyproject ignore_imports): the
