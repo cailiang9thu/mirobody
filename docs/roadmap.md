@@ -428,19 +428,19 @@ on an integration this project does not ship.
 
 Two facts, both verified rather than assumed:
 
-* `agent/` reaches into **six** distinct internal `pulse.file_parser` modules (fixed in 1.4.4: one front door)
-  (`services.db_utils`, `services.file_processing_service`,
-  `services.file_db_service`, `services.file_abstract_extractor`,
-  `services.database_services`, `handlers.genetic`). Not a seam — six.
+* `agent/` reached into **six** distinct internal file-pipeline modules. Not a
+  seam, six. **Closed in 1.4.4**: `mirobody.collect` re-exports what the answer
+  layer needs, an import-linter contract forbids reaching past it, and four of
+  those six modules have since been renamed or split without a single edit in
+  `agent/`, which is the point of having done it.
 * `collect/files/file_upload_manager.py` and `task/profile_refresh.py`
   imported `agent.chat.user_profile` under two `ignore_imports` exemptions —
   closed in 1.4.0 by moving the module to `user/profile.py` (see seam #4).
 
-The direction is what makes it a cycle worth paying down: `pulse` is the data
-gateway and should not depend on the reasoning layer. Seam #4 is
-closed, which fixes the pulse -> agent edge. That does not address agent -> pulse,
-where the fix is a narrow public surface on `collect` instead of six deep
-imports.
+The direction is what makes it a cycle worth paying down: `collect` is the data
+gateway and should not depend on the reasoning layer. Seam #4 closed the
+collect -> agent edge in 1.4.0, and 1.4.4 closed the other one with the front
+door above. Both directions are now machine-checked rather than agreed.
 
 Worth stating plainly since it comes up: file PARSING belongs in pulse. Turning
 an uploaded PDF into indicators is the same job as pulling from WHOOP —

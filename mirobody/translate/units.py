@@ -1,7 +1,13 @@
-"""
-Health Unit Standardization Management
+"""A device indicator's value, in the unit the catalogue declares for it.
 
-Provides unit conversion functionality with automatic bidirectional conversion generation.
+`convert_to_standard(StandardIndicator.WEIGHT, 154, "lb")` gives kilograms,
+because that is what `bodyMasss` is stored in. One target per indicator, and
+the target comes from the catalogue next door in `indicators_info`.
+
+Not `mirobody.units`, which is the UCUM engine in the library layer: it asks
+whether two arbitrary unit strings are interconvertible at all, with no target.
+This module imports its arithmetic from there (`conversion_factor`,
+`MOLAR_MASS`) instead of keeping a second set of numbers.
 """
 
 import logging
