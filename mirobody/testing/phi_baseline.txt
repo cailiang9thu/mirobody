@@ -126,13 +126,13 @@ mirobody/collect/core/scheduler.py	interpolation	e
 mirobody/collect/core/scheduler.py	interpolation	force
 mirobody/collect/core/scheduler.py	interpolation	persisted.isoformat()
 mirobody/collect/core/scheduler.py	interpolation	str(e)
-mirobody/collect/core/user.py	interpolation	active
-mirobody/collect/core/user.py	interpolation	email
-mirobody/collect/core/user.py	interpolation	error_msg
-mirobody/collect/core/user.py	interpolation	link['user_id']
-mirobody/collect/core/user.py	interpolation	result
-mirobody/collect/core/user.py	interpolation	str(e)
-mirobody/collect/core/user.py	interpolation	user['id']
+mirobody/user/platform.py	interpolation	active
+mirobody/user/platform.py	interpolation	email
+mirobody/user/platform.py	interpolation	error_msg
+mirobody/user/platform.py	interpolation	link['user_id']
+mirobody/user/platform.py	interpolation	result
+mirobody/user/platform.py	interpolation	str(e)
+mirobody/user/platform.py	interpolation	user['id']
 mirobody/collect/file_parser/file_processor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/collect/file_parser/file_processor.py	interpolation	e
 mirobody/collect/file_parser/file_processor.py	interpolation	file.filename

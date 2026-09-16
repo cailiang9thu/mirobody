@@ -18,7 +18,7 @@ from mirobody.collect.readings import upsert_readings
 from mirobody.collect.standardize.indicators_info import is_summary_indicator, is_series_indicator, normalize_indicator_name
 from mirobody.collect.standardize.fhir_mapping import get_fhir_id
 from mirobody.collect.standardize.value_range_validator import ValueRangeValidator
-from mirobody.collect.core.user import PlatformUserService
+from mirobody.user.platform import PlatformUserService
 
 logger = logging.getLogger(__name__)
 

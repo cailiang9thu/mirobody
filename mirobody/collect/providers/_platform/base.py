@@ -13,7 +13,7 @@ from mirobody.collect import LinkRequest
 from mirobody.collect.base import Provider
 from mirobody.collect.core import LinkType
 from mirobody.collect.core.push_service import push_service
-from mirobody.collect.core.user import PlatformUserService
+from mirobody.user.platform import PlatformUserService
 from mirobody.collect.ingest.models.requests import (
     FormatDataContext,
     FormatDataInput,

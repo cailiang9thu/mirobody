@@ -3,6 +3,8 @@
     auth/             how they prove it: tokens, email codes, OAuth, passkeys
     user.py           the identity record, and the ONE lookup over it
     user_service.py   sign-in: pick a validator from auth/, land an account
+    platform.py       the same, for a device platform: find-or-create a user
+                      from a provider link and hand back a token
     care_circle.py    who may read whose record
     account_merge.py  two sign-ins turn out to be one person
     profile.py        the health profile document generated from the record
@@ -16,7 +18,7 @@ extra. The eager `from .email import MandrillEmailValidator` that used to sit
 here therefore made **mandrill a hard requirement of the engine**, through a
 chain nothing in the layering rules could see:
 
-    mirobody/collect/core/user.py
+    mirobody/collect/...                 (any engine module)
       -> mirobody.user                     (executes THIS __init__)
         -> mirobody.user.auth.email
           -> mandrill

@@ -1,21 +1,20 @@
-"""
-Core module
+"""What every stage in this package stands on.
 
-Provides common functionalities for all Platforms and Providers, including:
-- Unified logging
-- Common data models and enumerations
-- Common database operations
-- Webhook processing framework
-- Unified background task scheduler
-- Encapsulated push service
+    scheduler.py         the background task scheduler
+    distributed_lock.py  one pull runs at a time, across processes
+    database.py          the DB base classes
+    push_service.py      delivering a push to a provider
+    constants.py         LinkType, ProviderStatus, CacheConfig
+    models.py            the provider contract's own types
 
-What a value *means* (the indicator catalogue, unit conversion, value-range
-validation, fhir_id mapping) lives in `mirobody.collect.standardize`, not here.
-The downstream pipeline stage (`pulse.aggregate`, series → daily summaries) 
-is a top-level pulse package too. Both used to live inside this package, which
-made "core" a grab-bag: the pipeline was invisible in the directory tree, and
-pure data modules imported alongside the server infrastructure above. Core is
-now only the shared base every stage stands on.
+Not here, deliberately: what a value MEANS (the indicator catalogue, unit
+conversion, value ranges, fhir_id) is `collect.standardize`, and the pipeline
+stage that turns a series into daily summaries is `collect.aggregate`. Both
+lived in here once, which is what made "core" a grab-bag: the pipeline was
+invisible in the directory tree, and pure data modules sat beside the server
+infrastructure. `PlatformUserService` left for the same reason, and went
+further: identity is `mirobody/user/platform.py` now, because user creation
+and authentication are not something a collection package should own.
 """
 
 from typing import TYPE_CHECKING

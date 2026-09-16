@@ -34,7 +34,7 @@ from pydantic import BaseModel, Field
 
 from mirobody.collect.core import LinkType
 from mirobody.collect.core import ProviderStatus
-from mirobody.collect.core.user import get_platform_user_service
+from mirobody.user.platform import get_platform_user_service
 # Import platform manager
 from mirobody.collect.manager import platform_manager
 from mirobody.server.auth import verify_token, verify_token_optional
