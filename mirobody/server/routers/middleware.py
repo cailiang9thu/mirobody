@@ -24,7 +24,7 @@ async def init():
     try:
         from mirobody.translate import start_aggregate_indicator_scheduler
         await start_aggregate_indicator_scheduler(False)
-        from mirobody.derive import start_derived_scheduler
+        from mirobody.translate import start_derived_scheduler
         await start_derived_scheduler()
         logger.info("Aggregate indicator scheduler started")
     except Exception as e:

@@ -6,6 +6,8 @@
     fhir_mapping.py          indicator to fhir_id
     aggregate/               a day of points to one number, and which source
                              publishes it
+    derive/                  quantities nothing measured: sleep efficiency,
+                             heart-rate range
     std_indicator_registry/  publishes the catalogue to the database
 
 ① Collect stores what a device or a document said, verbatim and traceable.
@@ -20,8 +22,10 @@ what it rewrites against.
 `aggregate/` is here because a daily total is the SAME quantity on a different
 time axis, which is a LOINC axis change, and because the rules were already
 here: `IndicatorInfo.aggregation_methods` declares them and `aggregate/` only
-executes them. A ratio of two different components is a new quantity, not a
-meaning, and lives in `mirobody.derive`.
+executes them. `derive/` sits beside it: sleep efficiency is total sleep over time in bed,
+heart-rate range is max minus min. Nothing wore a sensor for either. They are
+not collection, which is the point: ① Collect guarantees that what a source
+said is stored cleanly and can be traced back, and computes nothing on top.
 
 Two couplings, named rather than hidden. `collect/` imports this package in 11
 files, because a provider declares its metrics with `StandardIndicator` and
@@ -66,6 +70,7 @@ _EXPORTS = {
     "get_fhir_id": "fhir_mapping",
     "start_std_indicator_registry": "std_indicator_registry.startup",
     "start_aggregate_indicator_scheduler": "aggregate.startup",
+    "start_derived_scheduler": "derive.task",
     "AggregateIndicatorService": "aggregate.service",
     "AggregateDatabaseService": "aggregate.database_service",
     "build_indicator_name": "aggregate.naming",
@@ -92,6 +97,7 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .aggregate.rule_generator import get_all_aggregation_rules
     from .aggregate.service import AggregateIndicatorService
     from .aggregate.startup import start_aggregate_indicator_scheduler
+    from .derive.task import start_derived_scheduler
     from .std_indicator_registry.startup import start_std_indicator_registry
     from .units import UNIT_CONVERSIONS, convert_to_standard, get_all_units_info
     from .value_range_validator import ValueRangeValidator

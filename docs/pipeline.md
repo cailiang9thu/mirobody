@@ -22,7 +22,7 @@ how a reader comes to believe a boundary does not exist.
 | 6 | **Store** | one writer, one day column, one fingerprint | `collect/readings.py` |
 | 7 | **Aggregate** | a day of points → one number, under the metric's policy | `kernel/series.py`, `translate/aggregate/` |
 | 8 | **Elect** | which source the day publishes from | `series.elect`, `translate/aggregate/election.py` |
-| 8b | **Derive** | quantities nothing measured: sleep efficiency, HR range | `derive/rules.py` |
+| 8b | **Derive** | quantities nothing measured: sleep efficiency, HR range | `translate/derive/rules.py` |
 | 9 | **Correct** | a person's edit, as a layer over the row | `kernel/overlay.py` |
 | 10 | **Read** | one authority, one window semantics | `kernel/query.py` |
 | 11 | **Answer** | one tool, an envelope, a model that narrates | `agent/tools/` |
