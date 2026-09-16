@@ -4,8 +4,8 @@ Indicator extraction service
 Responsible for extracting health indicators from medical documents
 """
 
-from mirobody.collect.file_parser.services.indicator_store import save_indicators_to_db
-from mirobody.collect.file_parser.services.report_date import manual_report_date, resolve_report_date
+from mirobody.collect.files.services.indicator_store import save_indicators_to_db
+from mirobody.collect.files.services.report_date import manual_report_date, resolve_report_date
 import json
 import time
 import logging
@@ -14,7 +14,7 @@ from collections.abc import Callable
 
 from mirobody.utils.i18n import t
 from mirobody.utils.req_ctx import get_req_ctx
-from mirobody.collect.file_parser.services.prompts.file_indicator_extract import (
+from mirobody.collect.files.services.prompts.file_indicator_extract import (
     get_extract_indicators_prompt,
     RESPONSE_SCHEMA_EXTRACT_INDICATORS,
 )

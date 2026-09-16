@@ -11,13 +11,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fastapi import UploadFile
 from mirobody.utils.file_types import is_text_file
-from mirobody.collect.file_parser.handlers.document import DocumentHandler
-from mirobody.collect.file_parser.handlers.base import BaseFileHandler
-from mirobody.collect.file_parser.handlers.image import ImageHandler
-from mirobody.collect.file_parser.handlers.pdf import PDFHandler
-from mirobody.collect.file_parser.handlers.text import TextHandler
-from mirobody.collect.file_parser.handlers.genetic import GeneticHandler
-from mirobody.collect.file_parser.handlers.excel import ExcelHandler
+from mirobody.collect.files.handlers.document import DocumentHandler
+from mirobody.collect.files.handlers.base import BaseFileHandler
+from mirobody.collect.files.handlers.image import ImageHandler
+from mirobody.collect.files.handlers.pdf import PDFHandler
+from mirobody.collect.files.handlers.text import TextHandler
+from mirobody.collect.files.handlers.genetic import GeneticHandler
+from mirobody.collect.files.handlers.excel import ExcelHandler
 
 class FileHandlerFactory:
     def __init__(

@@ -4,7 +4,7 @@ Two source shapes, one convergence point, then meaning:
 
     providers/   devices and health platforms: Garmin, Oura, WHOOP pulled on a
                  schedule, Apple Health and CDA documents pushed
-    file_parser/ a file is a source too: lab PDFs, photos, CSV, genetic raw data
+    files/       a file is a source too: lab PDFs, photos, CSV, genetic raw data
          ↓
     ingest/      all three converge on StandardPulseData → th_series_data
          ↓
@@ -85,20 +85,20 @@ _EXPORTS = {
     "REST_CATALOG_MAX": "query",
     "upsert_readings": "readings",
     # Files, shared by server and agent.
-    "get_websocket_file_upload_manager": "file_parser.file_upload_manager",
-    "FileDbService": "file_parser.services.file_db_service",
-    "FileUploadData": "file_parser.services.file_processing_service",
-    "delete_all_files_from_message": "file_parser.services.file_processing_service",
-    "delete_files_from_message": "file_parser.services.file_processing_service",
-    "upload_files_to_storage": "file_parser.services.file_processing_service",
-    "process_files_async": "file_parser.services.file_processing_service",
-    "get_uploaded_files_paginated": "file_parser.services.drive_listing",
-    "regenerate_file_url": "file_parser.services.drive_listing",
-    "get_user_data_distribution": "file_parser.services.list_my_data",
-    "set_file_report_date": "file_parser.services.report_date",
-    "FileAbstractExtractor": "file_parser.services.file_abstract_extractor",
-    "lookup_extracted_text": "file_parser.services.file_abstract_extractor",
-    "GeneticHandler": "file_parser.handlers.genetic",
+    "get_websocket_file_upload_manager": "files.file_upload_manager",
+    "FileDbService": "files.services.file_db_service",
+    "FileUploadData": "files.services.file_processing_service",
+    "delete_all_files_from_message": "files.services.file_processing_service",
+    "delete_files_from_message": "files.services.file_processing_service",
+    "upload_files_to_storage": "files.services.file_processing_service",
+    "process_files_async": "files.services.file_processing_service",
+    "get_uploaded_files_paginated": "files.services.drive_listing",
+    "regenerate_file_url": "files.services.drive_listing",
+    "get_user_data_distribution": "files.services.list_my_data",
+    "set_file_report_date": "files.services.report_date",
+    "FileAbstractExtractor": "files.services.file_abstract_extractor",
+    "lookup_extracted_text": "files.services.file_abstract_extractor",
+    "GeneticHandler": "files.handlers.genetic",
     # What `mirobody.agent` needs beyond the above.
     "PostgresDoseLogStore": "meds",
     "PostgresMedicationStore": "meds",
@@ -135,20 +135,20 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .query import PostgresHealthQuery, REST_CATALOG_MAX
     from .readings import upsert_readings
     from .meds import PostgresDoseLogStore, PostgresMedicationStore
-    from .file_parser.file_upload_manager import get_websocket_file_upload_manager
-    from .file_parser.handlers.genetic import GeneticHandler
-    from .file_parser.services.drive_listing import get_uploaded_files_paginated, regenerate_file_url
-    from .file_parser.services.file_abstract_extractor import FileAbstractExtractor, lookup_extracted_text
-    from .file_parser.services.file_db_service import FileDbService
-    from .file_parser.services.file_processing_service import (
+    from .files.file_upload_manager import get_websocket_file_upload_manager
+    from .files.handlers.genetic import GeneticHandler
+    from .files.services.drive_listing import get_uploaded_files_paginated, regenerate_file_url
+    from .files.services.file_abstract_extractor import FileAbstractExtractor, lookup_extracted_text
+    from .files.services.file_db_service import FileDbService
+    from .files.services.file_processing_service import (
         FileUploadData,
         delete_all_files_from_message,
         delete_files_from_message,
         process_files_async,
         upload_files_to_storage,
     )
-    from .file_parser.services.list_my_data import get_user_data_distribution
-    from .file_parser.services.report_date import set_file_report_date
+    from .files.services.list_my_data import get_user_data_distribution
+    from .files.services.report_date import set_file_report_date
 
 
 def __getattr__(name: str):

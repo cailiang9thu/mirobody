@@ -28,7 +28,7 @@ build host into part of the data: the same upload is served as a spreadsheet
 from one deployment and as a download from another.
 
 `MIME_BY_EXT` therefore pins every extension this project accepts (uploads:
-`collect/file_parser/services/file_uploader.SUPPORTED_EXTENSIONS`; agent serving:
+`collect/files/services/file_uploader.SUPPORTED_EXTENSIONS`; agent serving:
 `agent/filesystem/naming.MULTIMODAL_EXTS`) and `mimetypes` is only the fallback for
 everything else. The values are the ones this project already stores: the
 legacy `x-` forms (`audio/x-aac`, `video/x-flv`) are kept rather than modernized
@@ -77,7 +77,7 @@ MIME_BY_EXT: dict[str, str] = {
     ".zip": "application/zip", ".rar": "application/x-rar-compressed",
     ".7z": "application/x-7z-compressed", ".gz": "application/gzip",
     ".tar": "application/x-tar",
-    # types that only the file_parser's own table used to carry
+    # types that only the files package's own table used to carry
     ".ico": "image/x-icon", ".tif": "image/tiff", ".mkv": "video/x-matroska",
 }
 

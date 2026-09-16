@@ -180,7 +180,7 @@ an explicit migration: it is irreversible for anyone holding data.
 Renaming the package after one part of it was considered and rejected on
 measurement. The package is `collect/` now, which is the stage name, and the
 rejection reads better than it did: external-source integration is
-`providers/` (Apple included since 1.4.4) plus `file_parser/`, the pipeline is
+`providers/` (Apple included since 1.4.4) plus `files/`, the pipeline is
 `ingest/` + `aggregate/`, and `core/` is down from 41% to ~8%. Standardization
 left the package entirely in 1.4.4, to `mirobody/translate/`, which is ②
 Translate's own stage.
@@ -194,10 +194,13 @@ meaning, rollups, with `core/` marked as infrastructure rather than a stage.
 Sizes are given rounded (`~6.4k`), because an exact count in prose is stale the
 week after it is written and the number is there to show proportion.
 
-That was the whole benefit. Moving `file_parser/` to a `files/` sibling and
-grouping the rest under `vendor/` would churn every import path in the package
-to communicate what two paragraphs now communicate, so it is not carried here as
-pending work.
+That was the whole benefit at the time. Half of it was reversed in 1.4.4:
+`file_parser/` is `files/` now, because the cost changed. The objection was
+churn across every import path, and 1.4.4 gave `collect` a front door
+(`mirobody.collect` re-exports what the answer layer needs, held by an
+import-linter contract), so a rename inside the package no longer reaches any
+caller outside it. Grouping the rest under `vendor/` stays rejected, for the
+reason above: naming the package after one part of it.
 
 ### ~~`[server]` extra — finish the dependency split~~ (done in 1.3.0; base is `numpy`, extras are `[parse]` and `[app]`)
 
@@ -323,7 +326,7 @@ run it: `webauthn._is_mfa_enabled` fetched one boolean that way. The rule is now
 stated at the top of `user/user.py`, and it is about atomicity, not about files.
 
 The retyping was worse than this entry said: not 20 sites but 25, in `user/`,
-`server/routers/`, `collect/core/`, `collect/file_parser/`, `indicator/` and
+`server/routers/`, `collect/core/`, `collect/files/`, `indicator/` and
 `demo/`, each with its own column list. And the cost was not the duplication.
 One of the copies — `get_user_info`, the profile the chat layer greets you with
 — had no `is_del` filter, so a deleted account still answered with its name,
@@ -391,7 +394,7 @@ continues, dropping that user rather than retrying.
 
 Low impact today: `IndicatorSyncTask` is an idempotent full sweep, and any
 later ingest re-triggers it. But file ingest
-(`file_parser/services/database_services.py:628`) is the *only* producer for
+(`files/services/` , then `database_services.py`) is the *only* producer for
 either queue and there is no cron re-drive, so a sweep that dies partway
 through stays undone until the next real upload.
 
@@ -425,18 +428,18 @@ on an integration this project does not ship.
 
 Two facts, both verified rather than assumed:
 
-* `agent/` reaches into **six** distinct internal `pulse.file_parser` modules
+* `agent/` reaches into **six** distinct internal `pulse.file_parser` modules (fixed in 1.4.4: one front door)
   (`services.db_utils`, `services.file_processing_service`,
   `services.file_db_service`, `services.file_abstract_extractor`,
   `services.database_services`, `handlers.genetic`). Not a seam — six.
-* `collect/file_parser/file_upload_manager.py` and `task/profile_refresh.py`
+* `collect/files/file_upload_manager.py` and `task/profile_refresh.py`
   imported `agent.chat.user_profile` under two `ignore_imports` exemptions —
   closed in 1.4.0 by moving the module to `user/profile.py` (see seam #4).
 
 The direction is what makes it a cycle worth paying down: `pulse` is the data
 gateway and should not depend on the reasoning layer. Seam #4 is
 closed, which fixes the pulse -> agent edge. That does not address agent -> pulse,
-where the fix is a narrow public surface on `file_parser` instead of six deep
+where the fix is a narrow public surface on `collect` instead of six deep
 imports.
 
 Worth stating plainly since it comes up: file PARSING belongs in pulse. Turning

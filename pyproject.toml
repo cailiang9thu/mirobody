@@ -649,7 +649,7 @@ forbidden_modules = [
     "mirobody.collect.backfill",
     "mirobody.collect.base",
     "mirobody.collect.core",
-    "mirobody.collect.file_parser",
+    "mirobody.collect.files",
     "mirobody.collect.ingest",
     "mirobody.collect.manager",
     "mirobody.collect.meds",

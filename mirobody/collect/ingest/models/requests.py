@@ -1,5 +1,12 @@
-"""
-Health API request models
+"""The shape every source converges on.
+
+`StandardPulseData` is a `StandardPulseMetaInfo` plus a list of
+`StandardPulseRecord`. A provider's `format_data` returns it and the upload
+path writes it, which is why a new vendor needs no new storage code.
+
+`StandardPulseRecord`'s first six fields are a vendor API's record shape, kept
+verbatim so its payloads needed no conversion. That vendor is gone; the fields
+stay because rows in `th_series_data` were written against them.
 """
 
 from typing import Any

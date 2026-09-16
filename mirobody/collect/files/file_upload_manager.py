@@ -31,7 +31,7 @@ SECTION INDEX (line numbers are approximate):
 
 from __future__ import annotations
 
-from mirobody.collect.file_parser.services.conversation_summary import generate_and_save_summary
+from mirobody.collect.files.services.conversation_summary import generate_and_save_summary
 import asyncio
 import json
 import logging
@@ -46,10 +46,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi import WebSocket
-from mirobody.collect.file_parser.file_processor import FileProcessor
-from mirobody.collect.file_parser.services.file_db_service import FileDbService
+from mirobody.collect.files.file_processor import FileProcessor
+from mirobody.collect.files.services.file_db_service import FileDbService
 from mirobody.utils.file_types import guess_mime
-from mirobody.collect.file_parser.handlers.genetic import GeneticHandler
+from mirobody.collect.files.handlers.genetic import GeneticHandler
 from mirobody.utils.tasks import spawn
 from .memory_upload_file import MemoryUploadFile
 
@@ -1019,7 +1019,7 @@ class WebSocketFileUploadManager:
                     # documented seam #4 (see pyproject ignore_imports): the
                     # profile GENERATOR lives agent-side because it calls the
                     # LLM. Importing it at module scope would make
-                    # `import mirobody.collect.file_parser` require langchain on
+                    # `import mirobody.collect.files` require langchain on
                     # a bare engine install; function scope defers that cost
                     # to the moment a profile is actually (re)built, exactly
                     # like task/profile_refresh does.
@@ -1206,7 +1206,7 @@ class WebSocketFileUploadManager:
                     # Create proper abstract if not available in results
                     if not file_abstract:
                         try:
-                            from mirobody.collect.file_parser.services.file_abstract_extractor import FileAbstractExtractor
+                            from mirobody.collect.files.services.file_abstract_extractor import FileAbstractExtractor
                             extractor = FileAbstractExtractor()
                             
                             logger.info(f"[WebSocket] Generating file abstract for file {i + 1} of {message_id}, type: {file_type}")

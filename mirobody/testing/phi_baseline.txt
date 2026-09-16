@@ -115,143 +115,133 @@ mirobody/collect/core/database.py	extra_key	time_cost
 mirobody/collect/core/database.py	interpolation	cache_key
 mirobody/collect/core/database.py	interpolation	logged_query
 mirobody/collect/core/database.py	interpolation	str(e)
-mirobody/collect/core/distributed_lock.py	interpolation	e
-mirobody/collect/core/distributed_lock.py	interpolation	existing_lock.decode() if isinstance(existing_lock, bytes) else existing_lock
-mirobody/collect/core/distributed_lock.py	interpolation	str(e)
-mirobody/collect/core/distributed_lock.py	interpolation	timestamp
 mirobody/collect/core/push_service.py	interpolation	str(e)
-mirobody/collect/core/scheduler.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/core/scheduler.py	interpolation	current_time.isoformat()
-mirobody/collect/core/scheduler.py	interpolation	e
-mirobody/collect/core/scheduler.py	interpolation	force
-mirobody/collect/core/scheduler.py	interpolation	persisted.isoformat()
-mirobody/collect/core/scheduler.py	interpolation	str(e)
-mirobody/collect/file_parser/file_processor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/file_parser/file_processor.py	interpolation	e
-mirobody/collect/file_parser/file_processor.py	interpolation	file.filename
-mirobody/collect/file_parser/file_processor.py	interpolation	str(update_error)
-mirobody/collect/file_parser/file_upload_manager.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	base_progress
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	e
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	error_message
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	f' for {filename}' if filename else ''
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	file_data['filename']
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	file_end_progress
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	file_entry.get('filename', 'unknown')
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	file_start_progress
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	has_genetic_files
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	list(self.active_connections.keys())
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	mapped_progress
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	max_progress
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	message
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	message.get('message', '')
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	message.get('type', 'unknown')
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	progress
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	progress_per_file
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	session['status']
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	str(abstract_error)
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	str(e)
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	successful_files
-mirobody/collect/file_parser/file_upload_manager.py	interpolation	total_files
-mirobody/collect/file_parser/handlers/base.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/file_parser/handlers/base.py	interpolation	ctx.filename
-mirobody/collect/file_parser/handlers/base.py	interpolation	e
-mirobody/collect/file_parser/handlers/base.py	interpolation	err
-mirobody/collect/file_parser/handlers/base.py	interpolation	error_msg
-mirobody/collect/file_parser/handlers/base.py	interpolation	event.get('type')
-mirobody/collect/file_parser/handlers/base.py	interpolation	file_key
-mirobody/collect/file_parser/handlers/base.py	interpolation	full_url
-mirobody/collect/file_parser/handlers/base.py	interpolation	self.get_type_name()
-mirobody/collect/file_parser/handlers/base.py	interpolation	str(update_error)
-mirobody/collect/file_parser/handlers/base.py	interpolation	unique_filename
-mirobody/collect/file_parser/handlers/base.py	interpolation	url_error
-mirobody/collect/file_parser/handlers/document.py	interpolation	e
-mirobody/collect/file_parser/handlers/document.py	interpolation	unique_filename
-mirobody/collect/file_parser/handlers/excel.py	interpolation	e
-mirobody/collect/file_parser/handlers/excel.py	interpolation	unique_filename
-mirobody/collect/file_parser/handlers/genetic.py	interpolation	file_key
-mirobody/collect/file_parser/handlers/genetic.py	interpolation	full_url
-mirobody/collect/file_parser/handlers/image.py	interpolation	e
-mirobody/collect/file_parser/handlers/image.py	interpolation	unique_filename
-mirobody/collect/file_parser/handlers/pdf.py	interpolation	e
-mirobody/collect/file_parser/handlers/pdf.py	interpolation	unique_filename
-mirobody/collect/file_parser/services/content_extractor.py	interpolation	str(e)
-mirobody/collect/file_parser/services/content_formatter.py	interpolation	str(e)
-mirobody/collect/file_parser/services/conversation_summary.py	interpolation	', '.join(update_fields)
-mirobody/collect/file_parser/services/conversation_summary.py	interpolation	e
-mirobody/collect/file_parser/services/conversation_summary.py	interpolation	str(e)
-mirobody/collect/file_parser/services/conversation_summary.py	interpolation	summary
-mirobody/collect/file_parser/services/conversation_summary.py	interpolation	update_result
-mirobody/collect/file_parser/services/drive_listing.py	interpolation	err
-mirobody/collect/file_parser/services/drive_listing.py	interpolation	file_key
-mirobody/collect/file_parser/services/drive_listing.py	interpolation	result.get('total', 0)
-mirobody/collect/file_parser/services/drive_listing.py	interpolation	str(e)
-mirobody/collect/file_parser/services/drive_listing.py	interpolation	target_user_id or uploader_user_id
-mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	content_hash[:16]
-mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	e
-mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	file_name
-mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	filename
-mirobody/collect/file_parser/services/file_abstract_extractor.py	interpolation	json_error
-mirobody/collect/file_parser/services/file_db_service.py	interpolation	e
-mirobody/collect/file_parser/services/file_db_service.py	interpolation	file_info
-mirobody/collect/file_parser/services/file_db_service.py	interpolation	file_key
-mirobody/collect/file_parser/services/file_db_service.py	interpolation	list(updates.keys())
-mirobody/collect/file_parser/services/file_db_service.py	interpolation	str(e)
-mirobody/collect/file_parser/services/file_processing_service.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	cache_error
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	cache_ttl
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	e
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	err
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	error_msg
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	file.filename
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	file_data.get('file_name', 'unknown')
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	file_key
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	file_keys
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	file_url
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	filename
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	result.get('success')
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	scene
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	storage.get_storage_type()
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	str(e)
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	str(file_error)
-mirobody/collect/file_parser/services/file_processing_service.py	interpolation	total_files
-mirobody/collect/file_parser/services/file_uploader.py	interpolation	filename
-mirobody/collect/file_parser/services/file_uploader.py	interpolation	full_url
-mirobody/collect/file_parser/services/file_uploader.py	interpolation	storage.get_storage_type()
-mirobody/collect/file_parser/services/file_uploader.py	interpolation	str(e)
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	e
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	error_msg
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	failed_batches
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	line
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	line_num
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	loaded_records
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	processed_lines
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	str(e)
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	str(ex)
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	temp_file_path
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	total_processed
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	total_saved
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	update_error
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	valid_records
-mirobody/collect/file_parser/services/genetic_processor.py	interpolation	ws_error
-mirobody/collect/file_parser/services/genetic_store.py	interpolation	source_table
-mirobody/collect/file_parser/services/indicator_extractor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/collect/file_parser/services/indicator_extractor.py	interpolation	e
-mirobody/collect/file_parser/services/indicator_extractor.py	interpolation	file_name
-mirobody/collect/file_parser/services/indicator_store.py	interpolation	e
-mirobody/collect/file_parser/services/indicator_store.py	interpolation	original_indicator
-mirobody/collect/file_parser/services/indicator_store.py	interpolation	str(e)
-mirobody/collect/file_parser/services/list_my_data.py	interpolation	str(e)
-mirobody/collect/file_parser/services/list_my_data.py	interpolation	total_categories
-mirobody/collect/file_parser/services/list_my_data.py	interpolation	total_records
-mirobody/collect/file_parser/services/report_date.py	interpolation	e
-mirobody/collect/file_parser/services/report_date.py	interpolation	exam_date
-mirobody/collect/file_parser/services/report_date.py	interpolation	file_key
-mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	filename
-mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	str(e)
-mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	str(ex)
-mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	temp_file_path
-mirobody/collect/file_parser/services/temp_file_manager.py	interpolation	upload_file.filename
+mirobody/collect/files/file_processor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/collect/files/file_processor.py	interpolation	e
+mirobody/collect/files/file_processor.py	interpolation	file.filename
+mirobody/collect/files/file_processor.py	interpolation	str(update_error)
+mirobody/collect/files/file_upload_manager.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/collect/files/file_upload_manager.py	interpolation	base_progress
+mirobody/collect/files/file_upload_manager.py	interpolation	e
+mirobody/collect/files/file_upload_manager.py	interpolation	error_message
+mirobody/collect/files/file_upload_manager.py	interpolation	f' for {filename}' if filename else ''
+mirobody/collect/files/file_upload_manager.py	interpolation	file_data['filename']
+mirobody/collect/files/file_upload_manager.py	interpolation	file_end_progress
+mirobody/collect/files/file_upload_manager.py	interpolation	file_entry.get('filename', 'unknown')
+mirobody/collect/files/file_upload_manager.py	interpolation	file_start_progress
+mirobody/collect/files/file_upload_manager.py	interpolation	has_genetic_files
+mirobody/collect/files/file_upload_manager.py	interpolation	list(self.active_connections.keys())
+mirobody/collect/files/file_upload_manager.py	interpolation	mapped_progress
+mirobody/collect/files/file_upload_manager.py	interpolation	max_progress
+mirobody/collect/files/file_upload_manager.py	interpolation	message
+mirobody/collect/files/file_upload_manager.py	interpolation	message.get('message', '')
+mirobody/collect/files/file_upload_manager.py	interpolation	message.get('type', 'unknown')
+mirobody/collect/files/file_upload_manager.py	interpolation	progress
+mirobody/collect/files/file_upload_manager.py	interpolation	progress_per_file
+mirobody/collect/files/file_upload_manager.py	interpolation	session['status']
+mirobody/collect/files/file_upload_manager.py	interpolation	str(abstract_error)
+mirobody/collect/files/file_upload_manager.py	interpolation	str(e)
+mirobody/collect/files/file_upload_manager.py	interpolation	successful_files
+mirobody/collect/files/file_upload_manager.py	interpolation	total_files
+mirobody/collect/files/handlers/base.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/collect/files/handlers/base.py	interpolation	ctx.filename
+mirobody/collect/files/handlers/base.py	interpolation	e
+mirobody/collect/files/handlers/base.py	interpolation	err
+mirobody/collect/files/handlers/base.py	interpolation	error_msg
+mirobody/collect/files/handlers/base.py	interpolation	event.get('type')
+mirobody/collect/files/handlers/base.py	interpolation	file_key
+mirobody/collect/files/handlers/base.py	interpolation	full_url
+mirobody/collect/files/handlers/base.py	interpolation	self.get_type_name()
+mirobody/collect/files/handlers/base.py	interpolation	str(update_error)
+mirobody/collect/files/handlers/base.py	interpolation	unique_filename
+mirobody/collect/files/handlers/base.py	interpolation	url_error
+mirobody/collect/files/handlers/document.py	interpolation	e
+mirobody/collect/files/handlers/document.py	interpolation	unique_filename
+mirobody/collect/files/handlers/excel.py	interpolation	e
+mirobody/collect/files/handlers/excel.py	interpolation	unique_filename
+mirobody/collect/files/handlers/genetic.py	interpolation	file_key
+mirobody/collect/files/handlers/genetic.py	interpolation	full_url
+mirobody/collect/files/handlers/image.py	interpolation	e
+mirobody/collect/files/handlers/image.py	interpolation	unique_filename
+mirobody/collect/files/handlers/pdf.py	interpolation	e
+mirobody/collect/files/handlers/pdf.py	interpolation	unique_filename
+mirobody/collect/files/services/content_extractor.py	interpolation	str(e)
+mirobody/collect/files/services/content_formatter.py	interpolation	str(e)
+mirobody/collect/files/services/conversation_summary.py	interpolation	', '.join(update_fields)
+mirobody/collect/files/services/conversation_summary.py	interpolation	e
+mirobody/collect/files/services/conversation_summary.py	interpolation	str(e)
+mirobody/collect/files/services/conversation_summary.py	interpolation	summary
+mirobody/collect/files/services/conversation_summary.py	interpolation	update_result
+mirobody/collect/files/services/drive_listing.py	interpolation	err
+mirobody/collect/files/services/drive_listing.py	interpolation	file_key
+mirobody/collect/files/services/drive_listing.py	interpolation	result.get('total', 0)
+mirobody/collect/files/services/drive_listing.py	interpolation	str(e)
+mirobody/collect/files/services/drive_listing.py	interpolation	target_user_id or uploader_user_id
+mirobody/collect/files/services/file_abstract_extractor.py	interpolation	content_hash[:16]
+mirobody/collect/files/services/file_abstract_extractor.py	interpolation	e
+mirobody/collect/files/services/file_abstract_extractor.py	interpolation	file_name
+mirobody/collect/files/services/file_abstract_extractor.py	interpolation	filename
+mirobody/collect/files/services/file_abstract_extractor.py	interpolation	json_error
+mirobody/collect/files/services/file_db_service.py	interpolation	e
+mirobody/collect/files/services/file_db_service.py	interpolation	file_info
+mirobody/collect/files/services/file_db_service.py	interpolation	file_key
+mirobody/collect/files/services/file_db_service.py	interpolation	list(updates.keys())
+mirobody/collect/files/services/file_db_service.py	interpolation	str(e)
+mirobody/collect/files/services/file_processing_service.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/collect/files/services/file_processing_service.py	interpolation	cache_error
+mirobody/collect/files/services/file_processing_service.py	interpolation	cache_ttl
+mirobody/collect/files/services/file_processing_service.py	interpolation	e
+mirobody/collect/files/services/file_processing_service.py	interpolation	err
+mirobody/collect/files/services/file_processing_service.py	interpolation	error_msg
+mirobody/collect/files/services/file_processing_service.py	interpolation	file.filename
+mirobody/collect/files/services/file_processing_service.py	interpolation	file_data.get('file_name', 'unknown')
+mirobody/collect/files/services/file_processing_service.py	interpolation	file_key
+mirobody/collect/files/services/file_processing_service.py	interpolation	file_keys
+mirobody/collect/files/services/file_processing_service.py	interpolation	file_url
+mirobody/collect/files/services/file_processing_service.py	interpolation	filename
+mirobody/collect/files/services/file_processing_service.py	interpolation	result.get('success')
+mirobody/collect/files/services/file_processing_service.py	interpolation	scene
+mirobody/collect/files/services/file_processing_service.py	interpolation	storage.get_storage_type()
+mirobody/collect/files/services/file_processing_service.py	interpolation	str(e)
+mirobody/collect/files/services/file_processing_service.py	interpolation	str(file_error)
+mirobody/collect/files/services/file_processing_service.py	interpolation	total_files
+mirobody/collect/files/services/file_uploader.py	interpolation	filename
+mirobody/collect/files/services/file_uploader.py	interpolation	full_url
+mirobody/collect/files/services/file_uploader.py	interpolation	storage.get_storage_type()
+mirobody/collect/files/services/file_uploader.py	interpolation	str(e)
+mirobody/collect/files/services/genetic_processor.py	interpolation	e
+mirobody/collect/files/services/genetic_processor.py	interpolation	error_msg
+mirobody/collect/files/services/genetic_processor.py	interpolation	failed_batches
+mirobody/collect/files/services/genetic_processor.py	interpolation	line
+mirobody/collect/files/services/genetic_processor.py	interpolation	line_num
+mirobody/collect/files/services/genetic_processor.py	interpolation	loaded_records
+mirobody/collect/files/services/genetic_processor.py	interpolation	processed_lines
+mirobody/collect/files/services/genetic_processor.py	interpolation	str(e)
+mirobody/collect/files/services/genetic_processor.py	interpolation	str(ex)
+mirobody/collect/files/services/genetic_processor.py	interpolation	temp_file_path
+mirobody/collect/files/services/genetic_processor.py	interpolation	total_processed
+mirobody/collect/files/services/genetic_processor.py	interpolation	total_saved
+mirobody/collect/files/services/genetic_processor.py	interpolation	update_error
+mirobody/collect/files/services/genetic_processor.py	interpolation	valid_records
+mirobody/collect/files/services/genetic_processor.py	interpolation	ws_error
+mirobody/collect/files/services/genetic_store.py	interpolation	source_table
+mirobody/collect/files/services/indicator_extractor.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/collect/files/services/indicator_extractor.py	interpolation	e
+mirobody/collect/files/services/indicator_extractor.py	interpolation	file_name
+mirobody/collect/files/services/indicator_store.py	interpolation	e
+mirobody/collect/files/services/indicator_store.py	interpolation	original_indicator
+mirobody/collect/files/services/indicator_store.py	interpolation	str(e)
+mirobody/collect/files/services/list_my_data.py	interpolation	str(e)
+mirobody/collect/files/services/list_my_data.py	interpolation	total_categories
+mirobody/collect/files/services/list_my_data.py	interpolation	total_records
+mirobody/collect/files/services/report_date.py	interpolation	e
+mirobody/collect/files/services/report_date.py	interpolation	exam_date
+mirobody/collect/files/services/report_date.py	interpolation	file_key
+mirobody/collect/files/services/temp_file_manager.py	interpolation	filename
+mirobody/collect/files/services/temp_file_manager.py	interpolation	str(e)
+mirobody/collect/files/services/temp_file_manager.py	interpolation	str(ex)
+mirobody/collect/files/services/temp_file_manager.py	interpolation	temp_file_path
+mirobody/collect/files/services/temp_file_manager.py	interpolation	upload_file.filename
 mirobody/collect/ingest/repositories/health_data.py	interpolation	(total_records + batch_size - 1) // batch_size
 mirobody/collect/ingest/repositories/health_data.py	interpolation	deleted
 mirobody/collect/ingest/repositories/health_data.py	interpolation	e
@@ -563,6 +553,10 @@ mirobody/utils/config/storage/local.py	interpolation	str(e)
 mirobody/utils/config/storage/local.py	interpolation	url
 mirobody/utils/db.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/utils/db.py	interpolation	logged_query
+mirobody/utils/distributed_lock.py	interpolation	e
+mirobody/utils/distributed_lock.py	interpolation	existing_lock.decode() if isinstance(existing_lock, bytes) else existing_lock
+mirobody/utils/distributed_lock.py	interpolation	str(e)
+mirobody/utils/distributed_lock.py	interpolation	timestamp
 mirobody/utils/embedding.py	interpolation	e
 mirobody/utils/embedding.py	interpolation	wait
 mirobody/utils/http.py	interpolation	message
@@ -585,5 +579,11 @@ mirobody/utils/llm/hipaa_policy.py	interpolation	value[:30]
 mirobody/utils/llm/utils.py	interpolation	str(e)
 mirobody/utils/plugin_dirs.py	interpolation	ep.name
 mirobody/utils/plugin_dirs.py	interpolation	group
+mirobody/utils/scheduler.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
+mirobody/utils/scheduler.py	interpolation	current_time.isoformat()
+mirobody/utils/scheduler.py	interpolation	e
+mirobody/utils/scheduler.py	interpolation	force
+mirobody/utils/scheduler.py	interpolation	persisted.isoformat()
+mirobody/utils/scheduler.py	interpolation	str(e)
 mirobody/utils/tasks.py	interpolation	exc
 mirobody/utils/tasks.py	interpolation	task.get_name()

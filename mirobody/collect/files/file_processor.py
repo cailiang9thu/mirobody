@@ -6,7 +6,7 @@ Integrates various atomic services to provide complete file processing functiona
 
 from __future__ import annotations
 
-from mirobody.collect.file_parser.services.conversation_summary import update_message_content
+from mirobody.collect.files.services.conversation_summary import update_message_content
 import logging
 from typing import Any
 from collections.abc import Callable
@@ -22,14 +22,14 @@ if TYPE_CHECKING:
 from mirobody.utils.i18n import t
 from mirobody.utils.req_ctx import get_req_ctx
 
-from mirobody.collect.file_parser.services.content_extractor import ContentExtractor
-from mirobody.collect.file_parser.services.file_uploader import FileUploader
-from mirobody.collect.file_parser.services.indicator_extractor import IndicatorExtractor
-from mirobody.collect.file_parser.services.temp_file_manager import TempFileManager
-from mirobody.collect.file_parser.services.file_abstract_extractor import FileAbstractExtractor
+from mirobody.collect.files.services.content_extractor import ContentExtractor
+from mirobody.collect.files.services.file_uploader import FileUploader
+from mirobody.collect.files.services.indicator_extractor import IndicatorExtractor
+from mirobody.collect.files.services.temp_file_manager import TempFileManager
+from mirobody.collect.files.services.file_abstract_extractor import FileAbstractExtractor
 
-from mirobody.collect.file_parser.handlers.factory import FileHandlerFactory
-from mirobody.collect.file_parser.handlers.base import FileProcessingContext
+from mirobody.collect.files.handlers.factory import FileHandlerFactory
+from mirobody.collect.files.handlers.base import FileProcessingContext
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class FileProcessor:
         """Wire the extraction services and the handler factory.
 
         The two optional parameters that stood here (`excel_processor` and
-        `csv_processor`) plus the `file_parser/config.py` module that stored
+        `csv_processor`) plus the `files/config.py` module that stored
         them globally, were an injection seam with no injector: both callers
         construct `FileProcessor()` with no arguments and nothing ever called
         the setters, so both attributes were always None. For Excel that made a

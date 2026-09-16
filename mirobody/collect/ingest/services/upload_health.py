@@ -1,5 +1,10 @@
-"""
-Standard Health data service
+"""`StandardPulseData` to rows, the one path every source finishes on.
+
+Per record: resolve the timezone, convert the value to the indicator's standard
+unit, check it against the indicator's plausible range, then hand it to
+`readings.upsert_readings`. A value outside the range is not dropped: it is
+written with `task_id = "filtered_out_of_range"`, because a reading we refuse
+to believe is still evidence the device produced it.
 """
 
 import json

@@ -5,7 +5,7 @@ Pull task implementation for providers
 import logging
 
 
-from mirobody.collect.core.scheduler import PullTask, ScheduleType
+from mirobody.utils.scheduler import PullTask, ScheduleType
 from .base import BasePullProvider
 
 logger = logging.getLogger(__name__)

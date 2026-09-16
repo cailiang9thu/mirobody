@@ -13,7 +13,7 @@ from .models import AppleHealthRecord, MetaInfo
 from mirobody.collect.base import LinkRequest, Provider, ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
 from mirobody.translate import StandardIndicator
-from mirobody.collect.ingest.models.requests import FormatDataInput, StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord
+from mirobody.collect.ingest import FormatDataInput, StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord
 from mirobody.collect.providers._platform.normalize import records_from_facts
 
 logger = logging.getLogger(__name__)

@@ -11,7 +11,7 @@ import logging
 import json
 
 from mirobody.utils.llm import unified_file_extract
-from mirobody.collect.file_parser.services.prompts.file_abstract_prompt import FILE_ABSTRACT_PROMPT, FALLBACK_ABSTRACT_TEMPLATES
+from mirobody.collect.files.services.prompts.file_abstract_prompt import FILE_ABSTRACT_PROMPT, FALLBACK_ABSTRACT_TEMPLATES
 from mirobody.documents import detect, extract as documents, render
 from mirobody.documents.ocr import vision_ocr
 

@@ -11,7 +11,7 @@ Architecture:
     services/: shared processing logic (async processing, content extraction, DB)
 """
 
-from mirobody.collect.file_parser.file_upload_manager import (
+from mirobody.collect.files.file_upload_manager import (
     WebSocketFileUploadManager,
     get_websocket_file_upload_manager,
 )

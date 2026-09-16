@@ -9,7 +9,7 @@ that ship with a deploy.
 import logging
 
 from .task import RegisterStandardIndicatorsTask
-from mirobody.collect.core.scheduler import scheduler
+from mirobody.utils.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
 

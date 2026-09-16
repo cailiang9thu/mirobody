@@ -1,6 +1,6 @@
 from typing import Any
 from mirobody.utils.i18n import t
-from mirobody.collect.file_parser.handlers.base import BaseFileHandler, FileProcessingContext
+from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
 import uuid
 import hashlib
 

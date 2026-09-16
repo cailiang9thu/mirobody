@@ -4,8 +4,8 @@ import logging
 from typing import Any
 from mirobody.utils.i18n import t
 from mirobody.utils.req_ctx import get_req_ctx
-from mirobody.collect.file_parser.handlers.base import BaseFileHandler, FileProcessingContext
-from mirobody.collect.file_parser.services.genetic_processor import process_genetic_file
+from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
+from mirobody.collect.files.services.genetic_processor import process_genetic_file
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
 # functionality: a bare `pip install mirobody` must import this module. Every
 # use below is an annotation, so PEP 563 (the __future__ import) keeps them as

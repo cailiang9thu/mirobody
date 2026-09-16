@@ -214,7 +214,7 @@ async def get_chat_history(user_id: str, session_id: str) -> list[dict[str, Any]
     try:
         # `input_prompt` used to be selected here and surfaced on the response
         # when truthy. Nothing in the project ever writes that column (not
-        # save_message, not the one UPDATE path (file_parser's
+        # save_message, not the one UPDATE path (collect/files's
         # update_message_content, which can set content/reasoning/message_type)
         #) so it is NULL on every row and the branch never fired.
         session_sql = """

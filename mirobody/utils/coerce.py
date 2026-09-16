@@ -5,7 +5,7 @@ written by an older release: each arrives as whatever the writer felt like, and
 a parse failure here is not worth an exception, because the caller has a
 sensible default and the alternative is losing the whole record over one field.
 
-These lived in `collect/file_parser/services/db_utils.py`, which was neither
+These lived in `collect/files/services/db_utils.py`, which was neither
 about the database nor about files: three modules outside that package imported
 it as a general toolbox, which is what a misnamed module invites.
 """

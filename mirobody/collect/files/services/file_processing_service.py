@@ -4,7 +4,7 @@ File processing service for async file operations
 
 from __future__ import annotations
 
-from mirobody.collect.file_parser.services.genetic_store import delete_genetic_data_by_source
+from mirobody.collect.files.services.genetic_store import delete_genetic_data_by_source
 import asyncio
 import logging
 from datetime import datetime
@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     from fastapi import UploadFile
 from pydantic import BaseModel
 
-from mirobody.collect.file_parser.file_processor import FileProcessor
-from mirobody.collect.file_parser.memory_upload_file import MemoryUploadFile
-from mirobody.collect.file_parser.services.file_uploader import (
+from mirobody.collect.files.file_processor import FileProcessor
+from mirobody.collect.files.memory_upload_file import MemoryUploadFile
+from mirobody.collect.files.services.file_uploader import (
     generate_file_key,
     validate_file_extension,
 )

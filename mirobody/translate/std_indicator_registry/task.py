@@ -16,7 +16,7 @@ from datetime import datetime
 
 from mirobody.collect.aggregate.rule_generator import get_all_aggregation_rules
 from mirobody.translate.indicators_info import HealthDataType, StandardIndicator
-from mirobody.collect.core.scheduler import PullTask, ScheduleType
+from mirobody.utils.scheduler import PullTask, ScheduleType
 from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from mirobody.collect.file_parser.services.conversation_summary import update_message_content
-from mirobody.collect.file_parser.services.report_date import resolve_report_date
+from mirobody.collect.files.services.conversation_summary import update_message_content
+from mirobody.collect.files.services.report_date import resolve_report_date
 import abc
 import asyncio
 import hashlib
@@ -496,7 +496,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         if not message_id:
             return
         try:
-            from mirobody.collect.file_parser.file_upload_manager import get_websocket_file_upload_manager
+            from mirobody.collect.files.file_upload_manager import get_websocket_file_upload_manager
 
             manager = get_websocket_file_upload_manager()
             session = manager.upload_sessions.get(message_id) or {}
@@ -532,8 +532,8 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
             extraction_failed_reason = ""
 
             try:
-                from mirobody.collect.file_parser.services.content_formatter import ContentFormatter
-                from mirobody.collect.file_parser.services.file_db_service import FileDbService
+                from mirobody.collect.files.services.content_formatter import ContentFormatter
+                from mirobody.collect.files.services.file_db_service import FileDbService
 
                 probed = await self.indicator_extractor.probe_report_date(original_text)
                 probe_dt, probe_source = await resolve_report_date(str(user_id), probed)
@@ -697,7 +697,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         from, it is what the Data page reads to ask "which date?" (#53).
         """
         try:
-            from mirobody.collect.file_parser.services.file_db_service import FileDbService
+            from mirobody.collect.files.services.file_db_service import FileDbService
 
             updates = {
                 "raw": formatted_raw,

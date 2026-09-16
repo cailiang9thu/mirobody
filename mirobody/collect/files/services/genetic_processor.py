@@ -10,7 +10,7 @@ from collections.abc import Generator
 
 from mirobody.utils.i18n import t
 from mirobody.utils import execute_query
-from mirobody.collect.file_parser.services.file_db_service import FileDbService
+from mirobody.collect.files.services.file_db_service import FileDbService
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class GeneticDataLoader:
             return
 
         try:
-            from mirobody.collect.file_parser.file_upload_manager import websocket_file_upload_manager
+            from mirobody.collect.files.file_upload_manager import websocket_file_upload_manager
 
             # Calculate progress: genetic processing maps to 50-100%
             genetic_progress = min((processed / total * 100), 100) if total and total > 0 else 0
@@ -310,7 +310,7 @@ async def process_genetic_file(
     """
     try:
         # Import websocket manager locally to avoid circular import
-        from mirobody.collect.file_parser.file_upload_manager import websocket_file_upload_manager
+        from mirobody.collect.files.file_upload_manager import websocket_file_upload_manager
 
         # 🔧 Fix: Use original filename, or temporary filename if not provided
         display_filename = original_filename or temp_file_path.name

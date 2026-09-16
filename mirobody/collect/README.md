@@ -40,26 +40,39 @@ providers are discovered at startup by `ProviderPlatform._load_providers_from_di
 | Subsystem | Directory | Size | Responsibility | Entry Point |
 |-----------|-----------|------:|---------------|-------------|
 | *— where data comes from —* | | | | |
-| **Providers** | `providers/` | ~6.4k | The live provider platform — plugin discovery, OAuth, pull scheduling | `providers/_platform/platform.py` |
-| **Apple** | `apple/` | ~1.2k | Apple Health platform + CDA processing | `apple/platform.py` |
-| **File Parser** | `file_parser/` | ~8.5k | Files as a data source: upload, parse PDF/CSV/Excel/Office/image/text/genetic | `file_parser/file_upload_manager.py` |
+| **Providers** | `providers/` | ~5.8k | Devices and health platforms: Garmin, Oura and WHOOP pulled on a schedule, Apple and CDA documents pushed | `providers/_platform/platform.py` |
+| **Files** | `files/` | ~7.8k | A file is a source too: upload, storage, PDF/CSV/Excel/Office/image/text/genetic | `files/file_upload_manager.py` |
 | *— what happens to it —* | | | | |
 | **Ingest** | `ingest/` | ~1.1k | `StandardPulseData` → DB write. Every source above converges here | `ingest/services/upload_health.py` |
-| **Standardize** | `standardize/` | ~4.8k | What a value means: indicator catalogue, units, value ranges, fhir_id | `standardize/indicators_info.py` |
-| **Aggregate** | `aggregate/` | ~4.9k | Series data → daily summaries; derived indicators | `aggregate/service.py` |
+| **Aggregate** | `aggregate/` | ~3.6k | Series data → daily summaries; derived indicators | `aggregate/service.py` |
 | *— what they all stand on —* | | | | |
-| **Core** | `core/` | ~2.5k | The plugin framework runtime: provider contract types, scheduler, DB base classes, push, distributed lock | `core/constants.py`, `core/models.py` |
+| **Core** | `core/` | ~0.5k | The provider contract types, DB base classes, push | `core/constants.py`, `core/models.py` |
 
-Read top to bottom and the table is the data flow: three source shapes, one
-convergence point, then meaning and rollups. The directory listing cannot show
-that ordering — `aggregate/` sorts before `providers/` — which is why it is
-spelled out here.
+What a value MEANS is not here. The indicator catalogue, units, value ranges
+and fhir_id are `mirobody/translate/` since 1.4.4, which is what makes "collect
+only collects" something the tree shows. The scheduler and the distributed lock
+left `core/` in the same release, to `mirobody/utils/`: both are generic
+infrastructure that `translate` needed too, and a package importing back into
+`collect` for a scheduler was a cycle.
+
+Read top to bottom and the table is the data flow: two source shapes, one
+convergence point, then rollups. The directory listing cannot show that
+ordering, `aggregate/` sorts before `providers/`, which is why it is spelled
+out here.
+
+A source is a TRANSPORT, not a kind of data. Medications are not a third
+source: they arrive either in a CDA document through `providers/apple` or in an
+uploaded file, and `collect/meds/` is a Postgres store for
+`mirobody.kernel.meds`, not a collector. An EHR integration will split the same
+way, a FHIR API being a provider and an exported document being a file.
 
 `ingest/` was called `data_upload/` until it was renamed for saying the
 opposite of what it does: it holds `StandardPulseRecord` and
 `StandardHealthService`, the normalized-record core, while the directory that
-actually handles file *uploads* is `file_parser/`. The old name reliably sent
-readers to the wrong place.
+actually handles file *uploads* is `files/`. The old name reliably sent readers
+to the wrong place. `files/` was `file_parser/` until 1.4.4, renamed for the
+same reason in reverse: it does uploads, storage and genetic processing, not
+only parsing.
 
 Two subsystems are gone rather than moved: `insight/` (a recipe + LLM engine
 writing rows nothing displayed) and `monitor/` (ingestion counters read only by
@@ -79,9 +92,11 @@ There is no `router/` here any more — the HTTP endpoints moved to
 - `providers/__init__.py` — add import here after creating provider
 
 ### Adding a new health indicator
-- `standardize/indicators_info.py` — `StandardIndicator` enum + `IndicatorInfo` dataclass
-- `standardize/units.py` — unit conversion definitions
-- `apple/models.py` — `FlutterHealthTypeEnum` mapping (if from Apple Health)
+**Not in this package** since 1.4.4:
+- `mirobody/translate/indicators_info.py` — `StandardIndicator` + `IndicatorInfo`
+- `mirobody/translate/units.py` — unit conversion definitions
+- `mirobody/kernel/decoders/apple.py` — the HealthKit identifier, if it comes
+  from Apple. One table serves both the push endpoint and `mirobody import apple`.
 
 ### Modifying API endpoints
 **Not in this package.** The HTTP layer moved to `mirobody/server/routers/`;
@@ -157,7 +172,7 @@ def process():
     return get_fhir_id(indicator)
 ```
 
-**Incident**: TH-126 introduced `from ..core.fhir_mapping` (wrong: resolved to `ingest/core/`; the module was `core/fhir_mapping.py` then, `standardize/fhir_mapping.py` now) as a lazy import inside `_prepare_summary_record()`. The bug was never caught because tests only exercised the SERIES path, not SUMMARY. A top-level import would have failed immediately at startup.
+**Incident**: TH-126 introduced `from ..core.fhir_mapping` (wrong: resolved to `ingest/core/`; the module was `core/fhir_mapping.py` then, `mirobody/translate/fhir_mapping.py` now) as a lazy import inside `_prepare_summary_record()`. The bug was never caught because tests only exercised the SERIES path, not SUMMARY. A top-level import would have failed immediately at startup.
 
 ### Sleep data uses 18:00-18:00 time window
 Sleep data uses previous-day 18:00 to current-day 18:00, NOT 00:00-24:00. This affects `data_begin` calculation in SQL. See `aggregate/` for implementation details.

@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from mirobody.collect.file_parser.handlers.base import BaseFileHandler, FileProcessingContext
+from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
 from mirobody.utils.i18n import t
 
 logger = logging.getLogger(__name__)

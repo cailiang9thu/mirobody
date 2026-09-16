@@ -1,7 +1,5 @@
 """What every stage in this package stands on.
 
-    scheduler.py         the background task scheduler
-    distributed_lock.py  one pull runs at a time, across processes
     database.py          the DB base classes
     push_service.py      delivering a push to a provider
     constants.py         LinkType, ProviderStatus, CacheConfig
@@ -36,9 +34,6 @@ _EXPORTS = {
     'UserProvider'            : 'models',
     'PushService'             : 'push_service',
     'push_service'            : 'push_service',
-    'PullTask'                : 'scheduler',
-    'Scheduler'               : 'scheduler',
-    'scheduler'               : 'scheduler',
 }
 __all__ = [*_EXPORTS]
 
@@ -47,7 +42,6 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .database import CacheableDatabaseService
     from .models import LinkRequest, ProviderInfo, UserProvider
     from .push_service import PushService, push_service
-    from .scheduler import PullTask, Scheduler, scheduler
 
 
 def __getattr__(name: str):

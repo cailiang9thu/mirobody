@@ -21,7 +21,7 @@ from collections.abc import Iterable
 from datetime import datetime, UTC
 from zoneinfo import ZoneInfo
 
-from mirobody.collect.ingest.models.requests import StandardPulseRecord
+from mirobody.collect.ingest import StandardPulseRecord
 from mirobody.kernel.series import Fact
 
 logger = logging.getLogger(__name__)
