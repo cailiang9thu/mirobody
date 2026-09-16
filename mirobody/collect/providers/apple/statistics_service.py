@@ -12,12 +12,8 @@ from datetime import datetime, UTC
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .models import (
-    AppleHealthStatistic,
-    AppleHealthStatisticsRequest,
-    FLUTTER_TO_RECORD_TYPE_MAPPING,
-    FlutterHealthTypeEnum,
-)
+from .models import AppleHealthStatistic, AppleHealthStatisticsRequest
+from mirobody.kernel.decoders import apple as apple_decoder
 from mirobody.collect.aggregate.naming import build_indicator_name
 from mirobody.collect.aggregate.database_service import AggregateDatabaseService
 
@@ -34,20 +30,15 @@ STAT_FIELD_TO_METHOD = {
 
 
 def _resolve_source_indicator(health_type: str) -> str | None:
-    """
-    Resolve Flutter health type string to our source indicator name.
+    """HealthKit identifier to catalogue metric, off the decoder's own tables.
 
     Args:
-        health_type: e.g. "STEPS", "HEART_RATE"
+        health_type: e.g. "HKQuantityTypeIdentifierStepCount"
 
     Returns:
         Source indicator name (e.g. "steps", "heartRates") or None if unmapped
     """
-    try:
-        enum_val = FlutterHealthTypeEnum(health_type)
-    except ValueError:
-        return None
-    return FLUTTER_TO_RECORD_TYPE_MAPPING.get(enum_val)
+    return apple_decoder.QUANTITY.get(health_type) or apple_decoder.CATEGORY.get(health_type)
 
 
 def _statistics_to_summary_records(

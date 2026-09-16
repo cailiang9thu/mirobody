@@ -27,14 +27,20 @@ from mirobody.kernel.series import Fact
 logger = logging.getLogger(__name__)
 
 
-def records_from_facts(facts: Iterable[Fact], *, slug: str, tz: str, source_id: str = "") -> list[StandardPulseRecord]:
+def records_from_facts(
+    facts: Iterable[Fact], *, slug: str, tz: str, source_id: str = "", source: str = ""
+) -> list[StandardPulseRecord]:
     """``mirobody.kernel.decoders`` facts → the ingest records this platform stores.
 
     A fact's ``effective_start_ms`` is the record timestamp; an interval fact
     (sleep stage, daily summary, workout) also carries ``startTime``/``endTime``
     so the aggregator can attribute it to the right local day.
+
+    ``source`` overrides the slug-derived name. Apple needs it: its rows say
+    ``apple_health`` or ``apple_health_watch`` depending on where the sample
+    came from, and `th_series_data` has been written that way all along.
     """
-    source = DataFormatter.format_source_name(slug)
+    source = source or DataFormatter.format_source_name(slug)
     out: list[StandardPulseRecord] = []
     for f in facts:
         value: float | str = f.value_num if f.value_num is not None else f.value_text

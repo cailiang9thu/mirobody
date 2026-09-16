@@ -58,21 +58,6 @@ mirobody/agent/middleware/tool_faults.py	interpolation	repairs
 mirobody/agent/models/clients.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/agent/tools/terminology_service.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/agent/tools/terminology_service.py	interpolation	e
-mirobody/mcp/service.py	extra_key	path
-mirobody/mcp/service.py	interpolation	e
-mirobody/mcp/service.py	interpolation	err
-mirobody/mcp/service.py	interpolation	name
-mirobody/mcp/service.py	interpolation	str(e)
-mirobody/mcp/tool.py	extra_key	line
-mirobody/mcp/tool.py	interpolation	", ".join(sorted(caller_ident))
-mirobody/mcp/tool.py	interpolation	dir
-mirobody/mcp/tool.py	interpolation	e
-mirobody/mcp/tool.py	interpolation	entry.name
-mirobody/mcp/tool.py	interpolation	error
-mirobody/mcp/tool.py	interpolation	function.__qualname__
-mirobody/mcp/tool.py	interpolation	getattr(function, "__qualname__", function.__name__)
-mirobody/mcp/tool.py	interpolation	str(e)
-mirobody/mcp/tool.py	interpolation	target_directory
 mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	chunk_end.strftime('%Y-%m-%d')
 mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	coverage
 mirobody/collect/aggregate/aggregators/sql_aggregator.py	interpolation	current_start.strftime('%Y-%m-%d')
@@ -125,32 +110,6 @@ mirobody/collect/aggregate/task.py	interpolation	e
 mirobody/collect/aggregate/task.py	interpolation	stats_dict['execution_time_ms']
 mirobody/collect/aggregate/task.py	interpolation	stats_dict['summaries_created']
 mirobody/collect/aggregate/task.py	interpolation	stats_dict['users_affected']
-mirobody/collect/providers/apple/platform.py	interpolation	e
-mirobody/collect/providers/apple/platform.py	interpolation	last_ts
-mirobody/collect/providers/apple/platform.py	interpolation	result.get('execution_time_ms', 0)
-mirobody/collect/providers/apple/platform.py	interpolation	result.get('status')
-mirobody/collect/providers/apple/platform.py	interpolation	result.get('summaries_created', 0)
-mirobody/collect/providers/apple/platform.py	interpolation	result.get('users_affected', 0)
-mirobody/collect/providers/apple/platform.py	interpolation	self.name
-mirobody/collect/providers/apple/platform.py	interpolation	str(e)
-mirobody/collect/providers/apple/provider.py	interpolation	(batch_t2 - batch_t1) * 1000
-mirobody/collect/providers/apple/provider.py	interpolation	(t2 - t1) * 1000
-mirobody/collect/providers/apple/provider.py	interpolation	(total_count - 1) // batch_size + 1
-mirobody/collect/providers/apple/provider.py	interpolation	batch_end - 1
-mirobody/collect/providers/apple/provider.py	interpolation	batch_start
-mirobody/collect/providers/apple/provider.py	interpolation	batch_start // batch_size + 1
-mirobody/collect/providers/apple/provider.py	interpolation	date_from
-mirobody/collect/providers/apple/provider.py	interpolation	date_to
-mirobody/collect/providers/apple/provider.py	interpolation	record.uuid
-mirobody/collect/providers/apple/provider.py	interpolation	str(e)
-mirobody/collect/providers/apple/provider.py	interpolation	unit_symbol
-mirobody/collect/providers/apple/provider.py	interpolation	value_data
-mirobody/collect/providers/apple/services/database_service.py	extra_key	error
-mirobody/collect/providers/apple/services/database_service.py	interpolation	llm_access
-mirobody/collect/providers/apple/services/database_service.py	interpolation	str(e)
-mirobody/collect/providers/apple/statistics_service.py	interpolation	(t2 - t1) * 1e3
-mirobody/collect/providers/apple/statistics_service.py	interpolation	(t3 - t2) * 1e3
-mirobody/collect/providers/apple/statistics_service.py	interpolation	e
 mirobody/collect/core/database.py	extra_key	records
 mirobody/collect/core/database.py	extra_key	time_cost
 mirobody/collect/core/database.py	interpolation	cache_key
@@ -326,6 +285,21 @@ mirobody/collect/manager.py	interpolation	platform.name
 mirobody/collect/manager.py	interpolation	platform_name
 mirobody/collect/manager.py	interpolation	result
 mirobody/collect/manager.py	interpolation	str(e)
+mirobody/collect/providers/apple/platform.py	interpolation	e
+mirobody/collect/providers/apple/platform.py	interpolation	last_ts
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('execution_time_ms', 0)
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('status')
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('summaries_created', 0)
+mirobody/collect/providers/apple/platform.py	interpolation	result.get('users_affected', 0)
+mirobody/collect/providers/apple/platform.py	interpolation	self.name
+mirobody/collect/providers/apple/platform.py	interpolation	str(e)
+mirobody/collect/providers/apple/provider.py	interpolation	str(e)
+mirobody/collect/providers/apple/services/database_service.py	extra_key	error
+mirobody/collect/providers/apple/services/database_service.py	interpolation	llm_access
+mirobody/collect/providers/apple/services/database_service.py	interpolation	str(e)
+mirobody/collect/providers/apple/statistics_service.py	interpolation	(t2 - t1) * 1e3
+mirobody/collect/providers/apple/statistics_service.py	interpolation	(t3 - t2) * 1e3
+mirobody/collect/providers/apple/statistics_service.py	interpolation	e
 mirobody/collect/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	api_error_message
 mirobody/collect/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	batch_end
 mirobody/collect/providers/mirobody_garmin_connect/provider_garmin.py	interpolation	batch_start
@@ -412,6 +386,21 @@ mirobody/collect/standardize/value_range_validator.py	interpolation	loaded
 mirobody/collect/standardize/value_range_validator.py	interpolation	raw_rules
 mirobody/collect/standardize/value_range_validator.py	interpolation	rule_str
 mirobody/collect/standardize/value_range_validator.py	interpolation	self._rule_set
+mirobody/mcp/service.py	extra_key	path
+mirobody/mcp/service.py	interpolation	e
+mirobody/mcp/service.py	interpolation	err
+mirobody/mcp/service.py	interpolation	name
+mirobody/mcp/service.py	interpolation	str(e)
+mirobody/mcp/tool.py	extra_key	line
+mirobody/mcp/tool.py	interpolation	", ".join(sorted(caller_ident))
+mirobody/mcp/tool.py	interpolation	dir
+mirobody/mcp/tool.py	interpolation	e
+mirobody/mcp/tool.py	interpolation	entry.name
+mirobody/mcp/tool.py	interpolation	error
+mirobody/mcp/tool.py	interpolation	function.__qualname__
+mirobody/mcp/tool.py	interpolation	getattr(function, "__qualname__", function.__name__)
+mirobody/mcp/tool.py	interpolation	str(e)
+mirobody/mcp/tool.py	interpolation	target_directory
 mirobody/server/auth.py	extra_key	token
 mirobody/server/auth.py	interpolation	str(e)
 mirobody/server/auth.py	interpolation	token[:50]

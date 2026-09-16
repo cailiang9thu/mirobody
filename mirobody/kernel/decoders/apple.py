@@ -1,10 +1,10 @@
 """Apple HealthKit records → facts. Pure; the type names are Apple's own.
 
-Two front doors produce the item this module decodes: the mobile app's JSON
-and the `export.zip` a person makes in the Health app. Both are keyed by the
-HealthKit identifier (`HKQuantityTypeIdentifierStepCount`), because that is
-what `export.xml` carries natively and what the Flutter enum is generated
-from.
+Two front doors produce the item this module decodes: the push endpoint
+(`collect/providers/apple`) and the `export.zip` a person makes in the Health
+app. Both are keyed by the HealthKit identifier
+(`HKQuantityTypeIdentifierStepCount`), because that is what `export.xml`
+carries natively and what HealthKit itself names a type.
 
 The unit is per record, not per type: `unit` is CDATA in Apple's DTD and
 follows the device's region, so one file can hold `mg/dL` and `mmol/L` for

@@ -1,9 +1,9 @@
 """① Collect: every way a reading gets into Mirobody, and what happens next.
 
-Three source shapes, one convergence point, then meaning:
+Two source shapes, one convergence point, then meaning:
 
-    providers/   devices and health platforms, pulled on a schedule
-    apple/       Apple Health exports and CDA documents
+    providers/   devices and health platforms: Garmin, Oura, WHOOP pulled on a
+                 schedule, Apple Health and CDA documents pushed
     file_parser/ a file is a source too: lab PDFs, photos, CSV, genetic raw data
          ↓
     ingest/      all three converge on StandardPulseData → th_series_data
@@ -65,9 +65,9 @@ _EXPORTS = {
     "StandardIndicator": "standardize.indicators_info",
     "UNIT_CONVERSIONS": "standardize.units",
     # Apple Health implementations
-    "AppleHealthPlatform": "apple",
-    "AppleHealthProvider": "apple",
-    "CDAProvider": "apple",
+    "AppleHealthPlatform": "providers.apple",
+    "AppleHealthProvider": "providers.apple",
+    "CDAProvider": "providers.apple",
     # Note: Specific providers (GarminProvider, etc.) are auto-loaded
     # and can be imported from .providers if needed
 }

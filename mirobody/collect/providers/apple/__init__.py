@@ -2,13 +2,7 @@
 Apple Health platform implementation
 """
 
-from .models import (
-    FLUTTER_TO_RECORD_TYPE_MAPPING,
-    AppleHealthRecord,
-    AppleHealthRequest,
-    FlutterHealthTypeEnum,
-    MetaInfo,
-)
+from .models import AppleHealthRecord, AppleHealthRequest, MetaInfo
 from .platform import AppleHealthPlatform
 from .provider import AppleHealthProvider, CDAProvider
 
@@ -19,6 +13,4 @@ __all__ = [
     "AppleHealthRequest",
     "AppleHealthRecord",
     "MetaInfo",
-    "FlutterHealthTypeEnum",
-    "FLUTTER_TO_RECORD_TYPE_MAPPING",
 ]

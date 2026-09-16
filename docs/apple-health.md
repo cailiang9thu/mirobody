@@ -1,266 +1,150 @@
-# Apple Health Platform Integration Guide
+# Apple Health Integration Guide
 
-> **2026-09-15: the export file works now.** `mirobody import apple export.zip`
-> reads the archive the iOS Health app produces (Summary → your picture →
-> Export All Health Data). It needs no key, no database and no extra, so a
-> bare `pip install mirobody` can read it. The JSON contract below is the
-> other front door, used by the mobile client; both decode through
-> `mirobody/kernel/decoders/apple.py`.
+Two front doors, one vocabulary. Both decode through
+[`mirobody/kernel/decoders/apple.py`](../mirobody/kernel/decoders/apple.py), so a
+type name means the same thing whichever way the data arrives.
 
-## 📋 Overview
+| | What it reads | Needs |
+| --- | --- | --- |
+| `mirobody import apple export.zip` | the archive the iOS Health app writes (Summary → your picture → Export All Health Data) | nothing: no key, no database, no extra |
+| `POST /apple/health` | JSON pushed by a client app | a running server and a token |
 
-The Apple Health Platform specializes in integrating Apple Health export data and CDA documents, using an event-based architecture to process different types of health data.
+## The vocabulary is HealthKit's own
 
-## 🎯 When to Choose Apple Health Platform
+**`type` is a HealthKit identifier**: `HKQuantityTypeIdentifierHeartRate`, not
+`HEART_RATE`. That is what `export.xml` carries, what HealthKit names a type on
+the device, and what this endpoint now accepts.
 
-**Use Cases:**
-- ✅ Processing Apple Health export files
-- ✅ Processing CDA (Clinical Document Architecture) documents
-- ✅ Bulk importing historical health data
-- ✅ Scenarios without real-time synchronization requirements
+Earlier releases took a second vocabulary here, a `FlutterHealthTypeEnum` of
+names like `HEART_RATE`, and mapped it onto the same catalogue with a 74-row
+table. It described one client that no longer exists, and two tables for one
+mapping is how they drift. If you are moving a client off it: send Apple's
+identifier, `startDate`/`endDate` instead of `dateFrom`/`dateTo`, a plain
+`value` instead of `{"numericValue": n}`, and `unit` instead of `unitSymbol`.
 
-**Technical Features:**
-- ✅ API reception mode
-- ✅ Event-driven processing
-- ✅ Batch data processing
-- ✅ gzip compression support
+## POST /apple/health
 
-## 🚀 Integration Steps
+Accepts gzip (`Content-Encoding: gzip`).
 
-### Step 1: Send Data via API Endpoint
-
-Apple Health data is received through HTTP API endpoints with gzip compression support.
-
-**API Endpoint**: `POST /apple/health`
-
-**Performance Optimization Features**:
-- **Batch Processing**: Automatically processes large amounts of data in batches (1000 records per batch) to avoid memory overflow
-- **Timezone Caching**: Caches ZoneInfo objects to reduce repeated creation overhead
-- **Zero-Copy Optimization**: Directly uses Pydantic object properties to avoid model_dump() serialization overhead
-- **Efficient Time Processing**: Unified conversion to UTC time to reduce timezone conversion operations
-
-**Request Format**:
 ```json
 {
     "request_id": "unique_request_id",
     "metaInfo": {
-        "userId": "user_123",
-        "timezone": "Asia/Shanghai"
+        "timezone": "Asia/Shanghai",
+        "taskId": "optional, marks records uploaded in one batch"
     },
     "healthData": [
         {
-            "uuid": "550e8400-e29b-41d4-a716-446655440000",  // Required, unique record identifier
-            "type": "HEART_RATE",  // Required, FlutterHealthTypeEnum type
-            "dateFrom": 1705284600000,  // Optional, start timestamp (milliseconds)
-            "dateTo": 1705284600000,  // Optional, end timestamp (milliseconds)
-            "value": {"numericValue": 72},  // Required, numeric data
-            "unitSymbol": "bpm",  // Optional, unit symbol
-            "sourceId": "com.apple.health",  // Optional, data source ID
-            "timezone": "Asia/Shanghai",  // Optional, defaults to UTC
-            "sourceName": "Apple Health",  // Optional
-            "sourcePlatform": "iOS",  // Optional
-            "sourceDeviceId": "device123",  // Optional
-            "recordingMethod": "automatic",  // Optional
-            "createdAt": 1705284600000  // Optional, creation timestamp
+            "type": "HKQuantityTypeIdentifierHeartRate",
+            "startDate": 1705284600000,
+            "endDate": 1705284600000,
+            "value": 72,
+            "unit": "count/min",
+            "sourceName": "Apple Watch",
+
+            "uuid": "550e8400-e29b-41d4-a716-446655440000",
+            "sourceId": "com.apple.health",
+            "timezone": "Asia/Shanghai",
+            "sourcePlatform": "iOS",
+            "sourceDeviceId": "device123",
+            "recordingMethod": "automatic",
+            "createdAt": 1705284600000
         }
     ]
 }
 ```
 
-**Supported Data Types** (Complete FlutterHealthTypeEnum):
+Only the first block is read. `startDate`/`endDate` take epoch milliseconds or
+Apple's own date string (`2026-06-01 08:00:00 +0800`); `endDate` defaults to
+`startDate`. A record with no parsable start decodes to nothing, never to a
+guessed time.
 
-**Vital Signs**:
-- `HEART_RATE` - Heart Rate → heartRates
-- `RESPIRATORY_RATE` - Respiratory Rate → respiratoryRates
-- `BODY_TEMPERATURE` - Body Temperature → bodyTemperatures
-- `BLOOD_GLUCOSE` - Blood Glucose → bloodGlucoses
-- `BLOOD_OXYGEN` - Oxygen Saturation → oxygenSaturations
-- `BLOOD_PRESSURE_SYSTOLIC` - Systolic Blood Pressure → systolicPressures
-- `BLOOD_PRESSURE_DIASTOLIC` - Diastolic Blood Pressure → diastolicPressures
-- `WALKING_HEART_RATE` - Walking Heart Rate → walkingHeartRates
-- `RESTING_HEART_RATE` - Resting Heart Rate → restingHeartRates
-- `HEART_RATE_VARIABILITY_SDNN` - Heart Rate Variability → hrvRMSSD
+**`unit` is per record, not per type.** Apple writes it that way (it is CDATA
+in their DTD and follows the device's region), so one upload can carry `mg/dL`
+and `mmol/L` for the same type. Every value is converted by reading its own
+unit. Send what Apple gave you and do not pre-convert.
 
-**Activity & Fitness**:
-- `STEPS` - Steps → steps
-- `CYCLING_SPEED` - Cycling Speed → cyclingSpeeds
-- `WALKING_SPEED` - Walking Speed → speeds
-- `FLIGHTS_CLIMBED` - Flights Climbed → floors
-- `DISTANCE_WALKING_RUNNING` - Walking/Running Distance → walkingRunningDistances
-- `EXERCISE_TIME` - Exercise Time → exerciseMinutes
-- `DISTANCE_CYCLING` - Cycling Distance → cyclingDistances
-- `VO2_MAX` - VO2 Max → vo2Maxs
-- `HEART_RATE_RECOVERY_ONE_MINUTE` - Heart Rate Recovery → recoveryes
+**Percent-typed quantities are fractions.** `HKUnit.percent()` ranges 0.0 to
+1.0, so an oxygen saturation of 98% is `0.98`.
 
-**Body Measurements**:
-- `HEIGHT` - Height → heights
-- `WEIGHT` - Weight → bodyMasss
-- `BODY_FAT_PERCENTAGE` - Body Fat Percentage → bodyFatPercentages
-- `BODY_MASS_INDEX` - BMI → bmis
-- `WAIST_CIRCUMFERENCE` - Waist Circumference → waistCircumferences
-- `SLEEPING_WRIST_TEMPERATURE` - Wrist Temperature → wristTemperatures
+### Category records
 
-**Sleep**:
-- `SLEEP_IN_BED` - Time In Bed → sleepAnalysis_InBed
-- `SLEEP_ASLEEP` - Sleep Time → sleepAnalysis_Asleep(Unspecified)
-- `SLEEP_AWAKE` - Awake Time → sleepAnalysis_Awake
-- `SLEEP_DEEP` - Deep Sleep → sleepAnalysis_Asleep(Deep)
-- `SLEEP_LIGHT` - Light Sleep → sleepAnalysis_Asleep(Core)
-- `SLEEP_REM` - REM Sleep → sleepAnalysis_Asleep(REM)
+A category record's `value` is the `HKCategoryValue*` name as a string, kept
+verbatim:
 
-**Nutrition**:
-- `DIETARY_PROTEIN_CONSUMED` - Protein Intake → proteins
-- `DIETARY_CARBS_CONSUMED` - Carbohydrate Intake → carbohydrates
-- `DIETARY_FATS_CONSUMED` - Fat Intake → fats
-- `DIETARY_ENERGY_CONSUMED` - Energy Intake → energyes
-- `DIETARY_WATER` - Water Intake → waters
+```json
+{"type": "HKCategoryTypeIdentifierSleepAnalysis",
+ "value": "HKCategoryValueSleepAnalysisAsleepDeep",
+ "startDate": 1736895600000, "endDate": 1736901000000}
+```
 
-**Others**:
-- `UV_EXPOSURE` - UV Exposure → uvExposures
+A sleep record carries no number: its value is the stage and its measurement is
+the span, so the duration is `endDate - startDate` in milliseconds. The four
+stages that are time asleep (Deep, Core, REM, Unspecified) each also land as a
+`sleepAnalysis_Asleep(Total)` record. `InBed` and `Awake` do not.
 
-**Body Composition Analysis** (Compatible with Renpho body fat scale):
-- `BASAL_METABOLIC_RATE` - Basal Metabolic Rate → basalMetabolicRate
-- `BODY_WATER` - Body Water → bodyWater
-- `BODY_AGE` - Body Age → bodyAge
-- `BODY_MUSCLE` - Skeletal Muscle Rate → bodyMuscle
-- `BODY_BONE` - Bone Weight → bodyBone
-- `BODY_SUB_FAT` - Subcutaneous Fat → bodySubFat
-- `BODY_VIS_FAT` - Visceral Fat → bodyVisFat
-- `BODY_FAT_FREE_WEIGHT` - Fat-Free Body Weight → bodyFatFreeWeight
-- `BODY_SINEW` - Sinew → bodySinew
-- `BODY_PROTEIN` - Protein Percentage → bodyProtein
+### Blood pressure
 
-Note: Values after the arrow are mapped StandardIndicator values
+Apple writes a cuff reading as two separate records, and so should you. They
+are recognised as one measurement when they share a `startDate` and a
+`sourceName`. A `HKCorrelationTypeIdentifierBloodPressure` record carrying
+`systolic` and `diastolic` is also accepted.
 
-**Request Example** (using curl):
+## What the endpoint accepts
+
+47 identifiers: 35 quantity types, 10 category types, sleep analysis and the
+blood pressure correlation. The tables in
+[`mirobody/kernel/decoders/apple.py`](../mirobody/kernel/decoders/apple.py) are
+the only authoritative list, and they are one command away, so nothing here can
+drift into being a second wrong copy:
+
 ```bash
-curl -X POST https://your-api-domain/apple/health \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Encoding: gzip" \
-  -d @- << EOF | gzip
-{
-    "request_id": "req_123",
-    "metaInfo": {
-        "userId": "user_123",
-        "timezone": "Asia/Shanghai"
-    },
-    "healthData": [
-        {
-            "uuid": "test-uuid-123",
-            "type": "HEART_RATE",
-            "dateFrom": 1705284600000,
-            "dateTo": 1705284600000,
-            "value": {"numericValue": 72},
-            "unitSymbol": "bpm",
-            "sourceId": "com.apple.health"
-        }
-    ]
-}
-EOF
+python -c "from mirobody.kernel.decoders import apple as a; \
+           print(len(a.DATA_TYPES)); [print(t) for t in sorted(a.DATA_TYPES)]"
 ```
 
-### Step 2: Handle Response
+Covered: vital signs, activity and fitness, body measurements, nutrition, sleep
+stages, UV exposure, and ten reproductive-health category types.
 
-Success response format:
-```json
-{
-    "success": true,
-    "data": {"request_id": "unique_request_id"},
-    "message": "Apple Health data processed successfully"
-}
+**Not covered, deliberately**: body water, bone mass, muscle and visceral fat,
+body age, protein percentage. Those are not HealthKit identifiers. They came
+from a body-scale vendor's own API, so nothing in an Apple export can produce
+them, and they belong to whichever scale integration reads that vendor.
+
+An identifier the table does not carry is dropped, not rejected. The upload
+still succeeds; the count and the type names are logged:
+
+```
+dropped 12 Apple records of 2 unmapped types: HKQuantityTypeIdentifierX, ...
 ```
 
-Failure response format:
-```json
-{
-    "success": false,
-    "message": "Error message"
-}
-```
+## Adding a data type
 
-## 🔧 Adding New Data Type Support
-
-There is no per-metric provider class. One enum and one mapping, both in
-[`mirobody/collect/providers/apple/models.py`](../mirobody/collect/providers/apple/models.py), decide
-what the endpoint accepts and where a record lands.
-
-**1. Declare the type** on `FlutterHealthTypeEnum`:
-
-```python
-class FlutterHealthTypeEnum(str, Enum):
-    ...
-    BLOOD_PRESSURE_SYSTOLIC = "BLOOD_PRESSURE_SYSTOLIC"
-```
-
-**2. Map it to a standard indicator**, in the same file:
-
-```python
-FLUTTER_TO_RECORD_TYPE_MAPPING = {
-    ...
-    FlutterHealthTypeEnum.BLOOD_PRESSURE_SYSTOLIC:
-        StandardIndicator.BLOOD_PRESSURE_SYSTOLIC.value.name,
-}
-```
-
-**3. If that indicator does not exist yet**, add it to `StandardIndicator` in
+One table, one file. Add the identifier to `QUANTITY` (or `CATEGORY`) in
+[`mirobody/kernel/decoders/apple.py`](../mirobody/kernel/decoders/apple.py),
+pointing at a catalogue metric. If that metric does not exist yet, add it to
+`StandardIndicator` in
 [`mirobody/collect/standardize/indicators_info.py`](../mirobody/collect/standardize/indicators_info.py)
-with its canonical unit — see that package's
+with its canonical unit, and see that package's
 [README](../mirobody/collect/standardize/README.md).
 
-Step 1 without step 2 is silent data loss, not an error. `type` validation is
-deliberately lenient, so the record is accepted and then dropped in
-`_prepare_record_optimized` with:
+Add a case to `mirobody/kernel/decoders/samples/apple/` in the same change: the
+expected numbers there are worked by hand, never read back from the decoder,
+which is what makes them evidence.
 
-```
-This record will be DISCARDED. Please add mapping to
-FLUTTER_TO_RECORD_TYPE_MAPPING if needed.
-```
+## Response
 
-## 📊 What the endpoint accepts
-
-**`type` is a `FlutterHealthTypeEnum` value, not an Apple HealthKit
-identifier.** Send `HEART_RATE`, not `HKQuantityTypeIdentifierHeartRate` — no
-`HK*` string appears anywhere in this codebase, and because validation is
-lenient, sending one is accepted and then discarded exactly as above.
-
-64 members are declared; **60 carry a mapping**:
-
-| Group | Mapped | Examples |
-| --- | --- | --- |
-| Vital signs | 10 | `HEART_RATE`, `BLOOD_PRESSURE_SYSTOLIC`, `BLOOD_OXYGEN` |
-| Renpho body-scale | 12 | `BASAL_METABOLIC_RATE`, `BODY_WATER`, `VISCERAL_FAT` |
-| Reproductive health | 11 | `BASAL_BODY_TEMPERATURE`, `MENSTRUATION_FLOW` |
-| Activity and fitness | 9 | `STEPS`, `DISTANCE_WALKING_RUNNING`, `VO2_MAX` |
-| Body measurements | 6 | `HEIGHT`, `WEIGHT`, `BODY_MASS_INDEX` |
-| Sleep | 6 | `SLEEP_IN_BED`, `SLEEP_DEEP`, `SLEEP_REM` |
-| Nutrition | 5 | `DIETARY_PROTEIN_CONSUMED`, `DIETARY_WATER` |
-| UV exposure | 1 | `UV_EXPOSURE` |
-
-This table is a summary. The mapping in the source is the only authoritative
-list, and it is one command away — so nothing here can drift into being a
-second, wrong copy of it:
-
-```bash
-python -c "from mirobody.collect.apple.models import FLUTTER_TO_RECORD_TYPE_MAPPING as m; \
-           print(len(m)); [print(k.value) for k in m]"
+```json
+{"success": true, "data": {"request_id": "unique_request_id"},
+ "message": "Apple Health data processed successfully"}
 ```
 
-The remaining **4 declared-but-unmapped** members — `INFREQUENT_MENSTRUAL_CYCLES`,
-`IRREGULAR_MENSTRUAL_CYCLES`, `PERSISTENT_INTERMENSTRUAL_BLEEDING`,
-`PROLONGED_MENSTRUAL_PERIODS` — have their mapping rows commented out even though
-the target `StandardIndicator` members exist. A client may legally send them and
-the records are dropped. Treat that as a known gap, not a design.
+```json
+{"success": false, "message": "Error message"}
+```
 
-## 🔍 Debugging Tips
+## Notes
 
-1. **View Logs**: Logs record detailed information about data processing
-2. **Unmapped types are dropped, not rejected**: grep the worker log for `will be DISCARDED` to see which `type` values a client is sending that `FLUTTER_TO_RECORD_TYPE_MAPPING` has no row for
-3. **Performance Optimization**: Large amounts of data will be processed in batches to improve performance
-
-## ⚠️ Important Notes
-
-1. **Time Format**: Apple Health uses ISO 8601 format with timezone information
-2. **Data Volume**: Large amounts of data may need to be processed in batches
-3. **Duplicate Data**: Deduplication logic for duplicate data needs to be handled at the application layer
-4. **Unit Conversion**: Ensure units are consistent with system standard units
+- **Duplicates** are the client's problem: deduplicate before sending.
+- **Volume**: large uploads are fine, and gzip is worth using.
+- **Time**: send the offset. A record's own `timezone` wins over `metaInfo`.

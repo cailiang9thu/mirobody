@@ -7,28 +7,29 @@ import time
 from dataclasses import replace
 from datetime import date, datetime
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from mirobody.kernel import meds
-from .models import FLUTTER_TO_RECORD_TYPE_MAPPING, AppleHealthRecord, MetaInfo
+from mirobody.kernel import decoders, meds
+from .models import AppleHealthRecord, MetaInfo
 from mirobody.collect.base import LinkRequest, Provider, ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
 from mirobody.collect.standardize.indicators_info import StandardIndicator
 from mirobody.collect.ingest.models.requests import FormatDataInput, StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord
+from mirobody.collect.providers.platform.normalize import records_from_facts
 
 logger = logging.getLogger(__name__)
 
 
 class AppleHealthProvider(Provider):
 
-    _statistic_indicator_mapping = {
-        StandardIndicator.STEPS.value.name: StandardIndicator.STEP_DURATION,
-        StandardIndicator.FLOORS_CLIMBED.value.name: StandardIndicator.FLOORS_CLIMBED_DURATION,
-        # StandardIndicator.ACTIVE_TIME.value.name: StandardIndicator.ACTIVE_TIME_DETAIL.value.name,
-        StandardIndicator.DISTANCE.value.name: StandardIndicator.WALKING_RUNNING_DURATION,
-        StandardIndicator.CYCLING_DISTANCE.value.name: StandardIndicator.CYCLING_DURATION,
-        # StandardIndicator.DIETARY_WATER.value.name: StandardIndicator.DIETARY_WATER_DETAIL.value.name,
-    }
+    #: Apple writes one record per sleep stage and never a total, so the four
+    #: stages that are time asleep each also land as a Total record. InBed and
+    #: Awake are not asleep and do not.
+    _ASLEEP = (
+        StandardIndicator.SLEEP_ASLEEP_DEEP.value.name,
+        StandardIndicator.SLEEP_ASLEEP_CORE.value.name,
+        StandardIndicator.SLEEP_ASLEEP_REM.value.name,
+        StandardIndicator.SLEEP_UNSPECIFIED.value.name,
+    )
 
     @property
     def info(self) -> ProviderInfo:
@@ -54,266 +55,71 @@ class AppleHealthProvider(Provider):
         return {}
 
     async def format_data(self, fmt_input: FormatDataInput) -> StandardPulseData:
-        raw_data = fmt_input.payload
-        try:
-            t1 = time.time()
+        """HealthKit records to standard records, via ``mirobody.kernel.decoders.apple``.
 
-            user_id = raw_data.get("user_id")
-            if not user_id:
-                raise ValueError("Missing user_id in raw data")
+        Every ``type`` is a HealthKit identifier, the vocabulary Apple's own
+        export uses, so this push endpoint and ``mirobody import apple`` read
+        one table. Records of a type that table does not carry are dropped and
+        counted, never guessed at.
+        """
+        raw = fmt_input.payload
+        t1 = time.time()
+        user_id = raw.get("user_id")
+        if not user_id:
+            raise ValueError("Missing user_id in raw data")
+        meta: MetaInfo = raw["meta_info"]
+        default_tz = meta.timezone
+        source = "apple_health_watch" if meta.directly_from_watch else "apple_health"
+        total_key = StandardIndicator.TOTAL_SLEEP.value.name
 
-            meta_info_data: MetaInfo = raw_data["meta_info"]
-            default_timezone = meta_info_data.timezone
-
-            timezone_cache = {
-                "UTC": ZoneInfo("UTC"),
-                default_timezone: ZoneInfo(default_timezone) if default_timezone != "UTC" else ZoneInfo("UTC"),
-            }
-
-            health_data = raw_data.get("health_data", [])
-            total_count = len(health_data)
-
-            logger.info(f"Starting to process {total_count} Apple Health records for user {user_id}")
-
-            batch_size = 1000
-            all_records = []
-
-            for batch_start in range(0, total_count, batch_size):
-                batch_end = min(batch_start + batch_size, total_count)
-                current_batch = health_data[batch_start:batch_end]
-
-                logger.info(f"Processing batch {batch_start // batch_size + 1}/{(total_count - 1) // batch_size + 1}, records: {batch_start}-{batch_end - 1}")
-
-                batch_records = []
-                batch_t1 = time.time()
-
-                for record_data in current_batch:
-                    if isinstance(record_data, AppleHealthRecord):
-                        record = record_data
-                    else:
-                        try:
-                            record = AppleHealthRecord(**record_data)
-                        except Exception as e:
-                            logger.error(f"Invalid record format: {str(e)}")
-                            continue
-
-                    processed_record = self._prepare_record_optimized(record, user_id, meta_info_data.taskId, timezone_cache, meta_info_data.directly_from_watch)
-                    if processed_record:
-                        batch_records.append(processed_record)
-
-                        if processed_record.type in [
-                            StandardIndicator.SLEEP_ASLEEP_DEEP.value.name, 
-                            StandardIndicator.SLEEP_ASLEEP_CORE.value.name, 
-                            StandardIndicator.SLEEP_ASLEEP_REM.value.name, 
-                            StandardIndicator.SLEEP_UNSPECIFIED.value.name
-                        ]:
-                            total_sleep_record = StandardPulseRecord(
-                                source=processed_record.source,
-                                type=StandardIndicator.TOTAL_SLEEP.value.name,
-                                timestamp=processed_record.timestamp,
-                                unit=processed_record.unit,
-                                value=processed_record.value,
-                                timezone=processed_record.timezone,
-                                startTime=processed_record.startTime,
-                                endTime=processed_record.endTime,
-                                source_id=processed_record.source_id,
-                                task_id=processed_record.task_id,
-                            )
-                            batch_records.append(total_sleep_record)
-
-                batch_t2 = time.time()
-                logger.info(f"Batch {batch_start // batch_size + 1} processed: {len(batch_records)} records, "
-                    f"time: {(batch_t2 - batch_t1) * 1000:.2f}ms")
-
-                all_records.extend(batch_records)
-
-            t2 = time.time()
-            logger.info(f"Total processing time: {(t2 - t1) * 1000:.2f}ms for {len(all_records)} valid records")
-
-            meta_info = StandardPulseMetaInfo(
-                userId=user_id,
-                requestId=raw_data.get("request_id"),
-                timestamp=datetime.now().isoformat(),
-                source="apple_health_watch" if meta_info_data.directly_from_watch else "apple_health",
-                timezone=default_timezone,
-                taskId=meta_info_data.taskId,
-                windowFrom=meta_info_data.windowFrom,
-                windowTo=meta_info_data.windowTo,
-            )
-
-            return StandardPulseData(metaInfo=meta_info, healthData=all_records)
-
-        except Exception as e:
-            logger.error(f"Error formatting Apple Health data: {str(e)}", stack_info=True)
-            raise
-
-    def _prepare_record_optimized(
-            self, 
-            record: AppleHealthRecord, 
-            user_id: str, 
-            task_id: str,
-            timezone_cache: dict[str, ZoneInfo] | None = None,
-            directly_from_watch: bool | None = False
-    ) -> StandardPulseRecord | None:
-
-        if timezone_cache is None:
-            timezone_cache = {}
-
-        try:
-            record_type = record.type
-            date_from = record.dateFrom
-            date_to = record.dateTo
-            value_data = record.value
-            unit_symbol = record.unitSymbol
-            source_id = record.sourceId or "unknown"
-            timezone = record.timezone or "UTC"
-
-            if len(timezone) > 20:
-                timezone = "UTC"
-
-            if record_type is None:
-                return None
-
-            flutter_type = record_type
-
-            mapped_enum_value = FLUTTER_TO_RECORD_TYPE_MAPPING.get(flutter_type)
-            if mapped_enum_value is None:
-                logger.warning(f"UNMAPPED_HEALTH_TYPE: '{flutter_type}' not found in mapping. "
-                    f"Record details - UUID: {record.uuid}, Value: {value_data}, Unit: {unit_symbol}, "
-                    f"Source_Id: {source_id}, Time: {date_from}-{date_to}. "
-                    f"This record will be DISCARDED. Please add mapping to FLUTTER_TO_RECORD_TYPE_MAPPING if needed.")
-                return None
-
-            type_value = mapped_enum_value
-
-            if timezone not in timezone_cache:
+        records: list[StandardPulseRecord] = []
+        unmapped: dict[str, int] = {}
+        invalid = 0
+        health_data = raw.get("health_data", [])
+        for item in health_data:
+            if isinstance(item, AppleHealthRecord):
+                record = item
+            else:
                 try:
-                    timezone_cache[timezone] = ZoneInfo(timezone)
-                except Exception:
-                    timezone_cache[timezone] = ZoneInfo("UTC")
-            tz_obj = timezone_cache[timezone]
+                    record = AppleHealthRecord(**item)
+                except Exception as e:
+                    invalid += 1
+                    logger.error(f"Invalid record format: {str(e)}")
+                    continue
+            tz = record.timezone if record.timezone and len(record.timezone) <= 20 else default_tz
+            facts = decoders.decode("apple", record.type, record.sample(), tz)
+            if not facts:
+                unmapped[record.type] = unmapped.get(record.type, 0) + 1
+                continue
+            for r in records_from_facts(
+                facts, slug=self.info.slug, tz=tz, source_id=record.sourceId or "unknown", source=source
+            ):
+                r.task_id = meta.taskId
+                records.append(r)
+                if r.type in self._ASLEEP:
+                    records.append(r.model_copy(update={"type": total_key}))
 
-            start_time = None
-            end_time = None
-            start_timestamp_ms = None
-            end_timestamp_ms = None
+        if unmapped:
+            logger.warning(  # phi: ok type names and counts, no value and no time
+                "dropped %d Apple records of %d unmapped types: %s",
+                sum(unmapped.values()), len(unmapped), ", ".join(sorted(unmapped)))
+        logger.info(  # phi: ok four counts and an elapsed time, no reading
+            "Formatted %d records from %d Apple Health records in %.0fms (%d invalid)",
+            len(records), len(health_data), (time.time() - t1) * 1000, invalid)
 
-            if date_from:
-                if isinstance(date_from, int):
-                    start_timestamp_ms = date_from
-                    start_time = datetime.fromtimestamp(date_from / 1000, tz=tz_obj)
-                elif isinstance(date_from, str):
-                    start_time = datetime.fromisoformat(date_from).replace(microsecond=0, tzinfo=tz_obj)
-                    start_timestamp_ms = int(start_time.timestamp() * 1000)
-
-            if date_to:
-                if isinstance(date_to, int):
-                    end_timestamp_ms = date_to
-                    end_time = datetime.fromtimestamp(date_to / 1000, tz=tz_obj)
-                elif isinstance(date_to, str):
-                    end_time = datetime.fromisoformat(date_to).replace(microsecond=0, tzinfo=tz_obj)
-                    end_timestamp_ms = int(end_time.timestamp() * 1000)
-
-            if not end_timestamp_ms:
-                end_timestamp_ms = start_timestamp_ms
-                end_time = start_time
-
-            if not start_timestamp_ms:
-                start_timestamp_ms = end_timestamp_ms
-                start_time = end_time
-
-            if not start_timestamp_ms and not end_timestamp_ms:
-                return None
-
-            main_timestamp_ms = start_timestamp_ms or end_timestamp_ms
-
-            numeric_value = self._extract_value(value_data, type_value)
-
-            if type_value in self._statistic_indicator_mapping and record.uuid:
-                mapped_indicator = self._statistic_indicator_mapping[type_value]
-                type_value = mapped_indicator.value.name
-                unit_symbol = mapped_indicator.value.standard_unit
-                numeric_value = end_timestamp_ms - start_timestamp_ms
-
-            return StandardPulseRecord(
-                source="apple_health_watch" if directly_from_watch else "apple_health",
-                type=type_value,  # Standard indicator value, e.g., "heartRates"
-                timestamp=main_timestamp_ms,
-                unit=unit_symbol,
-                value=numeric_value,
-                timezone=timezone,
-                startTime=start_timestamp_ms if start_timestamp_ms else None,
-                endTime=end_timestamp_ms if end_timestamp_ms else None,
-                source_id=source_id,
-                task_id=task_id,
-            )
-
-        except Exception as e:
-            logger.error(f"Error preparing record: {str(e)}", stack_info=True)
-            return None
-
-    def _extract_value(self, value_data: Any, record_type: str) -> float | str:
-        if record_type == StandardIndicator.REPRODUCTIVE_CERVICAL_MUCUS_QUALITY.value.name:
-            return {
-                1: 'dry',
-                2: 'sticky',
-                3: 'creamy',
-                4: 'water',
-                5: 'eggWhite',
-            }.get(value_data['numericValue'], 'unspecified')
-        
-        if record_type == StandardIndicator.REPRODUCTIVE_CONTRACEPTIVE.value.name:
-            return {
-                1: 'unspecified',
-                2: 'implant',
-                3: 'injection',
-                4: 'intrauterineDevice',
-                5: 'intravaginalRing',
-                6: 'oral',
-                7: 'patch',
-            }.get(value_data['numericValue'], 'unspecified')
-        
-        if record_type == StandardIndicator.REPRODUCTIVE_MENSTRUATION_FLOW.value.name:
-            return value_data['flow']
-        
-        if record_type == StandardIndicator.REPRODUCTIVE_OVULATION_TEST_RESULT.value.name:
-            return {
-                1: 'negative',
-                2: 'positive',
-                3: 'indeterminate',
-                4: 'estrogenSurge',
-            }.get(value_data['numericValue'], 'indeterminate')
-        
-        if record_type == StandardIndicator.REPRODUCTIVE_PREGNANCY_TEST_RESULT.value.name:
-            return {
-                1: 'negative',
-                2: 'positive',
-                3: 'indeterminate',
-            }.get(value_data['numericValue'], 'indeterminate')
-        
-        if record_type == StandardIndicator.REPRODUCTIVE_PROGESTERONE_TEST_RESULT.value.name:
-            return {
-                1: 'negative',
-                2: 'positive',
-                3: 'indeterminate',
-            }.get(value_data['numericValue'], 'indeterminate')
-        
-        if record_type == StandardIndicator.REPRODUCTIVE_SEXUAL_ACTIVITY.value.name:
-            return 'True, With Protection' if value_data['isProtectionUsed'] else 'True, Without Protection'
-        
-        if record_type in [
-            StandardIndicator.REPRODUCTIVE_INTERMENTSTRUAL_BLEEDING.value.name,
-            StandardIndicator.REPRODUCTIVE_LACTATION.value.name,
-            StandardIndicator.REPRODUCTIVE_PREGNANCY.value.name,
-        ]:
-            return 'True'
-        
-        if isinstance(value_data, dict):
-            if "numericValue" in value_data:
-                return float(value_data["numericValue"])
-
-            return 1.0
-        return 1.0  # Placeholder value
+        return StandardPulseData(
+            metaInfo=StandardPulseMetaInfo(
+                userId=user_id,
+                requestId=raw.get("request_id"),
+                timestamp=datetime.now().isoformat(),
+                source=source,
+                timezone=default_tz,
+                taskId=meta.taskId,
+                windowFrom=meta.windowFrom,
+                windowTo=meta.windowTo,
+            ),
+            healthData=records,
+        )
 
 
 def _sections(cda_data: Any) -> dict[str, list]:
