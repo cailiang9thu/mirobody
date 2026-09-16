@@ -18,7 +18,7 @@ from typing import Any
 
 from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
 from mirobody.utils.file_types import is_document_file
-from mirobody.utils.i18n import t
+from mirobody.utils.i18n import localize
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class DocumentHandler(BaseFileHandler):
         language: str,
     ) -> dict[str, Any]:
         if ctx.progress_callback:
-            await ctx.progress_callback(55, t("extracting_text_content", language, "file_processor"))
+            await ctx.progress_callback(55, localize("extracting_text_content", language, "file_processor"))
 
         original_text, content_hash = await self._extract_original_text(
             ctx=ctx,
@@ -62,7 +62,7 @@ class DocumentHandler(BaseFileHandler):
             )
 
         if ctx.progress_callback:
-            await ctx.progress_callback(75, t("extracting_abstract", language, "file_processor"))
+            await ctx.progress_callback(75, localize("extracting_abstract", language, "file_processor"))
 
         file_abstract = ""
         file_name = ctx.filename
@@ -77,7 +77,7 @@ class DocumentHandler(BaseFileHandler):
                 logger.warning(f"Document abstract extraction failed: {unique_filename}, error: {e}")
 
         if ctx.progress_callback:
-            await ctx.progress_callback(90, t("text_processing_success", language, "file_processor"))
+            await ctx.progress_callback(90, localize("text_processing_success", language, "file_processor"))
 
         return {
             "raw": original_text or "",

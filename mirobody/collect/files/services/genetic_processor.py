@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 from collections.abc import Generator
 
-from mirobody.utils.i18n import t
+from mirobody.utils.i18n import localize
 from mirobody.utils import execute_query
 from mirobody.collect.files.services.file_db_service import FileDbService
 
@@ -112,7 +112,7 @@ class GeneticDataLoader:
             genetic_progress = min((processed / total * 100), 100) if total and total > 0 else 0
             progress_percent = 100 if (total and processed >= total) else 50 + (genetic_progress * 0.5)
 
-            content = t("genetic_progress_display", self.language, "load_genetic_data",
+            content = localize("genetic_progress_display", self.language, "load_genetic_data",
                        processed=processed, saved=saved, percent=progress_percent)
 
             # Update th_files table with progress
@@ -199,7 +199,7 @@ class GeneticDataLoader:
         estimated_total = sum(1 for _ in open(file_path, encoding="utf-8"))
         
         if is_up_progress:
-            await self.update_progress(0, 0, t("genetic_file_estimation", self.language, "load_genetic_data", total=estimated_total), estimated_total)
+            await self.update_progress(0, 0, localize("genetic_file_estimation", self.language, "load_genetic_data", total=estimated_total), estimated_total)
 
         try:
             # Process each record
@@ -213,7 +213,7 @@ class GeneticDataLoader:
                         await self.update_progress(
                             total_processed,
                             total_saved,
-                            t(
+                            localize(
                                 "genetic_parsing_progress",
                                 self.language,
                                 "load_genetic_data",
@@ -239,7 +239,7 @@ class GeneticDataLoader:
                             await self.update_progress(
                                 total_processed,
                                 total_saved,
-                                t(
+                                localize(
                                     "genetic_batch_status",
                                     self.language,
                                     "load_genetic_data",
@@ -262,7 +262,7 @@ class GeneticDataLoader:
                 await self.update_progress(
                     total_processed,
                     total_saved,
-                    t(
+                    localize(
                         "genetic_processing_finished",
                         self.language,
                         "load_genetic_data",
@@ -324,7 +324,7 @@ async def process_genetic_file(
         loader = GeneticDataLoader(message_id, language, user_id, display_filename, display_file_size, file_key)
 
         if file_key:
-            await loader.update_progress(0, 0, t("genetic_initializing_loader", language, "load_genetic_data"))
+            await loader.update_progress(0, 0, localize("genetic_initializing_loader", language, "load_genetic_data"))
 
         # Execute data loading - use data_owner_user_id for th_series_data_genetic
         loaded_records = await loader.load_user_genetic_data(
@@ -336,7 +336,7 @@ async def process_genetic_file(
 
         # Update completion status in th_files
         if file_key:
-            final_content = t(
+            final_content = localize(
                 "genetic_processing_complete_message",
                 language,
                 "load_genetic_data",
@@ -385,7 +385,7 @@ async def process_genetic_file(
         # 🔧 Fix: Return correct original file information
         return {
             "success": True,
-            "message": t("genetic_file_received", language, "load_genetic_data"),
+            "message": localize("genetic_file_received", language, "load_genetic_data"),
             "type": "genetic",
             "url_thumb": display_filename,  # Use original filename
             "full_url": display_filename,  # Use original filename
@@ -406,7 +406,7 @@ async def process_genetic_file(
         # Update failure status in th_files
         if file_key:
             try:
-                failed_content = t(
+                failed_content = localize(
                     "genetic_processing_failed_message",
                     language,
                     "load_genetic_data",

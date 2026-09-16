@@ -1,6 +1,7 @@
 """Translated user-facing strings, one JSON file per calling module.
 
-`t("file_empty", language, "file_uploader")` reads `locales/file_uploader.json`,
+`localize("file_empty", language, "file_uploader")` reads
+`locales/file_uploader.json`,
 whose entries are `{key: {lang: text}}` in five languages (en/zh/fr/ja/es), and
 falls back requested language → en → zh → the key itself. Language codes come
 from the request's `Accept-Language` (`server/middlewares.py`) through the
@@ -59,8 +60,15 @@ def _translations(module: str) -> dict[str, dict[str, str]]:
         return {}
 
 
-def t(key: str, language: str, module: str, **kwargs) -> str:
-    """The text for `key` in `language`, from `locales/<module>.json`."""
+def localize(key: str, language: str, module: str, **kwargs) -> str:
+    """The text for `key` in `language`, from `locales/<module>.json`.
+
+    Named for what it does. It was `t`, which is the JavaScript convention
+    (i18next, vue-i18n); Python's is gettext's `_`, and neither says anything
+    at a call site. `translate` was the obvious alternative and is taken:
+    `mirobody.translate` is the ② stage, and a reader seeing `translate(...)`
+    in a progress message would have to check which one it is.
+    """
     lang_code = LANGUAGE_CODES.get(language.lower(), "en")
     text_dict = _translations(module).get(key, {})
     text = text_dict.get(lang_code) or text_dict.get("en") or text_dict.get("zh") or key
@@ -70,3 +78,28 @@ def t(key: str, language: str, module: str, **kwargs) -> str:
         except (KeyError, ValueError):
             pass  # a placeholder mismatch is the JSON's bug; the raw text still says something
     return text
+
+
+#: The headers a client may state its language in, most specific first. Both
+#: spellings of each: a WebSocket handshake's headers are not normalized the
+#: way Starlette normalizes a request's.
+_LANGUAGE_HEADERS = ("x-language", "X-Language", "accept-language", "Accept-Language")
+
+
+def language_from_headers(headers) -> str:
+    """The client's language, or "" when it stated none.
+
+    One implementation, because there are two callers that must agree: the HTTP
+    middleware and the WebSocket upload handshake. They did not agree before,
+    and the WebSocket half simply had no language, so every progress message
+    during an upload came back in English.
+    """
+    for key in _LANGUAGE_HEADERS:
+        value = headers.get(key) if hasattr(headers, "get") else None
+        if not value:
+            continue
+        for part in value.split(","):
+            code = part.split(";")[0].strip()
+            if code and code != "*":
+                return code
+    return ""

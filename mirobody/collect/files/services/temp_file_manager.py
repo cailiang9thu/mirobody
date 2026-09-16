@@ -21,8 +21,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi import UploadFile
-from mirobody.utils.i18n import t
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.i18n import localize
+from mirobody.utils.req_ctx import request_language
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +43,14 @@ class TempFileManager:
         """
         temp_file_path = None
         try:
-            language = get_req_ctx("language", "en")
+            language = request_language()
             # Read uploaded file content
             content = await upload_file.read()
 
             # Check if content is empty
             if not content or len(content) == 0:
                 logger.error(f"File content is empty: {upload_file.filename}")
-                raise ValueError(t("file_empty", language, "temp_file_manager"))
+                raise ValueError(localize("file_empty", language, "temp_file_manager"))
 
             # Get original filename and extension
             filename = upload_file.filename
@@ -93,11 +93,11 @@ class TempFileManager:
         """
         temp_file_path = None
         try:
-            language = get_req_ctx("language", "en")
+            language = request_language()
             # Check if content is empty
             if not content or len(content) == 0:
                 logger.error(f"File content is empty: {filename}")
-                raise ValueError(t("file_empty", language, "temp_file_manager"))
+                raise ValueError(localize("file_empty", language, "temp_file_manager"))
 
             # Get original filename and extension
             suffix = os.path.splitext(filename)[1] if filename else ""

@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
-from mirobody.utils.i18n import t
+from mirobody.utils.i18n import localize
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class PDFHandler(BaseFileHandler):
 
     async def _process_content(self, ctx: FileProcessingContext, temp_file_path: str, unique_filename: str, full_url: str, language: str) -> dict[str, Any]:
         if ctx.progress_callback:
-             await ctx.progress_callback(55, t("extracting_pdf_content", language, "file_processor"))
+             await ctx.progress_callback(55, localize("extracting_pdf_content", language, "file_processor"))
 
         # Step 1: Extract original text first (SHA256 dedup inside the extractor)
         original_text, content_hash = await self._extract_original_text(
@@ -32,7 +32,7 @@ class PDFHandler(BaseFileHandler):
             logger.info(f"PDF original text saved to th_files: {unique_filename}, length: {len(original_text)}")
 
         if ctx.progress_callback:
-            await ctx.progress_callback(70, t("extracting_abstract", language, "file_processor"))
+            await ctx.progress_callback(70, localize("extracting_abstract", language, "file_processor"))
 
         # Step 3: Sync extract abstract (must complete before returning success)
         file_abstract = ""
@@ -49,12 +49,12 @@ class PDFHandler(BaseFileHandler):
                 logger.warning(f"PDF abstract extraction failed: {unique_filename}, error: {e}")
 
         if ctx.progress_callback:
-            await ctx.progress_callback(85, t("pdf_upload_success", language, "file_processor"))
+            await ctx.progress_callback(85, localize("pdf_upload_success", language, "file_processor"))
 
         # Step 4: indicator extraction is auto-triggered by base process() via original_text
 
         if ctx.progress_callback:
-             await ctx.progress_callback(90, t("pdf_processing_success", language, "file_processor"))
+             await ctx.progress_callback(90, localize("pdf_processing_success", language, "file_processor"))
 
         return {
             "raw": original_text or "",

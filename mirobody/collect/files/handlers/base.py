@@ -19,8 +19,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi import UploadFile
-from mirobody.utils.i18n import t
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.i18n import localize
+from mirobody.utils.req_ctx import request_language
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class BaseFileHandler(abc.ABC):
         """Template method for file processing"""
         unique_filename = None  # Track file_key even if processing fails
         try:
-            language = get_req_ctx("language", "en")
+            language = request_language()
             
             # 1. Generate unique filename if needed
             unique_filename = self._get_unique_filename(ctx)
@@ -135,7 +135,7 @@ class BaseFileHandler(abc.ABC):
 
     async def _handle_upload(self, ctx: FileProcessingContext, unique_filename: str, language: str) -> str:
         if ctx.progress_callback:
-            await ctx.progress_callback(35, t("uploading_file", language, "file_processor"))
+            await ctx.progress_callback(35, localize("uploading_file", language, "file_processor"))
 
         if ctx.skip_upload_oss:
             # File already uploaded, generate signed URL
@@ -168,7 +168,7 @@ class BaseFileHandler(abc.ABC):
 
     async def _save_to_temp(self, ctx: FileProcessingContext, language: str) -> str | None:
         if ctx.progress_callback:
-            await ctx.progress_callback(45, t("saving_temp_file", language, "file_processor"))
+            await ctx.progress_callback(45, localize("saving_temp_file", language, "file_processor"))
             
         temp_file_path, _ = await self.temp_manager.save_upload_file_to_temp(ctx.file)
         return str(temp_file_path) if temp_file_path else None
@@ -362,7 +362,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         
         response = {
             "success": True,
-            "message": t(f"{self.get_type_name()}_processing_success", language, "file_processor"),
+            "message": localize(f"{self.get_type_name()}_processing_success", language, "file_processor"),
             "type": self.get_type_name(),
             "filename": ctx.filename,
             "full_url": full_url,
@@ -382,7 +382,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
         return response
 
     async def _handle_error(self, ctx: FileProcessingContext, e: Exception, file_key: str | None = None) -> dict[str, Any]:
-        language = get_req_ctx("language", "en")
+        language = request_language()
         error_msg = str(e)
         logger.error(f"File processing failed: {ctx.filename}, file_key: {file_key}, error: {error_msg}", exc_info=True)
 
@@ -390,15 +390,15 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
             try:
                 await update_message_content(
                     message_id=ctx.message_id,
-                    content=f"❌ {t('file_upload_failed', language, 'file_processor')}\n\n{t('error', language, 'file_processor')}: {error_msg}",
+                    content=f"❌ {localize('file_upload_failed', language, 'file_processor')}\n\n{localize('error', language, 'file_processor')}: {error_msg}",
                     reasoning=f"Error occurred during file processing: {error_msg}",
                 )
             except Exception as update_error:
                 logger.error(f"Failed to update message status: {str(update_error)}", stack_info=True)
 
-        user_message = t(f"{self.get_type_name()}_processing_failed", language, "file_processor")
+        user_message = localize(f"{self.get_type_name()}_processing_failed", language, "file_processor")
         if not user_message:
-             user_message = t('file_upload_failed', language, 'file_processor')
+             user_message = localize('file_upload_failed', language, 'file_processor')
         # The reason travels with the message: "Image processing failed" alone
         # sent the reporter of #68 into the server logs for a cause that was
         # one sentence long ("no vision provider: set one of these keys").
@@ -407,7 +407,7 @@ Return JSON format: {{"file_name": "...", "file_abstract": "..."}}"""
 
         # Some specialized error handling for JSON parsing if needed
         if "JSON parsing failed" in error_msg:
-             user_message = t("json_parsing_failed", language, "file_processor") or "File processing failed: Invalid response format"
+             user_message = localize("json_parsing_failed", language, "file_processor") or "File processing failed: Invalid response format"
 
         return {
             "success": False,

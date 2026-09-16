@@ -10,6 +10,8 @@ from redis.asyncio import Redis
 from starlette.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from mirobody.utils.i18n import language_from_headers
+
 from mirobody.user import JwtTokenValidator
 
 #-----------------------------------------------------------------------------
@@ -96,21 +98,12 @@ class JwtMiddleware(BaseHTTPMiddleware):
                 # request because a header could not be parsed would be worse.
                 pass
 
-            # Get user's language.
-            request.state.language = ""
-            for key in ["x-language", "X-Language", "accept-language", "Accept-Language"]:
-                if key in request.headers:
-                    value = request.headers.get(key)
-                    if value:
-                        languages = value.split(",")
-                        for language in languages:
-                            language_code = language.split(";")[0].strip()
-                            if language_code and language_code != "*":
-                                request.state.language = language_code
-                                ctx["language"] = request.state.language
-                                break
-                        if request.state.language:
-                            break
+            # Get user's language. Parsed by `utils.i18n`, which the WebSocket
+            # upload handshake also calls: this used to be the only copy, and
+            # the socket had no language at all.
+            request.state.language = language_from_headers(request.headers)
+            if request.state.language:
+                ctx["language"] = request.state.language
 
             # Get user's timezone.
             request.state.timezone = ""

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from mirobody.utils.i18n import t
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.i18n import localize
+from mirobody.utils.req_ctx import request_language
 from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
 from mirobody.collect.files.services.genetic_processor import process_genetic_file
 # `fastapi` lives in the [app] extra, but file parsing is advertised engine
@@ -64,7 +64,7 @@ class GeneticHandler(BaseFileHandler):
         # Override process completely because the flow is very different
         file_key = None
         try:
-            language = get_req_ctx("language", "en")
+            language = request_language()
             
             # Generate file_key using base class method
             file_key = self._get_unique_filename(ctx)
@@ -75,34 +75,34 @@ class GeneticHandler(BaseFileHandler):
             await ctx.file.seek(0)
 
             if ctx.progress_callback:
-                await ctx.progress_callback(30, t("uploading_file", language, "file_processor"))
+                await ctx.progress_callback(30, localize("uploading_file", language, "file_processor"))
 
             # Upload file to OSS/S3 storage (same as other file types)
             full_url = await self._handle_upload(ctx, file_key, language)
             logger.info(f"Genetic file uploaded to storage: {file_key}, URL: {full_url}")
 
             if ctx.progress_callback:
-                await ctx.progress_callback(40, t("genetic_file_saving", language, "load_genetic_data"))
+                await ctx.progress_callback(40, localize("genetic_file_saving", language, "load_genetic_data"))
 
             # Save file to temporary path for background processing
             temp_file_path, _ = await self.temp_manager.save_upload_file_to_temp(ctx.file)
 
             if ctx.progress_callback:
-                 await ctx.progress_callback(50, t("genetic_file_processing_background", language, "load_genetic_data"))
+                 await ctx.progress_callback(50, localize("genetic_file_processing_background", language, "load_genetic_data"))
 
             # Simple file abstract for genetic files (no LLM extraction needed)
             file_name = ctx.filename
-            file_abstract = t("genetic_file_abstract", language, "load_genetic_data", filename=ctx.filename)
+            file_abstract = localize("genetic_file_abstract", language, "load_genetic_data", filename=ctx.filename)
 
             response = {
                 "success": True,
-                "message": t("genetic_file_received", language, "load_genetic_data"),
+                "message": localize("genetic_file_received", language, "load_genetic_data"),
                 "type": "genetic",
                 "filename": ctx.filename,
                 "file_size": file_size,
                 "url_thumb": full_url or ctx.filename,
                 "full_url": full_url or ctx.filename,
-                "raw": t("genetic_file_processing_background", language, "load_genetic_data"),
+                "raw": localize("genetic_file_processing_background", language, "load_genetic_data"),
                 "file_abstract": file_abstract,
                 "file_name": file_name,
                 "message_id": ctx.message_id,

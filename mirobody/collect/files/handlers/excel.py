@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
-from mirobody.utils.i18n import t
+from mirobody.utils.i18n import localize
 from mirobody.utils.file_types import is_excel_file
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class ExcelHandler(BaseFileHandler):
         language: str,
     ) -> dict[str, Any]:
         if ctx.progress_callback:
-            await ctx.progress_callback(55, t("extracting_text_content", language, "file_processor"))
+            await ctx.progress_callback(55, localize("extracting_text_content", language, "file_processor"))
 
         # Built-in extraction: workbook -> text (SHA256 dedup inside the extractor).
         original_text, content_hash = await self._extract_original_text(
@@ -64,7 +64,7 @@ class ExcelHandler(BaseFileHandler):
             )
 
         if ctx.progress_callback:
-            await ctx.progress_callback(75, t("extracting_abstract", language, "file_processor"))
+            await ctx.progress_callback(75, localize("extracting_abstract", language, "file_processor"))
 
         # Sync abstract so the upload result carries it (matches PDF behaviour).
         file_abstract = ""
@@ -80,7 +80,7 @@ class ExcelHandler(BaseFileHandler):
                 logger.warning(f"Excel abstract extraction failed: {unique_filename}, error: {e}")
 
         if ctx.progress_callback:
-            await ctx.progress_callback(90, t("text_processing_success", language, "file_processor"))
+            await ctx.progress_callback(90, localize("text_processing_success", language, "file_processor"))
 
         return {
             "raw": original_text or "",

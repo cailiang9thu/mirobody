@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fastapi import UploadFile
 from mirobody.utils.config.storage import get_storage_client
-from mirobody.utils.i18n import t
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.i18n import localize
+from mirobody.utils.req_ctx import request_language
 
 logger = logging.getLogger(__name__)
 
@@ -113,12 +113,12 @@ class FileUploader:
             str: File URL
         """
         try:
-            language = get_req_ctx("language", "en")
+            language = request_language()
 
             # Check if content is empty
             if not file_content or len(file_content) == 0:
                 logger.error(f"File content is empty: {filename}")
-                raise ValueError(t("file_empty", language, "file_uploader"))
+                raise ValueError(localize("file_empty", language, "file_uploader"))
 
             file_size = len(file_content)
             
@@ -147,10 +147,10 @@ class FileUploader:
                     
             except TimeoutError:
                 logger.error(f"File upload timeout: {filename}, size: {file_size} bytes")
-                raise ValueError(t("file_upload_timeout", language, "file_uploader"))
+                raise ValueError(localize("file_upload_timeout", language, "file_uploader"))
 
             if not full_url:
-                raise ValueError(t("file_upload_failed", language, "file_uploader"))
+                raise ValueError(localize("file_upload_failed", language, "file_uploader"))
 
             logger.info(f"File uploaded successfully to {storage.get_storage_type()} storage: {full_url}")
 

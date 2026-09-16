@@ -12,8 +12,8 @@ import logging
 from typing import Any
 from collections.abc import Callable
 
-from mirobody.utils.i18n import t
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.i18n import localize
+from mirobody.utils.req_ctx import request_language
 from mirobody.collect.files.services.prompts.file_indicator_extract import (
     get_extract_indicators_prompt,
     RESPONSE_SCHEMA_EXTRACT_INDICATORS,
@@ -134,10 +134,10 @@ class IndicatorExtractor:
                 logger.warning(f"[IndicatorExtractor] Empty original text provided for: {file_name}")
                 return [], {}, None
 
-            language = get_req_ctx("language", "en")
+            language = request_language()
             
             if progress_callback:
-                await progress_callback(65, t("analyzing_medical_indicators", language, "indicator_extractor", filename=file_name))
+                await progress_callback(65, localize("analyzing_medical_indicators", language, "indicator_extractor", filename=file_name))
 
             logger.info(f"[IndicatorExtractor] Extracting indicators from text - user_id: {user_id}, text_length: {len(original_text)}")
 
@@ -172,7 +172,7 @@ class IndicatorExtractor:
                 return [], None, None
 
             if progress_callback:
-                await progress_callback(75, t("parsing_indicator_data", language, "indicator_extractor"))
+                await progress_callback(75, localize("parsing_indicator_data", language, "indicator_extractor"))
 
             # Parse result (async_get_structured_output returns dict directly)
             result = llm_ret if isinstance(llm_ret, dict) else json.loads(llm_ret)
@@ -192,7 +192,7 @@ class IndicatorExtractor:
             report = None
             if save_to_db and indicators:
                 if progress_callback:
-                    await progress_callback(80, t("saving_indicators_to_database", language, "indicator_extractor", count=len(indicators)))
+                    await progress_callback(80, localize("saving_indicators_to_database", language, "indicator_extractor", count=len(indicators)))
 
                 db_start_time = time.time()
                 if report_date and report_date[1] == "extracted":
@@ -221,10 +221,10 @@ class IndicatorExtractor:
                 logger.info(f"[IndicatorExtractor] Database save completed - user_id: {user_id}, duration: {db_duration:.2f}s, saved: {saved_count}")
 
                 if progress_callback:
-                    await progress_callback(85, t("database_save_completed", language, "indicator_extractor", count=saved_count))
+                    await progress_callback(85, localize("database_save_completed", language, "indicator_extractor", count=saved_count))
 
             if progress_callback:
-                await progress_callback(90, t("indicator_extraction_completed", language, "indicator_extractor", count=len(indicators)))
+                await progress_callback(90, localize("indicator_extraction_completed", language, "indicator_extractor", count=len(indicators)))
 
             total_duration = time.time() - start_time
             logger.info(f"[IndicatorExtractor] Text extraction completed: {file_name}, {len(indicators)} indicators, {total_duration:.2f}s")
@@ -234,14 +234,14 @@ class IndicatorExtractor:
         except json.JSONDecodeError as e:
             logger.error(f"[IndicatorExtractor] JSON parse failed for text extraction: {e}", exc_info=True)
             if progress_callback:
-                language = get_req_ctx("language", "en")
-                await progress_callback(90, t("json_parsing_failed", language, "indicator_extractor"))
+                language = request_language()
+                await progress_callback(90, localize("json_parsing_failed", language, "indicator_extractor"))
             raise ValueError(f"JSON parsing failed: {str(e)}")
         except Exception as e:
             logger.error(f"[IndicatorExtractor] Text extraction failed: {e}", exc_info=True)
             if progress_callback:
-                language = get_req_ctx("language", "en")
-                await progress_callback(90, t("indicator_extraction_error", language, "indicator_extractor"))
+                language = request_language()
+                await progress_callback(90, localize("indicator_extraction_error", language, "indicator_extractor"))
             raise e
 
     @staticmethod

@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Uplo
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from mirobody.utils import execute_query
+from mirobody.utils.i18n import language_from_headers
 from mirobody.utils.req_ctx import set_req_ctx
 from mirobody.server.auth import verify_token, verify_token_string
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
@@ -223,12 +224,19 @@ async def websocket_upload_health_report(
     # Generate unique trace_id for this WebSocket connection
     trace_id = str(uuid.uuid4())
 
-    # Set request context with trace_id for the entire WebSocket session
+    # Set request context with trace_id for the entire WebSocket session.
+    # `language` belongs here too: `JwtMiddleware` is a `BaseHTTPMiddleware`
+    # and never runs for a websocket scope, so every progress message during an
+    # upload came back in English whatever the client asked for. The handshake
+    # carries the same headers an HTTP request does.
     ctx = {
         "trace_id": trace_id,
         "connection_type": "websocket",
         "endpoint": "/ws/upload-health-report",
     }
+    language = language_from_headers(websocket.headers)
+    if language:
+        ctx["language"] = language
 
     logger.info("WebSocket file upload connection initiated")
 

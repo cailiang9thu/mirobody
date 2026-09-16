@@ -19,8 +19,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi import UploadFile
-from mirobody.utils.i18n import t
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.i18n import localize
+from mirobody.utils.req_ctx import request_language
 
 from mirobody.collect.files.services.content_extractor import ContentExtractor
 from mirobody.collect.files.services.file_uploader import FileUploader
@@ -93,7 +93,7 @@ class FileProcessor:
         try:
             # Determine target user ID, use query_user_id if available, otherwise use user_id
             target_user_id = query_user_id if query_user_id else user_id
-            language = get_req_ctx("language", "en")
+            language = request_language()
 
             # The message id identifies the upload; the file name identifies the
             # PATIENT, because that is how a check-up report is named.
@@ -101,7 +101,7 @@ class FileProcessor:
 
             # Initial progress: file upload completed
             if progress_callback:
-                await progress_callback(30, t("file_upload_completed", language, "file_processor"))
+                await progress_callback(30, localize("file_upload_completed", language, "file_processor"))
 
             # Get Handler from Factory
             handler = await self.factory.get_handler(file)
@@ -109,7 +109,7 @@ class FileProcessor:
             if not handler:
                 return {
                     "success": False,
-                    "message": t("file_not_supported", language, "file_processor"),
+                    "message": localize("file_not_supported", language, "file_processor"),
                 }
 
             # Create Context
@@ -129,7 +129,7 @@ class FileProcessor:
             return await handler.process(ctx)
 
         except Exception as e:
-            language = get_req_ctx("language", "en")
+            language = request_language()
             logger.error(f"File processing failed: {file.filename}, error: {e}", exc_info=True)
 
             # If there's a message ID, update message status to failed
@@ -137,7 +137,7 @@ class FileProcessor:
                 try:
                     await update_message_content(
                         message_id=message_id,
-                        content=f"❌ {t('file_upload_failed', language, 'file_processor')}\n\n{t('error', language, 'file_processor')}: {str(e)}",
+                        content=f"❌ {localize('file_upload_failed', language, 'file_processor')}\n\n{localize('error', language, 'file_processor')}: {str(e)}",
                         reasoning=f"Error occurred during file processing: {str(e)}",
                     )
                 except Exception as update_error:
@@ -145,7 +145,7 @@ class FileProcessor:
 
             return {
                 "success": False,
-                "message": f"{t('file_upload_failed', language, 'file_processor')}: {str(e)}",
+                "message": f"{localize('file_upload_failed', language, 'file_processor')}: {str(e)}",
                 "status": "error",
                 "message_id": message_id,
             }

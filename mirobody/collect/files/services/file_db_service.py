@@ -12,7 +12,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from mirobody.utils import execute_query
-from mirobody.utils.req_ctx import get_req_ctx
+from mirobody.utils.req_ctx import request_timezone
 
 from mirobody.utils.coerce import safe_json_dumps, safe_json_loads
 from mirobody.utils.db import extract_first_record
@@ -279,7 +279,7 @@ class FileDbService:
         """
         try:
             from mirobody.utils.config import get_default_timezone
-            timezone = get_req_ctx("timezone", get_default_timezone())
+            timezone = request_timezone(get_default_timezone())
 
             # Build WHERE clause. The listing answers "which files are attached
             # to the TARGET's record" (query_user_id = whose record), matching

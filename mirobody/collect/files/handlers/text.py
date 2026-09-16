@@ -1,5 +1,5 @@
 from typing import Any
-from mirobody.utils.i18n import t
+from mirobody.utils.i18n import localize
 from mirobody.collect.files.handlers.base import BaseFileHandler, FileProcessingContext
 import uuid
 import hashlib
@@ -17,7 +17,7 @@ class TextHandler(BaseFileHandler):
 
     async def _process_content(self, ctx: FileProcessingContext, temp_file_path: str, unique_filename: str, full_url: str, language: str) -> dict[str, Any]:
         if ctx.progress_callback:
-             await ctx.progress_callback(70, t("extracting_text_content", language, "file_processor"))
+             await ctx.progress_callback(70, localize("extracting_text_content", language, "file_processor"))
 
         # Calculate content hash for deduplication
         await ctx.file.seek(0)
@@ -47,7 +47,7 @@ class TextHandler(BaseFileHandler):
             )
 
         if ctx.progress_callback:
-            await ctx.progress_callback(90, t("text_processing_success", language, "file_processor"))
+            await ctx.progress_callback(90, localize("text_processing_success", language, "file_processor"))
 
         return {
             "raw": raw_text,
