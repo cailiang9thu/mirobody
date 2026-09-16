@@ -186,7 +186,7 @@ will not parse, and a column that is not there — so there is a third check:
 docker compose exec mirobody python -m scripts.e2e_health_data --user 1
 ```
 
-22 cases and 4 invariants, including **"one day, one number"**: a `day` bucket
+16 cases and 4 invariants, including **"one day, one number"**: a `day` bucket
 and a `latest` over the same day must agree, because that is what "the chat
 answer and the dashboard show the same thing" means when it is written down.
 Exit status is the number of failures, so it is usable in CI.
