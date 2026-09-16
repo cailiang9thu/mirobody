@@ -8,13 +8,14 @@ question (the third was the presigned-URL helper, since deleted), and they
 disagreed.
 
 A FIFTH implementation turned up after the first four were merged, and it was
-the one that mattered most: `file_parser/services/db_utils.get_mime_type`, read
-at five sites to decide the `content_type` a stored file carries and the type the
-model is handed. It disagreed with this table on `.flac`, `.m4a`, `.rar` and
-`.wav` (modern IANA names against the legacy `x-` forms) so within a single
-deployment the storage path and the agent path described the same bytes
-differently. It now delegates here, and this table wins because its values are
-already written into stored objects.
+the one that mattered most: `db_utils.get_mime_type`, read at five sites to
+decide the `content_type` a stored file carries and the type the model is
+handed. It disagreed with this table on `.flac`, `.m4a`, `.rar` and `.wav`
+(modern IANA names against the legacy `x-` forms) so within a single deployment
+the storage path and the agent path described the same bytes differently. It
+was made to delegate here, then deleted: every one of those sites calls
+`guess_mime` now. This table wins because its values are already written into
+stored objects.
 
 They can only agree if the answer does not come from `mimetypes` alone.
 `mimetypes` merges the interpreter's built-in table with the host's
@@ -27,7 +28,7 @@ build host into part of the data: the same upload is served as a spreadsheet
 from one deployment and as a download from another.
 
 `MIME_BY_EXT` therefore pins every extension this project accepts (uploads:
-`file_parser/services/file_uploader.SUPPORTED_EXTENSIONS`; agent serving:
+`collect/file_parser/services/file_uploader.SUPPORTED_EXTENSIONS`; agent serving:
 `agent/filesystem/naming.MULTIMODAL_EXTS`) and `mimetypes` is only the fallback for
 everything else. The values are the ones this project already stores: the
 legacy `x-` forms (`audio/x-aac`, `video/x-flv`) are kept rather than modernized
@@ -173,3 +174,24 @@ def is_document_file(filename: str, content_type: str | None = None) -> bool:
 def is_text_file(filename: str, content_type: str | None = None) -> bool:
     """True for plain-text-ish uploads we can decode without a parser."""
     return _matches(filename, content_type, TEXT_EXTENSIONS, TEXT_MIME_TYPES)
+
+
+def simple_file_type(file_type: str) -> str:
+    """A MIME type or extension reduced to the bucket the drive list shows.
+
+    "image", "pdf", "excel" or "csv"; anything else comes back unchanged. The
+    frontend picks an icon and a filter off this, so the answer has to be
+    stable whether the caller holds a long Office MIME or a bare extension.
+    """
+    if not file_type:
+        return ""
+    t = file_type.lower()
+    if "image" in t or t in ("png", "jpg", "jpeg", "gif"):
+        return "image"
+    if "pdf" in t:
+        return "pdf"
+    if "spreadsheet" in t or "excel" in t or t in ("xlsx", "xls", "xlsm", "xlsb"):
+        return "excel"
+    if "csv" in t:
+        return "csv"
+    return file_type

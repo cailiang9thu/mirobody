@@ -196,7 +196,7 @@ async def patch_file_date(patch: FileDatePatch, user_id: str = Depends(verify_to
     has a row on the target date staying put and being counted as `skipped`) 
     is `services.report_date.set_file_report_date`, shared with the agent tool.
     """
-    from mirobody.collect.file_parser.services.db_utils import parse_date
+    from mirobody.utils.coerce import parse_date
     from mirobody.collect.file_parser.services.file_db_service import FileDbService
     from mirobody.collect.file_parser.services.report_date import set_file_report_date
 

@@ -14,7 +14,7 @@ from typing import Any
 
 from mirobody.collect.file_parser.services.file_processing_service import process_files_async
 from mirobody.collect.file_parser.services.file_db_service import FileDbService
-from mirobody.collect.file_parser.services.db_utils import get_mime_type
+from mirobody.utils.file_types import guess_mime
 from mirobody.utils.config.storage import get_storage_client
 from mirobody.utils.tasks import spawn
 
@@ -62,7 +62,7 @@ async def _download_single_file(
             return None
 
         if not file_type or "/" not in file_type:
-            file_type = get_mime_type(file_name)
+            file_type = guess_mime(file_name)
 
         file_content = None
         content_b64 = None 

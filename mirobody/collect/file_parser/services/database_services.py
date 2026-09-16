@@ -8,11 +8,7 @@ from mirobody.utils import execute_query
 
 from mirobody.collect.readings import upsert_readings
 
-from .db_utils import (
-    safe_json_dumps,
-    parse_date,
-    get_utc_now,
-)
+from mirobody.utils.coerce import get_utc_now, parse_date, safe_json_dumps
 
 logger = logging.getLogger(__name__)
 

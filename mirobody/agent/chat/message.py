@@ -164,12 +164,12 @@ async def _refresh_file_urls_in_content(content_json_obj: Any) -> None:
         return
 
     from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
-    from mirobody.collect.file_parser.services.db_utils import get_mime_type
+    from mirobody.utils.file_types import guess_mime
 
     async def _sign(file_key: str, file_name: str = "") -> str:
         if not file_key:
             return ""
-        content_type = get_mime_type(file_name) if file_name else "application/octet-stream"
+        content_type = guess_mime(file_name) if file_name else "application/octet-stream"
         return await FileParserDatabaseService.regenerate_file_url(
             file_key, file_name, content_type
         )

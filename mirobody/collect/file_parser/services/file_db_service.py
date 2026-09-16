@@ -14,13 +14,9 @@ from zoneinfo import ZoneInfo
 from mirobody.utils import execute_query
 from mirobody.utils.req_ctx import get_req_ctx
 
-from .db_utils import (
-    extract_first_record,
-    get_mime_type,
-    get_simple_file_type,
-    safe_json_dumps,
-    safe_json_loads,
-)
+from mirobody.utils.coerce import safe_json_dumps, safe_json_loads
+from mirobody.utils.db import extract_first_record
+from mirobody.utils.file_types import guess_mime, simple_file_type
 
 logger = logging.getLogger(__name__)
 
@@ -382,7 +378,7 @@ class FileDbService:
                 
                 # Get content_type from file_content or derive from filename
                 stored_content_type = file_content.get("content_type", "")
-                content_type = stored_content_type if stored_content_type else get_mime_type(row.get("file_name", ""))
+                content_type = stored_content_type if stored_content_type else guess_mime(row.get("file_name", ""))
                 
                 # Determine upload_status from status field
                 status = file_content.get("status", "completed")
@@ -402,7 +398,7 @@ class FileDbService:
                     "file_name": row.get("file_name", ""),
                     "original_name": original_filename,
                     "file_type": row.get("file_type", ""),
-                    "type": get_simple_file_type(row.get("file_type", "")),
+                    "type": simple_file_type(row.get("file_type", "")),
                     "file_key": row.get("file_key", ""),
                     "file_size": file_content.get("file_size", 0),
                     "url_full": file_content.get("url_full", ""),

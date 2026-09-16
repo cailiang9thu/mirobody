@@ -49,7 +49,7 @@ from mirobody.collect.file_parser.file_processor import FileProcessor
 
 from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
 from mirobody.collect.file_parser.services.file_db_service import FileDbService
-from mirobody.collect.file_parser.services.db_utils import get_mime_type
+from mirobody.utils.file_types import guess_mime
 from mirobody.collect.file_parser.handlers.genetic import GeneticHandler
 from mirobody.utils.tasks import spawn
 from .memory_upload_file import MemoryUploadFile
@@ -760,7 +760,7 @@ class WebSocketFileUploadManager:
                 display_file_name = file_entry.get("file_name", original_filename)
                 
                 # Get MIME type from filename extension
-                actual_mime_type = get_mime_type(original_filename or file_key)
+                actual_mime_type = guess_mime(original_filename or file_key)
                 
                 file_info = {
                     "file_key": file_key,
