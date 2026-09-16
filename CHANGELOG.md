@@ -1,8 +1,7 @@
 ## Unreleased
 
-① Collect only collects. The stage was carrying the indicator catalogue, the
-daily rollups and a second identity implementation; those are other stages'
-work and have gone to them, and what is left is named for what it is.
+① Collect only collects. The indicator catalogue, the daily rollups and a
+second identity implementation have gone to the stages they belong to.
 
 ### Breaking
 
@@ -10,53 +9,26 @@ work and have gone to them, and what is left is named for what it is.
   `FlutterHealthTypeEnum` (`HEART_RATE`) and mapped it onto the catalogue with
   its own 74-row table, while `mirobody import apple` read the same catalogue
   off HealthKit identifiers. The Flutter table described a client that no
-  longer exists and is deleted. Send `type` as the HealthKit identifier
-  (`HKQuantityTypeIdentifierHeartRate`), the span as `startDate`/`endDate`,
-  `value` as the number itself and `unit` in place of `unitSymbol`. Units come
-  back in the catalogue's own (`count/min`, not `bpm`), sleep in milliseconds,
-  and a steps record stays steps instead of becoming `stepDuration`. Body
-  water, bone mass, muscle, visceral fat, body age and protein percentage go
-  with the table: they are not HealthKit identifiers and no Apple export
-  produces them. See `docs/apple-health.md`.
-- **`mirobody.collect.standardize` is `mirobody.translate`.** The indicator
-  catalogue, units, value ranges and fhir_id are ② Translate's, not ① Collect's.
-  `StandardIndicator` and `UNIT_CONVERSIONS` still resolve from
-  `mirobody.collect` so a provider plugin keeps one import path.
-- **`mirobody.collect.file_parser` is `mirobody.collect.files`**, and
-  `collect/aggregate/` is split between `mirobody.translate.aggregate` (a day's
-  number, which is the same quantity on a different time axis) and
-  `mirobody.translate.derive` (sleep efficiency and heart-rate range, which are
-  quantities nothing measured). `collect/core/user.py` is
-  `mirobody/user/platform.py`; `core/scheduler.py` and `core/distributed_lock.py`
-  are under `mirobody/utils/`.
+  longer exists and is deleted: send Apple's own identifier, `startDate`/
+  `endDate`, a plain `value` and `unit`. See `docs/apple-health.md`.
+- **Packages moved to the stage that owns them.**
+  `collect.standardize` → `mirobody.translate`; `collect.aggregate` splits
+  between `translate.aggregate` and `translate.derive`;
+  `collect.file_parser` → `collect.files`; `collect.apple` →
+  `collect.providers.apple`; `collect.core.user` → `user.platform`; the
+  scheduler and distributed lock → `mirobody.utils`. `mirobody.collect` and
+  `mirobody.translate` re-export what leaves them and a contract forbids
+  reaching past, so the next move costs no caller an edit.
 
 ### Fixed
 
 - **A WebSocket upload answered in English whatever the client asked for.**
   `JwtMiddleware` is a `BaseHTTPMiddleware`, which Starlette runs for http
-  scopes only, so the upload socket's context carried no language and all
-  eleven reads of it fell back to `en`. One parser now serves both transports.
-- **The agent could not read a `.docx`.** Four tables answered "can we get text
-  from this" and disagreed: `.docx` was missing from the agent filesystem's
-  copy, so a Word file never took the extract branch though `extract_text`
-  reads it, and was served as its zip container decoded as prose. `.xls`,
-  `.ppt` and `.xlsb` were in that copy and cannot be read at all.
-
-### Changed
-
-- **Two front doors, both machine-checked.** `mirobody.collect` re-exports what
-  the answer layer needs and `mirobody.translate` what leaves that package; two
-  import-linter contracts forbid reaching past either. Thirty-three deep
-  imports are gone, and four of the modules behind them were renamed or split
-  in this same release without a caller edit.
-- **`mirobody/documents/` is the only place that opens a file.** No caller
-  keeps its own extension table or opens a PDF library; pixels moved to
-  `documents/render.py`, so a page rendered for a vision model and the same
-  page rendered for OCR no longer come out at different resolutions.
-- `i18n`'s `t()` is `localize()`. `documents/pipeline.py`, 318 lines with no
-  production caller, is deleted.
-
-# Changelog
+  scopes only, so the upload socket carried no language.
+- **The agent could not read a `.docx`.** It was missing from the agent
+  filesystem's copy of the extractable-extensions table, so a Word file came
+  back as its zip container decoded as prose. `mirobody/documents/` is the one
+  place that answers that question now, and the one place that opens a file.
 
 ## 1.4.3
 
