@@ -87,7 +87,7 @@ class HealthIndicatorsService(RecordTool):
 
     def _query(self) -> Any:
         if self._health_query is None:
-            from mirobody.collect.query import PostgresHealthQuery
+            from mirobody.collect import PostgresHealthQuery
             self._health_query = PostgresHealthQuery()
         return self._health_query
 

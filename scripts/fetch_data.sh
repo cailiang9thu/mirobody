@@ -15,7 +15,7 @@
 # hash on every boot after the first.
 #
 # It does NOT fail the caller when a download fails. The one `runtime` file
-# degrades to a warning in `pulse/query.py` (semantic search falls back to the
+# degrades to a warning in `collect/query.py` (semantic search falls back to the
 # lexical index), and a deployment that cannot reach github.com must still
 # come up — that is the whole point of the offline resolver.
 

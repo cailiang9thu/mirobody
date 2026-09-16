@@ -621,6 +621,75 @@ forbidden_modules = [
 # model through `utils.llm`, which is engine-side, so it moved.
 ignore_imports = []
 
+[[tool.importlinter.contracts]]
+name = "collect has one front door (the answer layer imports mirobody.collect)"
+type = "forbidden"
+# DIRECT imports only. `mirobody.collect` imports its own submodules to
+# re-export them, so following the chain would flag the front door itself.
+allow_indirect_imports = true
+# ③ Agent reads what ① Collect stored, so the edge is legitimate. What is not
+# legitimate is reaching past the package into whichever module happens to hold
+# the symbol today: 33 such imports named 19 submodules, and 1.4.4 moved four of
+# them (`core/user.py`, `db_utils.py`, `database_services.py`,
+# `providers/platform/`). Every one would have been a router edit.
+#
+# `mirobody.collect` re-exports what these two layers need, lazily (PEP 562),
+# so nothing is imported that was not going to be. Adding a name to `_EXPORTS`
+# is the way to widen this, and it is one line.
+#
+# Tests are exempt by construction: they live in `tests/`, outside the graph.
+# That is the right privilege for them. A regression test for `readings.py`
+# should import `readings.py`, including its underscore-private names.
+source_modules = [
+    "mirobody.agent",
+    "mirobody.server",
+]
+forbidden_modules = [
+    "mirobody.collect.backfill",
+    "mirobody.collect.base",
+    "mirobody.collect.core",
+    "mirobody.collect.files",
+    "mirobody.collect.ingest",
+    "mirobody.collect.manager",
+    "mirobody.collect.meds",
+    "mirobody.collect.providers",
+    "mirobody.collect.query",
+    "mirobody.collect.readings",
+    "mirobody.collect.setup",
+]
+ignore_imports = []
+
+[[tool.importlinter.contracts]]
+name = "translate has one front door (② Translate is imported as a package)"
+type = "forbidden"
+allow_indirect_imports = true
+# `standardize/` moved out of `collect/` in 1.4.4 and became this package, so
+# "collect only collects" is something the tree shows rather than a sentence in
+# a document. The contents are 1.5.0's to rewrite: LOINC coding, the
+# comparability key, one standardized table. Naming the 14 crossing symbols in
+# `translate/__init__` means that rewrite moves modules without touching a
+# caller.
+#
+# `collect` is a source here on purpose. It imports this package 25 times (a
+# provider declares metrics with `StandardIndicator`, `ingest` converts units
+# before writing) and those are legitimate; reaching past the package to
+# whichever module holds the symbol today is not.
+source_modules = [
+    "mirobody.agent",
+    "mirobody.collect",
+    "mirobody.server",
+]
+forbidden_modules = [
+    "mirobody.translate.aggregate",
+    "mirobody.translate.derive",
+    "mirobody.translate.fhir_mapping",
+    "mirobody.translate.indicators_info",
+    "mirobody.translate.std_indicator_registry",
+    "mirobody.translate.units",
+    "mirobody.translate.value_range_validator",
+]
+ignore_imports = []
+
 # ── Lint gate (run: ruff check mirobody) ─────────────────────────────────────
 #
 # Narrow on purpose: every rule here is either a real defect class (F: undefined

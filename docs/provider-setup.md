@@ -20,7 +20,7 @@ credentials there, or in your `config.{env}.yaml` overlay, which overrides it
 > only from a signed iOS app, on-device, after per-type user consent — there is
 > no web OAuth flow and no server-to-server API. This server *receives* Apple
 > data (`/apple/health`, `/apple/statistics`, `/apple/cda`) from a client that
-> already has it. See [`collect/apple/`](../mirobody/collect/apple/README.md).
+> already has it. See [`collect/providers/apple/`](../mirobody/collect/providers/apple/README.md).
 
 ---
 

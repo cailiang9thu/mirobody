@@ -8,7 +8,7 @@ package is the direct-SDK path for extraction and utility calls.
 
 The other half that used to live here (`batch_ai_response`/`interface.py`
 and the `adapters/` stack) was deleted along with its single caller,
-`collect/file_parser/services/file_llm_analyzer.py` (the orphaned
+`collect/files/services/file_llm_analyzer.py` (the orphaned
 /ws/upload-with-llm-analysis flow).
 """
 

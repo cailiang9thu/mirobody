@@ -1,4 +1,34 @@
-# Changelog
+## Unreleased
+
+① Collect only collects. The indicator catalogue, the daily rollups and a
+second identity implementation have gone to the stages they belong to.
+
+### Breaking
+
+- **The Apple push endpoint speaks HealthKit.** `POST /apple/health` took a
+  `FlutterHealthTypeEnum` (`HEART_RATE`) and mapped it onto the catalogue with
+  its own 74-row table, while `mirobody import apple` read the same catalogue
+  off HealthKit identifiers. The Flutter table described a client that no
+  longer exists and is deleted: send Apple's own identifier, `startDate`/
+  `endDate`, a plain `value` and `unit`. See `docs/apple-health.md`.
+- **Packages moved to the stage that owns them.**
+  `collect.standardize` → `mirobody.translate`; `collect.aggregate` splits
+  between `translate.aggregate` and `translate.derive`;
+  `collect.file_parser` → `collect.files`; `collect.apple` →
+  `collect.providers.apple`; `collect.core.user` → `user.platform`; the
+  scheduler and distributed lock → `mirobody.utils`. `mirobody.collect` and
+  `mirobody.translate` re-export what leaves them and a contract forbids
+  reaching past, so the next move costs no caller an edit.
+
+### Fixed
+
+- **A WebSocket upload answered in English whatever the client asked for.**
+  `JwtMiddleware` is a `BaseHTTPMiddleware`, which Starlette runs for http
+  scopes only, so the upload socket carried no language.
+- **The agent could not read a `.docx`.** It was missing from the agent
+  filesystem's copy of the extractable-extensions table, so a Word file came
+  back as its zip container decoded as prose. `mirobody/documents/` is the one
+  place that answers that question now, and the one place that opens a file.
 
 ## 1.4.3
 

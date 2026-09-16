@@ -1,0 +1,83 @@
+"""
+Derived Calculation Task (TH-174 W2.2)
+
+PullTask that runs DerivedAggregator on a schedule.
+Independent from AggregateIndicatorTask.
+"""
+
+import logging
+from datetime import datetime
+
+from mirobody.utils.scheduler import PullTask, ScheduleType
+from .rules import DerivedAggregator
+
+logger = logging.getLogger(__name__)
+
+
+class DerivedCalculationTask(PullTask):
+    """Computes derived indicators from th_series_data daily summaries."""
+
+    def __init__(self):
+        super().__init__(
+            provider_slug="derived_indicator",
+            schedule_type=ScheduleType.INTERVAL,
+            interval_minutes=360,  # Check every 6 hours
+            execution_interval_hours=6.0,
+            lock_duration_hours=1.0,
+        )
+        self.aggregator = DerivedAggregator()
+
+    async def execute(self) -> bool:
+        try:
+            logger.info("[DerivedCalculationTask] Starting execution...")
+
+            result = await self.aggregator.process(lookback_days=90)
+
+            stats = {
+                "executed_at": datetime.now().isoformat(),
+                "total_computed": result.get("total_computed", 0),
+                "total_skipped": result.get("total_skipped", 0),
+                "by_rule": result.get("by_rule", {}),
+            }
+            await self.save_task_stats(stats)
+
+            logger.info(
+                f"[DerivedCalculationTask] Done: {stats['total_computed']} computed, "
+                f"{stats['total_skipped']} skipped"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"[DerivedCalculationTask] Execution error: {e}")
+            return False
+
+    async def get_task_info(self) -> dict:
+        full_status = await self.get_full_status()
+        full_status.update({
+            "task_name": "Derived Indicator Calculation",
+            "description": "Compute derived indicators from daily summaries",
+            "execution_frequency": "Every 6 hours",
+            "rules_count": len(self.aggregator.rules),
+        })
+        return full_status
+
+
+_task = None
+
+
+async def start_derived_scheduler() -> None:
+    """Register the derived-quantity job with the shared scheduler.
+
+    Separate from the aggregation job it used to ride along with: aggregation
+    produces a day's number for a measured quantity, this produces quantities
+    nothing measured, and a caller should be able to run one without the other.
+    """
+    global _task
+    from mirobody.utils.scheduler import scheduler
+
+    if _task is not None:
+        logger.warning("Derived indicator task already registered")
+        return
+    _task = DerivedCalculationTask()
+    scheduler.register_task(_task)
+    logger.info("Derived indicator task registered successfully")

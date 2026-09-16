@@ -130,3 +130,8 @@ async def execute_query(
             extra["trace_id"] = trace_id
         logger.error("execute_query failed", extra=extra, stacklevel=2, exc_info=True)
         raise
+
+
+def extract_first_record(result: list | None) -> dict | None:
+    """The first row of a query result, or None when it returned nothing."""
+    return result[0] if result else None

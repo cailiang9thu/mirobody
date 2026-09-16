@@ -41,7 +41,7 @@ The value is a MODULE, not an object: every loader already knows how to read
 a module, so an entry point is just one more place a module comes from. See
 `examples/mirobody_example_plugin/` for a complete installable example.
 
-Not merged with the provider loader in `collect/providers/platform/platform.py`:
+Not merged with the provider loader in `collect/providers/_platform/platform.py`:
 that one discovers `mirobody_<slug>/provider_<slug>.py` SUBDIRECTORIES, not
 flat files, and its packaged branch must import by real dotted path for the
 same relative-import reason (see `test_provider_loading.py`). Same disease,

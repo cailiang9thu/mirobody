@@ -106,7 +106,7 @@ The engine does three things, and the codebase, the docs and
 | Units | ~310 UCUM families with dimensional analysis and a molar-mass bridge keyed by LOINC code; 305 standard pulse indicators |
 | Coverage | **213/213** on the panels an ordinary checkup prints, in English, Chinese (Simplified and Traditional) and Japanese ([`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)) |
 | Bundle | LOINC 2.82: `mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285` — release, cut date and a digest over the bundle's own members |
-| Install | `pip install mirobody` is **2 packages**, on numpy only — ~52 MB on macOS, ~100 MB on Linux, where numpy bundles its own BLAS |
+| Install | `pip install mirobody` is **2 packages**, on numpy only — ~67 MB on macOS, ~100 MB on Linux, where numpy bundles its own BLAS |
 
 Why 2.82 and not 2.83, what LOINC covers of the wearable world, and the opt-in
 semantic tier that cannot abstain: → [Standardization in depth](docs/standardization.md)

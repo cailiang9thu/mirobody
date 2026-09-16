@@ -28,7 +28,7 @@ from .chat.model import UserInfo
 from .registry import llm_client, llm_client_names
 from mirobody.kernel import query
 from mirobody.kernel.ops import is_driver_exception
-from mirobody.utils.log import get_req_ctx
+from mirobody.utils.req_ctx import get_req_ctx
 from mirobody.utils.config import safe_read_cfg
 from mirobody.utils.config.llm import chat_default, chat_entries
 

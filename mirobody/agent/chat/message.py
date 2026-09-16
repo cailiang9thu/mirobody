@@ -5,6 +5,7 @@ render. It is NOT the agent's conversation memory: that is the LangGraph
 checkpointer (agent/checkpointer.py), keyed on thread_id = session_id.
 """
 
+from mirobody.collect import regenerate_file_url
 import json
 import logging
 import uuid
@@ -162,15 +163,13 @@ async def _refresh_file_urls_in_content(content_json_obj: Any) -> None:
     """
     if not content_json_obj:
         return
-
-    from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
-    from mirobody.collect.file_parser.services.db_utils import get_mime_type
+    from mirobody.utils.file_types import guess_mime
 
     async def _sign(file_key: str, file_name: str = "") -> str:
         if not file_key:
             return ""
-        content_type = get_mime_type(file_name) if file_name else "application/octet-stream"
-        return await FileParserDatabaseService.regenerate_file_url(
+        content_type = guess_mime(file_name) if file_name else "application/octet-stream"
+        return await regenerate_file_url(
             file_key, file_name, content_type
         )
 
@@ -215,7 +214,7 @@ async def get_chat_history(user_id: str, session_id: str) -> list[dict[str, Any]
     try:
         # `input_prompt` used to be selected here and surfaced on the response
         # when truthy. Nothing in the project ever writes that column (not
-        # save_message, not the one UPDATE path (file_parser's
+        # save_message, not the one UPDATE path (collect/files's
         # update_message_content, which can set content/reasoning/message_type)
         #) so it is NULL on every row and the branch never fired.
         session_sql = """

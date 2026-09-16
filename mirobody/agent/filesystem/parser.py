@@ -30,15 +30,14 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import BinaryIO
 
-from mirobody.collect.file_parser.services.file_abstract_extractor import FileAbstractExtractor, lookup_extracted_text
+from mirobody.collect import FileAbstractExtractor, lookup_extracted_text
 from mirobody.utils.db import execute_query
+from mirobody.documents import detect
 from .naming import guess_mime, is_multimodal
 
 logger = logging.getLogger(__name__)
 
-# Multimodal extensions whose text we still try to extract (so grep + non-pdf
-# models get content). Pure media (image/audio/video) have no extractable text.
-_TEXT_EXTRACTABLE_MULTIMODAL = {".pdf", ".ppt", ".pptx"}
+
 
 
 @dataclass
@@ -83,10 +82,11 @@ class FileParser:
         mime = guess_mime(filename)
         multimodal = is_multimodal(filename)
 
-        # Pure media (image/audio/video) is read multimodally and has no text
-        # to look up. Only text-y and pdf/ppt types can have a cached extraction.
-        ext = PurePosixPath(filename or "").suffix.lower()
-        extractable = (not multimodal) or (ext in _TEXT_EXTRACTABLE_MULTIMODAL)
+        # A multimodal file can still have text worth looking up: a PDF, a
+        # deck, or a photo somebody already OCR'd. `documents` is the one
+        # module that knows which, so it is asked rather than copied. Audio and
+        # video reach neither branch and are stored as bytes.
+        extractable = (not multimodal) or detect.is_extractable(filename)
 
         parsed_text = ""
         if extractable and file_bytes:

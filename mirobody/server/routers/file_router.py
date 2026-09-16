@@ -2,6 +2,7 @@
 WebSocket routes for data_server with file upload progress and real-time communication
 """
 
+from mirobody.collect import get_uploaded_files_paginated
 import asyncio
 import json
 import logging
@@ -14,21 +15,17 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Uplo
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from mirobody.utils import execute_query
+from mirobody.utils.i18n import language_from_headers
 from mirobody.utils.req_ctx import set_req_ctx
 from mirobody.server.auth import verify_token, verify_token_string
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
-from mirobody.collect.file_parser.file_upload_manager import get_websocket_file_upload_manager
-from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
-from mirobody.collect.file_parser.services.list_my_data import MyDataService
+from mirobody.collect import get_websocket_file_upload_manager
+from mirobody.collect import get_user_data_distribution
 
 # Additional imports for async file processing
-from mirobody.collect.file_parser.services.file_processing_service import (
-    delete_files_from_message,
-    delete_all_files_from_message,
-    upload_files_to_storage
-)
-from mirobody.collect.file_parser.services.file_processing_service import FileUploadData
+from mirobody.collect import delete_files_from_message, delete_all_files_from_message, upload_files_to_storage
+from mirobody.collect import FileUploadData
 from mirobody.utils.log import secret_fingerprint
 
 logger = logging.getLogger(__name__)
@@ -74,7 +71,6 @@ class FileDeleteResponse(BaseModel):
     data: dict[str, Any] | None
 
 
-my_data_service = MyDataService()
 
 async def _authorize_file_read(file_key: str, caller_id: str) -> bool:
     """Can `caller_id` read the object stored under `file_key`?
@@ -228,12 +224,19 @@ async def websocket_upload_health_report(
     # Generate unique trace_id for this WebSocket connection
     trace_id = str(uuid.uuid4())
 
-    # Set request context with trace_id for the entire WebSocket session
+    # Set request context with trace_id for the entire WebSocket session.
+    # `language` belongs here too: `JwtMiddleware` is a `BaseHTTPMiddleware`
+    # and never runs for a websocket scope, so every progress message during an
+    # upload came back in English whatever the client asked for. The handshake
+    # carries the same headers an HTTP request does.
     ctx = {
         "trace_id": trace_id,
         "connection_type": "websocket",
         "endpoint": "/ws/upload-health-report",
     }
+    language = language_from_headers(websocket.headers)
+    if language:
+        ctx["language"] = language
 
     logger.info("WebSocket file upload connection initiated")
 
@@ -435,7 +438,7 @@ async def get_data_distribution(
         logger.info(f"Get data distribution: user_id={target_user_id}")
 
         # Call service to get data distribution
-        result = await my_data_service.get_user_data_distribution(target_user_id)
+        result = await get_user_data_distribution(target_user_id)
 
         return JSONResponse(
             content={"code": 0, "msg": "ok", "data": result},
@@ -488,7 +491,7 @@ async def get_uploaded_files(
 
         # Use database service to get uploaded files
         # Pass current_user for permission checking and target_user_id to determine which user's files to query
-        result = await FileParserDatabaseService.get_uploaded_files_paginated(
+        result = await get_uploaded_files_paginated(
             uploader_user_id=str(current_user),  # For permission checking
             target_user_id=target_user_id,       # Determines which user's files to query
             limit=limit,

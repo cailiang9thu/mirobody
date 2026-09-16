@@ -8,8 +8,8 @@ from typing import Any
 
 from mirobody.collect.ingest.models.requests import StandardPulseData
 from mirobody.collect.ingest.repositories.health_data import HealthDataRepository, health_data_repository
-from mirobody.collect.standardize.units import convert_to_standard
-from mirobody.collect.standardize.indicators_info import get_indicator_by_str
+from mirobody.translate import convert_to_standard
+from mirobody.translate import get_indicator_by_str
 
 logger = logging.getLogger(__name__)
 

@@ -36,13 +36,20 @@ editing one.
 The tier split and the conventions below come from a design worked out and
 validated against real unit-conversion cases, not invented for this module.
 
-**Not to be confused with** :func:`mirobody.collect.standardize.units.convert_to_standard`,
-which is a different job on the other side of the pipeline: it takes a
-``StandardIndicator`` enum member and converts to *that device indicator's*
-declared canonical unit (① Collect, one target per indicator). This module takes
-two arbitrary UCUM strings and asks whether they are interconvertible at all
-(② Translate, no target). Use that one to canonicalize a device sample; use
-this one to compare two readings.
+**Not to be confused with** :func:`mirobody.translate.units.convert_to_standard`.
+That one takes a ``StandardIndicator`` and converts to the unit that indicator
+declares, one target per indicator, and it builds on this module: it imports
+`conversion_factor` and `MOLAR_MASS` from here rather than carrying its own
+numbers, which they used to and had already drifted on.
+
+This module takes two arbitrary UCUM strings and asks whether they are
+interconvertible at all, with no target in mind. Use that one to canonicalize a
+device sample; use this one to compare two readings.
+
+Both stay where they are. This one is the LIBRARY layer, named in four
+import-linter contracts, because `pip install mirobody` with nothing but numpy
+has to resolve a name and pick a code by unit. `mirobody.translate` is not that
+layer: `translate.aggregate.service` reaches aiohttp, redis and a database.
 """
 
 from __future__ import annotations

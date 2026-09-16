@@ -296,7 +296,7 @@ def _in_clause(prefix: str, values: Sequence[str]) -> tuple[str, dict[str, Any]]
 
     rsIDs are BOUND, never interpolated. They come out of a user-uploaded
     genotype file that is split on whitespace with no format validation
-    (`collect/file_parser/services/genetic_processor.py`), so a single quote in
+    (`collect/files/services/genetic_processor.py`), so a single quote in
     an uploaded file breaks out of an interpolated literal: a stored SQL
     injection on the read path, which is what this was.
     """

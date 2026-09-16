@@ -17,15 +17,10 @@ import aiohttp
 from mirobody.collect.base import ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
 from mirobody.collect.core.push_service import push_service
-from mirobody.collect.ingest.models.requests import (
-    FormatDataInput,
-    StandardPulseData,
-    StandardPulseMetaInfo,
-    StandardPulseRecord,
-)
-from mirobody.collect.providers.platform.base import BasePullProvider
-from mirobody.collect.providers.platform.oauth2 import OAuth2Client
-from mirobody.collect.providers.platform.normalize import records_from_facts
+from mirobody.collect.ingest import FormatDataInput, StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord
+from mirobody.collect.providers._platform.base import BasePullProvider
+from mirobody.collect.providers._platform.oauth2 import OAuth2Client
+from mirobody.collect.providers._platform.normalize import records_from_facts
 from mirobody.kernel import decoders
 from mirobody.utils import execute_query
 from mirobody.utils.config import safe_read_cfg

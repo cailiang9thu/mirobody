@@ -21,6 +21,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import pathlib
+
+from mirobody.documents import detect
 import time
 from typing import Any
 
@@ -153,7 +155,7 @@ async def openai_compatible_file_extract(
             raise FileNotFoundError(local_file_path)
         final_prompt = _build_prompt_with_schema(prompt, response_schema) if json_mode and response_schema else prompt
         file_ext = file_path.suffix.lower()
-        if file_ext == '.pdf':
+        if detect.is_pdf(file_path.name):
             return await _process_pdf(str(file_path), final_prompt, client, spec, json_mode=json_mode)
         if file_ext in IMAGE_EXTENSIONS:
             return await _process_image(str(file_path), final_prompt, client, spec, json_mode=json_mode)

@@ -60,7 +60,7 @@ Next day     00:00:00 → value=999  (should be excluded)
 > **Which indicators get this window changed in 1.4.0.** It was
 > `LOWER(indicator) LIKE '%sleep%'`; it is now the catalogue's own
 > `metrics.METRICS[name].window`, generated into the SQL by
-> `collect/aggregate/windows.py`. The predicate matched 58 `daily…Sleep…`
+> `translate/aggregate/windows.py`. The predicate matched 58 `daily…Sleep…`
 > metrics that are `provider_daily` — a vendor's own figure, already dated —
 > and re-anchoring those moved every one of them a day; and it missed
 > `napDuration`, which is a real interval belonging to the night. A test that
@@ -123,24 +123,12 @@ Insert 10 records: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
 ### Method 1: Run Module Directly
 
-```bash
-# Against a running stack
-docker compose exec mirobody python3 -m mirobody.collect.aggregate.test_aggregator
-
-# Or on the host, from the repo root
-python3 -m mirobody.collect.aggregate.test_aggregator
-```
-
-This is an integration script with its own `main()`, not a pytest module —
-`pytest` collects nothing from it. It needs a reachable database. The unit
-tests beside it live in the maintainers' internal suite and are not published
-in this repository.
-
-### Method 2: Run as Python Script
-
-```bash
-docker compose exec mirobody python3 /app/mirobody/collect/aggregate/test_aggregator.py
-```
+The integration script and the unit tests both live in the maintainers'
+internal suite and are not published in this repository. What is published is
+this document: what the aggregation has to get right, and why each case is
+there. The commands that used to be printed here named
+`mirobody.…aggregate.test_aggregator`, a module that is not in the package, so
+following them produced a `No module named` error rather than a test run.
 
 ## Test Flow
 
@@ -309,7 +297,7 @@ async def test_new_scenario(self):
 
 ## Related Documentation
 
-- [Aggregate Indicator README](../mirobody/collect/aggregate/README.md)
+- [Aggregate Indicator README](../mirobody/translate/aggregate/README.md)
 - [Testing Guide](testing.md)
 
 

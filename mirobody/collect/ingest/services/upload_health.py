@@ -1,5 +1,10 @@
-"""
-Standard Health data service
+"""`StandardPulseData` to rows, the one path every source finishes on.
+
+Per record: resolve the timezone, convert the value to the indicator's standard
+unit, check it against the indicator's plausible range, then hand it to
+`readings.upsert_readings`. A value outside the range is not dropped: it is
+written with `task_id = "filtered_out_of_range"`, because a reading we refuse
+to believe is still evidence the device produced it.
 """
 
 import json
@@ -15,10 +20,10 @@ from .repair_reconcile import RepairReconciler
 from mirobody.collect.ingest.models.requests import StandardPulseData
 from mirobody.collect.ingest.repositories.health_data import HealthDataRepository
 from mirobody.collect.readings import upsert_readings
-from mirobody.collect.standardize.indicators_info import is_summary_indicator, is_series_indicator, normalize_indicator_name
-from mirobody.collect.standardize.fhir_mapping import get_fhir_id
-from mirobody.collect.standardize.value_range_validator import ValueRangeValidator
-from mirobody.collect.core.user import PlatformUserService
+from mirobody.translate import is_summary_indicator, is_series_indicator, normalize_indicator_name
+from mirobody.translate import get_fhir_id
+from mirobody.translate import ValueRangeValidator
+from mirobody.user.platform import PlatformUserService
 
 logger = logging.getLogger(__name__)
 

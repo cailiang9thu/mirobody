@@ -145,7 +145,7 @@ class Server:
         # what is actually installed rather than hardcoding them; an overlay's
         # MIROBODY_WEB_CONFIG still wins.
         if "__IS_MOBILE_SOURCE_ON__" not in self._webpage_config:
-            from mirobody.collect.providers.installed import installed_provider_slugs
+            from mirobody.collect import installed_provider_slugs
             self._webpage_config["__IS_MOBILE_SOURCE_ON__"] = bool(installed_provider_slugs())
 
         if "__IS_NEW_FEATURES_ON__" not in self._webpage_config:

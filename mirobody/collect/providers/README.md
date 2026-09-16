@@ -34,7 +34,7 @@ To create a new provider, inherit from `BasePullProvider` and implement the requ
 ### 1. Basic Structure
 
 ```python
-from mirobody.collect.providers.platform.base import BasePullProvider
+from mirobody.collect.providers._platform.base import BasePullProvider
 from mirobody.collect.base import ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
 from mirobody.collect.core.models import ConnectInfoField
@@ -111,5 +111,5 @@ If your provider pulls data periodically, implement `pull_from_vendor_api`.
 
 ## 🧩 Reference
 
-- **Base Class**: [`mirobody/collect/providers/platform/base.py`](platform/base.py)
+- **Base Class**: [`mirobody/collect/providers/_platform/base.py`](platform/base.py)
 - **Example**: [`mirobody/collect/providers/mirobody_whoop/provider_whoop.py`](mirobody_whoop/provider_whoop.py)

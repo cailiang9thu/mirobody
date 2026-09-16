@@ -41,7 +41,7 @@ from pydantic import BaseModel, Field
 
 from mirobody.engine import resolve_reading as resolve_indicator_name
 from mirobody.units.normalize import normalize_unit, parse_value_unit
-from mirobody.collect.readings import upsert_readings
+from mirobody.collect import upsert_readings
 from mirobody.utils import execute_query
 from mirobody.server.auth import verify_token
 

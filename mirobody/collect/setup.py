@@ -5,11 +5,11 @@ Setup functions for the Pulse system
 import asyncio
 import logging
 
-from .apple.platform import AppleHealthPlatform
+from .providers.apple.platform import AppleHealthPlatform
 
 from .manager import platform_manager
-from mirobody.collect.providers.platform.base import BasePullProvider
-from mirobody.collect.providers.platform.platform import ProviderPlatform
+from mirobody.collect.providers._platform.base import BasePullProvider
+from mirobody.collect.providers._platform.platform import ProviderPlatform
 from mirobody.utils.config import global_config
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ async def setup_platform_system_async(providers: list[BasePullProvider] | None =
             continue
 
     # 6. Initialize FHIR mapping (optional, config-driven)
-    from .standardize.fhir_mapping import FhirMapping
+    from mirobody.translate import FhirMapping
     fhir_mapping = await FhirMapping.initialize()
     if fhir_mapping:
         logger.info("  - FHIR mapping initialized")

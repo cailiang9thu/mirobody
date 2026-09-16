@@ -27,7 +27,7 @@ from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 from mirobody.utils import execute_query, safe_read_cfg
 from mirobody.utils.sse import heartbeat_seconds
 from mirobody.utils.config import get_default_timezone
-from mirobody.utils.i18n import t
+from mirobody.utils.i18n import localize
 from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
@@ -420,7 +420,7 @@ class ChatProtocolAdapter(ABC):
             # this replaces is not harmless: Anthropic rejects a zero-length
             # text block (400), and LangGraph checkpoints it, so it replays.
             if not params.question and has_attachment(params.file_list):
-                params.question = t("attachment_only_question",
+                params.question = localize("attachment_only_question",
                                     params.language or "en", module="chat")
 
             question_msg_id = params.question_id or f"q_{uuid.uuid4()}"
@@ -639,7 +639,7 @@ class ChatProtocolAdapter(ABC):
                 # next one shows up in a log rather than only in a screenshot.
                 if accumulator.stream_completed and not accumulator.has_reply():
                     language = getattr(context.get('params'), 'language', None) or "en"
-                    filler = t("empty_turn", language, module="chat")
+                    filler = localize("empty_turn", language, module="chat")
                     accumulator.reply_chunks.append(filler)
                     await output_queue.put({"type": "reply", "content": filler})
                     if accumulator.finish_reason == FINISH_STOP:

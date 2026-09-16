@@ -11,9 +11,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi.responses import JSONResponse
 
-from mirobody.collect.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
-from mirobody.collect.apple.statistics_service import process_apple_health_statistics
-from mirobody.collect.manager import platform_manager
+from mirobody.collect import AppleHealthRequest, AppleHealthStatisticsRequest
+from mirobody.collect import process_apple_health_statistics
+from mirobody.collect import platform_manager
 from mirobody.server.auth import verify_token
 
 logger = logging.getLogger(__name__)
@@ -113,11 +113,12 @@ async def process_apple_health_data(
         "healthData": [
             {
                 "uuid": "unique_id",
-                "type": "HEART_RATE",
-                "dateFrom": 1705284600000,
-                "dateTo": 1705284600000,
-                "value": {"numericValue": 72},
-                "unitSymbol": "bpm",
+                "type": "HKQuantityTypeIdentifierHeartRate",
+                "startDate": 1705284600000,
+                "endDate": 1705284600000,
+                "value": 72,
+                "unit": "count/min",
+                "sourceName": "Apple Watch",
                 ...
             }
         ]
@@ -236,7 +237,7 @@ async def process_apple_health_statistics_data(
         },
         "statistics": [
             {
-                "type": "STEPS",
+                "type": "HKQuantityTypeIdentifierStepCount",
                 "dateFrom": 1710691200000,
                 "dateTo": 1710777600000,
                 "timezone": "Asia/Shanghai",

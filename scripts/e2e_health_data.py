@@ -3,7 +3,7 @@
 
 The unit tests pin the tool's contract without a store (`tests/agent/tools/
 test_health_indicators_service.py`) and the SQL's shape without a connection
-(`tests/pulse/test_query.py`). This script is the third thing: it runs the whole
+(`tests/collect/test_query.py`). This script is the third thing: it runs the whole
 path — subject zone, window, election, rendering, the three medication views and the
 PHI sentinel — against a live Postgres with real rows in it, because the two
 failures that only a database shows are a statement that will not parse and a

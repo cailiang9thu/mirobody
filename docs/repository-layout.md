@@ -34,7 +34,7 @@ frontend/        the bundled web client                          has them, a
 
 **Two forms, and they want opposite things.** The PyPI package is a LIBRARY and
 is meant to be small enough that nobody has to think about it: `pip install
-mirobody` is **2 packages, 52 MB** — the entries above the `documents/` line, on numpy.
+mirobody` is **2 packages, 67 MB** — the entries above the `documents/` line, on numpy.
 `[parse]` adds document reading, `[agent]` the harness as a library; `[app]` is everything, and the only thing that
 installs it is `requirements.txt`, because the Docker application is
 `git clone && ./deploy.sh` and never a pip install.

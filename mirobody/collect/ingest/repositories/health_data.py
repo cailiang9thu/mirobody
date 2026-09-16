@@ -1,5 +1,7 @@
-"""
-Health data repository
+"""SQL for the health tables the upload path touches.
+
+Kept apart from `services/` so the service reads as the decisions it makes and
+not as the queries it runs.
 """
 
 import logging

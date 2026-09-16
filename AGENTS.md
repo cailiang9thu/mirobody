@@ -49,7 +49,7 @@ ruff check mirobody examples   # rule set in pyproject.toml; 0 findings on main
 python -m compileall -q mirobody
 pytest -q               # 33 in a clone: the shipped resolver benchmark, which
                         # needs no extras. The regression suite is gitignored
-lint-imports            # 4 contracts, must say "0 broken"
+lint-imports            # 6 contracts, must say "0 broken"
 python3 -c "import mirobody.kernel.meds, mirobody.kernel.query"   # the library layer, bare interpreter
 ```
 
