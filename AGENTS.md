@@ -11,8 +11,8 @@ machine-checked (`lint-imports`, contracts in `pyproject.toml`):
 | Layer | Where | Installs with | May import |
 |---|---|---|---|
 | ② Translate + the kernel (the library) | vocabulary: `engine.py`, `lexical.py`, `units/`, `value_scale.py`, `zh_fold.py`, `_bundle.py`, `_strtab.py`; semantics: **`kernel/`** (`metrics`, `series`, `quality`, `overlay`, `meds`, `query`, `tools`, `ops`, `connect`, `sink`, `events`, `evidence`, `memory`, `vendors/`); toolbox: `testing/` | `pip install mirobody` (numpy only) | each other, nothing else |
-| ① Collect + storage + MCP | `mirobody/documents/`, `pulse/`, `indicator/`, `utils/`, `user/`, `task/`, `mcp/` | `[parse]` / `[app]` | no `langchain*`, `langgraph`, `deepagents` |
-| ③ Answer | `mirobody/agent/` (one agent: `MirobodyAgent`, on `deepagents`), `server/` | `[agent]` (the harness as a library) / `[app]` | anything |
+| ① Collect + storage + MCP | `mirobody/documents/`, `collect/`, `indicator/`, `utils/`, `user/`, `task/`, `mcp/` | `[parse]` / `[app]` | no `langchain*`, `langgraph`, `deepagents` |
+| ③ Agent | `mirobody/agent/` (one agent: `MirobodyAgent`, on `deepagents`), `server/` | `[agent]` (the harness as a library) / `[app]` | anything |
 
 There is one agent, and it is not switched at request time. `BaseAgent`,
 the `agent/base` package and the ChatGPT Apps widgets under `agent/resources`
@@ -22,7 +22,7 @@ pointing `AGENT_DIRS` at its own directory (`agent/registry.py`). External
 clients get the engine through `mirobody/mcp/` (six tools: `resolve_indicator`,
 `convert_unit`, `normalize_unit`, `query_health_indicators`, `query_medications`,
 `query_genetic_data`) —
-and that list is asserted exactly, in `tests/agent/test_tool_surface.py`.
+and that list is asserted exactly by the local suite.
 The agent's config keys are `MODELS`, `PROMPTS`, `ALLOWED_TOOLS`,
 `DISALLOWED_TOOLS`, `DEFAULT_MODEL`, `AGENT_NAME` — no suffix, and no "provider"
 (in this project a provider is a device; `PROVIDERS` was the 1.4.0 spelling).
@@ -47,8 +47,8 @@ running the minimal suite while reporting the full one. If a doc says `[agents]`
 ```bash
 ruff check mirobody examples   # rule set in pyproject.toml; 0 findings on main
 python -m compileall -q mirobody
-pytest -q               # 305 tests on a clone with [app,test]; 189 (+16 skipped)
-                        # on [test] alone, fewer by design, and the header says which
+pytest -q               # 33 in a clone: the shipped resolver benchmark, which
+                        # needs no extras. The regression suite is gitignored
 lint-imports            # 4 contracts, must say "0 broken"
 python3 -c "import mirobody.kernel.meds, mirobody.kernel.query"   # the library layer, bare interpreter
 ```
@@ -74,7 +74,7 @@ wheel in the same venv — otherwise they pass vacuously.
 - **Verify, don't reason.** Before deleting "unused" code compute reachability
   transitively (a sibling may call it). Before repeating a claim from a README,
   run the command.
-- **Every `th_series_data` write goes through `pulse/readings.py`.** Every
+- **Every `th_series_data` write goes through `collect/readings.py`.** Every
   FastAPI router answers with `server/envelope.py`. Every read of a person's
   readings goes through `query.HealthQuery`. Don't add a sixth INSERT, a fourth
   envelope, or a second copy of the query — when there were two, the chat
@@ -85,8 +85,7 @@ wheel in the same venv — otherwise they pass vacuously.
   nothing else — and it must not contain a `test_*.py` (a test inside the
   package drags pytest into the library layer).
 - **Logs carry ids, counts, durations, status codes and type names. Never a
-  value.** `tests/test_phi_baseline.py` fails on anything new; the baseline
-  may only shrink. An indicator NAME is not a value but it is still the answer
+  value.** The local PHI baseline fails on anything new; it may only shrink. An indicator NAME is not a value but it is still the answer
   to "what was measured", so it does not go in either. In a broad `except`,
   `exc_info=not is_driver_exception(e)` — a driver's message quotes the SQL
   with its bound parameters.
@@ -106,7 +105,7 @@ wheel in the same venv — otherwise they pass vacuously.
   Guide: `docs/provider-guide.md`.
 - **Docs are code.** Rename a module → grep the `.md` files. The README ships
   in four languages; English first, then the other three, and say so if you
-  only changed English. `mirobody/tests/test_readme_*.py` checks them as a set.
+  only changed English. A gate checks the live editions as a set.
 
 ## Never commit
 

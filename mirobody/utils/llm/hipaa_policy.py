@@ -1,7 +1,7 @@
 """Routing LLM traffic through BAA-covered providers, when you need that.
 
 Mirobody works with any OpenAI-compatible provider, and the default priority
-list starts at plain `api.openai.com`. That is deliberate — an engine should
+list starts at plain `api.openai.com`. That is deliberate: an engine should
 not dictate your vendor.
 
 If you are handling PHI and need a HIPAA-eligible path, this module is how you
@@ -24,7 +24,7 @@ you to do exactly that when Vertex configuration is missing.
 
 The module docstring used to open "All LLM traffic routes through compliant
 providers", stated as fact. It describes what happens once you have configured
-this, not what a default install does — worth being precise about, since it is
+this, not what a default install does: worth being precise about, since it is
 the kind of line someone handling PHI would reasonably rely on.
 """
 

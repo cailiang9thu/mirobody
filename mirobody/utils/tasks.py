@@ -7,18 +7,18 @@ preference. The CPython docs are explicit:
     disappearing mid-execution. The event loop only keeps weak references to
     tasks. A task that isn't referenced elsewhere may get garbage collected at
     any time, even before it's done.
-    — https://docs.python.org/3/library/asyncio-task.html
+    https://docs.python.org/3/library/asyncio-task.html
 
 This repo had 15 such call sites, and they run the work a user would most
 notice losing: file processing after upload, OAuth callback token exchange,
-vendor data pulls, embedding updates. A collected task fails silently — no
+vendor data pulls, embedding updates. A collected task fails silently, no
 exception, no log, just a job that never happened.
 
 The same docs note the second half of the problem: nobody awaits these, so a
 failure surfaces only as "Task exception was never retrieved" at GC time, if at
 all. `spawn` therefore logs failures itself.
 
-    from ..utils.tasks import spawn
+    from mirobody.utils.tasks import spawn
     spawn(self.process_files_async(...), name="file-processing")
 """
 
@@ -51,7 +51,7 @@ def spawn(coro: Coroutine[Any, Any, Any], *, name: str | None = None) -> asyncio
     """Run `coro` in the background, holding a strong reference to it.
 
     Returns the task so a caller that *does* want to await or cancel it can.
-    Fire-and-forget callers can ignore the return value safely — unlike a bare
+    Fire-and-forget callers can ignore the return value safely: unlike a bare
     `asyncio.create_task`, this one cannot be garbage collected mid-flight, and
     its failure is logged rather than swallowed.
     """

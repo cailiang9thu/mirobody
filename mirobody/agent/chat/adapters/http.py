@@ -1,9 +1,9 @@
 """HTTP transport: Server-Sent Events.
 
-Everything that is not the wire format — permission checks, the parallel
+Everything that is not the wire format: permission checks, the parallel
 file/question/history fetch, history replay, chunk accumulation, persisting the
 assistant response, end-chunk ordering, heartbeats, client-disconnect handling
-— lives in `ChatProtocolAdapter`. This file is what is genuinely HTTP.
+lives in `ChatProtocolAdapter`. This file is what is genuinely HTTP.
 """
 
 import json

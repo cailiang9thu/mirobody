@@ -1,4 +1,4 @@
-"""Read the shipped terminology bundle — ``mirobody/res/fhir_loinc_bundle.tar.gz``.
+"""Read the shipped terminology bundle: ``mirobody/res/fhir_loinc_bundle.tar.gz``.
 
 The bundle is a single tarball holding every static LOINC-derived lookup the
 resolver needs::
@@ -13,9 +13,9 @@ resolver needs::
     └── fhir_dose_index.npz          # (value, UCUM unit) -> corpus rows
 
 **Why this module is at the package root rather than inside
-``indicator/fhir/embeddings/``, where it used to live.** ``engine.py`` — the
+``indicator/fhir/embeddings/``, where it used to live.** ``engine.py`` (the
 front door of ② Translate, and the one thing a `pip install mirobody`
-actually runs — read its data through the bundle-BUILD package, and reached
+actually runs) read its data through the bundle-BUILD package, and reached
 into it for a private symbol (``alias._normalize``) besides. So the runtime
 depended on the build tooling, which meant the build tooling could never be
 pruned from the wheel and the layering was backwards on paper as well as in
@@ -37,7 +37,7 @@ from functools import lru_cache
 
 log = logging.getLogger(__name__)
 
-#: ``mirobody/res/`` — one level up from this module.
+#: ``mirobody/res/``: one level up from this module.
 RES_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "res"))
 
 BUNDLE_BASENAME = "fhir_loinc_bundle.tar.gz"
@@ -54,7 +54,7 @@ def bundle_path() -> str:
 def read_member(name: str, *, bundle_path: str | None = None) -> bytes | None:
     """Return the bytes of a member in the LOINC bundle, or None if missing.
 
-    *bundle_path* overrides the default location — used when the runtime cache
+    *bundle_path* overrides the default location: used when the runtime cache
     is loaded from a non-default ``res/`` directory.
     """
     return read_member_from(name, bundle_path or BUNDLE_PATH)
@@ -114,8 +114,8 @@ def read_code_list(name: str, *, bundle_path: str | None = None) -> list[str]:
     """One member that is a list of codes, one per line → the codes.
 
     Blank lines and ``#`` comments are dropped. Three readers parsed this
-    format independently — the resolver's skip set, the semantic tier's, and
-    the embedding index's mask builder — and the third did NOT drop comments,
+    format independently (the resolver's skip set, the semantic tier's, and
+    the embedding index's mask builder) and the third did NOT drop comments,
     so a commented line would have reached ``code_to_int`` and raised. The
     member has no comments today, which is why nothing caught it; one
     function is why nothing has to.
@@ -131,7 +131,7 @@ def read_members(names, *, bundle_path: str | None = None) -> dict[str, bytes]:
     """Read several members in ONE pass over the tarball.
 
     `read_member` opens, gunzips and streams the whole archive per call, so the
-    resolver's six-member load cost six full passes over 40 MB — 1.7 s, most of
+    resolver's six-member load cost six full passes over 40 MB: 1.7 s, most of
     it re-inflating the same bytes. One pass is 0.6 s. Missing members are
     simply absent from the result; the caller says what that means.
     """
@@ -188,7 +188,7 @@ def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | Non
 
     Shared by the lexical resolver and the semantic tier so there is one reader
     for one table. It used to be two: both parsed ``loinc_axis.csv`` into their
-    own dicts, and when the CSV stopped shipping — superseded by this blob —
+    own dicts, and when the CSV stopped shipping (superseded by this blob) 
     the semantic tier would have carried on with EMPTY gate tables rather than
     failing. That matters more than the duplication: those gates are what stop
     cosine answering `total cholesterol` with a PhenX survey item, and losing
@@ -197,8 +197,8 @@ def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | Non
     from ._strtab import FieldTable
 
     # *members* is a batch already read by `read_members`; without it this
-    # opens and gunzips the whole tarball twice, which is both slower and — the
-    # part that surprised — heavier, because the caller's copy of the same blob
+    # opens and gunzips the whole tarball twice, which is both slower and (the
+    # part that surprised) heavier, because the caller's copy of the same blob
     # becomes garbage the allocator keeps. Measured at +19 MB and +0.3 s.
     if members is not None:
         blob, index = members.get(AXIS_BLOB_MEMBER), members.get(AXIS_INDEX_MEMBER)
@@ -221,19 +221,13 @@ def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | Non
     return FieldTable(blob, off, AXIS_FIELDS), order_code, order_name
 
 
-# ── alias sources ────────────────────────────────────────────────────────────
-#
-# ``res/aliases_src/{lang}.tsv`` (LOINC LinguisticVariant-derived) and
-# ``{lang}_curated.tsv`` (hand-written corrections), plus
-# ``res/resolver_overrides.tsv`` — loose files, not bundle members.
-#
-# They used to be BOTH: byte-identical copies also lived inside the tarball as
-# ``aliases/{lang}.tsv``, with the resolver reading the loose files and the
-# lexicon build reading the tarball copies. Two copies of one table is the
-# state that always ends the same way, and it already had: four rows added to
-# ``zh_curated.tsv`` (DPA, DGLA, AA/EPA ×2) were live for the resolver and
-# invisible to the build, because the tarball copy had not been re-cut since.
-# The tarball members are gone; this is the one reader.
+# Alias sources: ``res/aliases_src/{lang}.tsv`` (LOINC LinguisticVariant-
+# derived), ``{lang}_curated.tsv`` (hand-written corrections) and
+# ``res/resolver_overrides.tsv``, all loose files rather than bundle members.
+# Byte-identical copies used to live in the tarball too, read by the lexicon
+# build while the resolver read the loose files, and the two drifted: four rows
+# added to ``zh_curated.tsv`` were live for the resolver and invisible to the
+# build. The tarball members are gone; this is the one reader.
 
 #: The sibling bundle holding SNOMED CT-derived runtime data (the Body
 #: Structure subtree mask, the axis aliases). A separate file because the

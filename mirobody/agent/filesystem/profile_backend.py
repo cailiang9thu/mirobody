@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from ...utils.db import execute_query
+from mirobody.utils.db import execute_query
 from .document_backend import DocumentBackend
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,7 @@
 
 These two mounts used to be COPIES. `_sync_session_uploads` and
 `_sync_user_library` ran on every chat turn, selected the authoritative answer
-out of `th_files`, and wrote pointer rows into `deep_agent_workspace` — path,
+out of `th_files`, and wrote pointer rows into `deep_agent_workspace`: path,
 mime, hash, and the extracted text copied column-for-column. The copy bought
 nothing on the read path, because the sync queried `th_files` every turn anyway;
 what it bought was a second place for the truth to live, and that is what let a
@@ -12,10 +12,10 @@ So the rows come from `th_files` now, and `is_del = false` is in the query. No
 sync, no pointer rows, no deletion to propagate, and no reconciliation pass to
 remember to write.
 
-**Only the two fetch methods change.** Everything about how a file is READ —
+**Only the two fetch methods change.** Everything about how a file is READ:
 extracted text for ppt/xlsx, a native file block for PDF on a capable model,
 base64 from object storage for images and audio, the lazy first-read extraction,
-the multimodal size cap — lives in `PgFilesystemBackend.aread` and is inherited
+the multimodal size cap: lives in `PgFilesystemBackend.aread` and is inherited
 untouched. That is deliberate: that logic encodes provider quirks (Anthropic
 rejecting a `{'type':'file'}` block from a text payload, qwen/deepseek 400ing on
 PDF blocks) which are expensive to relearn. The row shape those methods consume
@@ -32,7 +32,7 @@ from typing import Any
 
 from deepagents.backends.protocol import EditResult, FileUploadResponse, WriteResult
 
-from ...utils.db import execute_query
+from mirobody.utils.db import execute_query
 from .backend import PgFilesystemBackend, _is_text_mime
 from .naming import guess_mime, safe_basename
 
@@ -70,14 +70,12 @@ class ThFilesBackend(PgFilesystemBackend):
                          supports_file_block=supports_file_block)
         self._keys = [str(k) for k in (file_keys or [])][:_MAX_SESSION_FILES]
         # file_key -> the name THIS request attached the file under. `/uploads/`
-        # names a file by this rather than by `th_files.file_name`, which is not
-        # stable: the upload pass asks an LLM for a descriptive name and
-        # overwrites the column with it (`handlers/base.py::_extract_abstract`),
-        # and that write lands DURING the turn, concurrently with the agent. The
-        # column is the right name for `/library/`, where it is discovered by
-        # `ls`; it is the wrong one here, because `_attachment_reminder` has
-        # already told the model the request's name and a rename mid-turn turned
-        # that path into `file_not_found` (`ls` had listed it seconds earlier).
+        # uses it rather than `th_files.file_name`, which is not stable: the
+        # upload pass asks an LLM for a descriptive name and overwrites the
+        # column DURING the turn, concurrently with the agent. That column is
+        # the right name for `/library/`, discovered by `ls`, and the wrong one
+        # here: `_attachment_reminder` has already told the model the request's
+        # name, so a rename mid-turn turned that path into `file_not_found`.
         self._turn_names = {str(k): str(v) for k, v in (turn_names or {}).items() if v}
 
     # ── the projection ───────────────────────────────────────────────────────

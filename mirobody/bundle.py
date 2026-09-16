@@ -1,14 +1,14 @@
-"""Read the shipped terminology bundle — the stable surface for build-time tools.
+"""Read the shipped terminology bundle: the stable surface for build-time tools.
 
-``mirobody.resolve`` answers "which LOINC code is this term". A different job —
-generating a seed table, a corpus, or an embedding index from LOINC — needs the
+``mirobody.resolve`` answers "which LOINC code is this term". A different job (
+generating a seed table, a corpus, or an embedding index from LOINC) needs the
 axis table itself (``COMPONENT``, ``PROPERTY``, ``SYSTEM``,
 ``LONG_COMMON_NAME``) and the alias sources in their precedence order. That is
 what this module exposes.
 
 Until now the only route was :mod:`mirobody._bundle`, whose leading underscore
 declares it internal and free to move. The helpers there were already the right
-ones — a consumer that avoided them re-implemented a tar read and a blob decode
+ones: a consumer that avoided them re-implemented a tar read and a blob decode
 against a private on-disk format instead, which is strictly worse. So they are
 re-exported here under a name that carries a stability promise, and the
 underscore module stays free to change shape behind it.
@@ -26,20 +26,20 @@ existence.
 Everything here works from a plain ``pip install``
 --------------------------------------------------
 
-``mirobody/res/fhir_loinc_bundle.tar.gz`` is repacked on the way into a wheel —
-16 members / 39.7 MB in a checkout, 9 / 24.9 MB installed — and
+``mirobody/res/fhir_loinc_bundle.tar.gz`` is repacked on the way into a wheel (
+16 members / 39.7 MB in a checkout, 9 / 24.9 MB installed) and
 ``scripts/check_wheel_data.py`` enforces both directions, required members
 present and build inputs absent. Two things make that repack invisible here:
 
 * :func:`load_axis` reads ``axis_fields.bin`` / ``axis_index.npz``, which are
   runtime members and ship. It does **not** parse ``loinc_axis.csv``.
 * the alias sources are loose files under ``res/aliases_src/``, not bundle
-  members, and the resolver reads them on every load — so they ship too.
+  members, and the resolver reads them on every load, so they ship too.
 
 The one thing a wheel does not carry is ``loinc_axis.csv``, and with it the
 four columns the runtime table has no use for: ``TIME_ASPCT``, ``CLASS``,
-``CLASSTYPE``, ``STATUS``. A tool that needs those — filtering to
-``CLASSTYPE=1`` laboratory rows, or dropping ``STATUS=DEPRECATED`` — must read
+``CLASSTYPE``, ``STATUS``. A tool that needs those (filtering to
+``CLASSTYPE=1`` laboratory rows, or dropping ``STATUS=DEPRECATED``) must read
 that member from a checkout, and will find :func:`read_member` returns ``None``
 against an installed package. Derive what you need at build time and vendor it;
 :func:`bundle_version` is there so you can assert the vendored artifact and the

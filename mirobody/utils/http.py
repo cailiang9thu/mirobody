@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 # MCP 2026-07-28 `_meta` keys, defined next to the code that writes them.
 # `mcp/service.py` used to keep its own copies while this module hardcoded the
 # serverInfo literal, so the two could drift. `clientInfo` was declared here
-# too and never written or read by anything — removed rather than left as a
+# too and never written or read by anything: removed rather than left as a
 # third name to keep in sync.
 META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
 META_SERVER_INFO      = "io.modelcontextprotocol/serverInfo"
@@ -42,7 +42,7 @@ def request_origin(request: Request) -> str:
     the MCP endpoint URLs we hand to clients:
 
     * `hostname` DROPS THE PORT, so a local server on :18080 published
-      `http://localhost` — port 80, nothing listening. This is the broken local
+      `http://localhost`: port 80, nothing listening. This is the broken local
       login link.
     * anything not literally "localhost" was forced to https, so a server
       reached at `http://127.0.0.1:8000` advertised `https://127.0.0.1`.
@@ -124,7 +124,7 @@ def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, re
     """The `{success, code, msg, data}` envelope.
 
     `status` exists for the routes where the HTTP status is part of the
-    contract — an MCP client keys on 401, not on a body it may not parse.
+    contract: an MCP client keys on 401, not on a body it may not parse.
     It defaults to 200 because every other caller (and the web client)
     reads `code`, and changing that for all of them is a coordinated
     release, not a bug fix. (2026-09-14 regression report, F-7)
@@ -226,14 +226,14 @@ def jsonrpc_result(
     * ``resultType`` is REQUIRED on every result in that revision (it is what
       makes polymorphic results like ``input_required`` possible). Clients on
       earlier revisions ignore the unknown key, and the spec tells new clients
-      to read an ABSENT ``resultType`` as ``"complete"`` — so emitting it is
+      to read an ABSENT ``resultType`` as ``"complete"``, so emitting it is
       backward compatible in both directions.
     * ``io.modelcontextprotocol/serverInfo`` in ``_meta`` is a SHOULD, meant for
       display and debugging only; the spec is explicit that neither side may
       make security or behaviour decisions from it.
 
     ``cache_hint`` is ``(ttl_ms, scope)`` and emits 2026-07-28's ``ttlMs`` /
-    ``cacheScope`` — field names taken from the SDK's own `ListToolsResult`, not
+    ``cacheScope``: field names taken from the SDK's own `ListToolsResult`, not
     guessed. The spec marks ``tools/list``, ``prompts/list`` and
     ``server/discover`` (among others) as cacheable; we pass it on the ones we
     implement. Nothing this server returns is templated per caller, so there is
@@ -241,7 +241,7 @@ def jsonrpc_result(
 
     ``protocol_version`` echoes the revision this response is speaking. Under
     2026-07-28 there is no handshake, so a stateless client has no other way to
-    learn what the server settled on — `initialize` is exactly the call it never
+    learn what the server settled on: `initialize` is exactly the call it never
     makes. Echoing per response is therefore not redundant with the
     `initialize` result; it is the only channel that survives the handshake's
     removal.
@@ -258,7 +258,7 @@ def jsonrpc_result(
 
         # The SHAPE of the result, never the result. This used to log its first
         # hundred serialised characters, and for `tools/call` those are the
-        # person's readings — a health-data leak into the log on the one path
+        # person's readings: a health-data leak into the log on the one path
         # the chat-side redaction did not cover, found by grepping a container
         # after a real turn. A hundred characters is not a redaction; it is a
         # smaller leak.

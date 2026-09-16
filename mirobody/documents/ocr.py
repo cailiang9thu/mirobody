@@ -1,7 +1,7 @@
 """The reference `Ocr`: one image → its text, through the engine's vision client.
 
 `extract.pdf_text` hands this only the pages whose text layer is empty, and
-`extract.image_text` one downscaled photo at a time — never a whole document.
+`extract.image_text` one downscaled photo at a time, never a whole document.
 The provider is whichever key is configured (`utils.llm.unified_file_extract`
 picks it); a consumer with its own vision model passes its own callable.
 """
@@ -36,7 +36,7 @@ _SUFFIX = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "im
 
 async def vision_ocr(image: bytes, mime: str, *, prompt: str = OCR_PROMPT) -> str:
     """Text of one image through the configured vision provider."""
-    from ..utils.llm import unified_file_extract
+    from mirobody.utils.llm import unified_file_extract
 
     with tempfile.NamedTemporaryFile(suffix=_SUFFIX.get(mime, ".png"), delete=False) as handle:
         handle.write(image)

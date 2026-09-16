@@ -1,7 +1,7 @@
 """Statistics produce the evidence; a model only narrates it.
 
-Everything a summary or an insight may *claim* — "resting heart rate is 2σ
-above its baseline", "no data for six of the last fourteen days" — is
+Everything a summary or an insight may *claim* ("resting heart rate is 2σ
+above its baseline", "no data for six of the last fourteen days") is
 computed here by pure functions and handed to the model as facts. The model
 never sees raw rows and decides for itself what is remarkable, and its
 narration is checked afterwards against rules it cannot argue with.
@@ -73,7 +73,7 @@ class DetectPolicy:
 @dataclass(frozen=True)
 class Detection:
     """One thing worth saying, with the numbers that back it. ``evidence``
-    holds only numbers and dates — never text a model wrote."""
+    holds only numbers and dates, never text a model wrote."""
 
     indicator: str
     kind: str
@@ -94,7 +94,7 @@ def detect(indicator: str, daily: Sequence[DayValue], today: date, policy: Detec
 
     A flat baseline (σ = 0) uses a 1% band of the mean so a single different
     value is a deviation rather than a division by zero. Nothing is reported
-    when the baseline is shorter than ``policy.baseline_days`` — a detection
+    when the baseline is shorter than ``policy.baseline_days``: a detection
     against three days of history is noise dressed as evidence.
     """
     base, recent = _split(daily, today, policy.recent_days)
@@ -191,7 +191,7 @@ def gaps(
 
 @dataclass(frozen=True)
 class Annotation:
-    """A span laid next to readings on a timeline — a medication course, a
+    """A span laid next to readings on a timeline: a medication course, a
     trip, an illness. The kernel only carries it; what it means is the
     consumer's."""
 
@@ -255,8 +255,8 @@ def validate_narrative(text: str, rules: NarrativeRules) -> tuple[Violation, ...
 
 
 def number_forms(value: float) -> frozenset[str]:
-    """The literal spellings a model is likely to use for ``value`` — integer,
-    one decimal, thousands-separated — so :func:`validate_narrative` can
+    """The literal spellings a model is likely to use for ``value`` (integer,
+    one decimal, thousands-separated) so :func:`validate_narrative` can
     forbid echoing a number without forbidding numbers."""
     out = set()
     if float(value).is_integer():

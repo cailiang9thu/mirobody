@@ -3,7 +3,7 @@
 The route is data (`config.llm.yaml`); this module resolves it once and hands
 the file to the one OpenAI-compatible backend. It used to carry its own table
 of providers and their models, and "can this provider read an image" was
-expressed by membership in that table — which is how a `DEEPSEEK_API_KEY`-only
+expressed by membership in that table, which is how a `DEEPSEEK_API_KEY`-only
 deployment came to upload report photos into silence (#68). Now an entry says
 `supports_image`, the route lists entries, and the answer to "why no OCR" is
 a sentence naming the key and the file to edit.
@@ -77,7 +77,7 @@ async def unified_file_extract(
         Extracted content (JSON string or plain text)
 
     Raises:
-        NoProviderError (a ValueError): no routable entry — the message names
+        NoProviderError (a ValueError): no routable entry, and the message names
             the fix. ValueError: the named provider is unknown or keyless.
         Whatever the endpoint raises for a failed request: a 400/404 for a
             model that cannot read images used to come back as "" and look
@@ -95,8 +95,8 @@ async def unified_file_extract(
     logger.info(f"unified_file_extract: {provider_name}, model={model_name}, json_mode={json_mode}")
     if spec.llm_type == "anthropic":
         # The native API, for the structured outputs its OpenAI-compatible
-        # endpoint does not serve — see `utils/llm/backends_anthropic`.
-        from ..backends_anthropic import file_extract
+        # endpoint does not serve: see `utils/llm/backends_anthropic`.
+        from mirobody.utils.llm.backends_anthropic import file_extract
 
         return await file_extract(spec, file_path, prompt, response_schema=response_schema, json_mode=json_mode)
     return await openai_compatible_file_extract(

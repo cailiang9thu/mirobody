@@ -38,7 +38,7 @@ build dependencies and a missing one is reported against the pass that needs it.
 **Reads ship; writes do not.** `index.py` is the reader of the embedding
 index; `embeddings/` is the twelve passes that mint what it reads. They used
 to be one directory, so a `pip install` shipped `adapter.py` — the class
-`pulse/query.py` reaches for on every semantic lookup — while pruning the
+`collect/query.py` reaches for on every semantic lookup — while pruning the
 module it imports, and the one caller swallowed the `ModuleNotFoundError` and
 fell back to lexical recall without saying so. The same split is recorded in
 `mirobody/_bundle.py` for the tarball reader; this is the module it stopped

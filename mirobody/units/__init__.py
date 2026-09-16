@@ -23,7 +23,7 @@ See :mod:`.families` for the canonical-unit→family table and
 question, and using it to decide whether two units can be interconverted is
 wrong in both directions: `kg/m2` (BMI) and `mg/dL` are both `MCnc` yet cannot
 convert, while `U/L` (CCnc) and `[IU]/L` (ACnc) are 1:1 identical. That is what
-:mod:`.convert` is for — it parses dimensions instead of classifying properties.
+:mod:`.convert` is for, it parses dimensions instead of classifying properties.
 """
 
 from .families import (

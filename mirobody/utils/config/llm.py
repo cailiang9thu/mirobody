@@ -3,10 +3,10 @@
 Nothing in this module names a model. `config.llm.yaml` does: `MODELS` is a
 table of entries (alias → llm_type / api_key NAME / base_url / model /
 capabilities; "providers" in this project are devices), and three keys say
-which entry each utility surface uses — `UTILS_VISION_MODEL` (report photos,
+which entry each utility surface uses: `UTILS_VISION_MODEL` (report photos,
 scanned pages), `UTILS_TEXT_MODEL` (indicator extraction from text, titles,
 summaries) and `UTILS_EMBEDDING_MODEL`.
-A value is an entry name, a list of them (the FIRST whose key is present wins —
+A value is an entry name, a list of them (the FIRST whose key is present wins,
 that is how one key runs everything), a `provider/model` string, or an inline
 spec shaped like an entry. The chat picker is the `MODELS` table itself,
 first present key first. These are the keys mirovital's config-server already
@@ -17,14 +17,14 @@ Why routing is data. Issue #68: a deployment with `DEEPSEEK_API_KEY` alone
 uploaded three documents into silence. The key was declared in config.yaml and
 absent from four of the five Python tables that decided which provider a
 surface used, and whether a provider could read an image was recorded nowhere
-— it was implied by membership in a list. A first fix moved the five tables
+it was implied by membership in a list. A first fix moved the five tables
 into one Python registry; the owner's verdict on that was that a platform's
 users must be able to read AND change every routing decision in config.yaml,
 without a release. So the registry became `config.llm.yaml`, and this module
 only knows how to read it.
 
 Selection happens once per surface, on first use. A call that then fails is a
-failure, reported with the entry and the vendor's message — not a reason to
+failure, reported with the entry and the vendor's message, not a reason to
 try the next entry: two reports of one person must not be read by two
 different models.
 
@@ -33,7 +33,7 @@ What does live here as code: the key-name aliases vendors document
 string implies (the ONE table of URL literals, each the fallback for
 `<PREFIX>_BASE_URL`), and `LLMConfig`, the client the embedding layer uses.
 
-NOT the same thing as `mirobody/utils/llm/` — that package holds the callers
+NOT the same thing as `mirobody/utils/llm/`, that package holds the callers
 (structured extraction, text, vision dispatch). Both read the same routes.
 """
 
@@ -76,7 +76,7 @@ class LLMProvider(str, Enum):
 #: The one table of endpoint literals outside config.yaml; each URL is the
 #: fallback for `<PREFIX>_BASE_URL`. Gemini's is Google's OpenAI-COMPATIBLE
 #: endpoint; Anthropic's is its NATIVE base (the SDK appends `/v1/messages`),
-#: because `anthropic` is a family the utility surfaces call directly —
+#: because `anthropic` is a family the utility surfaces call directly:
 #: its compatibility endpoint cannot serve schema-constrained JSON.
 KNOWN_ENDPOINTS: dict[str, tuple[str, str]] = {
     "openai":     ("OPENAI_API_KEY",     "https://api.openai.com/v1"),
@@ -87,7 +87,7 @@ KNOWN_ENDPOINTS: dict[str, tuple[str, str]] = {
     "anthropic":  ("ANTHROPIC_API_KEY",  "https://api.anthropic.com"),
 }
 
-#: Where to get each key — for the message a person reads when none is set.
+#: Where to get each key: for the message a person reads when none is set.
 KEYS_URL: dict[str, str] = {
     "OPENROUTER_API_KEY": "https://openrouter.ai/keys",
     "DASHSCOPE_API_KEY":  "https://dashscope.console.aliyun.com/apiKey",
@@ -128,10 +128,22 @@ _NOT_OPENAI_CLIENT = ("gemini", "anthropic")
 #: reads.
 #: Vertex locations served from a MULTI-REGIONAL endpoint, whose hostname is
 #: neither the global one nor the `<region>-` one. Not a guess: both official
-#: SDKs carry exactly this set — `google.genai._api_client._MULTI_REGIONAL_LOCATIONS`
+#: SDKs carry exactly this set: `google.genai._api_client._MULTI_REGIONAL_LOCATIONS`
 #: and `anthropic.lib.vertex._client`, which hardcodes
 #: `https://aiplatform.us.rep.googleapis.com/v1`.
 _VERTEX_MULTI_REGIONS = frozenset({"us", "eu"})
+
+
+def vertex_location(location: str) -> str:
+    """The canonical spelling of a Vertex location: stripped, lowercased, and
+    `global` when nothing is named.
+
+    Exists so a caller that needs the location in a URL PATH as well as in the
+    hostname normalises once and uses that value twice. `location: " US "`
+    otherwise built the right host and the path `/locations/ US /`, a 404 that
+    names nothing. (#75)
+    """
+    return (location or "").strip().lower() or "global"
 
 
 def vertex_host(location: str) -> str:
@@ -142,14 +154,14 @@ def vertex_host(location: str) -> str:
         <region>    <loc>-aiplatform.googleapis.com
 
     The multi-regional pair is where the newest Claude and Gemini releases are
-    often published — and a deployment that must keep data in the US cannot use
+    often published, and a deployment that must keep data in the US cannot use
     `global`, so `location: us` is the only value that satisfies both. That is
     exactly the value the two-shape formula got wrong, and it got it wrong
     silently: `us-aiplatform.googleapis.com` is not a host, so the failure is a
     name that does not resolve rather than an error naming the cause. (#73)
     """
-    loc = (location or "").strip().lower()
-    if not loc or loc == "global":
+    loc = vertex_location(location)
+    if loc == "global":
         return "aiplatform.googleapis.com"
     if loc in _VERTEX_MULTI_REGIONS:
         return f"aiplatform.{loc}.rep.googleapis.com"
@@ -189,7 +201,7 @@ def read_api_key(env_name: str) -> str:
 def base_url_override(api_key_env: str) -> str:
     """`<PREFIX>_BASE_URL` for the key named `api_key_env` (OPENROUTER_API_KEY
     → OPENROUTER_BASE_URL), or "". The one redirect rule, applied to every
-    entry that reads the key — chat, vision, text, embeddings (#52)."""
+    entry that reads the key: chat, vision, text, embeddings (#52)."""
     from . import safe_read_cfg
 
     if not api_key_env.endswith("_API_KEY"):
@@ -224,7 +236,7 @@ class RouteSpec:
 
     @property
     def takes_json_object(self) -> bool:
-        """Whether `response_format: {"type": "json_object"}` may be sent — the
+        """Whether `response_format: {"type": "json_object"}` may be sent: the
         vision path's only use of the parameter."""
         return self.response_format in ("json_schema", "json_object")
 
@@ -241,19 +253,14 @@ class RouteSpec:
         return f"{self.alias} ({self.model})" if self.alias != self.model else self.model
 
 
-#: What an entry's `response_format` may say, and what each means at the call
-#: site. Not a capability ladder — measured behaviour, one vendor per value:
+#: What an entry's `response_format` may say. Measured behaviour, not a
+#: capability ladder, one vendor per value (measured 2026-09-10):
 #:
-#:   json_schema   OpenAI structured outputs (the default; OpenAI, OpenRouter,
-#:                 DashScope, Google's compatibility endpoint)
-#:   json_object   only the loose JSON mode. DeepSeek answers "This
-#:                 response_format type is unavailable now" to a schema.
-#:   none          the parameter cannot be sent at all, and the schema goes into
-#:                 the prompt. Anthropic's compatibility endpoint REJECTS
-#:                 `json_object` outright ("Input should be 'json_schema'") and
-#:                 takes a schema only in OpenAI strict mode — `strict: true`
-#:                 plus `additionalProperties: false` on every object, which the
-#:                 extraction schemas do not carry (measured 2026-09-10).
+#:   json_schema   OpenAI structured outputs; the default
+#:   json_object   loose JSON mode only. DeepSeek answers "This response_format
+#:                 type is unavailable now" to a schema.
+#:   none          the parameter cannot be sent; the schema goes in the prompt.
+#:                 Anthropic's compatibility endpoint rejects `json_object`.
 RESPONSE_FORMATS = ("json_schema", "json_object", "none")
 
 
@@ -314,7 +321,7 @@ def _spec_from_mapping(alias: str, entry: dict[str, Any]) -> RouteSpec | None:
 def _spec_from_string(value: str, entries: dict[str, dict], surface: str = "") -> RouteSpec | None:
     """An entry name, or `provider/model` against `KNOWN_ENDPOINTS`. On the
     embedding surface a vector-column FAMILY name (`qwen`, `openrouter`, …)
-    also resolves, to the entry that writes it — the spelling `EMBEDDING_PROVIDER:
+    also resolves, to the entry that writes it: the spelling `EMBEDDING_PROVIDER:
     qwen` used, and the one the database columns carry."""
     value = value.strip()
     if surface == "embedding":
@@ -345,7 +352,7 @@ def _spec_from_string(value: str, entries: dict[str, dict], surface: str = "") -
     return None
 
 
-#: Entry keys something actually reads. `RouteSpec` is a whitelist — a key it
+#: Entry keys something actually reads. `RouteSpec` is a whitelist: a key it
 #: does not name is dropped on the floor, silently, which is how `openai-utils`
 #: came to declare `reasoning_effort: none` (REQUIRED there: without it
 #: gpt-5.6-terra keeps reasoning on and then refuses the extraction callers'
@@ -364,7 +371,7 @@ KNOWN_ENTRY_KEYS: frozenset[str] = frozenset({
 
 
 def unread_entry_keys() -> dict[str, list[str]]:
-    """`{entry alias: keys nothing reads}` — dead configuration, by name."""
+    """`{entry alias: keys nothing reads}`: dead configuration, by name."""
     out: dict[str, list[str]] = {}
     for alias, entry in model_entries().items():
         unknown = sorted(k for k in (entry or {}) if k not in KNOWN_ENTRY_KEYS)
@@ -384,8 +391,8 @@ def model_entries() -> dict[str, dict[str, Any]]:
 
 
 def route_value(surface: str) -> Any:
-    """The raw configured value for a surface: a string — an entry name,
-    `provider/model`, or JSON — through `safe_read_cfg` (environment first, and
+    """The raw configured value for a surface: a string (an entry name,
+    `provider/model`, or JSON) through `safe_read_cfg` (environment first, and
     the one place tests control), else the structured value (a list, a spec)
     from the config file."""
     from . import safe_read_cfg
@@ -396,7 +403,7 @@ def route_value(surface: str) -> Any:
     if text:
         value = _maybe_json(text)
         # `get_str` renders a YAML list as its Python repr ("['a', 'b']"),
-        # which is not JSON and not a value — the structured read below has it.
+        # which is not JSON and not a value: the structured read below has it.
         if not (isinstance(value, str) and value.startswith("[")):
             return value
     cfg = global_config()
@@ -456,7 +463,7 @@ def resolve_route(surface: str) -> RouteSpec | None:
 
 
 def resolve_named(value: str, *, model: str | None = None) -> RouteSpec | None:
-    """A caller-named route — an entry name or `provider/model` — with an
+    """A caller-named route (an entry name or `provider/model`) with an
     optional model override. For the `provider=` parameters the utility
     functions keep for explicit callers."""
     spec = _spec_from_string(value, model_entries())
@@ -512,7 +519,7 @@ def chat_entries() -> dict[str, dict[str, Any]]:
 
 def chat_default() -> str | None:
     """The chat picker's default: the first `MODELS` entry (config order,
-    utility-only entries excluded) whose key is present — or that names no
+    utility-only entries excluded) whose key is present, or that names no
     key (ambient auth). None when none is."""
     for name, entry in chat_entries().items():
         ref = str((entry or {}).get("api_key") or "").strip()
@@ -598,9 +605,10 @@ class LLMConfig:
         elif provider == LLMProvider.VERTEX_AI and not base_url:
             # `vertex_host` rather than a `<loc>-` f-string: this one also got
             # `global` wrong, building `global-aiplatform.googleapis.com`.
+            loc = vertex_location(gcp_location)
             self.base_url = (
-                f"https://{vertex_host(gcp_location)}/v1"
-                f"/projects/{gcp_project}/locations/{gcp_location or 'global'}"
+                f"https://{vertex_host(loc)}/v1"
+                f"/projects/{gcp_project}/locations/{loc}"
             )
 
         self._client: Any = None

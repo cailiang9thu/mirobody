@@ -12,8 +12,8 @@ The conversion is not a nicety. A trend line built from a mix of lb and kg, or
 mg/dL and mmol/L, is silently wrong rather than obviously wrong.
 """
 
-from mirobody.pulse.standardize.indicators_info import StandardIndicator
-from mirobody.pulse.standardize.units import convert_to_standard, get_all_units_info
+from mirobody.collect.standardize.indicators_info import StandardIndicator
+from mirobody.collect.standardize.units import convert_to_standard, get_all_units_info
 
 
 # ── 1. what a provider sends vs what gets stored ─────────────────────────────

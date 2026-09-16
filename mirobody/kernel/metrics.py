@@ -1,4 +1,4 @@
-"""The device-metric catalogue — what a reading's *name* means.
+"""The device-metric catalogue: what a reading's *name* means.
 
 ``mirobody/res/metrics.tsv`` is the one table behind every "which indicator is
 this, what unit does it carry, and how does a day of it summarise" question.
@@ -8,27 +8,27 @@ duplicated as a 94-entry projection map plus a 495-row mapping seed in one
 downstream repo and a third copy in another. The shape is what those copies
 added and what this catalogue now carries:
 
-- ``state_class`` — the Home Assistant idea, extended for health data. It
+- ``state_class``: the Home Assistant idea, extended for health data. It
   says what a day of raw points *is*, and therefore how it may be summarised:
   ``instant`` (heart rate, a weight: mean/min/max or the last reading),
   ``cumulative`` (steps as deltas: sum, never the mean of running totals),
   ``interval`` / ``session`` (sleep stages, a workout: the union of the
   spans, so overlapping segments are not counted twice), ``provider_daily``
   (a vendor's own daily figure: project it, never average it again).
-- ``aggregation_policy`` — the one policy ``series.aggregate`` applies to
+- ``aggregation_policy``: the one policy ``series.aggregate`` applies to
   that class. The two columns are kept separate because a consumer may
   legitimately override the policy for one vendor whose stream has a
   different shape from everyone else's (a continuous SpO2 stream is
   ``instant``; a single nightly pulse-ox reading is ``last``).
-- ``loinc`` — only where the code is public and undisputed; otherwise the
+- ``loinc``: only where the code is public and undisputed; otherwise the
   metric's identity is ``("mirobody-device", name)``. A confident wrong code
   is worse than an honest namespace.
-- ``window`` — the local-day boundary. ``"18:00"`` for the sleep family, so
+- ``window``: the local-day boundary. ``"18:00"`` for the sleep family, so
   a night is one day; the old aggregator found sleep with ``LIKE '%sleep%'``.
 
 This module is part of the *library layer* (see the import-linter contracts
 in ``pyproject.toml``): stdlib only, importable on a bare ``pip install
-mirobody``. Display labels in other languages are NOT here — an
+mirobody``. Display labels in other languages are NOT here: an
 international project ships English names and lets each deployment inject
 its own (``register_labels``). Per-vendor overrides of a metric's shape are
 injected the same way (``register_overrides``); the catalogue never learns a
@@ -79,7 +79,7 @@ LEGAL_POLICIES: dict[str, frozenset[str]] = {
 SYSTEM_LOINC = "loinc"
 SYSTEM_DEVICE = "mirobody-device"
 
-#: The two classes ``metrics.tsv`` carries for how a row's value is typed —
+#: The two classes ``metrics.tsv`` carries for how a row's value is typed:
 #: kept from the enum this replaces, because the aggregator and the Apple
 #: upload path branch on them.
 DATA_SUMMARY = "summary"
@@ -113,7 +113,7 @@ class Metric:
     @property
     def canonical(self) -> tuple[str, str]:
         """``(system, code)``: the LOINC code when one is known, otherwise this
-        catalogue's own namespace — so two writers that both lack a code still
+        catalogue's own namespace, so two writers that both lack a code still
         agree on the identity."""
         return (SYSTEM_LOINC, self.loinc) if self.loinc else (SYSTEM_DEVICE, self.name)
 
@@ -190,7 +190,7 @@ _labels: dict[str, dict[str, tuple[str, str]]] = {}
 
 def canonical(name: str) -> tuple[str, str]:
     """``(system, code)`` for a catalogue name; an unknown name lands in the
-    device namespace under its own spelling rather than raising — a reading
+    device namespace under its own spelling rather than raising: a reading
     with an unknown name is still a reading."""
     m = METRICS.get(name)
     return m.canonical if m else (SYSTEM_DEVICE, name)
@@ -200,8 +200,8 @@ def register_overrides(system: str, table: dict[str, tuple[str, str, str]]) -> N
     """Teach the catalogue how one vendor's metric keys map, when the default
     (``metric_key == name``, shape from the catalogue) is wrong for it.
 
-    ``table`` maps the vendor's own key — a field path such as
-    ``"spo2.saturation"`` — to ``(name, state_class, aggregation_policy)``.
+    ``table`` maps the vendor's own key (a field path such as
+    ``"spo2.saturation"``) to ``(name, state_class, aggregation_policy)``.
     A vendor whose continuous SpO2 stream must not be summarised like another
     vendor's single nightly reading registers exactly that here. The table is
     the consumer's; the catalogue never ships a vendor's field paths.
@@ -220,7 +220,7 @@ def mapping_for(system: str, metric_key: str) -> Mapping | None:
 
     Overrides registered for ``system`` win; otherwise the key is taken to be
     a catalogue name (which is what Garmin, Whoop and Oura emit). ``None``
-    means "not a known metric" — the caller decides whether that is a
+    means "not a known metric": the caller decides whether that is a
     quarantine, a wait-for-mapping, or a drop. It is never a guess.
     """
     hit = _overrides.get((system, metric_key))
@@ -262,7 +262,7 @@ def load_labels_resource(locale: str) -> None:
 
 
 def with_shape(metric: Metric, state_class: str, policy: str) -> Metric:
-    """A copy of ``metric`` with another shape — for a consumer building its
+    """A copy of ``metric`` with another shape: for a consumer building its
     own override table from catalogue rows."""
     if policy not in LEGAL_POLICIES[state_class]:
         raise ValueError(f"{policy!r} is not a policy for {state_class}")

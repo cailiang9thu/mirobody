@@ -2,7 +2,7 @@
 
 LangGraph's ``ToolNode`` ships ``handle_tool_errors=_default_handle_tool_errors``,
 which RE-RAISES anything that isn't an argument-validation error. So an exception
-inside any tool — a bad row, a timed-out HTTP call, a driver hiccup — propagates
+inside any tool (a bad row, a timed-out HTTP call, a driver hiccup) propagates
 out of the graph and takes the whole turn with it:
 
   1. the SSE stream dies mid-answer, so the user gets a truncated reply;
@@ -11,17 +11,17 @@ out of the graph and takes the whole turn with it:
 
 This middleware turns any such fault into an ordinary error ``ToolMessage``: the
 model sees "that tool failed", can apologise or try another route, and the
-conversation survives. It wraps EVERY tool the agent has — global MCP tools, the
-user's own MCP tools, and deepagents' native filesystem tools — including ones
+conversation survives. It wraps EVERY tool the agent has (global MCP tools, the
+user's own MCP tools, and deepagents' native filesystem tools) including ones
 added later, which is why it lives here rather than as a decorator on individual
 tools.
 
 NOT caught, deliberately:
 
-  * ``GraphBubbleUp`` (``GraphInterrupt`` et al.) — how ``interrupt()`` suspends a
+  * ``GraphBubbleUp`` (``GraphInterrupt`` et al.): how ``interrupt()`` suspends a
     run. The agent passes ``interrupt_on`` only for ``ask_user``, but swallowing these would
     silently break any approval flow added later.
-  * ``asyncio.CancelledError`` — a ``BaseException``, so ``except Exception``
+  * ``asyncio.CancelledError``: a ``BaseException``, so ``except Exception``
     misses it by construction; a disconnected client must still cancel the run.
 """
 
@@ -40,14 +40,14 @@ logger = logging.getLogger(__name__)
 def _fault_message(request, exc: Exception) -> ToolMessage:
     """The error ``ToolMessage`` the model sees in place of a crashed tool result.
 
-    The TEXT carries the tool name, the fault kind and the exception TYPE — never
+    The TEXT carries the tool name, the fault kind and the exception TYPE, never
     its message: driver messages quote SQL with bound parameters, HTTP messages
     quote payloads, and models have historically echoed such strings to users
     verbatim. The full traceback goes to the log instead.
 
     The ARTIFACT carries the same fault as a `tools.Envelope`, so
     `RetryGovernanceMiddleware` learns whether retrying can help without parsing
-    the text — which a harness is free to truncate or evict.
+    the text, which a harness is free to truncate or evict.
 
     Both come from `mirobody.kernel.tools`: one classifier, shared with every
     consumer, rather than a per-repository table of exception names.
@@ -90,23 +90,16 @@ class ToolFaultMiddleware(AgentMiddleware):
 # The retry hint the model sees for each unparseable call. Mentioning
 # `none` specifically because that is the observed failure: claude-sonnet-4.6
 # (via OpenRouter, temperature 0.1) deterministically emitted
-# `{"aggregate": none, ...}` for the health-data tool — Python's None
+# `{"aggregate": none, ...}` for the health-data tool: Python's None
 # instead of JSON null / the quoted enum string "none".
 
-# ── salvaging malformed arguments ────────────────────────────────────────────
-#
-# The hint below tells the model exactly what it got wrong, and this provider
-# still re-emits the same shape twice in a row before we give up — observed
-# against the health-data tool, where every attempt looked like:
-#
-#     {"keywords": [...], "start_time": 2024-08-21, "aggregate": none}
-#                                       ^unquoted date      ^bare `none`
-#
-# The comment on _MAX_REPAIRS_PER_TURN was already right that a model emitting
-# broken JSON will not be argued into correctness. So try to REPAIR the string
-# before bouncing it back: these are deterministic, narrow rewrites applied only
-# to text that has ALREADY failed `json.loads`, so a valid call can never reach
-# them.
+# Salvaging malformed arguments. The hint below names exactly what went wrong
+# and some providers still re-emit the same shape twice before we give up,
+# observed against the health-data tool as
+# `{"keywords": [...], "start_time": 2024-08-21, "aggregate": none}`, with an
+# unquoted date and a bare `none`. So repair the string first: these rewrites
+# are deterministic and narrow, and run only on text that has ALREADY failed
+# `json.loads`.
 _PY_LITERALS = re.compile(r'(?<=[:\[,\s])(None|none|True|False)(?=[\s,\]}])')
 
 #: An unquoted date or timestamp: JSON reads `2024` and chokes on the dash.
@@ -158,7 +151,7 @@ _MAX_REPAIRS_PER_TURN = 2
 class InvalidToolCallRepairMiddleware(AgentMiddleware):
     """A malformed tool call must never end the conversation either.
 
-    ``ToolFaultMiddleware`` above catches tools that CRASH — but a tool call
+    ``ToolFaultMiddleware`` above catches tools that CRASH, but a tool call
     whose arguments fail JSON parsing never reaches any tool. LangChain parks
     it in ``AIMessage.invalid_tool_calls``; the react loop routes on
     ``tool_calls`` alone, sees none, and ends the graph. The user gets
@@ -167,7 +160,7 @@ class InvalidToolCallRepairMiddleware(AgentMiddleware):
     This hook answers each unparseable call with an error ``ToolMessage``
     (the OpenAI wire format requires every emitted tool_call id to be
     answered anyway) and jumps back to the model, which then re-issues the
-    call correctly. Scoped to the pure-invalid case — when valid calls exist
+    call correctly. Scoped to the pure-invalid case: when valid calls exist
     alongside, ToolNode must stay the next node, and it resolves the turn.
     """
 
@@ -202,7 +195,7 @@ class InvalidToolCallRepairMiddleware(AgentMiddleware):
                 [c.get("name") for c in invalid],
             )
             # Returning None here ended the turn with a ZERO-character reply
-            # and no error event — the client paid for the whole run and saw
+            # and no error event: the client paid for the whole run and saw
             # blank. Raise instead: the streaming loop's exception handler
             # turns this into an `error` event the client actually renders.
             raise RuntimeError(

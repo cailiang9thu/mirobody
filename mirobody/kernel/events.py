@@ -2,31 +2,31 @@
 
 An agent runtime emits these; every wire protocol (a consumer's SSE dialect,
 OpenAI-compatible Responses/Chat Completions, a WebSocket) translates them
-independently. No framework type — LangChain, LangGraph, FastAPI — may enter
+independently. No framework type (LangChain, LangGraph, FastAPI) may enter
 this module; it is stdlib and ``typing`` only, so a consumer can depend on
 it without depending on how the reference agent is built.
 
 The variants, and why each exists:
 
-* ``TextDelta`` / ``ReasoningDelta`` — visible reply vs. thinking text, two
+* ``TextDelta`` / ``ReasoningDelta``: visible reply vs. thinking text, two
   types because they are two channels on every protocol that exists.
-* ``Notice`` — a system-originated line for the user ("the model is
+* ``Notice``: a system-originated line for the user ("the model is
   unavailable, falling back"), which used to be smuggled through the
   thinking channel and was indistinguishable from the model's own trace.
 * ``ToolCallStarted`` / ``ToolArgumentsDelta`` / ``ToolCallCompleted`` /
-  ``ToolResult`` — one tool call's life cycle. ``ToolCallStarted.kind``
+  ``ToolResult``: one tool call's life cycle. ``ToolCallStarted.kind``
   classifies WHAT the call is (a health-data query, a citation search) so an
   adapter never needs a tool-name allowlist. ``ToolResult.status`` is the
-  fact an error middleware produced this result — losing it is how a failed
+  fact an error middleware produced this result: losing it is how a failed
   tool used to render as an ordinary one.
-* ``UsageDelta`` — provider-true token counts per model call, attributed to
+* ``UsageDelta``: provider-true token counts per model call, attributed to
   the model that produced them.
-* ``Interrupted`` — the run is paused; ``action_requests`` is the ONLY
+* ``Interrupted``: the run is paused; ``action_requests`` is the ONLY
   authoritative source of what is pending.
-* ``Completed`` / ``Failed`` — exactly one terminal outcome per stream and
+* ``Completed`` / ``Failed``: exactly one terminal outcome per stream and
   nothing legitimately follows it. ``Completed.finish_reason="length"`` is
   the fact a budget ended the turn; ``degrade`` names a graceful-degrade
-  branch whose user-facing wording differs per surface — the event carries
+  branch whose user-facing wording differs per surface: the event carries
   the fact, never localised copy.
 
 THE SINGLE-TERMINAL-OUTCOME INVARIANT: exactly one of ``Completed``,
@@ -197,7 +197,7 @@ class UsageDelta:
     source: str | None = None
 
 
-# --- terminal outcomes — mutually exclusive, exactly one per stream -------------------
+# --- terminal outcomes: mutually exclusive, exactly one per stream -------------------
 
 #: The one ``Completed.degrade`` value today: a model rejected an attached
 #: binary block and the turn completed without it.

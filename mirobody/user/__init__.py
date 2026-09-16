@@ -7,7 +7,7 @@
     account_merge.py  two sign-ins turn out to be one person
     profile.py        the health profile document generated from the record
 
-Exports resolve lazily (PEP 562), and that is load-bearing, not style — the
+Exports resolve lazily (PEP 562), and that is load-bearing, not style: the
 same reason `mirobody/agent/__init__.py` is lazy.
 
 This package's `auth.email` module imports `mandrill` at module scope, `auth.oauth_service`
@@ -16,13 +16,13 @@ extra. The eager `from .email import MandrillEmailValidator` that used to sit
 here therefore made **mandrill a hard requirement of the engine**, through a
 chain nothing in the layering rules could see:
 
-    mirobody/pulse/core/user.py
+    mirobody/collect/core/user.py
       -> mirobody.user                     (executes THIS __init__)
         -> mirobody.user.auth.email
           -> mandrill
 
-`mirobody/pulse/` is engine. So `pip install mirobody` plus a whoop payload —
-no server, no database — raised ModuleNotFoundError, and 24 pulse tests failed
+`mirobody/collect/` is engine. So `pip install mirobody` plus a whoop payload (
+no server, no database) raised ModuleNotFoundError, and 24 pulse tests failed
 in any environment without the server extra. They passed in the dev venv, which
 has everything, which is why this survived: it is only visible in a CLEAN
 install, and CI never ran the suite at all.

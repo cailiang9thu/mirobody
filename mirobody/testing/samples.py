@@ -1,12 +1,12 @@
 """Run vendor sample payloads through a decoder and compare with the facts a
 human worked out.
 
-A sample document (``mirobody/kernel/vendors/samples/<vendor>/*.json``) is either
+A sample document (``mirobody/kernel/decoders/samples/<vendor>/*.json``) is either
 one case or a ``cases`` list; each case has ``data_type``, ``tz``, ``input``
 and an ``expected`` block whose keys are checked here:
 
 ``count``          exact number of facts
-``values``         ``{metric: value}`` — first fact per metric, approx equal
+``values``         ``{metric: value}``: first fact per metric, approx equal
 ``series``         ``{metric: [values...]}`` in order
 ``intervals``      ``{metric: [[start_ms, end_ms], ...]}``
 ``absent``         metrics that must not appear
@@ -26,8 +26,8 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..kernel import metrics
-from ..kernel.series import Fact
+from mirobody.kernel import metrics
+from mirobody.kernel.series import Fact
 
 Decoder = Callable[..., Sequence[Fact]]
 
@@ -129,7 +129,7 @@ def run_samples(
 
 
 def metrics_used(decoder_tables: Iterable[Mapping]) -> set[str]:
-    """Every metric name a set of decoder tables can emit — to assert they
+    """Every metric name a set of decoder tables can emit: to assert they
     all exist in the catalogue."""
     names: set[str] = set()
     for table in decoder_tables:

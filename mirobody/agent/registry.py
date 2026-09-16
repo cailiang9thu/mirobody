@@ -1,23 +1,23 @@
 """The one agent, and how a deployment replaces it.
 
-mirobody ships exactly one agent — `MirobodyAgent`, on the deepagents harness
-— and does not switch between agents at request time. What this module
+mirobody ships exactly one agent (`MirobodyAgent`, on the deepagents harness
+) and does not switch between agents at request time. What this module
 provides is REPLACEMENT, from two places: an installed distribution that
 declares a `mirobody.agents` entry point (a `pip install`ed harness) is looked
 at first, then the `AGENT_DIRS` directories in order; the first class that
 defines `generate_response` becomes the agent for the whole process. A
 deployment that wants its own harness ships it as a plugin or points
 `AGENT_DIRS` at its own directory (an overlay replaces the list, it does not
-append to it) and never touches this package; everything else — the MCP
-tools, the chat endpoints, the wire format — is the same.
+append to it) and never touches this package; everything else: the MCP
+tools, the chat endpoints, the wire format: is the same.
 
 The contract a replacement has to meet is the two methods on `AbstractAgent`.
 The per-agent config keys that used to be suffixed with the agent's name
 (`PROVIDERS_<NAME>`, `PROMPTS_<NAME>`, ...) are plain `MODELS`, `PROMPTS`,
 `ALLOWED_TOOLS`, `DISALLOWED_TOOLS`: one agent, one set of keys.
 
-This module holds the process-wide state the chat layer reads — the agent
-class and its LLM clients — and nothing else. It does not import LangChain.
+This module holds the process-wide state the chat layer reads (the agent
+class and its LLM clients) and nothing else. It does not import LangChain.
 """
 
 from __future__ import annotations
@@ -29,8 +29,8 @@ from collections.abc import AsyncGenerator
 from types import ModuleType
 from typing import Any
 
-from ..utils import Config, global_config
-from ..utils.plugin_dirs import GROUP_AGENTS, entry_point_modules, import_plugin_module, resolve_plugin_dir
+from mirobody.utils import Config, global_config
+from mirobody.utils.plugin_dirs import GROUP_AGENTS, entry_point_modules, import_plugin_module, resolve_plugin_dir
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class AbstractAgent:
     `generate_response` is called once per turn with the kwargs
     `ChatProtocolAdapter._prepare_agent_kwargs` builds (`user_id`, `session_id`,
     `messages`, `provider`, `prompt_name`, `file_list`, ...) and yields chunk
-    dicts `{"type": ..., "content": ...}` — see `agent/README.md` for the types.
+    dicts `{"type": ..., "content": ...}`: see `agent/README.md` for the types.
     `load_llm_clients` is optional: given the `MODELS` table it returns
     `{provider_name: client}`; an agent that needs no model returns `{}`.
     """
@@ -84,7 +84,7 @@ def load_agent(dirs: list[str], config: Config | None = None) -> type | None:
     """Installed `mirobody.agents` plugins first, then `dirs` in order; the
     first agent class found becomes THE agent.
 
-    Every further candidate is logged by name and ignored — there is no second
+    Every further candidate is logged by name and ignored: there is no second
     slot. Loads the agent's LLM clients from the `MODELS` table when the
     class offers `load_llm_clients`. Returns the class, or None when no
     directory yielded one (the chat endpoints then answer "no agent").
@@ -158,7 +158,7 @@ def agent_class() -> type | None:
 
 
 def agent_name() -> str:
-    """The class name without its `Agent` suffix — what `th_messages.agent` records."""
+    """The class name without its `Agent` suffix: what `th_messages.agent` records."""
     if _agent_class is None:
         return ""
     return _agent_class.__name__.removesuffix("Agent") or _agent_class.__name__
@@ -190,8 +190,8 @@ def llm_client_names() -> list[str]:
 def available_models() -> list[str]:
     """The `/api/models` list: provider names whose key resolves RIGHT NOW.
 
-    Unfiltered, this listed every configured provider — five models on a
-    zero-key deployment — so the picker offered choices that could only fail
+    Unfiltered, this listed every configured provider (five models on a
+    zero-key deployment) so the picker offered choices that could only fail
     at chat time. A provider appears only when its client was loaded at
     startup AND its `api_key` reference resolves non-empty (recomputed per
     call: removing a key hides its model on the next request; adding one still
@@ -199,7 +199,7 @@ def available_models() -> list[str]:
     """
     if not _llm_clients:
         return []
-    from ..utils.config.llm import read_api_key
+    from mirobody.utils.config.llm import read_api_key
 
     cfg = global_config()
     providers = (cfg.get_agent_settings() or {}).get("providers") or {} if cfg else {}
@@ -210,7 +210,7 @@ def available_models() -> list[str]:
         # `read_api_key`, which `config.llm` calls THE admission function, and
         # not `safe_read_cfg`: the vendor-documented aliases live in it. With
         # `GEMINI_API_KEY` set and `GOOGLE_API_KEY` unset, the router resolved
-        # the key and built a real client while this returned [] — an empty
+        # the key and built a real client while this returned []: an empty
         # picker over a chat surface `mirobody doctor` called healthy. One key,
         # two answers, twice now.
         key_name = (providers.get(name) or {}).get("api_key", "")

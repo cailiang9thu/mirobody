@@ -1,15 +1,15 @@
-"""`query_genetic_data` — the one tool for a person's genotype calls.
+"""`query_genetic_data`: the one tool for a person's genotype calls.
 
 Genetics is a third data class, next to readings
 (`health_indicators_service.py`) and medications (`medications_service.py`),
 and it gets its own tool for the same reason they do: its grammar shares
 nothing with theirs. A genotype has no window, no resolution and no
-aggregate — a call is "what did this person's array call at these rsIDs",
+aggregate: a call is "what did this person's array call at these rsIDs",
 plus optionally the neighbours of each hit. Five parameters, every one
 applicable to every call.
 
-The tool shell is the same three steps as its siblings — authorize, run,
-render — and the same envelope: the model reads a rendered table, and
+The tool shell is the same three steps as its siblings: authorize, run,
+render, and the same envelope: the model reads a rendered table, and
 everything a *program* needs (did it work, is a retry pointless, how much was
 cut) travels beside it in a `tools.Envelope`.
 
@@ -34,10 +34,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ...kernel import query, tools
-from ...kernel.ops import is_driver_exception
-from ._authz import caller_of, denied, refused, subject_for
-from .health_indicators_service import envelope_meta, render_compact
+from mirobody.kernel import query, tools
+from ._authz import refused, subject_for
+from ._base import RecordTool
+from ._render import envelope_meta, render_compact
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ TOOL_NAME = "query_genetic_data"
 #: rsIDs one call may name. The list becomes an `IN` clause of bound
 #: parameters, and a model that wants a whole panel should ask twice.
 MAX_RSIDS = 50
-#: Variants one answer may carry, and the default. Direct hits only — the
+#: Variants one answer may carry, and the default. Direct hits only: the
 #: neighbours of each hit are capped separately.
 MAX_LIMIT = 500
 DEFAULT_LIMIT = 100
@@ -57,7 +57,7 @@ MAX_NEARBY_PER_HIT = 20
 DEFAULT_NEARBY_RANGE = 1_000_000
 
 #: Columns the answer renders, in order. `distance` and `near` are empty on a
-#: direct hit, and `render_compact` drops a column no row fills — so an exact
+#: direct hit, and `render_compact` drops a column no row fills, so an exact
 #: lookup renders four columns, not six.
 COLUMNS: tuple[str, ...] = ("rsid", "chromosome", "position", "genotype", "distance", "near")
 
@@ -164,11 +164,12 @@ def parse_query(args: Mapping[str, Any]) -> GeneticRequest:
     )
 
 
-class GeneticService:
+class GeneticService(RecordTool):
     """The tool body. `__tools__` is the whole published surface; `envelope`
     is API for the chat adapter, not a tool."""
 
     __tools__ = (TOOL_NAME,)
+    TOOL_NAME = TOOL_NAME
     input_schema = TOOL_SCHEMA
 
     def __init__(self, execute: Any = None) -> None:
@@ -183,7 +184,7 @@ class GeneticService:
         raw genotype file they uploaded.
 
         USE IT when the question names variants or asks what this person
-        carries at one — "what is my rs4988235", "am I a C677T carrier". With
+        carries at one: "what is my rs4988235", "am I a C677T carrier". With
         include_nearby it also returns the typed variants around each hit.
 
         DO NOT use it for readings (`query_health_indicators`), for
@@ -195,8 +196,8 @@ class GeneticService:
         `TOOL_SCHEMA`, published verbatim).
 
         Returns:
-            A compact table — rsid, chromosome, position, genotype, and for a
-            neighbour its distance and which query it is near — plus a `meta`
+            A compact table (rsid, chromosome, position, genotype, and for a
+            neighbour its distance and which query it is near) plus a `meta`
             block. Absence means "not typed", never "does not carry it".
 
         Notes for LLMs:
@@ -213,24 +214,9 @@ class GeneticService:
     def columns(self, args: Mapping[str, Any]) -> tuple[str, ...]:
         """Which columns one answer renders. Read by the chat adapter too
         (`tool_loader`), so both surfaces render the same table; not a tool
-        (`__tools__`). Fixed here — a genotype row has one shape."""
+        (`__tools__`). Fixed here: a genotype row has one shape."""
         return COLUMNS
 
-    async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
-        caller_id = caller_of(user_info)
-        if not caller_id:
-            return denied("authorization required")
-        try:
-            return await self._run(caller_id, args)
-        except query.Denied:
-            return denied("you may not read this person's data")
-        except Exception as e:
-            # Never hand the raw exception to the model: driver messages quote
-            # the SQL with its bound parameters, and a model echoes what it is
-            # given. The type goes to the log, the class to the envelope.
-            tool_name = TOOL_NAME  # a local the PHI log lint can see is a name, not a value
-            logger.error("[%s] error_type=%s", tool_name, type(e).__name__, exc_info=not is_driver_exception(e))
-            return tools.fault_envelope(e)
 
     # --- the run ------------------------------------------------------------
 
@@ -296,7 +282,7 @@ class GeneticService:
 
     async def _read(self, sql: str, params: Mapping[str, Any]) -> list[Mapping[str, Any]]:
         if self._execute is None:
-            from ...utils import execute_query
+            from mirobody.utils import execute_query
 
             self._execute = execute_query
         return list(await self._execute(sql, dict(params)) or [])
@@ -310,8 +296,8 @@ def _in_clause(prefix: str, values: Sequence[str]) -> tuple[str, dict[str, Any]]
 
     rsIDs are BOUND, never interpolated. They come out of a user-uploaded
     genotype file that is split on whitespace with no format validation
-    (`pulse/file_parser/services/genetic_processor.py`), so a single quote in
-    an uploaded file breaks out of an interpolated literal — a stored SQL
+    (`collect/file_parser/services/genetic_processor.py`), so a single quote in
+    an uploaded file breaks out of an interpolated literal: a stored SQL
     injection on the read path, which is what this was.
     """
     params = {f"{prefix}_{i}": v for i, v in enumerate(values)}
@@ -356,7 +342,7 @@ def _envelope_for(
 
 
 #: This module's tool surface: nothing at module level. The schema, the
-#: validator and the parser are the tool's CONTRACT, imported by name — a
+#: validator and the parser are the tool's CONTRACT, imported by name: a
 #: module-level function without this list would be published as a tool.
 __tools__: tuple[str, ...] = ()
 

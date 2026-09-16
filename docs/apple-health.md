@@ -1,5 +1,12 @@
 # Apple Health Platform Integration Guide
 
+> **2026-09-15: the export file works now.** `mirobody import apple export.zip`
+> reads the archive the iOS Health app produces (Summary → your picture →
+> Export All Health Data). It needs no key, no database and no extra, so a
+> bare `pip install mirobody` can read it. The JSON contract below is the
+> other front door, used by the mobile client; both decode through
+> `mirobody/kernel/decoders/apple.py`.
+
 ## 📋 Overview
 
 The Apple Health Platform specializes in integrating Apple Health export data and CDA documents, using an event-based architecture to process different types of health data.
@@ -175,7 +182,7 @@ Failure response format:
 ## 🔧 Adding New Data Type Support
 
 There is no per-metric provider class. One enum and one mapping, both in
-[`mirobody/pulse/apple/models.py`](../mirobody/pulse/apple/models.py), decide
+[`mirobody/collect/apple/models.py`](../mirobody/collect/apple/models.py), decide
 what the endpoint accepts and where a record lands.
 
 **1. Declare the type** on `FlutterHealthTypeEnum`:
@@ -197,9 +204,9 @@ FLUTTER_TO_RECORD_TYPE_MAPPING = {
 ```
 
 **3. If that indicator does not exist yet**, add it to `StandardIndicator` in
-[`mirobody/pulse/standardize/indicators_info.py`](../mirobody/pulse/standardize/indicators_info.py)
+[`mirobody/collect/standardize/indicators_info.py`](../mirobody/collect/standardize/indicators_info.py)
 with its canonical unit — see that package's
-[README](../mirobody/pulse/standardize/README.md).
+[README](../mirobody/collect/standardize/README.md).
 
 Step 1 without step 2 is silent data loss, not an error. `type` validation is
 deliberately lenient, so the record is accepted and then dropped in
@@ -235,7 +242,7 @@ list, and it is one command away — so nothing here can drift into being a
 second, wrong copy of it:
 
 ```bash
-python -c "from mirobody.pulse.apple.models import FLUTTER_TO_RECORD_TYPE_MAPPING as m; \
+python -c "from mirobody.collect.apple.models import FLUTTER_TO_RECORD_TYPE_MAPPING as m; \
            print(len(m)); [print(k.value) for k in m]"
 ```
 

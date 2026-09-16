@@ -15,8 +15,8 @@ from mirobody.user.auth.jwt import validator_from_config
 from mirobody.server.auth import verify_token
 from mirobody.utils import execute_query
 from mirobody.utils.config import get_default_timezone, global_config
-from ...user import care_circle as cc
-from ...user.user import get_user
+from mirobody.user import care_circle as cc
+from mirobody.user.user import get_user
 
 logger = logging.getLogger(__name__)
 
@@ -367,17 +367,14 @@ async def create_virtual_user(
         virtual_user_id = str(row["id"])
         virtual_user_name = row["name"]
 
-        # A managed member: a real row in the circle, marked accepted and
-        # read-write, without an invitation handshake — because this person will
-        # never sign in. That shortcut is scoped to the CALLER'S OWN circle,
-        # which is the whole safety story: `create_circle` makes the caller its
-        # owner, and `force_accept_managed_member` writes only into a circle the
-        # caller owns.
-        #
-        # `health_access = 2` is correct here and would be wrong anywhere else.
-        # For everyone who can sign in, that switch is theirs and starts at 0. A
-        # managed member has no way to set it, so the person who created them
-        # holds it — and they are the same person.
+        # A managed member is a real circle row, accepted and read-write, with
+        # no invitation handshake, because this person will never sign in. The
+        # shortcut is scoped to the CALLER'S OWN circle, which is the whole
+        # safety story: `force_accept_managed_member` writes only into a circle
+        # the caller owns. `health_access = 2` is right here and wrong anywhere
+        # else: for anyone who can sign in that switch is theirs and starts at
+        # 0, but a managed member cannot set it, so it is held by the person who
+        # created them, who is the same person.
         circle_id = await cc.ensure_own_circle(current_user_id)
         await cc.force_accept_managed_member(
             circle_id, int(virtual_user_id), nickname=virtual_user_name

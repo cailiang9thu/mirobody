@@ -5,15 +5,15 @@ pressure" are different claims, and a person choosing a device wants the
 second. A hand-written support table answers the first and drifts into
 answering the second wrongly, because nothing checks it.
 
-`gen_coverage` builds the table from `connect.Coverage` objects — which are
-themselves derived from each decoder's own mapping — so the documentation
+`gen_coverage` builds the table from `connect.Coverage` objects (which are
+themselves derived from each decoder's own mapping) so the documentation
 cannot promise a metric the code does not produce. `stale` is the CI half:
 it compares a committed table with a freshly generated one and returns the
 diff, so a decoder that gains a metric fails the build until the page is
 regenerated.
 
 Pure; stdlib only, and it takes the coverages as an argument rather than
-importing `vendors`, so a consumer can run it over its OWN connectors.
+importing `decoders`, so a consumer can run it over its OWN connectors.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ def gen_coverage(coverages: Mapping[str, object], *, metrics: Sequence[str] = ()
     """A Markdown table of provider × metric.
 
     With `metrics`, one column per named metric and a ✓ where the connector
-    carries it — the shape a reader uses to answer "will switching keep my
+    carries it: the shape a reader uses to answer "will switching keep my
     charts working". Without, one row per connector with its counts and its
     data types, which is what a long metric list degrades to gracefully.
     """
@@ -57,7 +57,7 @@ def embed(document: str, table: str) -> str:
     """`document` with the region between the markers replaced by `table`.
 
     Markers rather than a whole generated file, so the prose around the table
-    — which is where the honest caveats live — is written by a person and
+ (which is where the honest caveats live) is written by a person and
     survives regeneration.
     """
     start, end = document.find(MARKER_START), document.find(MARKER_END)

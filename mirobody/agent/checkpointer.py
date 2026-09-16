@@ -1,10 +1,10 @@
-"""LangGraph Postgres checkpointer — the agent's conversation memory.
+"""LangGraph Postgres checkpointer: the agent's conversation memory.
 
 This replaces a hand-rolled replay layer. Before this module, every turn
 rebuilt the agent's message list by parsing the persisted UI chunk list
 (``element_list``: the `reply`/`thinking`/`queryTitle`/`queryArguments`/
 `queryDetail` dicts the SSE stream emits) back into LangChain
-``AIMessage``/``ToolMessage`` objects — 424 lines of it, since deleted along
+``AIMessage``/``ToolMessage`` objects: 424 lines of it, since deleted along
 with the agent that needed it. That is precisely what a checkpointer does, except
 the round trip was
 lossy by construction: the wire format is shaped for a UI, so `thinking` never
@@ -19,8 +19,8 @@ sees only its own).
 
 ``th_messages`` keeps its job and loses one: it remains the durable, queryable
 projection that ``/api/history`` and session sharing render, but it is no
-longer fed back into the agent. That split — checkpointer for execution state,
-own table for the readable transcript — is the standard production shape.
+longer fed back into the agent. That split (checkpointer for execution state,
+own table for the readable transcript) is the standard production shape.
 
 Lifecycle: the pool/saver are process singletons (the graph itself is rebuilt
 per request); ``close_checkpointer`` is for shutdown.
@@ -51,13 +51,13 @@ def _build_pool() -> AsyncConnectionPool:
 
     It mirrors ``PostgreSQLConfig.get_async_pool`` (same conninfo shape, same
     ``search_path``) but is built here rather than reused, for two reasons:
-    ``autocommit=True`` — ``AsyncPostgresSaver.setup()`` runs DDL and the shared
-    pool does not enable it — and no ``app.encryption_key`` option, which the
+    ``autocommit=True`` (``AsyncPostgresSaver.setup()`` runs DDL and the shared
+    pool does not enable it) and no ``app.encryption_key`` option, which the
     checkpoint tables never need. ``PostgreSQLConfig.schema`` already has
     ``public`` appended, and libpq's ``options`` is whitespace-delimited so the
     comma-joined value must stay space-free.
     """
-    from ..utils.config import global_config
+    from mirobody.utils.config import global_config
 
     pg = global_config().get_postgresql()
     return AsyncConnectionPool(
@@ -85,7 +85,7 @@ async def get_checkpointer():
 
     Returns ``None`` if the checkpointer cannot be created (missing optional
     dependency or an unreachable database). A None checkpointer compiles a
-    stateless graph: the turn still answers, it just has no cross-turn memory —
+    stateless graph: the turn still answers, it just has no cross-turn memory,
     which is strictly better than failing the request outright.
     """
     global _pool, _saver, _unavailable
@@ -97,11 +97,11 @@ async def get_checkpointer():
     # Opt-out switch. `setup()` below issues CREATE TABLE, which is consistent
     # with how this project already provisions its schema at startup
     # (`server/bootstrap.create_schema`, same DB user, and compose.yaml's PG
-    # even runs `CREATE EXTENSION vector`) — but a deployment whose agent DB
+    # even runs `CREATE EXTENSION vector`), but a deployment whose agent DB
     # role is DDL-less, or that wants to stage the rollout, sets
     # `AGENT_CHECKPOINTER: false` and gets the pre-checkpointer behaviour
     # (stateless turns) with no code change.
-    from ..utils.config import safe_read_cfg
+    from mirobody.utils.config import safe_read_cfg
 
     if (safe_read_cfg("AGENT_CHECKPOINTER", "true") or "true").strip().lower() in ("false", "0", "off", "no"):
         logger.info("agent checkpointer disabled by AGENT_CHECKPOINTER; turns will be stateless")
@@ -145,7 +145,7 @@ async def delete_thread(session_id: str) -> None:
     ``thread_id == session_id``, so this is the checkpointer half of "delete
     this conversation". Without it, ``chat/session.delete_session`` would clear
     ``th_messages``/``th_sessions`` while the agent's own copy of the same turns
-    — health questions and the tool results answering them — survived
+ (health questions and the tool results answering them) survived
     indefinitely under the session id. A user who deletes a conversation must
     have it deleted, not merely hidden from the history endpoint.
 

@@ -2,8 +2,8 @@
 
 Three separate things end a turn badly, and only the first two had answers:
 
-* a tool that CRASHES — `ToolFaultMiddleware` turns it into an error result;
-* a tool call whose JSON never parsed — `InvalidToolCallRepairMiddleware`
+* a tool that CRASHES: `ToolFaultMiddleware` turns it into an error result;
+* a tool call whose JSON never parsed: `InvalidToolCallRepairMiddleware`
   feeds the parse error back;
 * a tool that answered "you are not allowed to read this", after which the
   model rephrases the same request and spends the rest of its budget getting
@@ -29,7 +29,7 @@ turn where it matters most.
 Inside `ToolFaultMiddleware` (which contains crashes from everything below it,
 this middleware included) and outside the rest. deepagents splices user
 middleware after its own `FilesystemMiddleware`, so what arrives here is the
-raw `ToolMessage` before eviction — which is exactly why reading the artifact
+raw `ToolMessage` before eviction, which is exactly why reading the artifact
 works.
 """
 

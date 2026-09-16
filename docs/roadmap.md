@@ -173,7 +173,7 @@ time to implement a source.
 them alongside whichever integration lands first, and never drop a table without
 an explicit migration: it is irreversible for anyone holding data.
 
-### `pulse/` internal layout
+### `collect/` internal layout
 
 **Status:** the readable half is done; the moves are not proposed any more.
 
@@ -188,8 +188,8 @@ mismatch this repo has been removing, so the rejection stands.
 What was actually wrong was legibility, not the names. The directory listing
 sorts `aggregate/` before `providers/`, so the tree shows the pipeline in an
 order it does not run in, and nothing said which directories are sources, which
-are stages, and which are the floor they stand on. `pulse/__init__.py` and
-`pulse/README.md` now both state that in flow order — sources, convergence,
+are stages, and which are the floor they stand on. `collect/__init__.py` and
+`collect/README.md` now both state that in flow order — sources, convergence,
 meaning, rollups, with `core/` marked as infrastructure rather than a stage.
 Sizes are given rounded (`~6.4k`), because an exact count in prose is stale the
 week after it is written and the number is there to show proportion.
@@ -323,7 +323,7 @@ run it: `webauthn._is_mfa_enabled` fetched one boolean that way. The rule is now
 stated at the top of `user/user.py`, and it is about atomicity, not about files.
 
 The retyping was worse than this entry said: not 20 sites but 25, in `user/`,
-`server/routers/`, `pulse/core/`, `pulse/file_parser/`, `indicator/` and
+`server/routers/`, `collect/core/`, `collect/file_parser/`, `indicator/` and
 `demo/`, each with its own column list. And the cost was not the duplication.
 One of the copies — `get_user_info`, the profile the chat layer greets you with
 — had no `is_del` filter, so a deleted account still answered with its name,
@@ -429,7 +429,7 @@ Two facts, both verified rather than assumed:
   (`services.db_utils`, `services.file_processing_service`,
   `services.file_db_service`, `services.file_abstract_extractor`,
   `services.database_services`, `handlers.genetic`). Not a seam — six.
-* `pulse/file_parser/file_upload_manager.py` and `task/profile_refresh.py`
+* `collect/file_parser/file_upload_manager.py` and `task/profile_refresh.py`
   imported `agent.chat.user_profile` under two `ignore_imports` exemptions —
   closed in 1.4.0 by moving the module to `user/profile.py` (see seam #4).
 
@@ -471,8 +471,8 @@ read five different opinions on "which keys count" (#68). The DATA is one
 table now — `MODELS` in `config.llm.yaml`, with the per-surface routes
 (`UTILS_VISION_MODEL`, `UTILS_TEXT_MODEL`, `UTILS_EMBEDDING_MODEL`) next to it —
 and the vision dispatcher, the text surface, the embedding layer and the
-agent's default all read it; `mirobody/tests/test_one_key_defaults.py`
-pins that every surface covers the same set. What remains split, on purpose,
+agent's default all read it, and a gate pins that every surface covers the
+same set. What remains split, on purpose,
 is client CONSTRUCTION: `LLMConfig.get_async_client()` (the `Config` family,
 used by embeddings) and `client_manager` (the direct-SDK extraction paths).
 Both read the registry; merging the two construction paths is still a
@@ -526,7 +526,7 @@ constructor injection with the global as a default — worth doing per-module
 when each is next touched, not as one sweep.
 
 
-### pulse/core: the findings that need a live database
+### collect/core: the findings that need a live database
 
 Confirmed by audit and reproduced where possible, but each needs a real
 PostgreSQL with data to fix *honestly* — the failure modes are all "silently
@@ -603,7 +603,7 @@ and the Agent Skills path.
 
 ### Rejected readings have nowhere to go
 
-`pulse/readings.py:gate` drops a row the quality gate rejects and logs the
+`collect/readings.py:gate` drops a row the quality gate rejects and logs the
 reason code and a count. That is the right log line and the wrong destination:
 a person whose scale sent a 150% body-fat reading, or whose export carried a
 48-hour "measurement", has no way to see that anything was refused. A
@@ -614,7 +614,7 @@ that what it drops is never something a person would want back.
 
 ### The aggregation worker's statistics, against a live series
 
-`pulse/aggregate` computes about twenty statistics in SQL — percentiles,
+`collect/aggregate` computes about twenty statistics in SQL — percentiles,
 time-in-range, CGM event detection, the derived sleep-onset methods. 1.4.0 put
 the DAY BOUNDARY and the SOURCE ELECTION on the kernel and left those
 statistics where they were, deliberately: routing them through
@@ -802,8 +802,8 @@ finding nobody here will act on.
 echoes the agent back; BaseAgent honoured `PROMPTS_BASE` (BaseAgent has since
 been removed — `MirobodyAgent` is the one agent, see CHANGELOG 1.4.0); a user
 prompt is appended to the agent's own prompt instead of replacing it. Behaviour verified
-against the running deployment, and pinned by
-`tests/agent/test_prompt_resolution.py`. The prompt-selection design question
+against the running deployment, and pinned by the local suite. The
+prompt-selection design question
 they exposed — that a prompt belongs to an agent and should not be a
 user-facing axis at all — was resolved on the client side: the shipped web
 client no longer offers a prompt picker.
@@ -824,7 +824,7 @@ kept for the record:
   `__IS_MOBILE_SOURCE_ON__` gates the client's device-provider UI, so
   **Garmin/Oura/Whoop and Apple Health — the README's headline ① Collect — are
   invisible in the shipped web client.** Derive the set from what is actually
-  configured (`pulse/providers/installed.py` already knows which providers
+  configured (`collect/providers/installed.py` already knows which providers
   exist) and emit all of them.
 
 ---

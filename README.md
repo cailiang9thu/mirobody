@@ -2,7 +2,7 @@
 
 # Mirobody
 
-**The AI-native health data engine — Collect · Translate · Answer.**
+**The AI-native health data engine — Collect · Translate · Agent.**
 
 One lab prints `A1c`, the next `HbA1c`, a third `hemoglobin A1c` — one test,
 three spellings, and that is before the units disagree. Mirobody turns lab
@@ -76,9 +76,12 @@ look; `method="refused"` is a decision.
 - **Self-hosted, standards-based, Apache-2.0.** One `./deploy.sh` runs the whole
   stack on your own machine; what comes out is LOINC-coded, FHIR-ready records
   you can take anywhere, and the same tools are served over MCP to Claude
-  Desktop, Cursor or your own agent.
+  Desktop, Cursor or your own agent. **No GPU: the app is self-hosted, the model
+  is not.** You bring one API key to a hosted provider; nothing runs inference on
+  your machine. "Offline" here means the resolver — name to code, with no network
+  and no key — not a local LLM.
 
-## Collect · Translate · Answer
+## Collect · Translate · Agent
 
 <p align="center">
   <img src="docs/images/where-your-data-comes-from.svg" alt="From wearables to food photos — one standard format, ready for AI." width="920">
@@ -89,9 +92,9 @@ The engine does three things, and the codebase, the docs and
 
 | Stage | What it means | Where |
 | --- | --- | --- |
-| **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (receive-only: a signed iOS client POSTs it in) | [`pulse/`](mirobody/pulse/) |
+| **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (`mirobody import apple export.zip`, or a signed iOS client POSTs it in) | [`collect/`](mirobody/collect/) |
 | **② Translate** (standardize) | One standard: resolve any reading to canonical codes (LOINC · SNOMED CT · RxNorm), normalize units to UCUM, land on FHIR-recognized code systems | [`indicator/`](mirobody/indicator/) |
-| **③ Answer** (agent) | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
+| **③ Agent** | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
 
 ## By the numbers
 
@@ -176,7 +179,8 @@ handing over a record. [`examples/06_care_circle_rules.py`](examples/06_care_cir
 prints the whole decision table offline. Set `SEED_DEMO_DATA=false` for a
 deployment that will hold real data.
 
-**One key runs everything.** Browsing the seeded record needs no key; the upload
+**One key runs everything, and none of it is your GPU.** The key points at a
+hosted model; your machine runs no inference. Browsing the seeded record needs no key; the upload
 and the questions below ride one. Put ONE key in the `.env` next to `compose.yaml`
 and `docker compose restart` — the app re-reads `/app/.env`; a shell `export` does
 not reach the containers. The `.env` is the only place for the key:
@@ -201,7 +205,7 @@ linking back to the page it was read from:
        alt="Dropping a lab-report PDF on the Data page; twelve analytes extracted, each linked to its source file" width="880">
 </p>
 
-**③ Answer (agent).** Ask about her HbA1c and the agent finds the data, charts
+**③ Agent.** Ask about her HbA1c and the agent finds the data, charts
 the three lab draws against 104 sensor-derived estimates, and says plainly that
 the improvement did not hold. Ask again about the report you just uploaded and it
 reads that instead — the fourth scene of
@@ -225,7 +229,7 @@ reads that instead — the fourth scene of
 | The agent harness as a library | `pip install 'mirobody[agent]'` — middleware, virtual-filesystem backends, checkpointer | [Bringing your own agent](CONTRIBUTING.md#-bringing-your-own-agent) |
 | These tools in Claude Desktop, Cursor or your own loop | Settings → MCP: every agent tool is also served at `/mcp`, gated per user | [MCP servers](https://docs.mirobody.ai/en/api-reference/mcp-servers/) · [`examples/07_claude_agent_sdk.py`](examples/07_claude_agent_sdk.py) |
 | Your app talking to a deployment | HTTP API, or backbone mode: your agent, our data layer | [API overview](https://docs.mirobody.ai/en/api-reference/overview/) · [Backbone](https://docs.mirobody.ai/en/api-reference/backbone-mode/) |
-| A new tool, skill or device provider | Drop a file into `mirobody/agent/tools/`, `mirobody/agent/skills/` or `mirobody/pulse/providers/` and restart — or `pip install` a package declaring a `mirobody.providers` / `mirobody.tools` / `mirobody.agents` entry point | [Adding tools](https://docs.mirobody.ai/en/tools/adding-tools/) · [Skills](https://docs.mirobody.ai/en/tools/skills/) · [Providers](https://docs.mirobody.ai/en/development/provider-integration/) |
+| A new tool, skill or device provider | Drop a file into `mirobody/agent/tools/`, `mirobody/agent/skills/` or `mirobody/collect/providers/` and restart — or `pip install` a package declaring a `mirobody.providers` / `mirobody.tools` / `mirobody.agents` entry point | [Adding tools](https://docs.mirobody.ai/en/tools/adding-tools/) · [Skills](https://docs.mirobody.ai/en/tools/skills/) · [Providers](https://docs.mirobody.ai/en/development/provider-integration/) |
 | Your own agent harness | `AGENT_DIRS` → your directory replaces the shipped agent | [`mirobody/agent/README.md`](mirobody/agent/README.md) |
 | The LOINC axis table and alias sources at build time | `mirobody.bundle` — for generating a seed or a corpus | [`mirobody/bundle.py`](mirobody/bundle.py) |
 

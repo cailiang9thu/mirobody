@@ -79,7 +79,7 @@ checking every table and column against the code:
 
 | Removed | Why |
 | --- | --- |
-| `health_data_epic`, `health_data_oracle`, `health_data_libre` | No such providers here (`pulse/providers/` ships Garmin, Oura, WHOOP, PostgreSQL). The two Epic/Oracle names survive only as string literals in a `source_table IN (…)` filter. |
+| `health_data_epic`, `health_data_oracle`, `health_data_libre` | No such providers here (`collect/providers/` ships Garmin, Oura, WHOOP, PostgreSQL). The two Epic/Oracle names survive only as string literals in a `source_table IN (…)` filter. |
 | `health_vital_webhook` | No query anywhere touched it. |
 | `th_task_flow` | Same; `th_messages.reference_task_id` is read but never written. |
 | `th_user_avatar_managed` | Avatars live in `care_circle_members.avatar_key`, which is what the sharing endpoints actually use. |
@@ -118,7 +118,7 @@ only way to find out is to trace all four readers.
 
 **`fhir_indicators`** — the code registry. `th_series_data.fhir_id` is a FK to
 it, and the join is how a reading's terminology identity reaches a user:
-`_coding_for` (pulse/query.py) hands the model a
+`_coding_for` (collect/query.py) hands the model a
 `{system, code}` per indicator through it — falling back to the catalogue's own
 answer (`metrics.canonical`) when the join is empty, so an identity is never
 blank, `FhirAdapter._fetch_db` and

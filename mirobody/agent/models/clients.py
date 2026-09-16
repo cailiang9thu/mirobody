@@ -1,4 +1,4 @@
-"""LLM client construction — one builder for every provider family.
+"""LLM client construction: one builder for every provider family.
 
 `build_chat_model(entry)` turns one provider entry (the shape of a `MODELS`
 row in config.yaml) into a LangChain chat model; `build_llm_clients(table)`
@@ -6,26 +6,26 @@ does it for the whole table and stands in a `_PlaceholderClient` where a key
 is missing, so a zero-key deployment boots and the picker can say what is
 usable.
 
-Every reference in an entry — `api_key`, `base_url`, `project`, `location` —
+Every reference in an entry (`api_key`, `base_url`, `project`, `location`) 
 is a NAME resolved through `resolve`: the environment and `safe_read_cfg` by
 default; a consumer with a config server passes its own resolver. A literal
 URL passes through.
 
 Families, chosen by `llm_type`:
 
-* `openai` / `openrouter` — any OpenAI-compatible endpoint (base_url +
+* `openai` / `openrouter`: any OpenAI-compatible endpoint (base_url +
   api_key), built on `ReasoningChatOpenAI` so DashScope/DeepSeek
   `reasoning_content` reaches `additional_kwargs`; `auth_type: azure_wif`
   swaps the key for an Entra bearer-token provider.
-* `google_anthropic_vertex` — Claude on Vertex through `init_chat_model`; the
+* `google_anthropic_vertex`: Claude on Vertex through `init_chat_model`; the
   prompt-cache breakpoint and the extended-thinking budget travel in
   `model_kwargs`, because that class drops unknown top-level kwargs silently.
-* `google_genai` / `google_vertexai` — Gemini through `ChatGoogleGenerativeAI`:
+* `google_genai` / `google_vertexai`: Gemini through `ChatGoogleGenerativeAI`:
   Vertex-hosted (ambient credentials) when the entry names a `project` and no
   key, AI Studio otherwise.
-* `anthropic` — the direct API through `init_chat_model`, thinking as its
+* `anthropic`: the direct API through `init_chat_model`, thinking as its
   native top-level parameter.
-* anything else — `init_chat_model(model_provider=llm_type)`, untouched.
+* anything else: `init_chat_model(model_provider=llm_type)`, untouched.
 
 `thinking` is one normalised effort level (`normalize_thinking`) translated
 into each family's dialect here, so every surface that accepts a thinking hint
@@ -35,12 +35,12 @@ for any other.
 
 What an entry DECLARES, this module keeps (#70). An entry's own `thinking`
 block, `reasoning` dict or `output_config` is never overwritten by the
-translation of an effort level — the level fills in what the entry left
+translation of an effort level: the level fills in what the entry left
 unsaid (`setdefault`, the way `cache_control` was always applied). Before
 this, `_vertex_anthropic_kwargs` assigned `thinking` unconditionally, so an
 entry that declared the adaptive shape for Claude Opus 4.7+ had it replaced
-with `{"type": "enabled", "budget_tokens": N}` — which those models reject
-with a 400 — and no configuration could avoid it.
+with `{"type": "enabled", "budget_tokens": N}` (which those models reject
+with a 400) and no configuration could avoid it.
 """
 
 from __future__ import annotations
@@ -53,8 +53,8 @@ from functools import lru_cache
 from collections.abc import Callable
 from typing import Any
 
-from ...utils.config import safe_read_cfg
-from ...utils.config.llm import vertex_host
+from mirobody.utils.config import safe_read_cfg
+from mirobody.utils.config.llm import vertex_host, vertex_location
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ def normalize_thinking(value: Any) -> str | None:
 def thinking_dialect(entry: dict | None, model_name: str, base_url: str = "") -> str:
     """Which thinking parameter dialect a provider speaks: the entry's
     ``thinking_style`` if set, else a conservative guess from model name and
-    base_url. Unknown → ``"none"``, which means "send nothing" — never a
+    base_url. Unknown → ``"none"``, which means "send nothing", never a
     parameter a provider might reject with a 400.
 
     The qwen ``enable_thinking``/``thinking_budget`` shape is DashScope's, and
@@ -145,7 +145,7 @@ _ANTHROPIC_BUDGET_MODELS = re.compile(r"claude-3|-4-[015](?!\d)")
 def anthropic_thinking_shape(entry: dict | None, model_name: str) -> str:
     """``"budget"`` or ``"adaptive"``: the entry's ``thinking_style``
     (``anthropic_budget`` / ``anthropic_adaptive``) if it says, else a guess
-    from the model name. The guess is a fallback, not the contract — a
+    from the model name. The guess is a fallback, not the contract: a
     deployment on an unlisted spelling declares the style."""
     explicit = str((entry or {}).get("thinking_style") or "").strip().lower()
     if explicit == "anthropic_budget":
@@ -195,7 +195,7 @@ def _openai_thinking_kwargs(entry: dict, model_name: str, base_url: str, effort:
     """The ChatOpenAI kwarg fragment for an effort level on an OpenAI-compatible
     endpoint. qwen's dialect rides in ``extra_body`` and is merged into the
     entry's own; OpenAI's is ``reasoning_effort`` (which a reasoning-native
-    model cannot switch off — ``off`` leaves the default) — or, when the entry
+    model cannot switch off: ``off`` leaves the default), or, when the entry
     already carries a ``reasoning`` dict, the effort folded into that dict."""
     if not effort:
         return {}
@@ -241,8 +241,8 @@ _REASONING_CHAT_OPENAI: type | None = None
 def reasoning_chat_openai() -> type:
     """``ChatOpenAI`` that surfaces DashScope/DeepSeek ``reasoning_content``.
 
-    langchain-openai drops this non-OpenAI field — it keeps the reasoning
-    TOKEN COUNT in usage but not the reasoning TEXT — so a thinking model's
+    langchain-openai drops this non-OpenAI field (it keeps the reasoning
+    TOKEN COUNT in usage but not the reasoning TEXT) so a thinking model's
     thoughts never reach ``additional_kwargs``. This subclass captures the
     field from the raw streaming delta and from the non-stream message, where
     `messages.message_reasoning` then finds it. Built lazily so langchain-openai
@@ -296,13 +296,13 @@ def default_resolver(name: str) -> str | None:
 
     An `_API_KEY` name goes through `read_api_key`, so the vendor-documented
     aliases count here too. They did not: a deployment holding only
-    `GEMINI_API_KEY` — the name Google's own docs use — had every route resolve
+    `GEMINI_API_KEY` (the name Google's own docs use) had every route resolve
     (`read_api_key` knows the alias) while the agent built a `_PlaceholderClient`
     and the chat picker offered nothing, with `mirobody doctor` reporting the
     chat surface healthy. One key, two answers, is #68.
     """
     if name.endswith("_API_KEY"):
-        from ...utils.config.llm import read_api_key
+        from mirobody.utils.config.llm import read_api_key
 
         return read_api_key(name) or None
     return os.environ.get(name) or safe_read_cfg(name) or None
@@ -325,7 +325,7 @@ def _base_url_override(entry: dict, resolve: Resolver) -> str | None:
     Chat was the one surface that did not. A literal URL passed `_resolve_ref`
     untouched, so "point the whole stack at one self-hosted gateway" meant
     editing the YAML for the agent while vision, extraction and embeddings all
-    followed the variable — the rule `config.llm.yaml` documents for every
+    followed the variable: the rule `config.llm.yaml` documents for every
     entry. The MODEL is not overridden this way: a model belongs to an entry,
     and a gateway that serves different ids gets its own entry.
     """
@@ -353,7 +353,7 @@ def _llm_type(entry: dict) -> str:
 
 def is_routable(entry: Any, *, resolve: Resolver | None = None) -> bool:
     """Whether `build_chat_model` could build this entry right now: a model,
-    and the credential its family needs — a resolvable key, the federated
+    and the credential its family needs: a resolvable key, the federated
     token file for Azure WIF, or a resolvable project for a Vertex model."""
     if not isinstance(entry, dict) or not entry.get("model"):
         return False
@@ -392,7 +392,7 @@ def _profile_override(entry: dict) -> dict[str, Any]:
     These booleans state what the MODEL accepts, so they set the ``*_inputs``
     fields only. They deliberately do NOT set ``pdf_tool_message`` /
     ``image_tool_message``, which are about what the WIRE carries inside a
-    ToolMessage — a different question with a different answer: `claude-sonnet`
+    ToolMessage, a different question with a different answer: `claude-sonnet`
     reads PDFs and reaches us over OpenRouter's Chat Completions endpoint,
     which answers `400 tool messages must include a non-empty string
     tool_call_id` for a file block. Writing the model's answer into the wire's
@@ -442,6 +442,11 @@ def _openai_kwargs(alias: str, entry: dict, thinking: str | None, resolve: Resol
     if auth == "azure_wif":
         kwargs.update(_azure_wif_kwargs(alias, base_url))
     elif auth == "gcp_adc":
+        # On this family the two keys are inputs to endpoint derivation, not
+        # request parameters. Left in kwargs, langchain-openai moves them to
+        # `model_kwargs` and posts them in the body of every call. (#75)
+        for field in ("project", "location"):
+            kwargs.pop(field, None)
         kwargs.update(_vertex_maas_kwargs(alias, entry, base_url, resolve))
     else:
         key = _resolve_key(alias, entry, resolve)
@@ -516,13 +521,13 @@ def _vertex_maas_kwargs(alias: str, entry: dict, base_url: Any, resolve: Resolve
     (`_gemini_kwargs`), while every OTHER Model Garden publisher is served
     only over `/endpoints/openapi/chat/completions`. So a partner model rides
     the ordinary OpenAI-compatible client and differs from it in exactly two
-    places — the base URL and where the bearer token comes from.
+    places: the base URL and where the bearer token comes from.
 
     The endpoint is DERIVED from `project`/`location` rather than written down,
     because a literal endpoint is the thing a redeploy to another region
     silently gets wrong. `base_url` in the entry still wins, for a private or
     self-deployed endpoint. The hostname has THREE shapes and `vertex_host`
-    owns all of them — this used to carry two, and the missing one was the
+    owns all of them, this used to carry two, and the missing one was the
     multi-regional `us` / `eu` pair a US-resident deployment has to use (#73).
     """
     if base_url:
@@ -531,7 +536,7 @@ def _vertex_maas_kwargs(alias: str, entry: dict, base_url: Any, resolve: Resolve
         project = _resolve_ref(entry.get("project"), resolve)
         if not project:
             raise RuntimeError(f"provider {alias!r}: auth_type gcp_adc needs a resolvable project (or a base_url)")
-        location = str(_resolve_ref(entry.get("location"), resolve) or "global")
+        location = vertex_location(str(_resolve_ref(entry.get("location"), resolve) or ""))
         endpoint = (f"https://{vertex_host(location)}/v1"
                     f"/projects/{project}/locations/{location}/endpoints/openapi")
     return {"base_url": endpoint, "api_key": _gcp_access_token_provider()}
@@ -542,7 +547,7 @@ def _vertex_maas_kwargs(alias: str, entry: dict, base_url: Any, resolve: Resolve
 #: shape `utils/llm/backends_anthropic._accepted_params` already uses on the
 #: extraction side: 1.x removed `temperature`, `top_p` and `top_k` and the
 #: signature has no `**kwargs`, so one of them reaching the client is a
-#: `TypeError` before a request is built — nothing in a provider log to read.
+#: `TypeError` before a request is built: nothing in a provider log to read.
 @lru_cache(maxsize=1)
 def _anthropic_rejects() -> frozenset[str]:
     try:
@@ -596,7 +601,7 @@ def _vertex_anthropic_kwargs(alias: str, entry: dict, thinking: str | None, reso
     model_kwargs = dict(kwargs.get("model_kwargs") or {})
     if _coerce_flag(entry.get("prompt_cache", True)):
         # deepagents' AnthropicPromptCachingMiddleware applies only to
-        # ChatAnthropic, which ChatAnthropicVertex is not — so without this
+        # ChatAnthropic, which ChatAnthropicVertex is not, so without this
         # breakpoint Claude-on-Vertex runs with zero cache, every tool round.
         model_kwargs.setdefault("cache_control", {"type": "ephemeral", "ttl": "5m"})
     _apply_anthropic_thinking(kwargs, entry, str(entry["model"]), thinking, request=model_kwargs)
@@ -608,7 +613,7 @@ def _vertex_anthropic_kwargs(alias: str, entry: dict, thinking: str | None, reso
 
 def _gemini_kwargs(alias: str, entry: dict, thinking: str | None, resolve: Resolver) -> dict[str, Any]:
     """Gemini through ``ChatGoogleGenerativeAI``: Vertex-hosted (``vertexai=True``,
-    ambient credentials, location ``global`` unless given — regional endpoints
+    ambient credentials, location ``global`` unless given: regional endpoints
     404 for Gemini) when the entry names a project and no usable key; AI
     Studio with the key otherwise. Uses ``max_output_tokens``, so an entry's
     ``max_tokens`` is renamed."""
@@ -724,7 +729,7 @@ class _PlaceholderClient:
 
     Holds the model name (so `getattr(client, "model_name")` works for
     diagnostics) but raises `AttributeError` with the fix on any other
-    attribute — including the `invoke` lookup in
+    attribute: including the `invoke` lookup in
     `MirobodyAgent._init_llm_client`.
     """
 

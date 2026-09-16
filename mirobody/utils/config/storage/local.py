@@ -35,7 +35,7 @@ class LocalStorage(AbstractStorage):
         """
 
         if not base_path or not proxy_url:
-            from ..config import global_config
+            from mirobody.utils.config.config import global_config
             config = global_config()
             if config:
                 if not base_path:
@@ -74,8 +74,8 @@ class LocalStorage(AbstractStorage):
         query parameter. Before this existed, `?folder=../secrets` wrote the
         payload to a sibling of `base_path` and `put()` returned success.
 
-        S3 and OSS are unaffected — `../` in an object key is a literal key
-        segment there, not a parent directory — which is exactly why this could
+        S3 and OSS are unaffected (`../` in an object key is a literal key
+        segment there, not a parent directory) which is exactly why this could
         sit unnoticed in a codebase whose production backend is S3.
 
         Args:
@@ -117,7 +117,7 @@ class LocalStorage(AbstractStorage):
             return f"{self.proxy_url.rstrip('/')}/{object_key}"
         # No MCP_PUBLIC_URL configured → RELATIVE URL. The comment here
         # always said "relative" but the code returned an absolute
-        # http://localhost:18080/... — on any deployment whose port is not
+        # http://localhost:18080/...: on any deployment whose port is not
         # 18080 (config.local.yaml runs 18090; an ssh tunnel held 18080)
         # every "View file" click landed on a dead host, silently. The
         # frontend is same-origin with this server (htdoc-hosted in prod,

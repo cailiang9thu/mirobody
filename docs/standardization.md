@@ -3,8 +3,8 @@
 The long form of the README's **② Translate (standardize)** stage: what the shipped
 vocabulary is, what it deliberately does not do, which LOINC release it is cut
 from and why, and the opt-in semantic tier. Every exact figure here is the same
-one the README quotes; `mirobody/tests/test_readme_numbers.py` checks the README, and
-this page follows it.
+one the README quotes; the README is held to the artifacts those figures come
+from, and this page follows it.
 
 <p align="center"><img src="images/where-your-data-comes-from.svg" alt="From wearables to food photos — one standard format, ready for AI." width="920"></p>
 

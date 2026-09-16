@@ -1,4 +1,4 @@
-"""``python -m mirobody`` — same CLI as the ``mirobody`` console script.
+"""``python -m mirobody``: same CLI as the ``mirobody`` console script.
 
 Deployments prefer this form: the module lives in site-packages (which
 compose.yaml persists in a volume), whereas the console-script shim in the

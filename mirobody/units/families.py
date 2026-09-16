@@ -3,7 +3,7 @@
 LOINC's PROPERTY axis is the dimensional family of a measurement
 (``MCnc`` = mass concentration, ``SCnc`` = substance/molar concentration,
 ``NCnc`` = number concentration, ...). For a given analyte every
-PROPERTY family selects a fixed set of units — glucose in plasma is
+PROPERTY family selects a fixed set of units: glucose in plasma is
 ``MCnc`` ⇒ mg/dL and ``SCnc`` ⇒ mmol/L, never the other way around. So
 once we know a measurement's unit, we know its PROPERTY family, and we
 can use that to filter / boost LOINC candidates whose PROPERTY column
@@ -11,13 +11,13 @@ matches.
 
 Two tables:
 
-* :data:`UCUM_FAMILY` — unique unit → primary PROPERTY family. For
+* :data:`UCUM_FAMILY`: unique unit → primary PROPERTY family. For
   units that pin down a single family (mg/dL → MCnc, mmol/L → SCnc),
   this lookup is exact.
 
-* :data:`AMBIGUOUS_UNITS` — units that legitimately span multiple
+* :data:`AMBIGUOUS_UNITS`: units that legitimately span multiple
   PROPERTYs (the worst offender is ``%``, which appears under
-  MFr/NFr/AFr/VFr/SFr/CFr/LenFr/RelACnc/RelRto — basically every
+  MFr/NFr/AFr/VFr/SFr/CFr/LenFr/RelACnc/RelRto: basically every
   fraction-like PROPERTY in LOINC). The entry value is the full
   ``frozenset`` of possible families. :func:`unit_family` returns the
   primary (most-common) one from :data:`UCUM_FAMILY` for backward
@@ -33,7 +33,7 @@ long tail (CCnt with ``nmol/h/mg{protein}``, ArVRat with
 and is intentionally not enumerated.
 
 UCUM keys are case-sensitive. Bracketed units (``[IU]``, ``[U]``,
-``[diop]``, ``[pH]``, ``[degF]``) use the formal UCUM syntax — see
+``[diop]``, ``[pH]``, ``[degF]``) use the formal UCUM syntax: see
 ucum.org for the full spec.
 """
 
@@ -67,7 +67,7 @@ UCUM_FAMILY: dict[str, str] = {
     "nmol/L":   "SCnc",
     "pmol/L":   "SCnc",
     "fmol/L":   "SCnc",
-    "meq/L":    "SCnc",   # milliequivalents — treated as SCnc family
+    "meq/L":    "SCnc",   # milliequivalents: treated as SCnc family
     "mmol/dL":  "SCnc",
     "umol/dL":  "SCnc",
     "nmol/mL":  "SCnc",
@@ -77,7 +77,7 @@ UCUM_FAMILY: dict[str, str] = {
     # ── Substance ratio (SRto) ────────────────────────────────────────
     "mmol/mol": "SRto",   # HbA1c IFCC unit
 
-    # ── Substance rate (SRat) — 24h excretion etc. ────────────────────
+    # ── Substance rate (SRat): 24h excretion etc. ────────────────────
     "mmol/d":         "SRat",
     "umol/d":         "SRat",
     "mmol/(24.h)":    "SRat",
@@ -90,7 +90,7 @@ UCUM_FAMILY: dict[str, str] = {
     "umol/(12.h)":    "SRat",
     "umol/(8.h)":     "SRat",
 
-    # ── Mass rate (MRat) — 24h urinary excretion, drug dosing ─────────
+    # ── Mass rate (MRat): 24h urinary excretion, drug dosing ─────────
     "mg/d":         "MRat",
     "ug/d":         "MRat",
     "g/d":          "MRat",
@@ -115,7 +115,7 @@ UCUM_FAMILY: dict[str, str] = {
     "g/(5.h)":      "MRat",
     "umol/min/g":   "CCnt",
 
-    # ── Mass ratio (MRto) — albumin/creatinine etc. ───────────────────
+    # ── Mass ratio (MRto): albumin/creatinine etc. ───────────────────
     # ``mg/g`` / ``ng/mg`` / ``ug/mg`` etc. are also legitimate Mass
     # content (MCnt) when bare (no creatinine annotation). The flip
     # depends on the analyte; see AMBIGUOUS_UNITS.
@@ -138,7 +138,7 @@ UCUM_FAMILY: dict[str, str] = {
     "d/(7.d)":      "NRat",         # days per 7-day week
     "d/(30.d)":     "NRat",         # days per 30-day month
 
-    # ── Catalytic content (CCnt) — enzyme activity per mass ───────────
+    # ── Catalytic content (CCnt): enzyme activity per mass ───────────
     "nmol/h/mg":    "CCnt",
     "nmol/min/mg":  "CCnt",
     "umol/h/mg":    "CCnt",
@@ -147,22 +147,22 @@ UCUM_FAMILY: dict[str, str] = {
     "U/g":          "CCnt",
     "umol/10*6":    "EntSub",       # per million cells (RBCs etc.)
 
-    # ── Length ratio (LenRto) — vision acuity etc. ────────────────────
+    # ── Length ratio (LenRto): vision acuity etc. ────────────────────
     "[ft_us]/[ft_us]": "LenRto",
 
     # ── Sound intensity ───────────────────────────────────────────────
     "dB":           "RelSoundInt",
 
-    # ── Frequency (Freq) — auditory thresholds, EEG ───────────────────
+    # ── Frequency (Freq): auditory thresholds, EEG ───────────────────
     "Hz":           "Freq",
     "kHz":          "Freq",
     "MHz":          "Freq",
 
-    # ── Electric resistance (Resis) — skin / bioimpedance ─────────────
+    # ── Electric resistance (Resis): skin / bioimpedance ─────────────
     "Ohm":          "Resis",
     "kOhm":         "Resis",
 
-    # ── Radioactivity (Acty) — nuclear medicine ───────────────────────
+    # ── Radioactivity (Acty): nuclear medicine ───────────────────────
     "mCi":          "Acty",
     "uCi":          "Acty",
     "Bq":           "Acty",
@@ -170,19 +170,19 @@ UCUM_FAMILY: dict[str, str] = {
     "MBq":          "Acty",
     "GBq":          "Acty",
 
-    # ── Energy (Engy) — caloric intake, exercise expenditure ──────────
+    # ── Energy (Engy): caloric intake, exercise expenditure ──────────
     "kcal":         "Engy",
-    "cal":          "Engy",     # nutritional context — same as kcal usually
+    "cal":          "Engy",     # nutritional context: same as kcal usually
     "J":            "Engy",
     "kJ":           "Engy",
     "MJ":           "Engy",
 
-    # ── Energy difference (EngDiff) — biochemistry ────────────────────
+    # ── Energy difference (EngDiff): biochemistry ────────────────────
     "kJ/mol":       "EngDiff",
     "J/mol":        "EngDiff",
     "kcal/mol":     "EngDiff",
 
-    # ── Energy rate (EngRat) — caloric intake / expenditure ───────────
+    # ── Energy rate (EngRat): caloric intake / expenditure ───────────
     "kcal/h":       "EngRat",
     "kcal/d":       "EngRat",
     "kcal/(24.h)":  "EngRat",
@@ -192,7 +192,7 @@ UCUM_FAMILY: dict[str, str] = {
     "kJ/min":       "EngRat",
     "kcal/kg/d":    "EngRat",
 
-    # ── Power (Pwr) — exercise power output, treadmill watts ──────────
+    # ── Power (Pwr): exercise power output, treadmill watts ──────────
     "W":            "Pwr",
     "mW":           "Pwr",
     "kW":           "Pwr",
@@ -210,14 +210,14 @@ UCUM_FAMILY: dict[str, str] = {
     "umol/L/h":     "CCncRat",
     "nmol/L/h":     "CCncRat",
 
-    # ── MET — metabolic equivalents (exercise dose) ───────────────────
+    # ── MET: metabolic equivalents (exercise dose) ───────────────────
     "[MET]":        "ARat",
 
     # ── Catalytic concentration variants ──────────────────────────────
     "umol/h/L":     "CCnc",
     "umol/min/L":   "CCnc",
 
-    # ── Mass content (MCnt) — per tissue / dry weight ─────────────────
+    # ── Mass content (MCnt): per tissue / dry weight ─────────────────
     "mg/kg":        "MCnt",
     "ug/kg":        "MCnt",
     "ng/kg":        "MCnt",
@@ -232,7 +232,7 @@ UCUM_FAMILY: dict[str, str] = {
     "umol/g":       "SCnt",
     "mmol/g":       "SCnt",
 
-    # ── Arbitrary concentration (ACnc) — IU = "international units" ───
+    # ── Arbitrary concentration (ACnc): IU = "international units" ───
     "[IU]/L":     "ACnc",
     "[IU]/mL":    "ACnc",
     "[IU]/dL":    "ACnc",
@@ -240,15 +240,15 @@ UCUM_FAMILY: dict[str, str] = {
     "m[IU]/mL":   "ACnc",
     "k[IU]/L":    "ACnc",
     "k[IU]/mL":   "ACnc",
-    "u[IU]/mL":   "ACnc",   # micro-IU per mL — uncommon but in LOINC
+    "u[IU]/mL":   "ACnc",   # micro-IU per mL: uncommon but in LOINC
     "u[IU]/L":    "ACnc",
-    "[arb'U]/mL":  "ACnc",  # arbitrary units per mL — allergen IgE assays
+    "[arb'U]/mL":  "ACnc",  # arbitrary units per mL: allergen IgE assays
     "[arb'U]/L":   "ACnc",
     "k[arb'U]/L":  "ACnc",
     "k[arb'U]/mL": "ACnc",
     "[arb'U]":     "Arb",   # bare arbitrary unit
 
-    # ── Catalytic concentration (CCnc) — enzyme activity ──────────────
+    # ── Catalytic concentration (CCnc): enzyme activity ──────────────
     "U/L":      "CCnc",
     "U/mL":     "CCnc",
     "mU/L":     "CCnc",
@@ -269,7 +269,7 @@ UCUM_FAMILY: dict[str, str] = {
     "/mL":      "NCnc",
     "/L":       "NCnc",
     "/dL":      "NCnc",
-    "/g":       "NCnt",         # count per gram — bacterial counts
+    "/g":       "NCnt",         # count per gram: bacterial counts
     "/kg":      "NCnt",
 
     # ── Bare counts (Num) ─────────────────────────────────────────────
@@ -282,17 +282,17 @@ UCUM_FAMILY: dict[str, str] = {
     "{breaths}": "Num",     # respiratory cycles (when context is total, not rate)
     "{beats}":  "Num",      # heartbeats (total)
 
-    # ── Score (Score) — sleep / recovery / risk scores ────────────────
+    # ── Score (Score): sleep / recovery / risk scores ────────────────
     "{score}":  "Score",
 
-    # ── Number areic (Naric) — per visual field, microscopy ───────────
+    # ── Number areic (Naric): per visual field, microscopy ───────────
     "/HPF":     "Naric",
     "/LPF":     "Naric",
     "/[HPF]":   "Naric",   # strict UCUM bracketed form
     "/[LPF]":   "Naric",
 
     # ── Fractions ─────────────────────────────────────────────────────
-    # ``%`` is ambiguous (MFr/NFr/AFr/VFr/SFr/CFr) — primary is MFr
+    # ``%`` is ambiguous (MFr/NFr/AFr/VFr/SFr/CFr): primary is MFr
     # (most common in LOINC); see AMBIGUOUS_UNITS for the full set.
     "%":        "MFr",
     "[ppm]":    "VFr",
@@ -304,7 +304,7 @@ UCUM_FAMILY: dict[str, str] = {
     # ── Ratios / dimensionless ────────────────────────────────────────
     "1":        "Ratio",   # INR, indices
 
-    # ── Volume (Vol) — sample volume, urine output ────────────────────
+    # ── Volume (Vol): sample volume, urine output ────────────────────
     "L":        "Vol",
     "dL":       "Vol",
     "cL":       "Vol",
@@ -321,15 +321,15 @@ UCUM_FAMILY: dict[str, str] = {
     "[tbs_us]":   "Vol",    # tablespoon
     "[tsp_us]":   "Vol",    # teaspoon
 
-    # ── Volume rate (VRat) — urine output, flow ───────────────────────
+    # ── Volume rate (VRat): urine output, flow ───────────────────────
     "L/min":         "VRat",
     "mL/min":        "VRat",
     "mL/h":          "VRat",
     "L/h":           "VRat",
     "mL/(24.h)":     "VRat",
     "L/(24.h)":      "VRat",
-    "mL/min/{1.73_m2}": "ArVRat",   # eGFR — areic volume rate
-    "L/min/m2":      "ArVRat",      # cardiac index — areic flow
+    "mL/min/{1.73_m2}": "ArVRat",   # eGFR: areic volume rate
+    "L/min/m2":      "ArVRat",      # cardiac index: areic flow
     "mL/min/m2":     "ArVRat",
     "mL/(8.h)":      "VRat",        # urinary output windows
     "mL/(10.h)":     "VRat",
@@ -341,7 +341,7 @@ UCUM_FAMILY: dict[str, str] = {
     "ng/mL/h":       "CCnc",         # plasma renin activity
     "nmol/mL/h":     "CCnc",
     "mL/m2":         "ArVol",        # stroke volume index
-    "mL/min/kg":     "ArVRat",       # VO2 max — per body weight
+    "mL/min/kg":     "ArVRat",       # VO2 max: per body weight
                                      # paren form mL/(min.kg) is in tokens.py aliases
 
     # ── Time durations ────────────────────────────────────────────────
@@ -354,7 +354,7 @@ UCUM_FAMILY: dict[str, str] = {
     "mo":       "Time",
     "a":        "Time",   # annum (year)
 
-    # ── Number rate (NRat) — heart rate, respiratory rate ─────────────
+    # ── Number rate (NRat): heart rate, respiratory rate ─────────────
     "/min":     "NRat",
     "/h":       "NRat",
     "/s":       "NRat",
@@ -362,12 +362,12 @@ UCUM_FAMILY: dict[str, str] = {
     "/wk":      "NRat",
     "/mo":      "NRat",
     "/a":       "NRat",   # per annum
-    "min/d":    "NRat",   # minutes per day — sleep, exercise duration
+    "min/d":    "NRat",   # minutes per day: sleep, exercise duration
     "h/d":      "NRat",
     "d/wk":     "NRat",
     "h/wk":     "NRat",
     "min/wk":   "NRat",
-    "[MET].min/wk": "ARat",     # metabolic equivalents — exercise dose
+    "[MET].min/wk": "ARat",     # metabolic equivalents: exercise dose
     "[MET].h/wk":   "ARat",
 
     # ── Anthropometric / vital signs ──────────────────────────────────
@@ -384,21 +384,21 @@ UCUM_FAMILY: dict[str, str] = {
     "mm":       "Len",
     "um":       "Len",
     "km":       "Len",
-    "[in_us]":  "Len",      # inch (US survey — what the aliases resolve to)
+    "[in_us]":  "Len",      # inch (US survey: what the aliases resolve to)
     "[ft_us]":  "Len",      # foot (US survey)
-    "[in_i]":   "Len",      # inch (international, exactly 0.0254 m) — the
+    "[in_i]":   "Len",      # inch (international, exactly 0.0254 m): the
     "[ft_i]":   "Len",      # spelling convert._BASE can actually convert;
                             # [in_us]/[ft_us] have no _BASE atom and stay atomic
     "[mi_us]":  "Len",      # mile
     "[yd_us]":  "Len",      # yard
 
     # ── Compound / derived ────────────────────────────────────────────
-    "kg/m2":    "MCnc",   # BMI — treated as concentration family
+    "kg/m2":    "MCnc",   # BMI: treated as concentration family
     "g/m2":     "MCnc",
 
     # ── Pressure (Pres) ───────────────────────────────────────────────
     # ``mm[Hg]`` is also used for partial pressure (PPres) in blood
-    # gases (pO2, pCO2) — see AMBIGUOUS_UNITS.
+    # gases (pO2, pCO2): see AMBIGUOUS_UNITS.
     "mm[Hg]":   "Pres",
     "cm[H2O]":  "Pres",
     "kPa":      "Pres",
@@ -407,7 +407,7 @@ UCUM_FAMILY: dict[str, str] = {
     "bar":      "Pres",
     "[psi]":    "Pres",
 
-    # ── Electric potential (Elpot) — EKG, EEG, EMG ────────────────────
+    # ── Electric potential (Elpot): EKG, EEG, EMG ────────────────────
     "mV":       "Elpot",
     "uV":       "Elpot",
     "V":        "Elpot",
@@ -415,7 +415,7 @@ UCUM_FAMILY: dict[str, str] = {
     "uV.ms":    "TmElpot",      # time-integrated potential
     "uV.s":     "TmElpot",
 
-    # ── Velocity (Vel) — echo Doppler, conduction velocity ────────────
+    # ── Velocity (Vel): echo Doppler, conduction velocity ────────────
     "cm/s":     "Vel",
     "m/s":      "Vel",
     "mm/s":     "Vel",
@@ -426,12 +426,12 @@ UCUM_FAMILY: dict[str, str] = {
     "mm2":      "Area",
     "m2":       "Area",
 
-    # ── Areic mass (ArMass) — bone densitometry, body composition ─────
+    # ── Areic mass (ArMass): bone densitometry, body composition ─────
     "g/cm2":    "ArMass",
     "mg/cm2":   "ArMass",
     "kg/cm2":   "ArMass",
 
-    # ── Areic length (ArLen) — body morphometrics ─────────────────────
+    # ── Areic length (ArLen): body morphometrics ─────────────────────
     "cm/m2":    "ArLen",
     "mm/m2":    "ArLen",
 
@@ -444,7 +444,7 @@ UCUM_FAMILY: dict[str, str] = {
     "deg":      "Angle",
     "rad":      "Angle",
 
-    # ── Inverse length (InvLen) — refractive optics ───────────────────
+    # ── Inverse length (InvLen): refractive optics ───────────────────
     "[diop]":   "InvLen",
     "[p'diop]": "InvLen",
 
@@ -460,7 +460,7 @@ UCUM_FAMILY: dict[str, str] = {
     "mosm/L":   "Osmolarity",
 
     # ── Bare atomic units (substance amount / arbitrary / catalytic) ──
-    # Standalone clinical use is rare — these are here so the morpheme
+    # Standalone clinical use is rare, these are here so the morpheme
     # tokenizer can recognize them mid-string. Without ``mmol`` in this
     # table the scanner falls back to ``mm`` (length) when it sees
     # ``mmol/Tag``.

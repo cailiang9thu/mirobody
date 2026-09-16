@@ -11,10 +11,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi.responses import JSONResponse
 
-from ...pulse.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
-from ...pulse.apple.statistics_service import process_apple_health_statistics
-from ...pulse.manager import platform_manager
-from ..auth import verify_token
+from mirobody.collect.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
+from mirobody.collect.apple.statistics_service import process_apple_health_statistics
+from mirobody.collect.manager import platform_manager
+from mirobody.server.auth import verify_token
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ async def _process_request_data(
         
         logger.info(f"Raw body size: {len(raw_body)} bytes, content_encoding: {content_encoding}, content_type: {content_type}")
 
-        # If gzip compressed, decompress first — with a ceiling. A compressed
+        # If gzip compressed, decompress first: with a ceiling. A compressed
         # body is attacker-shaped input: gzip reaches ~1000:1, so a 100 MB
         # bomb inflates to ~100 GB and `gzip.decompress` would try to hold all
         # of it. Streaming through a `decompressobj` with `max_length` caps

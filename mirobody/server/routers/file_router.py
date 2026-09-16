@@ -18,17 +18,17 @@ from mirobody.utils.req_ctx import set_req_ctx
 from mirobody.server.auth import verify_token, verify_token_string
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
-from mirobody.pulse.file_parser.file_upload_manager import get_websocket_file_upload_manager
-from mirobody.pulse.file_parser.services.database_services import FileParserDatabaseService
-from mirobody.pulse.file_parser.services.list_my_data import MyDataService
+from mirobody.collect.file_parser.file_upload_manager import get_websocket_file_upload_manager
+from mirobody.collect.file_parser.services.database_services import FileParserDatabaseService
+from mirobody.collect.file_parser.services.list_my_data import MyDataService
 
 # Additional imports for async file processing
-from mirobody.pulse.file_parser.services.file_processing_service import (
+from mirobody.collect.file_parser.services.file_processing_service import (
     delete_files_from_message,
     delete_all_files_from_message,
     upload_files_to_storage
 )
-from mirobody.pulse.file_parser.services.file_processing_service import FileUploadData
+from mirobody.collect.file_parser.services.file_processing_service import FileUploadData
 from mirobody.utils.log import secret_fingerprint
 
 logger = logging.getLogger(__name__)
@@ -79,8 +79,8 @@ my_data_service = MyDataService()
 async def _authorize_file_read(file_key: str, caller_id: str) -> bool:
     """Can `caller_id` read the object stored under `file_key`?
 
-    Ownership is not a property of the object store — S3/OSS/local all hand out
-    bytes to whoever names the key — so it has to come from the row that
+    Ownership is not a property of the object store (S3/OSS/local all hand out
+    bytes to whoever names the key) so it has to come from the row that
     recorded the upload. Two tables record one:
 
     ``th_files`` is the only one, now. There used to be a second lookup against
@@ -133,7 +133,7 @@ async def serve_storage_file(
     URL format: /files/uploads/20231125_123456_abc123.pdf
 
     **This endpoint had no authentication at all.** An external review fetched a
-    real health-report PDF from a running deployment with no token — the key is
+    real health-report PDF from a running deployment with no token: the key is
     a second-resolution timestamp plus 8 hex characters, which is not a secret,
     and the response also carried `Cache-Control: public` so any shared proxy
     was free to keep a copy of someone's labs. The docstring said "Can add
@@ -143,7 +143,7 @@ async def serve_storage_file(
     The query parameter is not a convenience: a browser cannot set a header on
     a navigation, an `<img src>` or a PDF viewer embed, and `_build_url` hands
     out exactly such URLs. **Clients rendering these links must now append the
-    token** — a bare `<a href="/files/...">` gets 401.
+    token**: a bare `<a href="/files/...">` gets 401.
     """
     from fastapi.responses import StreamingResponse
     from mirobody.utils.config.storage import get_storage_client
@@ -420,7 +420,7 @@ async def get_data_distribution(
 
         # `?user_id=` was honoured with no authorization check at all, so any
         # authenticated caller could read any user's data-category distribution
-        # — which categories of health data they hold and how much. The route
+        #, which categories of health data they hold and how much. The route
         # directly below this one (`/api/v1/data/uploaded-files`) already did
         # this correctly; the two were written apart and only one got the
         # check.

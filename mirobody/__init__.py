@@ -1,4 +1,4 @@
-"""Mirobody — the AI-native health data engine.
+"""Mirobody: the AI-native health data engine.
 
 The public surface of a `pip install mirobody`, in three imports::
 
@@ -10,14 +10,14 @@ The public surface of a `pip install mirobody`, in three imports::
 
 ``resolve`` and the vocabulary modules need nothing but numpy. Reading a
 document (:func:`mirobody.parse_file`) needs the extraction stack and one model
-key — ``pip install 'mirobody[parse]'``. The HTTP/chat/MCP server is the Docker
+key: ``pip install 'mirobody[parse]'``. The HTTP/chat/MCP server is the Docker
 application, not a library surface: ``git clone && ./deploy.sh``.
 
 **What is stable.** The names in ``__all__`` here, plus ``__all__`` in
 :mod:`mirobody.units`, :mod:`mirobody.lexical`, :mod:`mirobody.engine` and
-:mod:`mirobody.bundle`. Everything else — ``mirobody.indicator``,
-``mirobody.pulse``, ``mirobody.server``, ``mirobody.agent``, anything
-underscore-prefixed — is internal and moves without notice.
+:mod:`mirobody.bundle`. Everything else: ``mirobody.indicator``,
+``mirobody.collect``, ``mirobody.server``, ``mirobody.agent``, anything
+underscore-prefixed: is internal and moves without notice.
 
 :mod:`mirobody.bundle` is the build-time half of that surface: the axis table
 and the alias sources, for tools that generate a seed or a corpus from LOINC
@@ -26,7 +26,7 @@ rather than asking for one answer. It is deliberately not re-exported here, so
 
 **One name here does nothing by default.**
 :func:`~mirobody.engine.resolve_with_semantic_fallback` is a coroutine, and in a
-plain ``pip install`` it returns the lexical answers unchanged — no embedding
+plain ``pip install`` it returns the lexical answers unchanged, no embedding
 matrix ships and none is published to download. It is in ``__all__`` because
 the signature is stable for the deployments that do supply a matrix, not
 because a typical consumer calls it. If you are reaching for it to improve
@@ -88,22 +88,14 @@ def __dir__() -> list[str]:
     return sorted(__all__)
 
 
-# ── version ──────────────────────────────────────────────────────────────────
-#
-# Resolved in this order:
-#
-#   1. importlib.metadata — after the package is installed (wheel or editable).
-#   2. MIROBODY_VERSION env var — CI exports the git tag (or a timestamped
-#      0.0.0.dev* test version) before `python -m build`; the isolated build
-#      env has no installed metadata, so this is what release wheels get.
-#   3. The literal below — the CANONICAL version of this source tree. It is
-#      what a source checkout reports and what `pip install -e .` bakes into
-#      its metadata (pip's isolated build sees neither 1 nor 2). Bump it with
-#      each release, matching the CHANGELOG's top entry and the git tag; the
-#      release workflow refuses a tag that disagrees, and the test suite pins
-#      it to the CHANGELOG and the READMEs. (It used to be a "0.0.0.dev0"
-#      sentinel, so every source install reported a version that identified
-#      nothing.)
+# Version, resolved in this order:
+#   1. importlib.metadata, once the package is installed (wheel or editable).
+#   2. MIROBODY_VERSION, which CI exports from the git tag before
+#      `python -m build`; the isolated build env has no installed metadata.
+#   3. The literal below, the canonical version of this source tree and what
+#      `pip install -e .` bakes in. Bump it per release to match the CHANGELOG
+#      and the tag: the release workflow refuses a tag that disagrees, and the
+#      suite pins it to the CHANGELOG and the READMEs.
 try:
     from importlib.metadata import version as _version
     __version__ = _version("mirobody")

@@ -2,8 +2,8 @@
 
 A health record arrives as a file: a lab report PDF (born-digital or scanned),
 a photo of a printout, a spreadsheet, a Word or PowerPoint export, a text
-dump. Before anything downstream can read it — the indicator extractor, the
-agent's virtual filesystem, a search index — it has to become text, and every
+dump. Before anything downstream can read it (the indicator extractor, the
+agent's virtual filesystem, a search index) it has to become text, and every
 consumer used to do that itself with its own detection table, its own PDF
 library and its own idea of a table.
 

@@ -26,11 +26,11 @@ from langchain_core.tools import BaseTool
 
 from .chat.model import UserInfo
 from .registry import llm_client, llm_client_names
-from ..kernel import query
-from ..kernel.ops import is_driver_exception
-from ..utils.log import get_req_ctx
-from ..utils.config import safe_read_cfg
-from ..utils.config.llm import chat_default, chat_entries
+from mirobody.kernel import query
+from mirobody.kernel.ops import is_driver_exception
+from mirobody.utils.log import get_req_ctx
+from mirobody.utils.config import safe_read_cfg
+from mirobody.utils.config.llm import chat_default, chat_entries
 
 from . import harness
 from .errors import AgentError, ConfigError, client_safe_error
@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 def _default_provider() -> str:
     """The model to chat with when the caller names none: the first
     `MODELS` entry (config order, utility-only entries excluded) whose key is
-    present — the order of that table is the contract, as it is in mirovital's
+    present: the order of that table is the contract, as it is in mirovital's
     `MODEL_PROVIDERS`. With no key present, the first entry, so the error a
     chat then raises names a real entry and its missing key."""
     return chat_default() or next(iter(chat_entries()), "")
@@ -84,20 +84,14 @@ class MirobodyAgent:
         self.default_provider = safe_read_cfg("DEFAULT_MODEL") or _default_provider()
         self.file_parse_cache_ttl = int(safe_read_cfg("FILE_CACHE_TTL") or 300)
         self.file_parse_cache_maxsize = int(safe_read_cfg("FILE_CACHE_MAXSIZE") or 100)
-        # Two layers, and they are not interchangeable (see `_build_agent`):
-        #
-        # MODEL_CALL_LIMIT is the real budget, counted in agent iterations (= model
-        # calls, one per tool round) and enforced by ModelCallLimitMiddleware, which
-        # ends the run gracefully so the model still writes a final answer. This is
-        # what "N rounds" should mean, and it is immune to how many middleware nodes
-        # run per cycle.
-        #
-        # RECURSION_LIMIT is a raw LangGraph super-step ceiling kept only as a
-        # last-resort net for a true runaway. It must sit WELL ABOVE the model-call
-        # budget or it fires first and hard-fails with GraphRecursionError instead of
-        # degrading: every built-in middleware compiles its after_model hook as its
-        # own graph node, so one tool round costs several super-steps. Default it to
-        # ~6x the round budget so the graceful limit always wins.
+        # Two layers, not interchangeable (see `_build_agent`). MODEL_CALL_LIMIT
+        # is the real budget, counted in model calls and enforced by
+        # ModelCallLimitMiddleware, which ends the run gracefully so the model
+        # still writes an answer. RECURSION_LIMIT is a raw LangGraph super-step
+        # ceiling, a last-resort net for a runaway: it must sit WELL above the
+        # call budget or it fires first and hard-fails with GraphRecursionError,
+        # since every middleware compiles its after_model hook as its own node
+        # and one tool round costs several super-steps. Default it to ~6x.
         self.model_call_limit = int(safe_read_cfg("MODEL_CALL_LIMIT") or 50)
         self.recursion_limit = int(
             safe_read_cfg("RECURSION_LIMIT") or max(100, self.model_call_limit * 6)
@@ -169,7 +163,7 @@ class MirobodyAgent:
 
         This used to also fetch a prompt the user had saved under the same name
         and append it. Nothing in the shipped client could save one, and a
-        health agent's system prompt is not a per-user preference — the
+        health agent's system prompt is not a per-user preference: the
         reading workflow, the flag-against-printed-ranges rule and the
         no-diagnosis framing are the product, not a setting. One source now.
         """
@@ -192,7 +186,7 @@ class MirobodyAgent:
         tools: list,
     ) -> str:
         """Build system prompt with tools, time, user context, and health-profile core."""
-        from ..user.profile import get_health_profile_core
+        from mirobody.user.profile import get_health_profile_core
         maxlen = int(safe_read_cfg("PROFILE_CORE_MAXLEN") or 2000)
         health_profile = await get_health_profile_core(user_id, maxlen) if user_id else None
         try:
@@ -225,7 +219,7 @@ class MirobodyAgent:
         work on a bare pip install with zero configuration. Deployments list
         their own directory first to override.
         """
-        from ..utils.config import global_config
+        from mirobody.utils.config import global_config
 
         cfg = global_config()
         dirs = cfg.get_dirs("SKILL_DIRS", []) if cfg else []
@@ -242,7 +236,7 @@ class MirobodyAgent:
         """Build the deepagents virtual filesystem.
 
         With a ``user_id``: a ``CompositeBackend`` of read-only PROJECTIONS over
-        the tables that already own the data — there is no agent-filesystem
+        the tables that already own the data: there is no agent-filesystem
         table (see the comment below for how that changed):
 
           default        → StateBackend                    scratch, rw
@@ -266,21 +260,14 @@ class MirobodyAgent:
         from .filesystem.files_backend import ThFilesBackend
         from .filesystem.profile_backend import ProfileBackend
 
-        # Every mount is now either graph state or a read-only PROJECTION of the
-        # table that owns the data. There is no agent-filesystem table:
-        #
-        #   /            the agent's scratch space — StateBackend, checkpointed by
-        #                LangGraph (checkpointer.py), so it survives the turn
-        #                without a table of its own
-        #   /memories/   projects health_user_profile_by_system (is_deleted = false)
-        #   /uploads/    projects th_files, narrowed to THIS request's file_keys
-        #   /library/    projects th_files (is_del = false), the rest of the history
-        #
-        # The two mirroring passes that used to run here — one per turn, copying
-        # path/mime/hash/text out of th_files into pointer rows — are gone. They
-        # bought nothing on the read path (they queried th_files every turn
-        # anyway) and cost a second home for the truth, which is how a deleted
-        # health document kept answering.
+        # Every mount is graph state or a read-only PROJECTION of the table
+        # that owns the data; there is no agent-filesystem table. Mirroring
+        # th_files into pointer rows gave truth a second home, which is how a
+        # deleted health document kept answering.
+        #   /            scratch space: StateBackend, checkpointed by LangGraph
+        #   /memories/   health_user_profile_by_system (is_deleted = false)
+        #   /uploads/    th_files, narrowed to THIS request's file_keys
+        #   /library/    th_files (is_del = false), the rest of the history
         this_turn_keys = [str(f["file_key"]) for f in (file_list or [])
                           if isinstance(f, dict) and f.get("file_key")]
 
@@ -288,7 +275,7 @@ class MirobodyAgent:
         # answers to exactly the paths the model was handed. Deriving them from
         # `th_files.file_name` instead would reintroduce the mid-turn rename race
         # (see `ThFilesBackend.__init__`). The `file_key` fallback mirrors the
-        # reminder's (`attachment_reminder`, below) — a request that carries no
+        # reminder's (`attachment_reminder`, below): a request that carries no
         # `file_name` must still name the file the same way at both ends.
         this_turn_names = {str(f["file_key"]): str(f.get("file_name") or f.get("file_key") or "")
                            for f in (file_list or [])
@@ -310,14 +297,14 @@ class MirobodyAgent:
         }
         # Agent Skills ride the same composite: SkillsMiddleware lists them,
         # the native read_file serves their bodies from this mount. Local
-        # directory, read-only — the agent must never edit its own skills.
+        # directory, read-only: the agent must never edit its own skills.
         skills_dir = self._skills_source_dir()
         if skills_dir:
             from deepagents.backends import FilesystemBackend
             routes["/skills/"] = FilesystemBackend(root_dir=skills_dir)
 
         # Every mount is a PROJECTION (a table, a directory the agent must not
-        # edit), so `read_only_mounts` denies writes on all of them up front —
+        # edit), so `read_only_mounts` denies writes on all of them up front:
         # a refusal the model does not have to spend a tool call to discover.
         # The scratch root is graph state, not a table: it was a
         # PgFilesystemBackend(scope='workspace') row per file; LangGraph's
@@ -372,7 +359,7 @@ class MirobodyAgent:
         return llm_client, model_name, (fallback_msg if fallback_used else None), loaded_tools, system_prompt
 
     #: Which LangChain transport package carries a non-text content block
-    #: inside a ``ToolMessage`` — the only shape ``read_file`` can deliver a
+    #: inside a ``ToolMessage``: the only shape ``read_file`` can deliver a
     #: PDF in. Keyed by module root, so it covers every client a package
     #: builds: ``langchain_openai`` is ChatOpenAI, AzureChatOpenAI, the
     #: OpenRouter client (ChatOpenAI + base_url) and our ReasoningChatOpenAI
@@ -389,7 +376,7 @@ class MirobodyAgent:
 
         Not "can this model read a PDF". That is what ``model.profile``
         (``pdf_tool_message`` / ``pdf_inputs``) answers, and it is the wrong
-        question — the two are independent, and asking the model is what
+        question: the two are independent, and asking the model is what
         produced these, measured 2026-09-10 with a PDF attached to a question:
 
             claude-sonnet via OpenRouter → 400 tool messages must include a
@@ -398,8 +385,8 @@ class MirobodyAgent:
                                                values are: 'text', 'refusal',
                                                'image_url', and 'input_audio'
 
-        Both models genuinely read PDFs — one over Anthropic's native API, the
-        other over the Responses API — and neither of those is the endpoint
+        Both models genuinely read PDFs (one over Anthropic's native API, the
+        other over the Responses API) and neither of those is the endpoint
         this client is talking to. Meanwhile qwen and deepseek were fine, for
         the accidental reason that their profile is ``None``: they took the
         extracted-text path, which works. So the profile got the answer wrong
@@ -407,13 +394,13 @@ class MirobodyAgent:
         simply attached a report.
 
         The transport is decided by the client's class, which is what
-        ``build_chat_model`` picks from ``llm_type`` — so this reads the same
+        ``build_chat_model`` picks from ``llm_type``, so this reads the same
         configuration, one step later and without a second table to keep in
         step.
 
         **A profile may only narrow, never widen.** The first version of this
         let a non-None ``profile["pdf_tool_message"]`` answer outright, as an
-        escape hatch for a gateway that does accept the block — and the 400 it
+        escape hatch for a gateway that does accept the block, and the 400 it
         was written to end came straight back, because that merged dict has
         three origins and two of them are statements about the MODEL:
 
@@ -421,13 +408,13 @@ class MirobodyAgent:
           ``pdf_tool_message: True`` there and still answers `400 Invalid
           value: 'file'` on Chat Completions;
         * the entry's ``supports_pdf`` boolean, which used to write this field
-          too (`clients._profile_override` — fixed there as well);
+          too (`clients._profile_override`: fixed there as well);
         * an explicit ``profile:`` dict, the only one of the three that is
           about the wire.
 
         Nothing here can tell them apart, so none of them may GRANT. A ``False``
         may still veto, because being wrong in that direction costs a PDF read
-        as extracted text — which works — instead of a 400 shown to a user who
+        as extracted text (which works) instead of a 400 shown to a user who
         attached a report. A gateway that genuinely carries the block is a fact
         about a TRANSPORT, so it belongs in ``_TOOL_MESSAGE_CARRIES_FILES``.
         """
@@ -444,17 +431,6 @@ class MirobodyAgent:
         logger.info(f"file-block support: pdf=False (unrecognised transport {type(llm_client).__name__})")
         return False
 
-    # Native tools this agent must not offer the model, hidden via the harness
-    # profile's ``excluded_tools`` (deepagents appends a ``_ToolExclusionMiddleware``
-    # for it).
-    #
-    # ``delete``: PgFilesystemBackend deliberately does not implement it (see
-    # backend.py). That alone is NOT enough to hide the tool, because the
-    # capability probe runs against the mounted backend — and ``CompositeBackend``
-    # DOES implement ``delete``, routing per path. So deepagents considers delete
-    # supported, offers it, and every call comes back as the composite's
-    # "unsupported" error after the model has already spent tokens on it. Excluding
-    # it by name is what actually keeps it off the tool list.
     #: Read-only tools the `eval` REPL may call as `tools.<name>`; each guards
     #: itself because the PTC bridge bypasses the tool middleware.
     _PTC_TOOLS: tuple[str, ...] = (query.TOOL_NAME,)
@@ -469,6 +445,12 @@ class MirobodyAgent:
     #: a trend" and still bounded; `exit_behavior="continue"` lets the model
     #: write its answer from what it already has rather than ending the turn.
     _QUERY_CALL_LIMIT = 12
+    #: Native tools hidden from the model via the harness profile's
+    #: ``excluded_tools``. PgFilesystemBackend does not implement ``delete``,
+    #: but that alone does not hide it: the capability probe runs against
+    #: ``CompositeBackend``, which does implement it, so deepagents offers the
+    #: tool and every call comes back "unsupported" after the model has already
+    #: spent tokens on it. Excluding by name is what keeps it off the list.
     _EXCLUDED_NATIVE_TOOLS = frozenset({"delete"})
 
     async def _build_agent(
@@ -491,7 +473,7 @@ class MirobodyAgent:
         try:
             # Build the deepagents virtual filesystem (CompositeBackend). User
             # uploads + history are auto-mounted at /uploads/ and /library/ as
-            # live th_files projections — the agent reads them with the native
+            # live th_files projections: the agent reads them with the native
             # read_file tool (multimodal for pdf/image/…). No custom file MCP
             # tools, no external sandbox.
             backend, permissions = await self._build_backend(
@@ -509,7 +491,7 @@ class MirobodyAgent:
             # Agent Skills (agentskills.io), deepagents-native: frontmatter is
             # injected into the system prompt at startup; the body is read
             # through the /skills/ mount only when a task needs it. Skipped for
-            # anonymous sessions (StateBackend — no /skills/ mount to read from).
+            # anonymous sessions (StateBackend, no /skills/ mount to read from).
             if user_id and self._skills_source_dir():
                 from deepagents.middleware.skills import SkillsMiddleware
                 tail.append(SkillsMiddleware(backend=backend, sources=[("/skills/", "Mirobody")]))
@@ -538,7 +520,7 @@ class MirobodyAgent:
                 model=llm_client,
                 # Agent-only tool (hitl.py): the chat channel's "which date?"
                 # question; the answer is applied on resume, in generate_response.
-                # Never in the MCP tool directory — an MCP client has no widget
+                # Never in the MCP tool directory: an MCP client has no widget
                 # to answer ask_user with.
                 tools=[*tools, ask_user],
                 system_prompt=system_prompt,
@@ -588,13 +570,13 @@ class MirobodyAgent:
         skipped_tool_ids: set[str] = set()
 
         try:
-            # subgraphs=True surfaces subagent (subgraph) events — without it the
+            # subgraphs=True surfaces subagent (subgraph) events: without it the
             # parent graph only sees a single `task` ToolMessage when the subagent
             # FINISHES, so nothing streams during a subagent run (the original bug).
             # With it, each item becomes a (namespace, stream_type, payload) triple;
             # the subagent's react subgraph reuses node names "model"/"tools", so its
             # tokens/tool-calls flow through process_stream_event into the existing
-            # reply/queryTitle/queryDetail event types — no frontend change needed.
+            # reply/queryTitle/queryDetail event types, no frontend change needed.
             async for stream_item in agent.astream(
                 graph_input,
                 context=chat_context,
@@ -689,14 +671,14 @@ class MirobodyAgent:
 
         try:
             # `files_data` (the HTTP layer's pre-downloaded bytes) is deliberately
-            # NOT consumed here — it arrives via **kwargs and is ignored. Uploads
+            # NOT consumed here, it arrives via **kwargs and is ignored. Uploads
             # reach the agent as FILES, not as message payload: _build_backend
             # projects them into /uploads/ by file_key (ThFilesBackend over
             # th_files, no byte copy) and the prompt tells the model to
             # read_file them on demand. Injecting the bytes into the turn would
             # duplicate that and blow up the context.
 
-            # The attachment reminder is built AFTER the mount exists — see the
+            # The attachment reminder is built AFTER the mount exists: see the
             # append below, and `attachment_reminder` for why the paths have to
             # come from the mount rather than from this request.
 
@@ -727,7 +709,7 @@ class MirobodyAgent:
 
             # Tell the model exactly which files this turn attached and where to
             # read them, so it never needs an `ls /uploads/` round-trip and never
-            # silently misses one. Transient — appended to the run's messages
+            # silently misses one. Transient: appended to the run's messages
             # only, not the cached system prompt. Matches the list's element type
             # (BaseMessage vs dict) to avoid mixing forms.
             token_counter = TokenUsageCallback()

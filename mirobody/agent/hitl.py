@@ -1,4 +1,4 @@
-"""The chat channel's "which date?" — one agent-only tool (issue #53).
+"""The chat channel's "which date?": one agent-only tool (issue #53).
 
 `ask_user` is a deepagents human-in-the-loop interrupt: the tool body never
 runs. When the model calls it, `HumanInTheLoopMiddleware` pauses the graph
@@ -15,7 +15,7 @@ sees it: the date is parsed out of the reply (an option tapped, or free text
 like "2026年1月6日" / "就按今天"), filed through the same rule the Data page
 bar and `POST /health-indicators/file-date` use (`services/report_date.py`),
 and the tool result tells the model what happened. One tool, one round trip.
-The tool is handed to the agent directly — it is NOT in the MCP tool
+The tool is handed to the agent directly, it is NOT in the MCP tool
 directory: an external MCP client has no widget to answer with.
 """
 
@@ -39,15 +39,15 @@ ASK_USER_INTERRUPT = {"ask_user": {"allowed_decisions": ["respond"]}}
 @tool
 def ask_user(question: str, options: list[str] | None = None,
              report_date_for: list[str] | None = None) -> str:
-    """Ask the user ONE short question and WAIT for the answer — never guess.
+    """Ask the user ONE short question and WAIT for the answer, never guess.
 
     Use it when only the user knows something you need before acting
     correctly. `options` (2-4 short strings) renders as one-tap buttons; the
     user may still type. The reply is returned as this tool's result.
 
     Asking which date a report is from: pass the attachments' file_keys (from
-    the attachment note) in `report_date_for`. The answer — a date such as
-    "2026-01-06", or "就按今天" / "keep" for the upload day — is then applied
+    the attachment note) in `report_date_for`. The answer: a date such as
+    "2026-01-06", or "就按今天" / "keep" for the upload day: is then applied
     to those files for you, and the result says what was filed; you do not
     need another call. Offer dates found on the message's other attachments
     as options, plus "就按今天".
@@ -65,7 +65,7 @@ def parse_date_answer(answer: str, today: datetime | None = None) -> tuple[str, 
     ("unclear", None).
 
     A full date wins over the keep-words, so "不是今天，是2026-01-06" files
-    under the date; "就按今天（2026-09-03）" — the option the model offers —
+    under the date; "就按今天（2026-09-03）" (the option the model offers) 
     reads as keep because the only date in it IS today. A month-day without a
     year is this year's."""
     text = (answer or "").strip()
@@ -93,8 +93,8 @@ def parse_date_answer(answer: str, today: datetime | None = None) -> tuple[str, 
 async def apply_report_date_answer(user_id: str, file_keys: list[str], answer: str) -> str:
     """File the attachments under the user's answer; return the tool result
     the resumed model reads. Authorization per file, the endpoint's rule."""
-    from mirobody.pulse.file_parser.services.file_db_service import FileDbService
-    from mirobody.pulse.file_parser.services.report_date import set_file_report_date
+    from mirobody.collect.file_parser.services.file_db_service import FileDbService
+    from mirobody.collect.file_parser.services.report_date import set_file_report_date
     from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
     kind, when = parse_date_answer(answer)
@@ -183,11 +183,11 @@ async def pending_answer(agent: Any, config: dict, messages: Any, user_id: str =
     A thread paused on an interrupt has a next node to run and an interrupt on
     its pending task. The client sends the answer as an ordinary chat message
     (typed, or an option tapped in the widget), so nothing in the request says
-    "this is a resume" — the checkpointer's state does.
+    "this is a resume": the checkpointer's state does.
 
     When the open question asked which date attachments are from
     (`report_date_for`), the answer is applied here and what comes back is
-    the tool result the model reads — the filing already done, no second
+    the tool result the model reads: the filing already done, no second
     tool call (this module).
     """
     if not config.get("configurable", {}).get("thread_id"):

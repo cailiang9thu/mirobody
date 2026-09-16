@@ -1,21 +1,21 @@
-"""Care-circle demo seed — so a fresh deployment is not an empty database.
+"""Care-circle demo seed, so a fresh deployment is not an empty database.
 
 A first-time self-hoster signs in and, today, finds nothing: the agent works and
 has nothing to work on. This module fills that gap with one synthetic person's
 two-year record and shares it into the care circle of EVERY address in
-`EMAIL_PREDEFINE_CODES` — not just the one this repo ships. A deployment that
+`EMAIL_PREDEFINE_CODES`, not just the one this repo ships. A deployment that
 added its own demo accounts, or `./deploy.sh` with a different set, gets the same
 data behind whichever of them a human actually signs in as; guessing one name
 here would have made the demo look empty for the rest.
 
-It demonstrates two things at once — what the engine does with real volume, and
+It demonstrates two things at once: what the engine does with real volume, and
 what it feels like to hold someone else's record next to your own. Each sign-in
 account gets a THIN record of its own (a few weeks of self-tracked vitals and
 one unremarkable annual checkup, ~two dozen readings) beside the synthetic
 person's two-year, 244-indicator record shared into the circle. That contrast
 is the point: ask about YOUR HbA1c and you get one normal value from your own
 data; ask about HERS and the answer comes from a record you merely have view
-access to — data isolation you can see, not just read about.
+access to: data isolation you can see, not just read about.
 
 The data is NOT generated here and does NOT ship in the wheel. It lives in
 the repo-root `demo/` directory, beside `frontend/`, for the reason that one
@@ -33,8 +33,8 @@ HuggingFace, `mirobody-eval` needs an embedding key this repo does not require,
 and a demo that fails when the network is down is worse than no demo.
 
 Deliberately NOT dependent on embeddings. `query_health_indicators` answers from
-plain SQL on two of its three paths — the catalogue ("what does she have?") and
-named indicators — and only fuzzy keyword search needs pgvector, where it
+plain SQL on two of its three paths, the catalogue ("what does she have?") and
+named indicators, and only fuzzy keyword search needs pgvector, where it
 degrades to the catalogue rather than erroring. So this works with no LLM or
 embedding key configured at all.
 
@@ -94,7 +94,7 @@ def enabled() -> bool:
 
 # ── The sign-in account's OWN record ─────────────────────────────────
 #
-# A thin, healthy, self-tracked slice — deliberately the opposite of the
+# A thin, healthy, self-tracked slice: deliberately the opposite of the
 # synthetic person's 244-indicator clinical record, so the walkthrough can
 # SHOW isolation instead of asserting it: the same question ("my HbA1c?" /
 # "her HbA1c?") answers from two different records with two different
@@ -102,19 +102,13 @@ def enabled() -> bool:
 # the same rows.
 
 #: The string the end-to-end PHI check greps the running container's logs for.
-#:
-#: The discipline has a static layer (`testing.phi_lint`, which reads the AST of
-#: every log statement) and a runtime one (`ops.PHIPolicy`, a logging filter).
-#: This is the third, and the only one that tests the SYSTEM: a redaction that
-#: holds in unit tests and not in the container is not a redaction.
-#:
-#: It is a STRING, not an odd number, on purpose. A leaked bare value is
-#: indistinguishable from any other number in a log; a leaked comment is
-#: unambiguous, and a comment is free-text health data — the thing the column
-#: encryption at rest exists to protect. It rides on an existing row's comment
-#: rather than on a row of its own, so the demo's charts are unchanged.
-#:
-#: Demo data only, and the demo never seeds under PRODUCTION.
+#: The other two layers are static (`testing.phi_lint` reads the AST of every
+#: log statement) and runtime (`ops.PHIPolicy`, a logging filter); this is the
+#: only one that tests the system. A string, not a number, because a leaked
+#: bare value is indistinguishable from any other number in a log while a
+#: leaked comment is unambiguous, and a comment is the free-text health data
+#: column encryption exists to protect. It rides on an existing row, so the
+#: demo's charts are unchanged. Demo data only; never seeded under PRODUCTION.
 PHI_CANARY = "self-tracked PHI-CANARY-3f9a"
 
 #: Which row from the end carries it. The last one is the storyline's HbA1c and
@@ -162,7 +156,7 @@ def _member_series(member_id: str, email: str) -> list[dict]:
     for day, pct in (("2024-11-12", 5.3), ("2025-05-06", 5.2)):
         rows.append(row("GlycatedHemoglobin-HbA1c", pct, day, "%",
                         "Annual checkup lab draw", time="09:15:00"))
-    # The PHI sentinel rides on one of these rows — see PHI_CANARY.
+    # The PHI sentinel rides on one of these rows: see PHI_CANARY.
     rows[-_CANARY_ROW]["comment"] = PHI_CANARY
     return rows
 
@@ -199,12 +193,12 @@ async def _put_blob(file_key: str, text: str) -> None:
     """Store the document's bytes where the row's file_key points.
 
     The row alone is enough for the agent's VFS (it reads original_text), but
-    the file page's "view original" link serves the BLOB at file_key — without
+    the file page's "view original" link serves the BLOB at file_key: without
     one the link is dead and every listing logs a "File not found" warning.
     Best-effort: a storage failure must not fail the seed.
     """
     try:
-        from ..utils.config.storage.factory import get_storage_client
+        from mirobody.utils.config.storage.factory import get_storage_client
         _, err = await get_storage_client().put(
             key=file_key,
             content=text.encode("utf-8"),
@@ -220,7 +214,7 @@ async def _seed_member_own_data(execute_query, member_id: str, email: str) -> in
     """Give a sign-in account its own thin record. Returns readings written."""
     # Imported here, not at module top: the sibling `_member_series` test runs
     # on a bare `pip install mirobody`, and `pulse.readings` pulls in `utils`.
-    from ..pulse.readings import upsert_readings
+    from mirobody.collect.readings import upsert_readings
 
     rows = _member_series(member_id, email)
     await upsert_readings(rows, on_conflict="update_revive")
@@ -250,13 +244,13 @@ async def _seed_member_own_data(execute_query, member_id: str, email: str) -> in
 async def seed(member_emails: list[str]) -> None:
     """Load the fixture and share it with each address in *member_emails*.
 
-    *member_emails* are the accounts a human will actually sign in as — the keys
+    *member_emails* are the accounts a human will actually sign in as: the keys
     of `EMAIL_PREDEFINE_CODES`. Each is created if absent, because the circle
     needs a member id and `add_or_get_user` only runs on first login: without
     this, the first sign-in would land on an account that is in no circle.
     """
-    from ..user import care_circle as cc
-    from ..utils import execute_query
+    from mirobody.user import care_circle as cc
+    from mirobody.utils import execute_query
 
     if not FIXTURE.is_file():
         # A pip install of the library, or a checkout without the fixture:
@@ -284,8 +278,8 @@ async def seed(member_emails: list[str]) -> None:
         return
 
     # A replay must bring the shared record back whatever a walkthrough did to
-    # it — hence "update_revive", not the device-sync "update".
-    from ..pulse.readings import upsert_readings
+    # it: hence "update_revive", not the device-sync "update".
+    from mirobody.collect.readings import upsert_readings
 
     series = fixture.get("series") or []
     written_count = await upsert_readings([dict(r, user_id=owner_id) for r in series], on_conflict="update_revive")
@@ -325,7 +319,7 @@ async def seed(member_emails: list[str]) -> None:
         # `health_access` is set on the OWNER's row, because that is where the
         # switch lives: it says what the synthetic person shares with the
         # circle, and it is the only reason the caregiver can read anything.
-        # ACCESS_VIEW, not EDIT — a walkthrough should not be able to edit the
+        # ACCESS_VIEW, not EDIT: a walkthrough should not be able to edit the
         # record it is reading.
         circle_id = await cc.ensure_own_circle(owner_id, name="Demo care circle")
         await cc.set_health_access(owner_id, circle_id, cc.ACCESS_VIEW)
@@ -334,12 +328,12 @@ async def seed(member_emails: list[str]) -> None:
         # shortcut: these are accounts a human signs in as, so their own
         # `health_access` must stay at 0. Seeding them with the managed-member
         # path would set it to read-write and put the walkthrough in a state the
-        # product says is impossible — "off by default, each member controls
+        # product says is impossible: "off by default, each member controls
         # their own".
         await cc.invite(circle_id, int(member_id))
         await cc.respond_to_invitation(int(member_id), circle_id, accept=True)
 
-        # The member's own thin record — see _member_series for why.
+        # The member's own thin record: see _member_series for why.
         await _seed_member_own_data(execute_query, member_id, email)
         shared.append(email)
 

@@ -10,7 +10,7 @@ The contract every caller relies on:
 Where the ENGINE comes from is the one thing that differs between deployments,
 so it is injected: `use_engines(provider)` installs a callable
 ``(db_config) -> AsyncEngine``. The reference server installs nothing and gets
-the default — ``global_config().get_postgresql(db_config).get_async_engine()``;
+the default: ``global_config().get_postgresql(db_config).get_async_engine()``;
 a consumer with its own DSN, ``search_path`` GUC and encryption key installs
 its own at startup, and every module that imported `execute_query` keeps
 working. Engines are cached here per ``db_config`` name; `reset_engines()`
@@ -39,7 +39,7 @@ def use_engines(provider: Callable[[str], Any] | None) -> None:
 
 
 def reset_engines() -> None:
-    """Forget the cached engines — call after disposing them."""
+    """Forget the cached engines: call after disposing them."""
     _engines.clear()
 
 
@@ -86,7 +86,7 @@ async def execute_query(
     start = time.perf_counter()
     try:
         # Imported here rather than at module scope so that importing
-        # `mirobody.utils.db` — which `mirobody.utils` re-exports from — does
+        # `mirobody.utils.db` (which `mirobody.utils` re-exports from) does
         # not make SQLAlchemy a requirement of code that never opens a connection.
         from sqlalchemy import text
 
@@ -96,7 +96,7 @@ async def execute_query(
             # params=list[dict] is SQLAlchemy executemany; dict/None binds once.
             cur = await conn.execute(text(query), params)
             # Branch on whether the cursor HAS a result set, never on the SQL
-            # prefix — `WITH … UPDATE`, `UPDATE … RETURNING` break the latter.
+            # prefix: `WITH … UPDATE`, `UPDATE … RETURNING` break the latter.
             if cur.returns_rows:
                 ret: list[dict] | dict = [dict(row._mapping) for row in cur.fetchall()]
             elif isinstance(params, list):
@@ -118,7 +118,7 @@ async def execute_query(
         return ret
 
     except Exception as e:
-        # Counts and a type only — never the parameter VALUES, which are the row
+        # Counts and a type only, never the parameter VALUES, which are the row
         # being written; the traceback and `stacklevel` name the statement, and
         # the INFO line above already carried its text when `log_sql` is on.
         extra = {

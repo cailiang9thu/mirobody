@@ -23,7 +23,7 @@ repos:
     hooks:
       # `mirobody.testing.phi_lint` is shipped code, so this needs no network:
       # it runs the package in the repo. `--baseline` makes it report only what
-      # is NEW; `tests/test_phi_baseline.py` is what enforces shrink-only.
+      # is NEW; the maintainers' local suite is what enforces shrink-only.
       #
       # NO tree arguments on purpose: with none, the CLI scans
       # `phi_lint.DEFAULT_TREES`, the same constant the test reads. Spelling the

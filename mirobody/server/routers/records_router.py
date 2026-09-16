@@ -17,13 +17,13 @@ are the hosted ones.
 **What is deliberately NOT copied**, because it is operator machinery rather
 than engine behaviour, and self-hosting has no operator but you:
 
-* `retention` / `session_id` — the hosted plane expires rows on a schedule.
+* `retention` / `session_id`: the hosted plane expires rows on a schedule.
   Here a row lives until something deletes it. Sending `retention` is not an
   error; it is ignored, and saying so beats a 400 for a field the platform docs
   told the caller to send.
-* the `user` Subject key — one deployment, real accounts, JWT. There are no
+* the `user` Subject key: one deployment, real accounts, JWT. There are no
   Subjects to isolate; the caller's own token says who they are.
-* `mb_live_*` keys, quota and rate metering — the hosted plane's billing edge.
+* `mb_live_*` keys, quota and rate metering: the hosted plane's billing edge.
 
 The path prefix is `/api`, not `/v1`: this is not the hosted contract and
 should not claim to be versioned alongside it.
@@ -39,11 +39,11 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from ...engine import resolve_reading as resolve_indicator_name
+from mirobody.engine import resolve_reading as resolve_indicator_name
 from mirobody.units.normalize import normalize_unit, parse_value_unit
-from ...pulse.readings import upsert_readings
-from ...utils import execute_query
-from ..auth import verify_token
+from mirobody.collect.readings import upsert_readings
+from mirobody.utils import execute_query
+from mirobody.server.auth import verify_token
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ MAX_RECORDS_PER_REQUEST = 500
 def _error(status: int, message: str, code: str, param: str | None = None) -> JSONResponse:
     """The hosted plane's error envelope, so one client can read both.
 
-    `{"error": {message, type, code, param}}` — not the house `{code, msg}`,
+    `{"error": {message, type, code, param}}`, not the house `{code, msg}`,
     which every other router here answers with. The two envelopes coexist on
     purpose: the web client's endpoints keep theirs, this surface speaks the
     one a developer's OpenAI-shaped error handling already understands.
@@ -87,7 +87,7 @@ def _standardize(name: str, value: str | None, unit: str | None) -> dict[str, An
 
     This is stage ② in one function: name -> LOINC via the offline resolver,
     value+unit -> a parsed number and a UCUM unit. `None` for the code is the
-    honest answer for a term that did not resolve — never a guessed one.
+    honest answer for a term that did not resolve, never a guessed one.
 
     `resolve_reading`, not `resolve`: the code depends on the unit. Total
     cholesterol is 2093-3 in mg/dL and 14647-2 in mmol/L, and a route that has
@@ -108,8 +108,8 @@ class StandardizeRequest(BaseModel):
     """`text` is the only source this endpoint takes.
 
     The hosted endpoint also accepts a `file`/`file_key`, because it owns the
-    upload plane. Here uploads already have a home — `POST /files/upload` and
-    the Data tab — and duplicating that intake would mean a second copy of the
+    upload plane. Here uploads already have a home (`POST /files/upload` and
+    the Data tab) and duplicating that intake would mean a second copy of the
     parser wiring. A file's readings reach the same place by that route.
     """
 
@@ -128,7 +128,7 @@ async def standardize(body: StandardizeRequest, user_id: str = Depends(verify_to
     normalization are offline. A deployment with no LLM key configured gets a
     plain 400 saying so rather than a stack trace.
     """
-    from ...engine import parse_text
+    from mirobody.engine import parse_text
 
     try:
         readings = await parse_text(body.text)
@@ -244,7 +244,7 @@ async def _insert_records(user_id: str, records: list[dict[str, Any]], *, source
         value = record.get("value")
         unit = record.get("unit")
         # The unit rides with the value in `value` because that is the column's
-        # existing convention — `th_series_data.value` already holds "3.9
+        # existing convention: `th_series_data.value` already holds "3.9
         # mmol/L" for rows written by the file parser, and a reader that
         # splits it expects to find it there.
         text = f"{value} {unit}".strip() if unit else f"{value}"
@@ -299,20 +299,20 @@ async def read_records(
     offset: int = Query(0, ge=0),
     user_id: str = Depends(verify_token),
 ):
-    """The caller's records, newest first — one object per reading.
+    """The caller's records, newest first: one object per reading.
 
     Row-level, not grouped by indicator like the web client's endpoint: `id` is
     what `DELETE /api/data?id=` takes, and a developer paging a series wants the
     readings in order, not a name-keyed map to flatten first.
     """
     # `value` is stored in the clear and every other reader selects it that way;
-    # `comment` is the encrypted one — the one writer (`pulse/readings.py`)
+    # `comment` is the encrypted one: the one writer (`collect/readings.py`)
     # wraps it in `encrypt_content`, so reading it raw would hand back ciphertext.
     #
     # The filter is spliced in, not parameterised as `(:indicator IS NULL OR
     # ...)`: with no filter psycopg binds NULL with no type and Postgres fails
     # the whole statement with "could not determine data type of parameter",
-    # so the unfiltered listing — the common case — returned 500.
+    # so the unfiltered listing (the common case) returned 500.
     params = {
         "uid": str(user_id),
         "limit": limit + 1,          # one extra row answers `has_more`
@@ -366,7 +366,7 @@ async def erase_records(
     indicator: str | None = Query(None, description="One indicator (substring match)"),
     user_id: str = Depends(verify_token),
 ):
-    """Erase the caller's records — one row, one indicator, or all of them.
+    """Erase the caller's records: one row, one indicator, or all of them.
 
     `all=true` is required for the widest scope. The hosted endpoint treats "no
     filter" as "everything", which is defensible behind an API key an operator

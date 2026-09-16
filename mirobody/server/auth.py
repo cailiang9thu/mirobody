@@ -1,16 +1,16 @@
 """Bearer-token verification for HTTP requests.
 
 The FastAPI-facing half of authentication: pull the token off the request,
-verify it, and turn it into a user id — or raise 401. Token *issuance* and
+verify it, and turn it into a user id, or raise 401. Token *issuance* and
 claim shape live in `mirobody/user/jwt.py`; this module only consumes them.
 
 Was `utils_auth.py`, then `mirobody/utils/auth.py`. It is FastAPI all the way
-down — `Header` defaults, `HTTPException` — and FastAPI ships in the
+down (`Header` defaults, `HTTPException`) and FastAPI ships in the
 `[app]` extra, so it never belonged in the engine's utils package: every
 one of its live callers is a router right next door. `verify_token_string` is
-the one function with a non-router caller in history, and that caller — the
+the one function with a non-router caller in history, and that caller (the
 care-circle permission check, then `utils/permissions.py`, now
-`user/care_circle.py` — imported it without ever using it.
+`user/care_circle.py`) imported it without ever using it.
 
 Two functions did not come along, both with zero callers anywhere:
 `verify_token_from_websocket` (the only reason this module imported
@@ -23,9 +23,9 @@ import logging
 from urllib.parse import unquote
 from fastapi import Header, HTTPException
 
-from ..utils.config import global_config
-from ..utils.log import secret_fingerprint
-from ..utils.req_ctx import get_req_ctx, update_req_ctx
+from mirobody.utils.config import global_config
+from mirobody.utils.log import secret_fingerprint
+from mirobody.utils.req_ctx import get_req_ctx, update_req_ctx
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ async def verify_token_string(token_string: str) -> str:
 
     if not decoded:
         # The full undecoded bearer token used to go out in this response
-        # BODY — to the caller, and onward into their proxy logs, browser
+        # BODY: to the caller, and onward into their proxy logs, browser
         # console and error tracker. A 401 must not hand back the credential it
         # just rejected; the fingerprint goes to our log instead.
         logger.warning("JWT decode failed", extra={"token": secret_fingerprint(token)})

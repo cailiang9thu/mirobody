@@ -43,10 +43,10 @@ package-lock.json
 
 # AI assistant working notes (local only, never published).
 # Bare `CLAUDE.md` at the root is the intended one; the `**/` pattern is because
-# a `mirobody/pulse/CLAUDE.md` was committed once and shipped to PyPI inside the
+# a `mirobody/collect/CLAUDE.md` was committed once and shipped to PyPI inside the
 # wheel — an internal notes file, under a filename that tells open-source
 # readers to skip it. Its content was real module documentation and now lives at
-# mirobody/pulse/README.md.
+# mirobody/collect/README.md.
 CLAUDE.md
 **/CLAUDE.md
 

@@ -1,15 +1,15 @@
-"""The OpenAI-compatible vision path — every entry the vision route can name.
+"""The OpenAI-compatible vision path: every entry the vision route can name.
 
 OpenRouter, DashScope, OpenAI, DeepSeek and Google's compatibility endpoint all
 speak chat/completions with an `image_url` part, so there is one
 implementation; what differs per entry (endpoint, key, model, the `extra_body`
 that turns thinking off) arrives in the `RouteSpec`. PDFs are rendered to
-page images here for everyone — no compatibility endpoint takes a PDF part
+page images here for everyone, no compatibility endpoint takes a PDF part
 (Google's rejects `type: file`; DeepSeek documents images only).
 
 Failures are ERRORS here, not empty strings. The image path used to catch
 every exception and return "", so a provider's `400 This model does not
-support image` — the exact answer a text-only model gives — was
+support image` (the exact answer a text-only model gives) was
 indistinguishable from a blank page, and the upload above it reported success
 over zero indicators (#68). A page that fails inside a multi-page PDF is still
 skipped with a warning, because one bad page must not lose the other twenty;
@@ -34,7 +34,7 @@ from .media import (
     _read_and_optimize_image,
 )
 from .results import _build_prompt_with_schema, _merge_page_results, clean_json_response
-from ...file_types import IMAGE_EXTENSIONS
+from mirobody.utils.file_types import IMAGE_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +44,13 @@ def _api_params(spec: RouteSpec, messages: list[dict], json_mode: bool) -> dict[
     if spec.extra_body:
         params["extra_body"] = dict(spec.extra_body)
     if spec.reasoning_effort:
-        # Declared on the entry, so it reaches the vision surface too — this is
+        # Declared on the entry, so it reaches the vision surface too, this is
         # the parameter `openai-utils` needs, and it was being dropped here as
         # well as on the text path.
         params["reasoning_effort"] = spec.reasoning_effort
     if json_mode and spec.takes_json_object:
         # An entry that says `response_format: none` gets the JSON instruction
-        # from the prompt only — Anthropic's compatibility endpoint answers
+        # from the prompt only: Anthropic's compatibility endpoint answers
         # `json_object` with a 400 rather than ignoring it.
         params["response_format"] = {"type": "json_object"}
     return params
@@ -118,7 +118,7 @@ async def _process_image(
         # through some gateways (OpenRouter, measured 2026-09-09) where the
         # vendor's own endpoint answers 400. One photo of a report is never
         # blank, so "no text" for a single image is the model's inability, not
-        # the document's emptiness — and it has to say so, or the upload above
+        # the document's emptiness, and it has to say so, or the upload above
         # reports success over nothing (#68).
         raise RuntimeError(
             f"{provider_name} ({model_name}) returned no text for the image — a model that cannot "
@@ -137,14 +137,14 @@ async def openai_compatible_file_extract(
 ) -> str:
     """File extraction through the entry `spec` resolves to.
 
-    The client comes from `client_manager` (so `<PREFIX>_BASE_URL` applies —
+    The client comes from `client_manager` (so `<PREFIX>_BASE_URL` applies:
     #52) unless the caller passes one. Errors propagate with the entry and
     model named.
     """
     if client is None:
         # Function-local: clients.py builds SDK clients, and a module-scope
         # import here would close the loop back through llm/__init__.
-        from ..clients import client_manager
+        from mirobody.utils.llm.clients import client_manager
 
         client = client_manager.for_spec(spec)
     file_path = pathlib.Path(local_file_path)

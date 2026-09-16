@@ -16,19 +16,19 @@ from abc import ABC, abstractmethod
 from typing import Any
 from collections.abc import AsyncGenerator
 
-from ...registry import agent_name, new_agent
-from ..file import process_files_from_storage
-from ...errors import client_safe_error
+from mirobody.agent.registry import agent_name, new_agent
+from mirobody.agent.chat.file import process_files_from_storage
+from mirobody.agent.errors import client_safe_error
 
-from ..message import save_message
-from ..model import ChatStreamRequest, has_attachment
+from mirobody.agent.chat.message import save_message
+from mirobody.agent.chat.model import ChatStreamRequest, has_attachment
 
-from ....user.care_circle import CareCircleDenied, resolve_subject
-from ....utils import execute_query, safe_read_cfg
-from ....utils.sse import heartbeat_seconds
-from ....utils.config import get_default_timezone
-from ....utils.i18n import t
-from ....utils.tasks import spawn
+from mirobody.user.care_circle import CareCircleDenied, resolve_subject
+from mirobody.utils import execute_query, safe_read_cfg
+from mirobody.utils.sse import heartbeat_seconds
+from mirobody.utils.config import get_default_timezone
+from mirobody.utils.i18n import t
+from mirobody.utils.tasks import spawn
 
 logger = logging.getLogger(__name__)
 
@@ -145,17 +145,14 @@ class ChatProtocolAdapter(ABC):
     def __init__(self):
         self.scene: str = "web"  # Default scene, subclasses can override
     
-    # =========================================================================
     # The only thing a protocol has to supply: how a chunk goes on the wire.
-    #
     # `handle_request` and `stream_output` used to be abstract. Between them
-    # they are 183 lines, of which 5 emitted SSE framing — so declaring them
-    # abstract obliged a second transport to reimplement the accumulator
-    # dispatch, the database write, the end-chunk ordering and the heartbeat
-    # timing in order to change `data: {...}\n\n` into a frame. They are
-    # concrete below; only the encoding is abstract, which is the seam that
-    # actually differs between SSE and WebSocket.
-    # =========================================================================
+    # they are 183 lines, 5 of which emit SSE framing, so a second transport
+    # had to reimplement the accumulator dispatch, the database write, the
+    # end-chunk ordering and the heartbeat timing just to change
+    # `data: {...}\n\n` into a frame. They are concrete below; only the
+    # encoding is abstract, which is the seam that differs between SSE and
+    # WebSocket.
 
     @abstractmethod
     def encode_chunk(self, chunk: dict[str, Any]) -> str:
@@ -210,7 +207,7 @@ class ChatProtocolAdapter(ABC):
         
         # Validate help-ask permissions
         # The call this replaced also forwarded a `token` kwarg that the
-        # function did not accept — a TypeError waiting on whichever caller
+        # function did not accept: a TypeError waiting on whichever caller
         # first passed one.
         try:
             await resolve_subject(user_id, params.query_user_id)
@@ -292,7 +289,7 @@ class ChatProtocolAdapter(ABC):
     #-------------------------------------------------------------------------
 
     def _prepare_agent_kwargs(self, params: ChatStreamRequest) -> dict[str, Any]:
-        """Pack the request into the kwargs the agent receives — built ONCE.
+        """Pack the request into the kwargs the agent receives: built ONCE.
 
         This used to be two packagings: this method produced a 16-field dict
         for UnifiedChatService, which repackaged it into agent_kwargs with
@@ -338,12 +335,12 @@ class ChatProtocolAdapter(ABC):
     ) -> AsyncGenerator[dict[str, Any], None]:
         """Resolve the agent and forward its raw chunks; always close with `end`.
 
-        Formerly ``UnifiedChatService.generate_chat_response`` — a stateless
+        Formerly ``UnifiedChatService.generate_chat_response``: a stateless
         single-method class between the adapter and the agent whose main
         activity was repackaging the adapter's dict. Merged here; the class
         is gone.
 
-        No accumulation or formatting happens here — chunks stream through
+        No accumulation or formatting happens here: chunks stream through
         as-is ({"type": "reply"|"thinking"|"queryTitle"|"queryArguments"|
         "queryDetail"|"costStatistics"|"error", ...}); `stream_output` owns
         accumulation and persistence.
@@ -360,7 +357,7 @@ class ChatProtocolAdapter(ABC):
 
             # Why a turn ENDED is a fact about the run, and the client had no way
             # to tell "the model finished" from "the budget ran out" from "it
-            # crashed" — all three arrived as the same empty `end`. A reader that
+            # crashed": all three arrived as the same empty `end`. A reader that
             # cannot distinguish them shows "Answer Completed" over a truncated
             # reply, which is what it did. Additive: `content` is unchanged and a
             # client that ignores the key behaves exactly as before.
@@ -414,24 +411,14 @@ class ChatProtocolAdapter(ABC):
                 yield self.encode_chunk({"type": "error", "content": "No permission to chat for this user"})
                 return
 
-            # An attachment-only turn asks "read this" — say it out loud, ONCE,
-            # before anything downstream reads `params.question`. Everything
-            # that turn touches keys on that field: `_save_question_if_needed`
-            # (so the turn leaves a user row and the session gets a title
-            # instead of an assistant answer whose `question_id` points at a
-            # row that does not exist), the language the turn is answered in
-            # (an empty question reads as English, so a Chinese user who typed
-            # nothing got an English-instructed prompt), and the message the
-            # model receives. Substituting later, at message-build
-            # time, fixed only the last of those — and even that only until a
-            # `current_turn_note` was folded in ahead of it, which left the user
-            # message a bare time hint asking nothing at all.
-            #
-            # The empty message this replaces is not a harmless no-op: Anthropic
-            # rejects a zero-length text block outright (400), and LangGraph
-            # checkpoints the turn's input BEFORE the model node runs, so the
-            # failed turn stays in the session thread and is replayed on every
-            # later turn of that session.
+            # An attachment-only turn asks "read this": say it out loud ONCE,
+            # before anything downstream reads `params.question`. Three things
+            # key on that field: `_save_question_if_needed` (else the assistant
+            # row's `question_id` points at a user row that does not exist),
+            # the language the turn is answered in (an empty question reads as
+            # English), and the message the model receives. The empty message
+            # this replaces is not harmless: Anthropic rejects a zero-length
+            # text block (400), and LangGraph checkpoints it, so it replays.
             if not params.question and has_attachment(params.file_list):
                 params.question = t("attachment_only_question",
                                     params.language or "en", module="chat")
@@ -455,7 +442,7 @@ class ChatProtocolAdapter(ABC):
 
             # Kick off summary generation in parallel with the assistant
             # stream. Since the title is derived from the user's question
-            # only, we don't need to wait for the response to finish — the
+            # only, we don't need to wait for the response to finish: the
             # sidebar title shows up seconds earlier this way.
             if saved_msg_id:
                 spawn(
@@ -504,7 +491,7 @@ class ChatProtocolAdapter(ABC):
             return None
 
         # Get Redis client dynamically
-        from ....utils.config import global_config
+        from mirobody.utils.config import global_config
         redis_client = None
         try:
             redis_client = await global_config().get_redis().get_async_client()
@@ -549,7 +536,7 @@ class ChatProtocolAdapter(ABC):
                 params={"session_id": session_id, "user_id": user_id},
             )
             if result and (not result[0].get("summary") or result[0].get("summary") == "New Session"):
-                from ..summary import generate_and_save_summary
+                from mirobody.agent.chat.summary import generate_and_save_summary
                 await generate_and_save_summary(
                     user_id=user_id,
                     session_id=session_id,
@@ -603,7 +590,7 @@ class ChatProtocolAdapter(ABC):
 
                 The upstream `end` is swallowed here and a fresh one is emitted
                 after the response is saved, so WHY the turn ended has to be
-                carried across — otherwise the client always reads `stop`, which
+                carried across: otherwise the client always reads `stop`, which
                 is the bug this field exists to fix.
                 """
                 accumulator.stream_completed = True
@@ -645,7 +632,7 @@ class ChatProtocolAdapter(ABC):
                 
                 # A turn that ends without one `reply` chunk is not a success
                 # the client can render: it draws an empty bubble under "Answer
-                # Completed". Measured 2026-09-11 across two vendors — gemini
+                # Completed". Measured 2026-09-11 across two vendors: gemini
                 # spent 2,337 of 2,539 output tokens on `thinking` and qwen
                 # 8,943 of 9,862, both finishing `stop` with no error event and
                 # no reply. Say it in the bubble, and mark the outcome, so the
@@ -703,7 +690,7 @@ class ChatProtocolAdapter(ABC):
         # Silence-triggered keepalive (see `utils/sse.py` for why it must be
         # silence-triggered and how short the interval has to be). The frame
         # is a `heartbeat` chunk rather than an SSE comment because chunks are
-        # the adapter-neutral unit here — `encode_chunk` owns the wire — and
+        # the adapter-neutral unit here (`encode_chunk` owns the wire) and
         # the shipped web client drops `type: heartbeat` on sight. Two knobs
         # used to multiply into a 40-second first ping (`HEARTBEAT_INTERVAL` ×
         # `HEARTBEAT_COUNTER_THRESHOLD`), past most proxies' idle timeout; one

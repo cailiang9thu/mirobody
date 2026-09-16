@@ -20,7 +20,7 @@ from argparse import Namespace
 from collections import defaultdict
 from functools import lru_cache
 
-from ..concept_graph import ConceptGraph
+from mirobody.indicator.concept_graph import ConceptGraph
 from .common import (
     FHIR_GRAPH_BIN,
     SYSTEMS, _CODE_BITS, _CODE_MASK, code_to_fhir_id, int_to_code,

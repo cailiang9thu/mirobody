@@ -1,25 +1,25 @@
-"""Console entry point — ``mirobody <command>``.
+"""Console entry point: ``mirobody <command>``.
 
 Installed via ``[project.scripts]`` so a plain ``pip install mirobody`` gets a
-runnable command (deployments use ``python -m mirobody`` — see __main__.py).
+runnable command (deployments use ``python -m mirobody``: see __main__.py).
 
 Commands:
 
-* ``mirobody parse <file>``             — the engine's party trick: lab report
+* ``mirobody parse <file>``             the engine's party trick: lab report
   in, standardized LOINC table out. One LLM key, no database, no server.
   Requires the ``[parse]`` extra.
-* ``mirobody resolve <terms...>``       — offline indicator-name resolution
+* ``mirobody resolve <terms...>``       offline indicator-name resolution
   against the shipped bundles. Needs NOTHING: no key, no config, no network.
-* ``mirobody dev [--pg-url URL]``       — the same server in ONE command, with
+* ``mirobody dev [--pg-url URL]``       the same server in ONE command, with
   no config file, no Redis requirement and generated dev secrets. `config.yaml`
   is not in the wheel, so this is the only shape in which
   ``pip install 'mirobody[app]'`` alone can start something.
-* ``mirobody serve [config.yaml ...]``  — the full HTTP server (chat, MCP,
+* ``mirobody serve [config.yaml ...]``  the full HTTP server (chat, MCP,
   API). Requires the ``[app]`` extra; checked up front with a plain message
   instead of a traceback from deep inside an import chain.
-* ``mirobody worker [config.yaml ...]`` — the background task worker
+* ``mirobody worker [config.yaml ...]``: the background task worker
   (IndicatorSync, ProfileRefresh queues).
-* ``mirobody doctor [config.yaml ...]`` — which LLM provider each surface
+* ``mirobody doctor [config.yaml ...]``, which LLM provider each surface
   (chat, vision, structured extraction, text, embeddings) would select with
   the current configuration, and what to set where one has none. Needs no
   database and no extra.
@@ -43,7 +43,7 @@ def _require_extra(command: str, extra: str, marker: str, what: str) -> None:
     opaque ``ModuleNotFoundError``. Checking one marker dependency up front and
     naming the pip command is the entire fix.
 
-    ``pip install mirobody`` is ② Translate — ``resolve``, units, lexical,
+    ``pip install mirobody`` is ② Translate: ``resolve``, units, lexical,
     numpy and nothing else. That is deliberate: it is the surface other
     software depends ON, and it used to drag 93 packages and 245 MB behind it.
     """
@@ -67,7 +67,7 @@ def _cmd_serve(args: argparse.Namespace) -> None:
 
 #: What `mirobody dev` needs that a git checkout gets from `config.yaml` and a
 #: deployment gets from `./deploy.sh`. Written as a YAML overlay in MEMORY, not
-#: to a file: `config.yaml` is not in the wheel (checked — no `config.y*ml`
+#: to a file: `config.yaml` is not in the wheel (checked, no `config.y*ml`
 #: member), so `pip install 'mirobody[app]' && mirobody serve` has no
 #: configuration at all, and that is the actual reason "one command" did not
 #: work. Writing a config into someone's working directory is a side effect a
@@ -103,7 +103,7 @@ MCP_TOOL_DIRS:
 AGENT_DIRS:
   - mirobody/agent
 PROVIDER_DIRS:
-  - mirobody/pulse/providers
+  - mirobody/collect/providers
 PROMPTS:
   - agent/prompts/mirobody.jinja
 
@@ -134,7 +134,7 @@ def _pg_from_url(url: str) -> dict[str, str]:
 
 
 def _cmd_dev(args: argparse.Namespace) -> None:
-    """One command, one process, no config file — the local-development path.
+    """One command, one process, no config file: the local-development path.
 
     `serve` is the deployment shape: it reads `config.{ENV}.yaml`, expects
     Redis, and expects the secrets to already exist. Every one of those is a
@@ -142,7 +142,7 @@ def _cmd_dev(args: argparse.Namespace) -> None:
     a fresh machine, and four of them are things a developer should not have to
     produce by hand to see the thing run.
 
-    What this does NOT change: Redis stays optional because it already was —
+    What this does NOT change: Redis stays optional because it already was:
     `RedisConfig.get_async_client` returns None when it cannot ping, and
     `Server` logs "local memory mode" and carries on. `dev` just stops treating
     that as a failure worth blocking on.
@@ -165,15 +165,13 @@ def _cmd_dev(args: argparse.Namespace) -> None:
             "postgres: `schema/00_init_schema.sql` creates a vector column."
         )
 
-    # Ephemeral by default, and said out loud. A dev secret that persists is a
-    # dev secret that reaches production in someone's shell history.
-    #
-    # Put into the ENVIRONMENT, not only into the overlay, and that is not a
-    # workaround: `Config.__init__` builds its `FernetEncrypter` from
-    # `get_fernet_key("CONFIG_ENCRYPTION_KEY")` BEFORE it loads any YAML, so a
-    # value supplied in config can never satisfy it — the run just logs
-    # "CONFIG_ENCRYPTION_KEY is not set" at ERROR and encrypts with a
-    # publicly-known key. `LOG_ENCRYPTION_KEY` reads the same way.
+    # Ephemeral by default, and said out loud: a dev secret that persists is a
+    # dev secret that reaches production in someone's shell history. It goes
+    # into the ENVIRONMENT, not only the overlay, because `Config.__init__`
+    # builds its `FernetEncrypter` from `get_fernet_key("CONFIG_ENCRYPTION_KEY")`
+    # BEFORE it loads any YAML, so a value supplied in config can never satisfy
+    # it: the run logs "CONFIG_ENCRYPTION_KEY is not set" at ERROR and encrypts
+    # with a publicly-known key. `LOG_ENCRYPTION_KEY` reads the same way.
     generated = []
     for name, nbytes in (("JWT_KEY", 32), ("CONFIG_ENCRYPTION_KEY", 16), ("LOG_ENCRYPTION_KEY", 16)):
         if not os.environ.get(name):
@@ -235,7 +233,7 @@ def _width(text: str) -> int:
     `f"{term:<{n}}"` pads by `len()`, and every CJK character occupies two
     columns in every terminal. So `血红蛋白` was billed as 4 and drawn as 8, and
     the LOINC column drifted four places right on exactly the rows that make the
-    point — this command's whole pitch is that four languages land on one code,
+    point, this command's whole pitch is that four languages land on one code,
     and it showed that as a table which did not line up.
     """
     return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
@@ -267,7 +265,7 @@ def _cmd_parse(args: argparse.Namespace) -> None:
     The no-key case gets the same treatment as the missing extra in
     `_require_extra`, and for the same reason. It used to surface as a
     twenty-line traceback ending in a `ValueError` from four frames inside
-    `unified_file_extract` — the message was correct and nobody would read it
+    `unified_file_extract`: the message was correct and nobody would read it
     there. `parse` is the second command the README hands a new user, right
     after `resolve`, which needs no key at all; being told which environment
     variable to set is the entire content of the failure.
@@ -311,6 +309,70 @@ def _cmd_parse(args: argparse.Namespace) -> None:
     print(f"\n{len(readings)} readings · {n_res} resolved to standard codes · offline lexical index")
 
 
+def _cmd_import(args: argparse.Namespace) -> None:
+    """Read a vendor's own export file into standardized readings.
+
+    No database, no server, no key, no extra: `zipfile`, `xml.etree` and the
+    decode tables are all stdlib or this package, so a bare `pip install
+    mirobody` can read an export. That is the point. A deployment that wants
+    live sync still registers a developer app with the vendor; a person who
+    wants their own data out of their own phone does not.
+    """
+    import json
+    from datetime import datetime
+
+    from mirobody.kernel import decoders
+    from mirobody.kernel.decoders import apple_export
+
+    if not os.path.exists(args.file):
+        sys.exit(f"mirobody import: no such file: {args.file}")
+
+    counts = apple_export.Counts()
+    seen: dict[str, list[float]] = {}
+    span: list[int] = []
+    unknown: dict[str, int] = {}
+    out = open(args.out, "w", encoding="utf-8") if args.out else None
+    try:
+        for kind, item in apple_export.iter_items(args.file, counts):
+            facts = decoders.decode("apple", kind, item, args.tz)
+            if not facts:
+                if kind:
+                    unknown[kind] = unknown.get(kind, 0) + 1
+                continue
+            for f in facts:
+                seen.setdefault(f.metric_key, []).append(f.value_num or 0.0)
+                span.append(f.effective_start_ms)
+                if out:
+                    out.write(json.dumps(f.__dict__, ensure_ascii=False) + "\n")
+    except (OSError, FileNotFoundError) as e:
+        sys.exit(f"mirobody import: {e}")
+    finally:
+        if out:
+            out.close()
+
+    if not seen:
+        print(f"Read {counts.records} records; none of them decoded to a known indicator.")
+        return
+    for metric in sorted(seen):
+        values = seen[metric]
+        print(f"  {metric:<36.36s}  {len(values):>7} readings   {min(values):g} … {max(values):g}")
+    days = ""
+    if span:
+        first = datetime.fromtimestamp(min(span) / 1000).date()
+        last = datetime.fromtimestamp(max(span) / 1000).date()
+        days = f" · {first} … {last}"
+    print(f"\n{sum(len(v) for v in seen.values())} readings · {len(seen)} indicators{days}")
+    if unknown:
+        total = sum(unknown.values())
+        names = ", ".join(sorted(unknown)[:3])
+        more = f" and {len(unknown) - 3} more" if len(unknown) > 3 else ""
+        print(f"{total} records skipped: {names}{more}. Nothing was dropped in silence.")
+    if counts.clinical_files:
+        print(f"{counts.clinical_files} clinical records are in this export; this release does not read them.")
+    if args.out:
+        print(f"Facts written to {args.out}")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="mirobody",
@@ -346,6 +408,16 @@ def main(argv: list[str] | None = None) -> None:
     p_parse.add_argument("file", help="path to a lab report (pdf/png/jpg/txt/csv)")
     p_parse.add_argument("--no-resolve", action="store_true", help="skip offline code resolution")
     p_parse.set_defaults(func=_cmd_parse)
+
+    p_import = sub.add_parser(
+        "import",
+        help="read a vendor export file (Apple Health export.zip) — no key, no database, no extra",
+    )
+    p_import.add_argument("vendor", choices=["apple"], help="which vendor's export this is")
+    p_import.add_argument("file", help="path to export.zip, export.xml, or the unpacked directory")
+    p_import.add_argument("--tz", default="UTC", help="fallback timezone; Apple records carry their own offset")
+    p_import.add_argument("--out", default="", help="write decoded facts to this file as JSON lines")
+    p_import.set_defaults(func=_cmd_import)
 
     p_resolve = sub.add_parser("resolve", help="resolve indicator names to standard codes — fully offline, no key needed")
     p_resolve.add_argument("terms", nargs="+", help="indicator names in any supported language")

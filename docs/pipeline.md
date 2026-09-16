@@ -15,13 +15,13 @@ how a reader comes to believe a boundary does not exist.
 | # | Stage | What it is | Where |
 |---|---|---|---|
 | 1 | **Connect** | a credential, its state machine, when to stop retrying | `kernel/connect.py` |
-| 2 | **Pull** | ask the vendor for a window; keep the raw payload | `pulse/providers/` |
-| 3 | **Decode** | vendor JSON → `series.Fact`, in the catalogue's units | `kernel/vendors/` |
+| 2 | **Pull** | ask the vendor for a window; keep the raw payload | `collect/providers/` |
+| 3 | **Decode** | vendor JSON → `series.Fact`, in the catalogue's units | `kernel/decoders/` |
 | 4 | **Resolve** | which metric IS this — name, code, shape | `kernel/metrics.py`, `engine.py` |
-| 5 | **Gate** | reject the impossible; convert what is convertible | `kernel/quality.py`, applied in `pulse/readings.py` |
-| 6 | **Store** | one writer, one day column, one fingerprint | `pulse/readings.py` |
-| 7 | **Aggregate** | a day of points → one number, under the metric's policy | `kernel/series.py`, `pulse/aggregate/` |
-| 8 | **Elect** | which source the day publishes from | `series.elect`, `pulse/aggregate/election.py` |
+| 5 | **Gate** | reject the impossible; convert what is convertible | `kernel/quality.py`, applied in `collect/readings.py` |
+| 6 | **Store** | one writer, one day column, one fingerprint | `collect/readings.py` |
+| 7 | **Aggregate** | a day of points → one number, under the metric's policy | `kernel/series.py`, `collect/aggregate/` |
+| 8 | **Elect** | which source the day publishes from | `series.elect`, `collect/aggregate/election.py` |
 | 9 | **Correct** | a person's edit, as a layer over the row | `kernel/overlay.py` |
 | 10 | **Read** | one authority, one window semantics | `kernel/query.py` |
 | 11 | **Answer** | one tool, an envelope, a model that narrates | `agent/tools/` |
@@ -34,7 +34,7 @@ how a reader comes to believe a boundary does not exist.
 expired → revoked`) with a failure counter. `connect.record_failure` /
 `may_attempt` back off after each authorization failure and stop entirely after
 a threshold; the reference pull loop consults them
-(`pulse/providers/platform/base.py`).
+(`collect/providers/platform/base.py`).
 
 *The failure this prevents:* a person changes their vendor password, every tick
 of the loop then fails, forever, at the loop's full rate — and some vendors read
@@ -55,7 +55,7 @@ see `docs/provider-guide.md` for when to put open-wearables in front of it.
 
 ## 3. Decode
 
-**Implemented.** `vendors.decode(vendor, data_type, item, tz)` → `list[Fact]`,
+**Implemented.** `decoders.decode(vendor, data_type, item, tz)` → `list[Fact]`,
 pure. A decode table maps a vendor's field path to a catalogue metric and a
 function that converts into **the catalogue's** unit — the unit itself is never
 written in the table, so a decoder cannot disagree with the aggregator about
@@ -86,11 +86,11 @@ who both lack a code still agree, and nobody's chart silently merges two tests.
 **Implemented.** `quality.time_gate` (no start, an end before its start, a span
 over 36 hours, a measurement a day in the future) and `value_gate` (a
 percentage outside 0–100, a non-finite number) run on every row inside the
-one writer, `pulse/readings.py:gate`, before it is bound; a rejected row is
+one writer, `collect/readings.py:gate`, before it is bound; a rejected row is
 counted in the log by reason code and not written. `reconcile_unit`,
 `overcount_suspect` and `is_echo` are the kernel's other gates: the first is
 what a decoder uses to land a value in the catalogue's unit, the last two are
-the aggregation pass's (`pulse/aggregate/election.py` rejects an impossible
+the aggregation pass's (`collect/aggregate/election.py` rejects an impossible
 duration candidate rather than ranking it).
 
 **Not implemented.** A quarantine table. A rejected row is dropped with its
@@ -106,7 +106,7 @@ maintains none. Only the physically impossible is rejected.
 
 ## 6. Store
 
-**Implemented.** One writer (`pulse/readings.py`) for `th_series_data`. It
+**Implemented.** One writer (`collect/readings.py`) for `th_series_data`. It
 derives four columns at write time:
 
 | Column | From | Why at write time |
@@ -149,7 +149,7 @@ LIKE '%sleep%'`. That matched 58 `daily…Sleep…` metrics which are
 `provider_daily` — the vendor's own figure, already dated — and re-anchoring
 those moved every one a day; and it missed `napDuration`, which is a real
 interval belonging to the night. The catalogue's `window` answers both
-(`pulse/aggregate/windows.py`).
+(`collect/aggregate/windows.py`).
 
 **Suggested extension.** `series.sessionize(segments, gap_ms)` — stitching stage
 fragments into one night before `duration_union` — is designed and not built.
@@ -162,7 +162,7 @@ overlap.
 themselves. `series.elect` ranks the sources — measurer over profile echo, then
 coverage, then the MEASUREMENT instant (never the row's update time: an echo is
 rewritten daily and looks fresh), then the deployment's own priority list — and
-`pulse/aggregate/election.py` marks the winner's rows `elected`.
+`collect/aggregate/election.py` marks the winner's rows `elected`.
 
 A candidate is **rejected** rather than ranked when its numbers are impossible:
 a total sleep time longer than the night it was measured in is arithmetic, not
@@ -228,6 +228,5 @@ in this pipeline decides whether a number is good news.
 9. Every answer states which window semantics produced it.
 10. A log line carries ids, counts, durations, status codes and type names — never a value.
 
-Each one is a test. `tests/test_series.py`, `tests/test_quality.py`,
-`tests/test_metrics.py`, `tests/pulse/test_readings.py`, `tests/pulse/aggregate/test_election.py`,
-`tests/test_vendors.py`, `tests/test_phi_baseline.py`.
+Each one is a test in the maintainers' local suite, one module per subject:
+series, quality, metrics, readings, election, decoders and the PHI baseline.

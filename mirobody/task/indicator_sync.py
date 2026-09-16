@@ -1,6 +1,6 @@
 """Indicator dim-table sync task.
 
-Producer (pulse): `await IndicatorSyncTask.enqueue("")` on ingest — payload
+Producer (pulse): `await IndicatorSyncTask.enqueue("")` on ingest, payload
 is a dirty flag, coalesced so at most one sweep is pending.
 
 Consumer: five idempotent classmethods called from `consume`, arranged as a
@@ -8,39 +8,39 @@ funnel that progressively narrows the `th_series_data.fhir_id IS NULL` pool,
 then materializes whatever remains into `th_series_dim` for embedding
 search:
 
-  1. `backfill_from_registry` — fill NULL from the THETA `fhir_indicators`
+  1. `backfill_from_registry`: fill NULL from the THETA `fhir_indicators`
                                 registry (deterministic: `code` /
                                 `full_name` + unambiguous `short_name`).
                                 Strongest signal; runs first.
-  2. `backfill_from_history`  — fill NULL where an indicator's already-mapped
+  2. `backfill_from_history`  fill NULL where an indicator's already-mapped
                                 rows agree on a single `fhir_id`
                                 (`COUNT(DISTINCT) = 1`). Catches free-text
                                 indicators whose history already agrees.
-  3. `backfill_from_dominant` — fill NULL using the ≥99% majority `fhir_id`
-                                across an indicator's history — cleans
+  3. `backfill_from_dominant` (fill NULL using the ≥99% majority `fhir_id`
+                                across an indicator's history) cleans
                                 mapping drift. True multi-meaning
                                 (e.g. "pain" spread across body sites)
                                 never reaches 99% and stays NULL.
-  4. `insert`                 — INSERT placeholder dim rows for every
+  4. `insert`                 INSERT placeholder dim rows for every
                                 still-unmapped indicator (only
                                 `original_indicator` is set).
-  5. `embed`                  — compute and write text embeddings for dim
+  5. `embed`                  compute and write text embeddings for dim
                                 rows missing the configured provider's
                                 embedding column.
 
 Each method is independently idempotent (each filters only on its own
-"missing" condition — no cross-step coupling), so they can be invoked in
+"missing" condition, no cross-step coupling), so they can be invoked in
 isolation for tests / migrations / batch re-runs. The `consume` order is a
 performance choice: earlier steps are cheaper and higher confidence, so
 running them first shrinks the work later steps see.
 
-This task is the canonical writer for `th_series_dim`. It does NOT fill `standard_indicator` — nothing in this
+This task is the canonical writer for `th_series_dim`. It does NOT fill `standard_indicator`: nothing in this
 project does, since the external mapper that once generated descriptions was
 retired. It DOES backfill `th_series_data.fhir_id`, but only for unambiguous
 cases; truly ambiguous free-text indicators are left NULL rather than guessed.
 
 Note what that retirement means for the funnel: steps 2 and 3 are *self*-
-referential — they propagate mappings that already exist in `th_series_data`.
+referential, they propagate mappings that already exist in `th_series_data`.
 With no upstream mapper seeding new ones, they can only spread what the
 historical rows already carry.
 """
@@ -52,8 +52,8 @@ from datetime import datetime, UTC
 from typing import Any
 
 from .base import BaseRedisTask
-from ..utils import execute_query
-from ..utils.embedding import text_embedding
+from mirobody.utils import execute_query
+from mirobody.utils.embedding import text_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class IndicatorSyncTask(BaseRedisTask):
         signal covers subsequent producers. Requires producer to commit DB
         writes before calling enqueue.
         """
-        del payload  # content ignored — queue is a dirty-flag only
+        del payload  # content ignored: queue is a dirty-flag only
 
         redis = await cls._get_producer_redis()
         try:
@@ -106,15 +106,12 @@ class IndicatorSyncTask(BaseRedisTask):
         try:
             await self.embed()
         except ValueError as e:
-            # `embed` raises on a misconfigured `UTILS_EMBEDDING_MODEL` — no
-            # provider at all, or one with no `th_series_dim` vector column —
-            # and that raise is right for a direct caller (see its docstring).
-            # Here it used to leave the sweep half-done and unfinished: the
-            # four backfills above HAD written their rows, but the exception
-            # reached `TaskBase.run`, which logs "loop error" with a stack
-            # trace and sleeps, so a deployment with no embedding key saw a
-            # traceback per signal and never the line saying the mapping work
-            # succeeded. Semantic search degrades to the lexical index; the
+            # `embed` raises on a misconfigured `UTILS_EMBEDDING_MODEL`, which
+            # is right for a direct caller but left this sweep half-done: the
+            # four backfills above had written their rows, yet the exception
+            # reached `TaskBase.run`, so a deployment with no embedding key saw
+            # a traceback per signal and never the line saying the mapping work
+            # succeeded. Semantic search degrades to the lexical index and the
             # rest of the funnel is unaffected, so the sweep finishes.
             if not type(self)._embed_misconfig_logged:
                 type(self)._embed_misconfig_logged = True
@@ -130,22 +127,22 @@ class IndicatorSyncTask(BaseRedisTask):
     @classmethod
     async def backfill_from_registry(cls) -> None:
         """Backfill `th_series_data.fhir_id` from the THETA `fhir_indicators`
-        registry. Deterministic lookup — the strongest and cheapest
+        registry. Deterministic lookup: the strongest and cheapest
         signal, so it runs first in the funnel.
 
         Match keys (OR'd into one `safe_dict` CTE):
         - `code` (verified 2026-04-23: equal to `full_name` for THETA rows):
           always unique per fhir_id via the `(indicator_standard, code)`
           UNIQUE constraint.
-        - `short_name` — Chinese aliases. Only the globally-unique-within-
-          THETA ones are used; ambiguous short_names (~10 collisions —
+        - `short_name`: Chinese aliases. Only the globally-unique-within-
+          THETA ones are used; ambiguous short_names (~10 collisions:
           multiple THETA codes sharing one alias such as "resting heart
           rate") and ~123 empty rows are filtered out by the
           `HAVING COUNT(DISTINCT fhir_id) = 1` guard.
 
         `split_part(indicator, '.', 1)` strips the source suffix
         (e.g. `dailyAvgHeartRates.apple_health` → `dailyAvgHeartRates`) to
-        mirror `FhirMapping._strip_source_suffix` on the write hot path —
+        mirror `FhirMapping._strip_source_suffix` on the write hot path,
         so this step covers the residual NULL rows that the hot-path
         `FhirMapping` cache missed (cold start, config off, race, etc.).
 
@@ -185,7 +182,7 @@ class IndicatorSyncTask(BaseRedisTask):
     @classmethod
     async def backfill_from_history(cls) -> None:
         """Backfill `th_series_data.fhir_id` using already-mapped rows as a
-        self-referential dictionary — only for indicators whose entire
+        self-referential dictionary: only for indicators whose entire
         non-NULL history agrees on a single `fhir_id`
         (`HAVING COUNT(DISTINCT fhir_id) = 1`).
 
@@ -220,20 +217,20 @@ class IndicatorSyncTask(BaseRedisTask):
     @classmethod
     async def backfill_from_dominant(cls, threshold: float = 0.99) -> None:
         """Backfill `th_series_data.fhir_id` using ≥`threshold` majority rule
-        across an indicator's mapped history — cleans mapping drift
+        across an indicator's mapped history: cleans mapping drift
         without touching true multi-meaning cases.
 
         Rationale: a medical indicator is expected to have a single stable
         meaning. When the same text appears under multiple fhir_ids, the
         long-tailed minority is almost always non-determinism / version
         drift from whatever mapped those rows (e.g. "fasting blood glucose"
-        observed at 99.93% on one fhir_id). True multi-meaning — e.g. "pain"
-        split 60/30/10 across body sites — never reaches 99% dominance, so a
+        observed at 99.93% on one fhir_id). True multi-meaning: e.g. "pain"
+        split 60/30/10 across body sites, never reaches 99% dominance, so a
         strict threshold filters drift noise while leaving genuine ambiguity
         untouched.
 
         Scope:
-        - Only fills NULL rows. Does NOT overwrite existing fhir_ids —
+        - Only fills NULL rows. Does NOT overwrite existing fhir_ids:
           historical "collapse noisy minorities to dominant" is out of
           scope here (one-shot CLI maintenance if ever needed).
         - `threshold` is a classmethod arg (default 0.99), not a config
@@ -284,7 +281,7 @@ class IndicatorSyncTask(BaseRedisTask):
         that is still unmapped (`fhir_id IS NULL`) and not yet in
         `th_series_dim`. Each backfill step first trims the NULL pool, so
         by the time `insert` runs only the genuinely unresolvable
-        indicators — the ones that will rely on embedding-based search —
+        indicators (the ones that will rely on embedding-based search) 
         get materialized as dim rows.
 
         `ON CONFLICT DO NOTHING` dedups concurrent workers at the DB. Only
@@ -317,11 +314,11 @@ class IndicatorSyncTask(BaseRedisTask):
     async def embed(cls, batch_size: int = 100, limit: int = 10_000) -> None:
         """Compute text embedding for dim rows with NULL `embedding_<provider>`
         and UPDATE. Text source is `standard_indicator` if set, else
-        `original_indicator` — so legacy rows with an existing description
+        `original_indicator`, so legacy rows with an existing description
         still use the richer text, while new rows embed the raw name.
 
         Only embeds rows whose `original_indicator` still has unmapped
-        th_series_data (fhir_id IS NULL) — mirrors `insert`'s filter and
+        th_series_data (fhir_id IS NULL): mirrors `insert`'s filter and
         matches `_search_non_fhir`'s join scope. Once every series_data
         row for an indicator is mapped, its dim row is never hit by
         search and doesn't need an embedding.
@@ -334,13 +331,13 @@ class IndicatorSyncTask(BaseRedisTask):
         Per-batch embedding errors are logged and skipped; the loop continues.
 
         A provider with no `th_series_dim` vector column raises BEFORE the loop
-        and is therefore not one of those skippable per-batch errors — it is a
+        and is therefore not one of those skippable per-batch errors, it is a
         misconfiguration, and a sweep that quietly wrote nothing would look
         exactly like a sweep with nothing to do.
 
         This used to name `openrouter` as that example, and it stopped being
         true when `th_series_dim.embedding_qwen3_8b` was added (01_basedata.sql)
-        — openrouter is the shipped default and lands in that column like any
+        openrouter is the shipped default and lands in that column like any
         other. Left corrected rather than deleted because the wrong version
         read as "the default provider cannot embed", which is the opposite of
         what happens: this task is what makes indicator search work at all, and

@@ -69,7 +69,7 @@ def load_prompt_templates(cfg: _Reader, key: str = "PROMPTS") -> dict[str, str]:
     Each entry is a path, optionally ``path@name`` to override the key (the
     default key is the basename without ``.jinja``). A path is looked up on the
     filesystem first, then inside the installed package. If neither resolves,
-    the *path itself* is kept as the value — the historical behaviour, which
+    the *path itself* is kept as the value: the historical behaviour, which
     lets a deployment pass a literal prompt string where a path is expected.
     Entries that resolve to no name at all are numbered ``Prompt_1``, ``…_2``.
     """

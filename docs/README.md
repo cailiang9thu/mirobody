@@ -43,15 +43,15 @@ work — each entry states the measurement that motivated it.
 
 Short, and about *that package only*:
 
-- [`mirobody/pulse/`](../mirobody/pulse/README.md) — ① Collect
+- [`mirobody/collect/`](../mirobody/collect/README.md) — ① Collect
 - [`mirobody/indicator/`](../mirobody/indicator/README.md) — ② Translate (standardize)
-- [`mirobody/agent/`](../mirobody/agent/README.md) — ③ Answer (agent)
+- [`mirobody/agent/`](../mirobody/agent/README.md) — ③ Agent
 - [`mirobody/agent/tools/`](../mirobody/agent/tools/README.md) — the MCP tool surface
-- [`mirobody/pulse/apple/`](../mirobody/pulse/apple/README.md) — Apple Health import
-- [`mirobody/pulse/aggregate/`](../mirobody/pulse/aggregate/README.md) — daily rollups
-- [`mirobody/pulse/standardize/`](../mirobody/pulse/standardize/README.md) — health indicators, units & standardization
+- [`mirobody/collect/apple/`](../mirobody/collect/apple/README.md) — Apple Health import
+- [`mirobody/collect/aggregate/`](../mirobody/collect/aggregate/README.md) — daily rollups
+- [`mirobody/collect/standardize/`](../mirobody/collect/standardize/README.md) — health indicators, units & standardization
 - [`mirobody/schema/`](../mirobody/schema/README.md) — database schema, contract and bootstrap
-- [`mirobody/pulse/providers/`](../mirobody/pulse/providers/README.md) — provider directory layout
+- [`mirobody/collect/providers/`](../mirobody/collect/providers/README.md) — provider directory layout
 - [`mirobody/utils/config/`](../mirobody/utils/config/README.md) — configuration
 - [`mirobody/units/`](../mirobody/units/README.md) — UCUM units, families, conversions
 - [`mirobody/kernel/`](../mirobody/kernel/__init__.py) — the kernel; the module docstring is its README (the stage → module map)

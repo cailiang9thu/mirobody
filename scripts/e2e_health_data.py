@@ -105,7 +105,8 @@ async def run(user_id: str, capture: Path | None) -> int:
     await Config.init(yaml_filenames=[])
 
     from mirobody.kernel import query, tools
-    from mirobody.agent.tools.health_indicators_service import HealthIndicatorsService, render_compact, render_rest
+    from mirobody.agent.tools._render import render_compact, render_rest
+    from mirobody.agent.tools.health_indicators_service import HealthIndicatorsService
     from mirobody.agent.tools.medications_service import MedicationsService
 
     service = HealthIndicatorsService()

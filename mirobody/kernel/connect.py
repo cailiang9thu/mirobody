@@ -5,7 +5,7 @@ Three things every deployment re-learned on its own:
 
 * a credential has a **life cycle** (``linked → refreshing → expired →
   revoked``) and the pull loop must not hammer a vendor with a token it has
-  already been told is dead — the third consecutive authorization failure
+  already been told is dead: the third consecutive authorization failure
   in a row is not a transient error, it is the credential telling you it
   expired;
 * a **backfill** is a bounded list of windows, never "everything since
@@ -53,7 +53,7 @@ _TRANSITIONS: dict[tuple[str, str], str] = {
 
 
 def transition(state: str, event: str) -> str:
-    """The next credential state, or ``ValueError`` for an illegal move — a
+    """The next credential state, or ``ValueError`` for an illegal move: a
     pull loop that refreshes a revoked token has a bug, not a state."""
     try:
         return _TRANSITIONS[(state, event)]
@@ -63,7 +63,7 @@ def transition(state: str, event: str) -> str:
 
 @dataclass(frozen=True)
 class Credential:
-    """What the framework knows about one linked account — never the secret
+    """What the framework knows about one linked account, never the secret
     itself. ``failures`` counts consecutive authorization failures."""
 
     provider: str
@@ -82,7 +82,7 @@ class Credential:
 class DebouncePolicy:
     """After ``threshold`` consecutive authorization failures the credential
     is treated as expired; a retry is allowed only ``cooldown_ms`` after the
-    last failure. No defaults — a vendor with a flaky auth server wants a
+    last failure. No defaults: a vendor with a flaky auth server wants a
     higher threshold than one that never fails."""
 
     threshold: int
@@ -162,10 +162,10 @@ class Coverage:
     different claims, and conflating them is how a documentation page comes to
     promise data nobody's integration produces.
 
-    Derived from the decoder's own table (`vendors.coverage_of`), never
+    Derived from the decoder's own table (`decoders.coverage_of`), never
     hand-written, so it cannot drift from the code. Two consequences worth
-    stating: a metric here is one the decoder can EMIT — whether a given
-    person's device records it is a different question again — and a
+    stating: a metric here is one the decoder can EMIT (whether a given
+    person's device records it is a different question again) and a
     connector with an empty `timeseries` is a connector that decodes nothing,
     which is a bug rather than a modest integration.
     """
@@ -188,7 +188,7 @@ class Coverage:
         return metric in self.timeseries
 
     def missing(self, wanted: frozenset[str] | set[str]) -> frozenset[str]:
-        """What `wanted` asks for and this connector cannot give — the answer
+        """What `wanted` asks for and this connector cannot give: the answer
         to "will switching to this device keep my charts working"."""
         return frozenset(wanted) - self.timeseries
 

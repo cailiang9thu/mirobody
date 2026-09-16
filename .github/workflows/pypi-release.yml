@@ -199,7 +199,7 @@ jobs:
             'stands on its own'
         )
         import mirobody.utils, mirobody.utils.llm
-        import mirobody.pulse, mirobody.pulse.file_parser
+        import mirobody.collect, mirobody.collect.file_parser
         import mirobody.indicator
         print('[parse] imports clean on a FastAPI-free install')
         "

@@ -1,7 +1,7 @@
 """Time-series kernel: what a day of readings is, and how it summarises.
 
 Every consumer of this library ends up writing the same four things around
-its own tables — where a local day starts and ends (with the sleep family
+its own tables, where a local day starts and ends (with the sleep family
 starting at 18:00 and a DST day lasting 23 or 25 hours), how a day of points
 collapses to one number (which depends on what the points *are*, see
 ``metrics.state_class``), how two devices measuring the same thing are
@@ -9,7 +9,7 @@ reconciled, and how overlapping spans are counted without counting a minute
 twice. Three repositories wrote them independently; two of them shipped the
 same bug (a duplicate sync doubling a night's sleep). This module is those
 four things once, as pure functions over plain values: no database, no
-clock, no framework — so the same input gives the same output forever, and
+clock, no framework, so the same input gives the same output forever, and
 a golden vector can pin every rule.
 
 What is deliberately NOT here: tables, queues, cursors, which source a
@@ -64,7 +64,7 @@ class Fact:
     devices' steps must never be summed together, so the key is part of
     every window. ``panel_id`` ties readings measured together (a blood
     pressure's two numbers, a body-composition scale's thirteen).
-    ``ingested_at_ms`` orders revisions of the same span — the later sync
+    ``ingested_at_ms`` orders revisions of the same span: the later sync
     wins when they disagree.
     """
 
@@ -115,7 +115,7 @@ def _window_offset(window: str) -> tuple[int, int]:
 
 
 def day_bounds_ms(day: date, tz: str, window: str = "00:00") -> tuple[int, int]:
-    """``[start, end)`` in unix ms of the local day ``day`` — the day that
+    """``[start, end)`` in unix ms of the local day ``day``: the day that
     starts at ``window`` (``"18:00"`` for the sleep family) in ``tz``.
 
     Both ends are computed on the wall clock and converted separately. On a
@@ -133,7 +133,7 @@ def local_date(ms: int, tz: str, window: str = "00:00") -> date:
     """The local day (per ``day_bounds_ms``) that contains the instant ``ms``.
 
     With ``window="18:00"`` an instant at 02:00 belongs to the *previous*
-    calendar date — the night is one day. This is the BEDTIME-day convention
+    calendar date: the night is one day. This is the BEDTIME-day convention
     (the day the window opened); see ``display_day`` for the wake-day view
     products usually show.
     """
@@ -149,7 +149,7 @@ def display_day(day: date, window: str = "00:00") -> date:
     """The calendar date a product shows a windowed day under. A sleep day
     that opens at 18:00 on D is the night the user *wakes from* on D+1, and
     that is the date every wearable app labels it with. One implementation,
-    so no reader adds its own ``+1`` — or forgets to."""
+    so no reader adds its own ``+1``, or forgets to."""
     return day + timedelta(days=1) if window != "00:00" else day
 
 
@@ -186,7 +186,7 @@ def union_spans(spans: Iterable[tuple[int, int]]) -> list[tuple[int, int]]:
 
 
 def merge_intervals(spans: Iterable[tuple[int, int]]) -> int:
-    """Total covered duration of the union of ``spans`` — never more than the
+    """Total covered duration of the union of ``spans``, never more than the
     plain sum, never less than the longest single span. Sleep stages from two
     syncs of the same night overlap; summing them counts the night twice."""
     return sum(e - s for s, e in union_spans(spans))
@@ -194,7 +194,7 @@ def merge_intervals(spans: Iterable[tuple[int, int]]) -> int:
 
 def stable_hash(*parts: object) -> str:
     """32 hex chars of SHA-256 over the parts, joined so that ``("a", "bc")``
-    and ``("ab", "c")`` differ. No timestamps, no dict order — the same
+    and ``("ab", "c")`` differ. No timestamps, no dict order: the same
     inputs give the same fingerprint on every machine, forever."""
     joined = "\x1f".join("" if p is None else str(p) for p in parts)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()[:32]
@@ -211,7 +211,7 @@ class Projection:
 
     ``fingerprint`` describes the value actually published (after rounding),
     so two runs that round to the same number agree and a downstream
-    consumer can skip work — and wake nothing — when it has not changed.
+    consumer can skip work (and wake nothing) when it has not changed.
     """
 
     aggregation_type: str
@@ -236,7 +236,7 @@ def aggregate(
 ) -> Projection | None:
     """Collapse the facts of one window into one projection under ``policy``
     (a ``metrics.POLICY_*`` value). ``None`` means the window holds nothing
-    to publish — the caller retracts whatever it had.
+    to publish: the caller retracts whatever it had.
 
     The policy is passed in, not inferred: the shape of a stream is a
     catalogue decision (``metrics.mapping_for``), and a vendor override may
@@ -244,9 +244,9 @@ def aggregate(
 
     - ``mean_min_max``: mean is the value; min/max/count ride in ``inputs``.
     - ``sum_delta``: the day's total of deltas. Never hand this a running
-      total — eight thousand steps become thirty thousand.
+      total: eight thousand steps become thirty thousand.
     - ``duration_union``: minutes covered by the union of the spans.
-    - ``provider_value``: the vendor's own daily figure — the last revision
+    - ``provider_value``: the vendor's own daily figure, the last revision
       received (by ``ingested_at_ms``, then by time), never a mean of them.
     - ``last``: the latest measurement of the day.
     """
@@ -301,7 +301,7 @@ class Bucket:
 
 
 def downsample(points: Iterable[tuple[int, float]], bucket_ms: int, method: str = AGG_TYPE_MEAN) -> list[Bucket]:
-    """Regular buckets over ``(ms, value)`` points — for an intraday view
+    """Regular buckets over ``(ms, value)`` points: for an intraday view
     that must not ship 86,400 heart-rate samples, and for the archive tier
     that keeps a month of them at minute resolution. ``method`` is
     ``mean``/``min``/``max``/``sum``/``last``."""
@@ -337,7 +337,7 @@ def downsample(points: Iterable[tuple[int, float]], bucket_ms: int, method: str 
 @dataclass(frozen=True)
 class Segment:
     """A labelled span from one ingestion batch: a sleep stage, a workout
-    zone. ``ingested_at_ms`` is the recency signal — a later batch that
+    zone. ``ingested_at_ms`` is the recency signal: a later batch that
     re-classifies the same minutes is presumed to supersede the earlier one."""
 
     start_ms: int
@@ -468,7 +468,7 @@ def rank_candidates(
     priorities: Sequence[str] = (),
 ) -> list[Candidate]:
     """Sort candidates best-first by the named criteria in order. Unknown
-    criterion names raise — a misspelled ranking must not silently become
+    criterion names raise: a misspelled ranking must not silently become
     "alphabetical by identity"."""
     for name in ranking:
         if name not in CRITERIA:
@@ -519,7 +519,7 @@ def elect(
 ) -> Decision:
     """Pick the source a cell publishes from.
 
-    Rank by ``ranking`` (the group's policy — *what* to prefer is the
+    Rank by ``ranking`` (the group's policy: *what* to prefer is the
     consumer's decision, *how* to prefer it is this function), then take the
     best candidate that passes every validator and carries information. The
     fingerprint covers the ranked identities and their values, so a rerun

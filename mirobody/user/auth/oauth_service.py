@@ -10,18 +10,7 @@ from redis.asyncio import Redis
 
 from .jwt import AbstractTokenValidator
 
-from ...utils import (
-    request_origin,
-    secret_fingerprint,
-    json_response,
-    json_response_with_code,
-    redirect,
-    get_jwt_token,
-    
-    Request,
-    Response,
-    Route
-)
+from mirobody.utils import request_origin, secret_fingerprint, json_response, json_response_with_code, redirect, get_jwt_token, Request, Response, Route
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +50,7 @@ logger = logging.getLogger(__name__)
 #-----------------------------------------------------------------------------
 
 # RFC 6749 §4.1.2: an authorization code "MUST be short lived", 10 minutes
-# maximum recommended. This used to be `token_validator.get_expires_in()` — the
+# maximum recommended. This used to be `token_validator.get_expires_in()`: the
 # ACCESS TOKEN lifetime, which defaults to 30 days when JWT_EXPIRES_IN is unset.
 # The comment beside the state token already said "will expire in 10 minutes";
 # the code had drifted from its own documented intent.
@@ -226,7 +215,7 @@ class OAuthService:
             # `redirect_uris` must be PERSISTED, not merely echoed back. It was
             # only ever put in the response body, so the authorize handler had
             # nothing to compare against and trusted whatever `redirect_uri` the
-            # request carried — an attacker could send a logged-in victim to
+            # request carried: an attacker could send a logged-in victim to
             # /authorize with `redirect_uri=https://evil.example/cb` and receive
             # a code exchangeable for that victim's tokens (RFC 6749 §10.6).
             # JSON because a Redis hash value must be a scalar.
@@ -370,7 +359,7 @@ class OAuthService:
             user_id     = str(payload["sub"])
 
             # The redirect target must be one the client registered. Exact
-            # string match, per RFC 6749 §3.1.2.3 and RFC 8252 §7.1 — no
+            # string match, per RFC 6749 §3.1.2.3 and RFC 8252 §7.1, no
             # prefix or host matching, both of which are routinely bypassed
             # (`https://good.example.evil.com`, `https://good.example/../..`).
             if not await self._is_registered_redirect_uri(client_id, redirect_uri):
@@ -614,7 +603,7 @@ class OAuthService:
             # `client_secret` was in this line, at INFO, in cleartext. It is a
             # long-lived credential: anyone with log read access could
             # impersonate the client. The fingerprint still answers the only
-            # question this log line was ever used for — "did the client send
+            # question this log line was ever used for: "did the client send
             # the secret we expect?".
             logger.info(
                 "Token request - grant_type: %s, client_id: %s, client_secret: %s",
@@ -631,7 +620,7 @@ class OAuthService:
                 # read it and leave it in place behind a `# TODO: pass`, so a
                 # leaked code could be exchanged for fresh token pairs for its
                 # whole lifetime. `delete` returning 0 means another request
-                # already redeemed it — that is a replay, and it is refused.
+                # already redeemed it, that is a replay, and it is refused.
                 consumed = True
                 if self._redis:
                     key = self._auth_code_keyprefix + code

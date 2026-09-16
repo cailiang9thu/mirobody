@@ -2,20 +2,20 @@
 
 **Two layers, and the boundary is atomicity.** `utils/db.execute_query` runs ONE
 statement inside its own `engine.begin()`, so anything that must commit or roll
-back together cannot use it — two calls are two transactions. That is the whole
+back together cannot use it: two calls are two transactions. That is the whole
 rule, and in this package it applies to exactly three functions: `add_or_get_user`
 (SELECT then INSERT-or-UPDATE, a read-then-write that must not interleave),
 `del_user` (two tables marked deleted together), and `account_merge` (an explicit
 `conn.transaction()` over the whole merge). Those take an injected
 `AsyncConnectionPool` and hand-roll `cur.execute(..., %s)`.
 
-Everything else — every single-statement read, wherever it lives — goes through
+Everything else (every single-statement read, wherever it lives) goes through
 `execute_query` with `:named` params. Choose by need, never by file.
 
 **And one query, not twenty.** A hand-rolled `SELECT ... FROM health_app_user
 WHERE ... AND is_del = false` at every call site is a per-call-site chance to
 drop the `is_del` filter, and a lookup without it answers for deleted accounts
-— name, language, timezone and all. :func:`get_user` is the single lookup;
+name, language, timezone and all. :func:`get_user` is the single lookup;
 `test_user_lookup.py` fails if a new hand-rolled one appears.
 """
 
@@ -27,12 +27,12 @@ from typing import TYPE_CHECKING
 
 # Type-checking only: `AsyncConnectionPool` appears in three parameter
 # annotations, and psycopg_pool lives in the [app] extra. A module-scope
-# import here made `import mirobody.user.care_circle` — the pure authorization
-# rules examples/06 demonstrates — require the server extra.
+# import here made `import mirobody.user.care_circle` (the pure authorization
+# rules examples/06 demonstrates) require the server extra.
 if TYPE_CHECKING:
     from psycopg_pool import AsyncConnectionPool
 
-from ..utils.db import execute_query
+from mirobody.utils.db import execute_query
 
 logger = logging.getLogger(__name__)
 

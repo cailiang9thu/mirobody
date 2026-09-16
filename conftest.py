@@ -33,9 +33,10 @@ package needs the server stack whether that test touches the pool or not. CI
 never caught it because CI never ran pytest at all.
 
 The gate suite used to sit beside the code it guards (`mirobody/server/test_*.py`),
-where the PARENT PACKAGE pulled the extra in before the module body ran. It now
-lives under `mirobody/tests/`, which imports nothing on its own — so the lists
-below are the module's own imports and nothing else.
+where the PARENT PACKAGE pulled the extra in before the module body ran. It lives
+under `tests/` now, which imports nothing on its own, so the lists below are the
+module's own imports and nothing else. Only `test_engine_coverage.py` still ships
+inside the package, and it needs no extra.
 """
 
 from __future__ import annotations
@@ -71,7 +72,6 @@ _HAS_PARSE = _installed("dotenv", "ruamel.yaml", "pypdfium2")
 # exists to prevent. A glob that matches nothing fails silently, so when a
 # test moves, grep this list.
 _AGENT_ONLY = [
-    "mirobody/tests/agent/*",
     "tests/agent/*",
     "tests/agent/**/*",
     "tests/test_plugin_entry_points.py",
@@ -84,8 +84,6 @@ _AGENT_ONLY = [
 # needs the extra. `utils/test_db.py` needs sqlalchemy, which arrives with the
 # same extra.
 _SERVER_ONLY = [
-    "mirobody/tests/server/*",
-    "mirobody/tests/user/*",
     "tests/server/*",
     "tests/server/**/*",
     "tests/user/*",
@@ -102,13 +100,15 @@ _SERVER_ONLY = [
 # Found the only way this class is ever found — in a clean clone, not in a
 # long-lived venv that has everything.
 _PARSE_ONLY = [
-    "mirobody/tests/pulse/*",
-    "mirobody/tests/utils/test_content_type.py",
-    "mirobody/tests/test_one_key_defaults.py",
-    "mirobody/tests/test_readme_numbers.py",
-    "tests/pulse/file_parser/*",
-    "tests/pulse/file_parser/**/*",
-    "tests/pulse/aggregate/*",
+    "tests/collect/test_delete_is_deletion.py",
+    "tests/collect/test_upload_authz.py",
+    "tests/collect/test_upload_smoke.py",
+    "tests/utils/test_content_type.py",
+    "tests/test_one_key_defaults.py",
+    "tests/test_readme_numbers.py",
+    "tests/collect/file_parser/*",
+    "tests/collect/file_parser/**/*",
+    "tests/collect/aggregate/*",
     "tests/documents/*",
     "tests/documents/**/*",
     "tests/utils/test_prompts.py",

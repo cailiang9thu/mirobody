@@ -10,20 +10,20 @@ Pipeline:
                 └─ if miss: tokenize-compose via morphemes
 
 We deliberately do **not** lowercase indiscriminately. UCUM is
-case-sensitive — ``mg`` is milligram, ``MG`` is megagram, ``m`` is meter
+case-sensitive: ``mg`` is milligram, ``MG`` is megagram, ``m`` is meter
 versus ``M`` is mega-. Variants like ``MG/DL`` are handled explicitly in
 the ``alias`` layer rather than by blanket case folding.
 
 Data lives in :mod:`.tokens` as two Python dicts keyed by
 canonical UCUM. Two layers:
 
-* **morpheme** — atomic tokens that the scanner concatenates into a
+* **morpheme**: atomic tokens that the scanner concatenates into a
   composed UCUM string. ``Millimol pro Liter`` is tokenized as
   ``Millimol`` (→ ``mmol``) + ``pro`` (→ ``/``) + ``Liter`` (→ ``L``)
   and composed back to ``mmol/L``. Composed result is only accepted if
   it lands in :data:`UCUM_FAMILY` (so nonsense like ``mgL`` is rejected).
 
-* **alias** — full-string variants that map directly to a canonical
+* **alias**: full-string variants that map directly to a canonical
   without decomposition (``mmHg`` → ``mm[Hg]``, ``mg%`` → ``mg/dL``,
   Russian compound digits like ``10⁹/л`` → ``10*9/L``).
 
@@ -71,7 +71,7 @@ _SYMBOL_FOLD: dict[str, str] = {
     "µ":  "u",   # U+00B5 MICRO SIGN
     "μ":  "u",   # U+03BC GREEK SMALL LETTER MU
     "×":  "x",   # multiplication sign
-    "·":  ".",   # middle dot — UCUM uses . for multiplication
+    "·":  ".",   # middle dot: UCUM uses . for multiplication
     "⋅":  ".",   # dot operator
     "°":  "deg",
     " ":  "",    # collapse internal whitespace
@@ -79,10 +79,10 @@ _SYMBOL_FOLD: dict[str, str] = {
 }
 
 
-# UCUM annotations ``{xxx}`` carry semantic meaning only — they do not
+# UCUM annotations ``{xxx}`` carry semantic meaning only, they do not
 # change the dimension of the unit. Stripped at lookup-time (not in
 # :func:`_clean`) so that canonicals like ``mL/min/{1.73_m2}`` (eGFR
-# — where the annotation IS the denominator) still match themselves
+#, where the annotation IS the denominator) still match themselves
 # exactly and preserve their ArVRat family. For ``mL/min/{1.73_m2}``
 # the ``/?`` also eats the preceding slash, so the stripped form is
 # ``mL/min`` rather than the truncated ``mL/min/``.
@@ -132,7 +132,7 @@ def _invert_to_token_map(source: dict[str, list[str]]) -> dict[str, str]:
 @lru_cache(maxsize=1)
 def _alias_table() -> dict[str, str]:
     alias = _invert_to_token_map(ALIASES)
-    # Every canonical UCUM unit is a valid input — register it as
+    # Every canonical UCUM unit is a valid input: register it as
     # mapping to itself so callers don't need to special-case "already
     # canonical". Explicit alias entries take precedence.
     for canon in UCUM_FAMILY:
@@ -147,7 +147,7 @@ def _morpheme_table() -> tuple[dict[str, str], tuple[str, ...]]:
     Auto-injects atomic UCUM canonicals (no ``/`` or ``.``) so the
     scanner recognizes ``mg`` / ``mmol`` / ``L`` inside longer inputs
     without each language repeating them. Compound canonicals stay out
-    of the morpheme layer — registering ``/L`` here would let the
+    of the morpheme layer: registering ``/L`` here would let the
     greedy scanner gobble it across a numerator/denominator boundary
     (``Millimol/Liter`` → ``Millimol`` + ``/L`` + leftover ``iter``).
 
@@ -160,7 +160,7 @@ def _morpheme_table() -> tuple[dict[str, str], tuple[str, ...]]:
         if "/" in canon or "." in canon:
             continue
         morpheme.setdefault(_clean(canon), canon)
-    # Universal separator — every language uses ``/`` for "per".
+    # Universal separator: every language uses ``/`` for "per".
     morpheme.setdefault("/", "/")
     keys = tuple(sorted(morpheme, key=len, reverse=True))
     return morpheme, keys
@@ -170,7 +170,7 @@ def _tokenize_compose(text: str) -> str | None:
     """Greedy longest-match-first tokenization + UCUM composition.
 
     Returns the composed UCUM string if it lands in :data:`UCUM_FAMILY`,
-    else ``None``. Unmatched characters break the parse — anything left
+    else ``None``. Unmatched characters break the parse: anything left
     over means we don't fully recognize the input.
     """
     table, keys = _morpheme_table()
@@ -184,7 +184,7 @@ def _tokenize_compose(text: str) -> str | None:
                 pos += len(tok)
                 break
         else:
-            # unmatched char — refuse the parse rather than emit garbage
+            # unmatched char: refuse the parse rather than emit garbage
             return None
     composed = "".join(out)
     if composed in UCUM_FAMILY:
@@ -225,7 +225,7 @@ def _resolve_prefix(text: str) -> str | None:
     ``text[:end]`` that ``_resolve_strict`` accepts, else ``None``.
 
     Used by :func:`parse_value_unit` to peel a unit token off the
-    front of post-value rest text — handles compact CJK inputs like
+    front of post-value rest text: handles compact CJK inputs like
     ``70克葡萄糖`` where the unit (``克``) butts directly against a
     surrounding noun with no whitespace to split on.
     """
@@ -239,7 +239,7 @@ def _resolve_prefix(text: str) -> str | None:
 
 
 def _resolve_suffix(text: str) -> str | None:
-    """Longest-suffix resolve — mirror of :func:`_resolve_prefix` for
+    """Longest-suffix resolve: mirror of :func:`_resolve_prefix` for
     the pre-value side. Handles ``葡萄糖70克`` (noun before value,
     unit after) where the unit might be the rightmost edge of the
     text. The function name describes the SLICE strategy (suffix of
@@ -296,32 +296,22 @@ def _comparator_and_value(raw_cmp: str, raw_num: str) -> tuple[str, float | None
     return raw_cmp, value
 
 
-# ``parse_value_unit`` expects a clean ``<value><unit>`` standalone
-# string; resolver / corpus-side users need to find ``75 g`` inside
-# longer text (LOINC names: ``--2 hours post 75 g glucose PO``). The
-# scanner below covers that use case.
-#
-# Restricting to dose-relevant families keeps the scanner from
-# colliding with axes the resolver already covers:
-#   - TIME_ASPCT axis handles ``2 hours`` / ``24 hour`` (Time family)
-#   - PROPERTY axis handles concentrations (MCnc/SCnc, e.g. ``mg/dL``)
-# Dose unit families are the gap — these encode challenge doses
-# (75 g, 100 g, 50 mL), body-weight-normalized variants
-# (1.75 g/kg pediatric OGTT), and biological-activity units
-# (``500 U penicillin``, ``5 IU insulin``) that no axis predicts.
-# Adding non-dose families here would double-fire with axis bonus
-# and over-promote.
+# ``parse_value_unit`` expects a clean ``<value><unit>``; resolver and corpus
+# users need ``75 g`` found inside longer text (``--2 hours post 75 g glucose
+# PO``), which the scanner below covers. Restricting it to dose-relevant
+# families keeps it off axes the resolver already has: TIME_ASPCT takes
+# ``2 hours``, PROPERTY takes concentrations. Doses are the gap: challenge
+# doses (75 g, 50 mL), body-weight variants (1.75 g/kg pediatric OGTT) and
+# activity units (``5 IU insulin``). A non-dose family added here would
+# double-fire with the axis bonus and over-promote.
 _DOSE_FAMILIES = frozenset({"Mass", "Vol", "CCnt", "MCnt", "Arb"})
 
-# Two-pass scan: one regex per script class.
-#
-# **Latin pass** — number then optional whitespace then a Latin /
-# micro-sign / degree-shaped token. Body allows letters, digits, and
-# UCUM compositors (``./*[]+-``) so compounds like ``g/kg`` and
-# ``10*9/L`` round-trip through ``_resolve_strict``; whitespace is
-# excluded so the body can't run across tokens. ``\b`` at the tail
-# rejects partial matches like ``75 grms`` (typo) by requiring a real
-# word boundary — but only Latin/digit-vs-non-Latin counts, which is
+# Two-pass scan, one regex per script class. Latin pass: number, optional
+# whitespace, then a Latin / micro-sign / degree-shaped token. The body allows
+# letters, digits and UCUM compositors (``./*[]+-``) so ``g/kg`` and ``10*9/L``
+# round-trip through ``_resolve_strict``, and excludes whitespace so it cannot
+# run across tokens. ``\b`` at the tail rejects partial matches like
+# ``75 grms``, but only Latin/digit-vs-non-Latin counts as a boundary, which is
 # why this pass alone misses compact CJK input.
 _LATIN_VALUE_UNIT_SCAN = re.compile(
     r"([0-9]+(?:[.,][0-9]+)?)"
@@ -329,20 +319,20 @@ _LATIN_VALUE_UNIT_SCAN = re.compile(
     r"([A-Za-zμµ°][A-Za-z0-9./*\[\]+\-]{0,11})"
     # Tail: not followed by another Latin-alnum (rejects ``75 grms``
     # mid-word). Plain ``\b`` would *also* reject ``75g 后`` because
-    # ``g`` and the CJK ``后`` are both ``\w`` — no boundary fires
+    # ``g`` and the CJK ``后`` are both ``\w``, no boundary fires
     # between them. Explicit negative lookahead targets the right
     # adjacency: another Latin/digit char means the body cut short.
     r"(?![A-Za-z0-9])",
     re.UNICODE,
 )
 
-# **CJK pass** — number anchor only; the unit body is parsed by
+# **CJK pass**: number anchor only; the unit body is parsed by
 # greedy-longest-match against the morpheme table. ``\b`` between two
 # CJK ideographs doesn't fire (they're both ``\w``), so any
 # regex-only body would either eat the trailing noun
 # (``75克葡萄糖`` → ``克葡萄糖``) or refuse to start. Instead we find
 # digit runs, skip optional whitespace, and tokenize forward using
-# the same morpheme table the rest of the module uses — stops at the
+# the same morpheme table the rest of the module uses: stops at the
 # first un-tokenizable char, which is exactly where the unit ends.
 _DIGIT_RUN = re.compile(r"[0-9]+(?:[.,][0-9]+)?", re.UNICODE)
 
@@ -368,11 +358,11 @@ def scan_value_units(text: str | None) -> list[tuple[float, str]]:
     PROPERTY axis bonuses, so a positive hit here is information the
     resolver doesn't already have. ``mmol/L`` belongs to the SCnc
     concentration family (PROPERTY-axis territory) and is intentionally
-    rejected — bonusing on it would double-count with axis rerank.
+    rejected: bonusing on it would double-count with axis rerank.
     """
     if not isinstance(text, str) or not text:
         return []
-    # Preserve whitespace as a token boundary — the standard ``_clean``
+    # Preserve whitespace as a token boundary: the standard ``_clean``
     # collapses spaces (correct for compact UCUM input, wrong for
     # arbitrary text scanning). NFKC + symbol fold are still applied so
     # full-width digits and the µ/μ variants normalize before regex.
@@ -404,13 +394,13 @@ def scan_value_units(text: str | None) -> list[tuple[float, str]]:
         seen.add(key)
         out.append(key)
 
-    # Pass 1 — Latin / micro / degree-shaped unit tokens.
+    # Pass 1: Latin / micro / degree-shaped unit tokens.
     for m in _LATIN_VALUE_UNIT_SCAN.finditer(scan_text):
         _record(m.group(1), _resolve_strict(_clean(m.group(2))))
 
-    # Pass 2 — CJK greedy unit parse via the shared edge-resolve
+    # Pass 2: CJK greedy unit parse via the shared edge-resolve
     # primitive ``_resolve_prefix``. Same primitive
-    # :func:`parse_value_unit` uses for its compact-CJK fallback —
+    # :func:`parse_value_unit` uses for its compact-CJK fallback:
     # both paths agree on what counts as a unit token sitting next
     # to a value with no whitespace.
     n = len(scan_text)
@@ -418,7 +408,7 @@ def scan_value_units(text: str | None) -> list[tuple[float, str]]:
         pos = m.end()
         while pos < n and scan_text[pos] in (" ", "\t"):
             pos += 1
-        # Skip if next char is Latin/digit — Pass 1's territory.
+        # Skip if next char is Latin/digit: Pass 1's territory.
         # Dedup would still drop the duplicate, but cleaner to gate
         # up front.
         if pos >= n or scan_text[pos].isascii():
@@ -432,7 +422,7 @@ def parse_value_unit(text: str | None) -> ParsedQuantity:
     """Parse a free-text "value + unit" string into its components.
 
     Lookup order:
-      1. Whole input as unit — preserves ``10*9/L`` and other canonicals
+      1. Whole input as unit: preserves ``10*9/L`` and other canonicals
          that legitimately start with digits.
       2. Value at start: ``<5.6 mg/dL`` → comparator + value + unit.
       3. Value anywhere: ``每分钟90次`` (Chinese SVO) → ``(0, 90, /min)``.
@@ -453,15 +443,14 @@ def parse_value_unit(text: str | None) -> ParsedQuantity:
     if direct is not None:
         return ParsedQuantity("", None, direct)
 
-    # ── Path B0: respect an explicit whitespace boundary ─────────────
-    # ``_clean`` collapses internal whitespace, which GLUES a numeric value
-    # onto a digit-leading unit: ``240 10⁹/L`` → NFKC ⁹→9 → ``240109/L``,
-    # after which Path B's greedy digit match reads value=240109, unit=/L —
-    # a platelet count corrupted by three orders of magnitude. The author's
-    # own separator is the strongest split signal, so before collapsing it,
-    # try: first token ENTIRELY comparator+number, remainder a unit on its
-    # own. Digit-leading units (10*9/L, 10¹²/L, …) resolve via the alias
-    # table exactly like the bare-unit Path A always has.
+    # Path B0: respect an explicit whitespace boundary. ``_clean`` collapses
+    # internal whitespace, gluing a value onto a digit-leading unit:
+    # ``240 10⁹/L`` NFKC-folds to ``240109/L``, after which Path B's greedy
+    # digit match reads value=240109, unit=/L, a platelet count wrong by three
+    # orders of magnitude. The author's own separator is the strongest split
+    # signal, so before collapsing it: first token entirely comparator+number,
+    # remainder a unit on its own. Digit-leading units resolve via the alias
+    # table exactly as bare units do in Path A.
     parts = text.split()
     if len(parts) >= 2:
         m0 = _VALUE_PREFIX.fullmatch(_clean(parts[0]))
@@ -480,14 +469,14 @@ def parse_value_unit(text: str | None) -> ParsedQuantity:
             return ParsedQuantity(raw_cmp, value, None)
         unit = _resolve_strict(rest)
         if unit is None:
-            # Compact CJK fallback: ``70克葡萄糖`` — the unit butts
+            # Compact CJK fallback: ``70克葡萄糖``, the unit butts
             # against a noun with no whitespace, so ``rest`` as a whole
             # can't tokenize-compose, but its longest prefix can. Bound
             # is small so we can't eat across a value/unit boundary.
             unit = _resolve_prefix(rest)
         if unit is not None:
             return ParsedQuantity(raw_cmp, value, unit)
-        # Rest exists but didn't resolve — fall through rather than emit
+        # Rest exists but didn't resolve: fall through rather than emit
         # a half-parsed (value-only) result for inputs like "5.6/3.2".
 
     # ── Path C: value anywhere (Chinese SVO: "每分钟90次") ───────────
@@ -499,7 +488,7 @@ def parse_value_unit(text: str | None) -> ParsedQuantity:
             value = None
         left = cleaned[:nm.start()]
         right = cleaned[nm.end():]
-        # Try joined first — preserves SVO behavior ("每分钟90次":
+        # Try joined first: preserves SVO behavior ("每分钟90次":
         # left ``每分钟`` + right ``次`` tokenize-composes to /min).
         # Then each side independently for the value-at-edge CJK cases
         # (``葡萄糖70克``: right side ``克`` resolves on its own).

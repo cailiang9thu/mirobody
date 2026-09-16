@@ -120,7 +120,7 @@ def default_index_path() -> str | None:
     explicit = os.environ.get(ENV_VAR)
     if not explicit:
         try:
-            from ..utils.config import safe_read_cfg
+            from mirobody.utils.config import safe_read_cfg
 
             explicit = safe_read_cfg(ENV_VAR, "")
         except Exception:
@@ -348,7 +348,7 @@ class SemanticIndex:
         with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)
 
-        from ..utils.embedding import embedding_model_id, resolve_embedding_provider
+        from mirobody.utils.embedding import embedding_model_id, resolve_embedding_provider
 
         provider = resolve_embedding_provider()
         model = embedding_model_id(provider)
@@ -452,7 +452,7 @@ class SemanticIndex:
         wheel plus numpy". Nothing here should raise that floor for callers who
         never ask for the semantic tier.
         """
-        from ..utils.embedding import text_embedding
+        from mirobody.utils.embedding import text_embedding
 
         vectors = await text_embedding(terms, cache=True)
         results: list[list[Candidate]] = []

@@ -7,10 +7,10 @@ from datetime import datetime, date
 
 import redis.asyncio
 
-from ..utils import execute_query
-from ..utils.llm import async_get_text_completion
-from ..utils.llm_output import strip_code_fence
-from ..utils.config import safe_read_cfg, global_config
+from mirobody.utils import execute_query
+from mirobody.utils.llm import async_get_text_completion
+from mirobody.utils.llm_output import strip_code_fence
+from mirobody.utils.config import safe_read_cfg, global_config
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ def _extract_core_section(common_part: str, maxlen: int) -> str:
     The profile generator emits this as the FIRST section (see
     GENERATE_USER_PROFILE_PROMPT). We inject ONLY this section so the system
     prompt stays short and stable between profile refreshes (prompt-cache
-    friendly) — the volatile lab time-series lives in the detail, which the
+    friendly): the volatile lab time-series lives in the detail, which the
     agent reads on demand from ``/memories/health_profile.md``.
 
     Returns the core section text (capped at ``maxlen``). Falls back to a
@@ -62,7 +62,7 @@ async def get_health_profile_core(user_id: str, maxlen: int = 2000) -> str | Non
     Returns the curated '核心摘要 / Core Summary' section of the latest profile
     (capped at ``maxlen``), or None when the user has no profile yet. The full
     detailed profile is mirrored to ``/memories/health_profile.md`` for the
-    agent to read on demand — keeping the injected core short + stable so it
+    agent to read on demand: keeping the injected core short + stable so it
     stays prompt-cache friendly between profile refreshes.
     """
     if not user_id:
@@ -70,7 +70,7 @@ async def get_health_profile_core(user_id: str, maxlen: int = 2000) -> str | Non
     try:
         # Query inlined from the deleted chat/user.py `fetch_system_user_profile`,
         # whose return dict named the decrypted text `medical_history` while this
-        # caller read `common_part` — so the lookup ALWAYS came back empty and no
+        # caller read `common_part`, so the lookup ALWAYS came back empty and no
         # <health_profile> block ever reached the system prompt. Selecting the
         # column directly removes the renaming hop that hid the mismatch.
         rows = await execute_query(
@@ -85,7 +85,7 @@ async def get_health_profile_core(user_id: str, maxlen: int = 2000) -> str | Non
     except Exception as e:
         # This swallowed silently. Every agent turn calls it to put the
         # user's health context into the system prompt, so a failure here
-        # degrades every answer the user gets — and left no trace explaining why.
+        # degrades every answer the user gets, and left no trace explaining why.
         logger.warning("health profile unavailable for %s: %s", user_id, e, exc_info=True)
         return None
     if not rows:
@@ -1231,7 +1231,7 @@ class UserProfileService:
 
             # Mirror the FULL detailed profile into the agent's encrypted /memories/
             # so it can read specifics on demand; the bounded Core Summary is what
-            # gets injected into the system prompt. Best-effort — never blocks save.
+            # gets injected into the system prompt. Best-effort, never blocks save.
 
             return {
                 "status": "success",

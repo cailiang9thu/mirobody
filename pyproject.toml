@@ -298,17 +298,12 @@ indicator-build = [
 
 [tool.setuptools.packages.find]
 include = ["mirobody", "mirobody.*"]
-# The twenty-one modules under `mirobody/tests/` are the ones that are EVIDENCE
-# for a public claim: `test_engine_coverage.py` is the resolver score the README
-# publishes and links; the four `test_readme_*` gates check the READMEs' figures,
-# links, examples and cross-edition parity against reality; `test_public_api` /
-# `test_public_surface` check the export tables and the "two packages" promise;
-# and `test_upload_authz` / `test_care_circle` / `test_bootstrap_guard` /
-# `test_delete_is_deletion` are the authorization regressions SECURITY.md points
-# at. They stay in git because a benchmark nobody can run is an assertion. They
-# are pruned from the artifact by `scripts/build_backend.py` — useful to a
-# contributor, useless in someone's site-packages — and
-# `scripts/check_wheel_data.py` fails the build if one comes back.
+# `mirobody/tests/test_engine_coverage.py` is the one test module in git: it is
+# the resolver score the README publishes and links, and a benchmark nobody can
+# run is an assertion. It is pruned from the artifact by
+# `scripts/build_backend.py` (useful to a reader with a clone, useless in
+# someone's site-packages) and `scripts/check_wheel_data.py` fails the build if
+# a test module comes back.
 #
 # Everything else lives in a gitignored `tests/` at the repo root, so the local
 # regression suite can be thorough without becoming public API. That rule was
@@ -370,12 +365,10 @@ disable_test_id_escaping_and_forfeit_all_rights_to_community_support = true
 # extra). Without this the async tests fail with "async def functions are not
 # natively supported" on every machine.
 asyncio_mode = "auto"
-# Two roots. `mirobody/tests/` is the gate suite: every module in it is EVIDENCE
-# for a public claim — the resolver benchmark the README scores itself against,
-# the gates on the README's own numbers, links and translations, the export
-# tables, and the authorization regressions SECURITY.md points at. `tests/` is the local regression suite and is gitignored: internal
-# quality control that can be as detailed as it needs to be without becoming
-# part of the project's public surface. It is simply absent from a clone, and
+# Two roots. `mirobody/tests/` holds the single gate that ships: the resolver
+# benchmark the README scores itself against. `tests/` is the local regression
+# suite and is gitignored: internal quality control that can be as detailed as
+# it needs to be without becoming part of the project's public surface. It is simply absent from a clone, and
 # pytest skips a testpath that does not exist. (Historical note: the README
 # once documented a tests/ directory along with `-m mcp` / `-m chat` and other
 # markers, none of which existed — following it produced "0 tests collected".)
@@ -427,12 +420,12 @@ source_modules = [
     "mirobody.kernel.sink",
     "mirobody.kernel.tools",
     "mirobody.units",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.value_scale",
     "mirobody.zh_fold",
     # The rest of the engine.
     "mirobody.indicator",
-    "mirobody.pulse",
+    "mirobody.collect",
     "mirobody.documents",
     "mirobody.utils",
     "mirobody.user",
@@ -485,7 +478,7 @@ source_modules = [
     "mirobody.kernel.sink",
     "mirobody.kernel.tools",
     "mirobody.units",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.value_scale",
     "mirobody.zh_fold",
 ]
@@ -494,7 +487,7 @@ forbidden_modules = [
     "mirobody.engine",
     "mirobody.indicator",
     "mirobody.mcp",
-    "mirobody.pulse",
+    "mirobody.collect",
     "mirobody.documents",
     "mirobody.server",
     "mirobody.task",
@@ -530,7 +523,7 @@ source_modules = [
     "mirobody.kernel.tools",
     "mirobody.units",
     "mirobody.value_scale",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.zh_fold",
 ]
 forbidden_modules = [
@@ -610,11 +603,11 @@ source_modules = [
     "mirobody.kernel.sink",
     "mirobody.kernel.tools",
     "mirobody.units",
-    "mirobody.kernel.vendors",
+    "mirobody.kernel.decoders",
     "mirobody.value_scale",
     "mirobody.zh_fold",
     "mirobody.indicator",
-    "mirobody.pulse",
+    "mirobody.collect",
     "mirobody.documents",
     "mirobody.utils",
     "mirobody.task",
@@ -660,10 +653,14 @@ extend-exclude = [
 #   RUF100  a `noqa` that no longer suppresses anything. A stale one silently
 #        swallows the NEXT finding on that line.
 #   C4, PIE  comprehension and simplification defects, three findings between them.
+#   TID  a relative import that leaves its directory (TID252, at ruff's default
+#        `parents` level; plain `from .sibling` stays legal). See CLAUDE.md:
+#        the same dependency was being spelled two ways, so grep stopped
+#        answering "who imports kernel".
 select = [
     "E4", "E7", "E9", "F", "UP",
     "B", "ISC", "C4", "PIE", "PLE", "RUF100",
-    "RET505", "RET507", "PLW0602",
+    "RET505", "RET507", "PLW0602", "TID",
 ]
 ignore = [
     "B007",   # unused loop variable. `for k, v in d.items()` when only `v` is read
@@ -689,8 +686,12 @@ ignore = [
 #        start_time` is a NAIVE LOCAL wall clock, and `schema/a4_series_data_day_
 #        authority.sql` plus `pulse/readings.py` are built on that. Selecting DTZ
 #        would ask us to break the storage contract to satisfy a linter.
-#   TID252 (408) relative imports. The package uses them throughout by choice;
-#        import-linter is what actually guards the layering here.
+# TID252 was listed here as "relative imports are used throughout by choice".
+# Reversed 2026-09-14 on measurement, not taste: numpy nests deeper than we do
+# with zero parent-relative imports, fastapi likewise, and nothing in an
+# eighteen-library sample reached the four dots this package had. It is selected
+# above now. import-linter still guards the layering; TID252 keeps the edge
+# visible to a reader.
 
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI declares a parameter's SOURCE in its default: `file: UploadFile =

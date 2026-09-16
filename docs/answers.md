@@ -55,7 +55,7 @@ gets all six plus the harness's own: `ls read_file write_file edit_file glob
 grep`, the `eval` REPL, and `ask_user`. `ask_user` is never an MCP tool — an
 MCP client has no widget to answer a question with.
 
-`tests/agent/test_tool_surface.py` asserts both lists exactly.
+The local suite asserts both lists exactly.
 
 ---
 

@@ -1,15 +1,15 @@
-"""`query_medications` — the one tool for a person's medications.
+"""`query_medications`: the one tool for a person's medications.
 
 Medications are an entity, not a series: a plan has a lifecycle, a dose has a
 day, a course has a reason it closed. That grammar has nothing in common with
 `resolution` and `aggregate`, so it is its own tool with five parameters
-(`meds.TOOL_SCHEMA`) rather than a mode inside the readings tool — a mode
+(`meds.TOOL_SCHEMA`) rather than a mode inside the readings tool: a mode
 under which most of the readings parameters would have to be refused.
 
 The tool body is thin on purpose: authorization, the two stores, a window in
 the subject's zone, and an envelope. Everything that decides what a row says
-— which plans are in effect, what state each of today's slots is in, how a
-schedule reads — is pure and lives in `mirobody.kernel.meds`, so a consumer
+ (which plans are in effect, what state each of today's slots is in, how a
+schedule reads) is pure and lives in `mirobody.kernel.meds`, so a consumer
 with its own storage renders the same rows.
 
 It never raises, for the same reason as the readings tool: a PTC call has
@@ -20,22 +20,23 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any
 
-from ...kernel import meds, query, series, tools
-from ...kernel.ops import is_driver_exception
-from ._authz import caller_of, denied, refused, subject_for
-from .health_indicators_service import awaited, envelope_meta, render_compact
+from mirobody.kernel import meds, series, tools
+from ._authz import refused, subject_for
+from ._base import RecordTool
+from ._render import awaited, envelope_meta, render_compact
 
 logger = logging.getLogger(__name__)
 
 
-class MedicationsService:
+class MedicationsService(RecordTool):
     """The tool body. `__tools__` is the whole published surface; `envelope`
     is API for the chat adapter, not a tool."""
 
     __tools__ = (meds.TOOL_NAME,)
+    TOOL_NAME = meds.TOOL_NAME
     input_schema = meds.TOOL_SCHEMA
 
     def __init__(self, store: Any = None, dose_log: Any = None, *, tz: Any = None, now: Any = None) -> None:
@@ -51,7 +52,7 @@ class MedicationsService:
         Read this person's medications: the list they keep (plan), the doses
         they recorded (log), or the courses over time (history).
 
-        USE IT for anything about what they take, took or stopped — "what am
+        USE IT for anything about what they take, took or stopped: "what am
         I on", "when did I start metformin", "did I take my evening dose",
         "what was I taking in March". `view="history"` answers "when did I
         switch", which is how a question like "how did my blood pressure move
@@ -71,30 +72,18 @@ class MedicationsService:
         Notes for LLMs:
             - A plan is what the person intends to take. Never answer an
               adherence question ("did I take it", "how many did I miss") from
-              the plan — use `view="log"`.
+              the plan: use `view="log"`.
             - A dose missing from the log is not evidence it was not taken.
         """
         envelope = await self.envelope(user_info, **args)
         return {"result": render_compact(envelope, self.columns(args)), **envelope_meta(envelope)}
 
     def columns(self, args: Mapping[str, Any]) -> tuple[str, ...] | None:
-        """Which columns one answer renders — a plan, a dose log and a course
+        """Which columns one answer renders: a plan, a dose log and a course
         history share no shape. Read by the chat adapter too (`tool_loader`),
         so both surfaces render the same table; not a tool (`__tools__`)."""
         return meds.VIEW_COLUMNS.get(str(args.get("view") or meds.VIEW_PLAN))
 
-    async def envelope(self, user_info: Mapping[str, Any], **args: Any) -> tools.Envelope:
-        caller_id = caller_of(user_info)
-        if not caller_id:
-            return denied("authorization required")
-        try:
-            return await self._run(caller_id, args)
-        except query.Denied:
-            return denied("you may not read this person's data")
-        except Exception as e:
-            tool_name = meds.TOOL_NAME
-            logger.error("[%s] error_type=%s", tool_name, type(e).__name__, exc_info=not is_driver_exception(e))
-            return tools.fault_envelope(e)
 
     # --- the run ------------------------------------------------------------
 
@@ -127,7 +116,7 @@ class MedicationsService:
 
     def _stores(self) -> tuple[Any, Any]:
         if self._store is None or self._dose_log is None:
-            from ...pulse.meds import PostgresDoseLogStore, PostgresMedicationStore
+            from mirobody.collect.meds import PostgresDoseLogStore, PostgresMedicationStore
             self._store = self._store or PostgresMedicationStore()
             self._dose_log = self._dose_log or PostgresDoseLogStore()
         return self._store, self._dose_log
@@ -135,12 +124,9 @@ class MedicationsService:
     async def _zone_of(self, subject_id: str) -> str:
         if self._tz is not None:
             return await awaited(self._tz(subject_id)) or "UTC"
-        from ...user.user import get_user
+        from mirobody.user.user import get_user
         row = await get_user(user_id=subject_id)
         return ((row or {}).get("tz") or "").strip() or "UTC"
-
-    def _clock(self) -> datetime:
-        return self._now() if callable(self._now) else datetime.now(UTC)
 
 
 # --- pure --------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""UCUM unit conversion — so one indicator can be one series in one unit.
+"""UCUM unit conversion, so one indicator can be one series in one unit.
 
 Three tiers, degrading in order:
 
@@ -15,7 +15,7 @@ Three tiers, degrading in order:
 
 **Do not use** :func:`~.families.unit_family` **to decide convertibility.** It
 is a LOINC PROPERTY classifier, not a dimension table, and it is wrong in both
-directions for this purpose — measured, not supposed:
+directions for this purpose: measured, not supposed:
 
     kg/m2 (BMI)  -> MCnc      mg/dL -> MCnc      same family, NOT convertible
     U/L          -> CCnc      [IU]/L -> ACnc     different families, 1:1 IDENTICAL
@@ -24,7 +24,7 @@ directions for this purpose — measured, not supposed:
 concentration, and refuses a conversion that is the identity. A dimension
 signature rejects the first and accepts the second by construction.
 
-`None` from :func:`scale` is **not an error** — it means "atomic unit": equal
+`None` from :func:`scale` is **not an error**, it means "atomic unit": equal
 only to a unit spelled exactly the same way. `%`, `mm[Hg]`, `个/HP`, `meq/L` all
 take that path. Better to decline than to guess.
 
@@ -36,7 +36,7 @@ editing one.
 The tier split and the conventions below come from a design worked out and
 validated against real unit-conversion cases, not invented for this module.
 
-**Not to be confused with** :func:`mirobody.pulse.standardize.units.convert_to_standard`,
+**Not to be confused with** :func:`mirobody.collect.standardize.units.convert_to_standard`,
 which is a different job on the other side of the pipeline: it takes a
 ``StandardIndicator`` enum member and converts to *that device indicator's*
 declared canonical unit (① Collect, one target per indicator). This module takes
@@ -79,7 +79,7 @@ _PREFIX: dict[str, float] = {
 #: whose only job is deciding whether two units can convert:
 #:   M mass · V volume · N amount of substance · L length · T time · A activity
 #: `1` is dimensionless (counts); its factor folds into the scalar and stays OUT
-#: of the signature — otherwise `10*9/L` and `/L` would read as different
+#: of the signature: otherwise `10*9/L` and `/L` would read as different
 #: dimensions.
 _BASE: dict[str, tuple[str, float]] = {
     "g": ("M", 1.0),
@@ -88,7 +88,7 @@ _BASE: dict[str, tuple[str, float]] = {
     "mol": ("N", 1.0),
     # `eq` (equivalents) is deliberately ABSENT: mEq↔mmol differs by valence
     # (1 mmol Ca2+ = 2 mEq), so a 1:1 conversion is silently off by a factor of
-    # two. `meq/L` therefore parses as None — equal only to itself.
+    # two. `meq/L` therefore parses as None: equal only to itself.
     "m": ("L", 1.0),
     "s": ("T", 1.0),
     "min": ("T", 60.0),
@@ -122,7 +122,7 @@ def _atom(token: str) -> tuple[str, float] | None:
         except ValueError:
             return None
     # Longest prefix first: `da` before `d`, and `m` (milli) must not eat
-    # `min` / `mol` — both already matched in _BASE above.
+    # `min` / `mol`: both already matched in _BASE above.
     for prefix in sorted(_PREFIX, key=len, reverse=True):
         if token.startswith(prefix):
             rest = token[len(prefix):]
@@ -166,22 +166,14 @@ def scale(ucum: str | None) -> DimScale | None:
     return (signature, factor)
 
 
-#: Mass concentration (M/V) ↔ substance concentration (N/V), bridged by molar
-#: mass: LOINC code → (g_per_mol, basis, note).
-#:
-#: **Keyed by code, never by indicator name.** Three conventions that will be
-#: got wrong if they are not written down:
-#:
-#:   1. Triglyceride uses a CONVENTIONAL average molar mass (triolein ≈ 885.4),
-#:      not the mass of one determinate molecule. The 88.57 factor is an
-#:      industry convention, not something computed from a formula.
-#:   2. BUN is reported as NITROGEN, urea as the whole molecule — a factor of
-#:      ~2.14 apart. They get one row each and must never share.
-#:   3. Conversion happens only WITHIN one code. Across codes, however close
-#:      clinically, is concept mapping, and this table does not do that.
-#:
-#: A finite, checkable table of physical constants with a golden vector per row
-#: — not an open-ended correction KB.
+#: Mass concentration (M/V) to substance concentration (N/V), bridged by molar
+#: mass: LOINC code -> (g_per_mol, basis, note). Keyed by code, never by
+#: indicator name. Three conventions that get got wrong otherwise: triglyceride
+#: uses a conventional average molar mass (triolein ~885.4), so 88.57 is
+#: industry convention and not computed; BUN is reported as NITROGEN and urea
+#: as the whole molecule, ~2.14 apart, so they get a row each and never share;
+#: conversion happens only WITHIN one code, across codes being concept mapping,
+#: which this table does not do.
 MOLAR_MASS: dict[str, tuple[float, str, str]] = {
     # Glucose metabolism
     "1558-6": (180.16, "C6H12O6", "Fasting glucose; 1 mmol/L = 18.016 mg/dL"),
@@ -251,7 +243,7 @@ def convert_value(value: float, from_unit: str, to_unit: str, *, loinc_code: str
 
     **Nothing is rounded.** Full precision is kept; format at the output layer,
     where the display unit's usual precision is known. A None must not be
-    treated as zero — it means these readings belong to separate series.
+    treated as zero, it means these readings belong to separate series.
     """
     factor = conversion_factor(from_unit, to_unit, loinc_code=loinc_code)
     return None if factor is None else value * factor
@@ -308,17 +300,17 @@ def canonical_unit(ucum: str | None, *, loinc_code: str = "") -> str | None:
 
     `mg/dL` and `g/L` both answer `g/L`; with a `loinc_code` that
     :data:`MOLAR_MASS` bridges, both answer `mol/L` instead. None means atomic
-    (`%`, `mm[Hg]`, `meq/L`) — see :func:`scale`.
+    (`%`, `mm[Hg]`, `meq/L`): see :func:`scale`.
     """
     got = _canonical(ucum, loinc_code)
     return None if got is None else _render(got[0])
 
 
 def canonicalize(value: float, unit: str | None, *, loinc_code: str = "") -> CanonicalQuantity:
-    """A reading folded to base units — the COMPARISON KEY, not a replacement.
+    """A reading folded to base units: the COMPARISON KEY, not a replacement.
 
     Store it in a second column beside the value as recorded, and two readings
-    are comparable when their canonical PAIRS agree — a `SELECT ... GROUP BY`
+    are comparable when their canonical PAIRS agree: a `SELECT ... GROUP BY`
     rather than a conversion pass per query. The original is never touched;
     provenance and FHIR fidelity depend on the reading as written down, and
     :func:`convert_value` remains the way to answer "in THIS unit, what is it".
@@ -326,8 +318,8 @@ def canonicalize(value: float, unit: str | None, *, loinc_code: str = "") -> Can
     The unit comes back with the number because the canonical basis is not a
     property of the input alone. Without a code, `mg/dL` folds to `g/L`; with
     `2345-7` it folds to `mol/L`, where the mmol/L half of the world's glucose
-    readings already is. That is the whole point — a Chinese report's 5.6 mmol/L
-    and a US report's 100 mg/dL are one series only across the molar bridge —
+    readings already is. That is the whole point (a Chinese report's 5.6 mmol/L
+    and a US report's 100 mg/dL are one series only across the molar bridge) 
     but it means a bare canonical number is ambiguous. Comparing the pairs is
     not, and the two bases stay distinguishable rather than silently mixing.
 
@@ -336,7 +328,7 @@ def canonicalize(value: float, unit: str | None, *, loinc_code: str = "") -> Can
 
     An unparseable unit is returned unchanged rather than raising: a reading
     whose unit this module cannot fold is still a reading, and `%` or `mm[Hg]`
-    is already its own canonical form — equal only to itself, which is exactly
+    is already its own canonical form: equal only to itself, which is exactly
     what an unchanged pair means to a caller comparing pairs.
     """
     got = _canonical(unit, loinc_code)

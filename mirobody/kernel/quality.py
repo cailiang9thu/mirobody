@@ -1,7 +1,7 @@
 """Quality gates: the checks that decide whether a fact may enter analysis.
 
 Two rules bound what belongs here. First, a gate rejects only what is
-*physically or logically impossible* — an end before its start, a
+*physically or logically impossible*: an end before its start, a
 percentage above 100, a total longer than the span it covers, a value whose
 unit has a different dimension from the metric's. "Heart rate 190 is high"
 is a reference range, an open-ended clinical asset this library does not
@@ -18,7 +18,7 @@ from __future__ import annotations
 import math
 
 from . import metrics
-from .. import units
+from mirobody import units
 from .series import Fact
 
 #: Reason codes. Consumers persist these literals on quarantined rows.
@@ -74,7 +74,7 @@ def reconcile_unit(raw_unit: str, expected_ucum: str, value: float | None) -> tu
     and flagged ``unit_converted``; two units the engine *both* knows with
     different dimensions are an ``ERR_UNIT_DIMENSION_CONFLICT`` (a
     temperature filed under a mass); a unit the engine does not know is
-    admitted as-is with ``unverified_unit`` — an unfamiliar but correct unit
+    admitted as-is with ``unverified_unit``: an unfamiliar but correct unit
     must not lock real data in quarantine.
     """
     incoming = units.normalize_unit(raw_unit) or raw_unit
@@ -109,7 +109,7 @@ def is_echo(value: float | str | None, last_value: float | str | None) -> bool:
 
 
 def cross_source_ratio(a: float, b: float) -> float:
-    """``max/min`` of two positive values, ``inf`` when one is zero — the
+    """``max/min`` of two positive values, ``inf`` when one is zero: the
     signal a monitor uses to flag two sources disagreeing by orders of
     magnitude (a unit slipped: minutes stored as milliseconds)."""
     if a <= 0 or b <= 0:
@@ -118,7 +118,7 @@ def cross_source_ratio(a: float, b: float) -> float:
 
 
 def shape_for(system: str, metric_key: str) -> metrics.Mapping | None:
-    """Convenience: the catalogue mapping a normaliser needs, or ``None`` —
+    """Convenience: the catalogue mapping a normaliser needs, or ``None``,
     which the caller turns into ``ERR_NO_TRUSTED_MAPPING``."""
     return metrics.mapping_for(system, metric_key)
 

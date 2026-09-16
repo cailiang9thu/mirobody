@@ -1,7 +1,7 @@
 """Token usage for one agent turn, and the ``costStatistics`` chunk it becomes.
 
 LangChain normalises every provider's usage into ``AIMessage.usage_metadata``:
-``input_tokens`` (which ALREADY includes cache reads and writes — unlike raw
+``input_tokens`` (which ALREADY includes cache reads and writes: unlike raw
 Anthropic events), ``output_tokens``, ``input_token_details.cache_read`` /
 ``cache_creation`` and ``output_token_details.reasoning``. Summing those across
 every chunk (or every ``on_llm_end``) of a turn is correct for every provider
@@ -11,7 +11,7 @@ first and last chunk; summing is right either way.
 
 ``costStatistics`` deliberately reports TOKENS ONLY. It used to also compute a
 dollar figure, which was the operator's provider cost, not the user's bill.
-Pricing — if a deployment meters — is that deployment's table.
+Pricing (if a deployment meters) is that deployment's table.
 
 Cache accounting is ONE field, ``cache_read_tokens``. Cache *creation* is
 counted here (a meter may want it) but never shown: only Anthropic reports it

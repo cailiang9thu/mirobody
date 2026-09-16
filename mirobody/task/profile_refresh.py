@@ -7,7 +7,7 @@ in a separate service, and this docstring still said so long after the worker
 here took it over.
 
 Weak consistency with IndicatorSyncTask: profile may occasionally refresh
-before the latest dim sync completes and read slightly stale dim data — the
+before the latest dim sync completes and read slightly stale dim data: the
 next signal for that user cleans it up.
 """
 
@@ -28,7 +28,7 @@ class ProfileRefreshTask(BaseRedisTask):
 
     async def consume(self, messages: list[str]) -> None:
         # Lazy import breaks mirobody.task ↔ mirobody.agent.chat/pulse cycle.
-        from ..user.profile import UserProfileService
+        from mirobody.user.profile import UserProfileService
 
         user_ids = {m for m in messages if m}
         if not user_ids:

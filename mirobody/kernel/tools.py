@@ -1,7 +1,7 @@
 """What an agent tool returns, how it fails, and when it may be called again.
 
 The model reads a rendered string; everything a *program* needs to know
-about a tool call — did it work, is retrying pointless, how much was cut —
+about a tool call (did it work, is retrying pointless, how much was cut) 
 travels out of band in a :class:`ToolResult`. Three rules from production:
 
 * A tool's failure text carries the tool name and the exception's **type**,
@@ -88,7 +88,7 @@ _FAULT_HINT = {
 
 
 def fault_text(kind: str, tool_name: str, exc: BaseException | None = None) -> str:
-    """The JSON the model sees in place of a crashed tool result — tool name,
+    """The JSON the model sees in place of a crashed tool result: tool name,
     fault kind, exception type, guidance. Never the exception message."""
     body = {"error": f"{tool_name} failed ({kind})", "error_kind": kind, "hint": _FAULT_HINT[kind]}
     if exc is not None:
@@ -147,7 +147,7 @@ NEXT_STEPS = frozenset(
 
 @dataclass(frozen=True)
 class Meta:
-    """How the answer was produced — methodology, never findings."""
+    """How the answer was produced: methodology, never findings."""
 
     window: tuple[str, str] = ("", "")  # local dates, inclusive
     tz: str = ""

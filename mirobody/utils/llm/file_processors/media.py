@@ -1,8 +1,8 @@
 """Turning a file on disk into something a vision model will accept.
 
 Image downscaling/recompression, PDF page rasterisation, and the OpenAI-shaped
-message envelope. The cost of getting this wrong is paid twice — once in
-tokens, once in extraction quality — so the optimisation thresholds live here
+message envelope. The cost of getting this wrong is paid twice (once in
+tokens, once in extraction quality) so the optimisation thresholds live here
 together rather than at each call site.
 """
 

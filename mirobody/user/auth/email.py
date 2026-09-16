@@ -29,7 +29,7 @@ class DummyEmailCodeValidator(AbstractEmailCodeValidator):
         the server prints it at startup, which is exactly what the README tells
         a new user to read. Returning an error here made the sign-in page's
         "send code" button answer "No SMTP server configured" for the one
-        account the quickstart hands you — the code still worked if you typed
+        account the quickstart hands you: the code still worked if you typed
         it, so the failure was in the step that had nothing to do.
         """
         if to_email in self._predefined_codes:
@@ -49,7 +49,7 @@ class DummyEmailCodeValidator(AbstractEmailCodeValidator):
 
 #: Attempts allowed against one issued code before it is burned. A 6-digit code
 #: is 10**6 possibilities; unlimited guessing turns a 600-second window into a
-#: guaranteed account takeover, and nothing else stood in the way — the request
+#: guaranteed account takeover, and nothing else stood in the way: the request
 #: rate limiter is gated on `request.state.user_id > 0`, so it never fires for
 #: /email/verify, which is by definition anonymous.
 _MAX_VERIFY_ATTEMPTS = 5
@@ -63,7 +63,7 @@ class _CodeVerificationMixin:
 
     * **The Redis branch never deleted the code on success.** The in-memory
       branch did (`del self._codes[...]`), so a code was single-use in
-      development and reusable for its whole 600-second TTL in production —
+      development and reusable for its whole 600-second TTL in production:
       the deployment shape where it matters.
     * **Neither counted failures.** With no lockout and no rate limiting
       reachable on an anonymous endpoint, the whole keyspace is walkable.

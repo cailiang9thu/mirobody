@@ -1,15 +1,15 @@
 """Resolving a configured plugin directory to something importable.
 
-Three loaders — MCP tools (`mcp/tool.py`), the agent (`agent/registry.py`)
-and background tasks (`task/loader.py`) — each took a directory string from
+Three loaders, for MCP tools (`mcp/tool.py`), the agent (`agent/registry.py`)
+and background tasks (`task/loader.py`), each took a directory string from
 config and turned it into module names the same way, and each carried the same
 two defects:
 
 1. **Path spelling decided whether the directory worked at all.** The rule was
    `directory.replace(os.sep, ".")`, guarded by
    `removeprefix(os.getcwd())`. That strips the CWD prefix only when the string
-   literally starts with it, so on macOS — where `/tmp` is a symlink to
-   `/private/tmp` and `os.getcwd()` reports the real path — the SAME directory
+   literally starts with it, so on macOS (where `/tmp` is a symlink to
+   `/private/tmp` and `os.getcwd()` reports the real path) the SAME directory
    loaded one tool spelled `mytools` and zero spelled `/tmp/toolhost/mytools`.
    Any directory outside the tree failed outright with a warning nobody reads.
    The README tells users to "add your own directory" to `MCP_TOOL_DIRS`; that
@@ -37,11 +37,11 @@ loaders also read `importlib.metadata` entry points:
     [project.entry-points."mirobody.agents"]      # a module with ONE agent class (replaces the shipped one)
     mine = "my_harness.agent"
 
-The value is a MODULE, not an object — every loader already knows how to read
+The value is a MODULE, not an object: every loader already knows how to read
 a module, so an entry point is just one more place a module comes from. See
 `examples/mirobody_example_plugin/` for a complete installable example.
 
-Not merged with the provider loader in `pulse/providers/platform/platform.py`:
+Not merged with the provider loader in `collect/providers/platform/platform.py`:
 that one discovers `mirobody_<slug>/provider_<slug>.py` SUBDIRECTORIES, not
 flat files, and its packaged branch must import by real dotted path for the
 same relative-import reason (see `test_provider_loading.py`). Same disease,
@@ -91,7 +91,7 @@ def resolve_plugin_dir(configured: str) -> tuple[str | None, str | None]:
     """Map a configured directory onto ``(directory_on_disk, dotted_prefix)``.
 
     ``dotted_prefix`` is None when the directory is real but not importable as a
-    package — the caller should then load each file by location. Both None means
+    package: the caller should then load each file by location. Both None means
     nothing usable was found and the caller should warn and skip.
     """
     raw = (configured or "").strip()
@@ -112,7 +112,7 @@ def resolve_plugin_dir(configured: str) -> tuple[str | None, str | None]:
             # also how a caller may pass a dotted name instead of a path.
             return os.path.dirname(spec.origin), dotted
 
-    # Not importable — but the directory may still exist, under either spelling.
+    # Not importable, but the directory may still exist, under either spelling.
     for candidate in (raw, relative):
         if candidate and os.path.isdir(candidate):
             return os.path.abspath(candidate), None
@@ -124,7 +124,7 @@ def import_plugin_module(directory: str, dotted_prefix: str | None, filename: st
     """Import one plugin file, by package path when there is one.
 
     Returns ``(module_name, module)``. The name is what the caller keys tools or
-    agents by, so it stays readable for a file-loaded module too — the directory
+    agents by, so it stays readable for a file-loaded module too: the directory
     name plus the stem, rather than a synthetic token.
     """
     stem = filename[:-3] if filename.endswith(".py") else filename

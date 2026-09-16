@@ -1,7 +1,7 @@
 """One read authority, one tool for readings.
 
-Every surface that shows a person their own readings — the chat agent's tool,
-an MCP client, a dashboard, a daily summary — reads through
+Every surface that shows a person their own readings (the chat agent's tool,
+an MCP client, a dashboard, a daily summary) reads through
 :class:`HealthQuery`. The tool the model sees, ``query_health_indicators``, has
 one JSON schema (:data:`TOOL_SCHEMA`) shared by the chat and MCP surfaces and
 a dispatch table from ``(resolution, aggregate)`` to the one ``HealthQuery``
@@ -18,10 +18,10 @@ baseline is ``aggregate=stats`` (``first``/``first_date``) rather than an
 filter the answer already carries.
 
 The pure parts live here: window resolution with an explicit time zone and an
-explicit *now*; the selection rule (keywords or indicator names — at most
+explicit *now*; the selection rule (keywords or indicator names: at most
 one); catalogue ranking (a zero-API lexical recall with a small zh↔en synonym
-seed); the token-cheap table renderer; the request validator. The IO — SQL,
-authorization, the read-time refresh — is the consumer's ``HealthQuery``
+seed); the token-cheap table renderer; the request validator. The IO: SQL,
+authorization, the read-time refresh: is the consumer's ``HealthQuery``
 implementation.
 """
 
@@ -37,7 +37,7 @@ from datetime import datetime, timedelta
 from importlib import resources
 from typing import Protocol
 
-from .. import lexical
+from mirobody import lexical
 from .series import zone
 
 # --- windows -------------------------------------------------------------------------
@@ -65,7 +65,7 @@ def parse_bound(text: str, tz: str, *, end_of_day: bool = False) -> datetime | N
     A bare ``YYYY-MM-DD`` is that day's 00:00 in ``tz`` (``end_of_day``: the
     next day's 00:00, the right edge of an inclusive day); an ISO string with
     an offset keeps it; one without is read in ``tz``. This is the ONE answer
-    to "which instant does this date mean" — a database's implicit cast
+    to "which instant does this date mean": a database's implicit cast
     answers it with the session zone instead."""
     if not text:
         return None
@@ -108,7 +108,7 @@ def resolve_window(
 
 @dataclass(frozen=True)
 class Selection:
-    """What to read: free-text ``keywords`` or exact ``indicators`` — at most
+    """What to read: free-text ``keywords`` or exact ``indicators``, at most
     one. Neither means the catalogue."""
 
     keywords: tuple[str, ...] = ()
@@ -131,10 +131,10 @@ def normalize_list_arg(value: object) -> tuple[str, ...]:
     """Whatever the model sent for a list parameter → clean names. Seen in
     the wild: a JSON-stringified list, a list of JSON strings, a comma-joined
     string. Untreated, the store compares against the literal text
-    ``["Heart Rate"]`` and matches nothing — a silent empty result.
+    ``["Heart Rate"]`` and matches nothing: a silent empty result.
 
     **A comma splits a bare string, never an element of a list.** Clinical
-    names contain commas — ``1,25-Dihydroxyvitamin D`` is one — and splitting
+    names contain commas (``1,25-Dihydroxyvitamin D`` is one) and splitting
     a list element made every such indicator unrequestable: three fragments,
     none of them a name, and an empty answer with nothing to attribute it to.
     A model that sends ``"a,b"`` as one string still gets two names, because
@@ -291,7 +291,7 @@ def compact(
     context.
 
     ``columns`` defaults to every key in first-seen order. ``empty`` is what
-    no rows read as — ``""`` by default; a caller that puts the table in a
+    no rows read as: ``""`` by default; a caller that puts the table in a
     JSON field passes a word a model cannot mistake for "the field was
     blank". Cells longer than ``max_cell`` are cut and nested containers
     summarised (see `_cell`); ``max_cell=None`` renders everything in full.
@@ -330,7 +330,7 @@ DEFAULT_LIMIT = 50
 TOOL_NAME = "query_health_indicators"
 
 #: The one schema both the chat tool and the MCP tool publish. Flat, eight
-#: parameters, every one applicable to every call — no mode switch, so no
+#: parameters, every one applicable to every call, no mode switch, so no
 #: parameter that is silently ignored or refused depending on another.
 TOOL_SCHEMA: dict[str, object] = {
     "type": "object",
@@ -524,7 +524,7 @@ class HealthQuery(Protocol):
     dispatch table; every leaf takes the same ``(subject_id, sel, window)``
     head. The implementation owns the SQL, the time-zone lookup and any
     read-time refresh. Day-grained values come from the elected daily
-    authority — the same numbers a dashboard shows, by construction; raw
+    authority: the same numbers a dashboard shows, by construction; raw
     rows are newest first; ``latest`` is the most recent value *inside the
     window*."""
 

@@ -10,7 +10,7 @@
 --   local_date    the local day the reading belongs to, through the metric's
 --                 own window (`metrics.METRICS[name].window` — "18:00" for the
 --                 sleep family, so a night is one day and not two halves).
---                 Written once, at write time, by `pulse/readings.py`.
+--                 Written once, at write time, by `collect/readings.py`.
 --   series_key    the physical stream: `indicator|source`. Two devices'
 --                 step counts must never be summed together, and the key is
 --                 what keeps them apart.
@@ -22,7 +22,7 @@
 --                 that changed nothing does not touch the row (`sink.changed`).
 --   elected       this row is the day's published authority for its
 --                 (indicator, local_date). Election happens ONCE, on the
---                 write side (`pulse/aggregate`); every reader just filters.
+--                 write side (`collect/aggregate`); every reader just filters.
 --
 -- Re-runnable, as every file here must be.
 

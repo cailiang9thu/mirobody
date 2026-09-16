@@ -13,22 +13,11 @@ from starlette.routing import Route
 
 from typing import Any
 
-from ..utils.http import META_PROTOCOL_VERSION, request_origin
+from mirobody.utils.http import META_PROTOCOL_VERSION, request_origin
 
-from ..utils import (
-    get_jwt_token,
+from mirobody.utils import get_jwt_token, json_response, json_response_with_code, jsonrpc_result, jsonrpc_error
 
-    json_response,
-    json_response_with_code,
-
-    jsonrpc_result,
-    jsonrpc_error,
-)
-
-from ..user import (
-
-    AbstractTokenValidator
-)
+from mirobody.user import AbstractTokenValidator
 
 from .tool import load_tools_from_directories, call_tool
 
@@ -83,7 +72,7 @@ _CAPABILITIES = {
 # 2026-07-28 caching metadata, emitted on the methods the spec marks cacheable.
 # The tool set is built once at startup and never changes while the process
 # runs (no listChanged notifications), so a client may hold it for a few
-# minutes. `private` because the list is filtered per caller — a shared cache
+# minutes. `private` because the list is filtered per caller: a shared cache
 # must not serve one caller's copy to another.
 _LIST_CACHE_HINT = (300_000, "private")
 
@@ -157,16 +146,13 @@ class McpService:
         else:
             self._mcp_urls = {}
 
-        # How long a personal MCP URL stays valid.
-        #
-        # This was a hardcoded 365 days, and the URL is a bearer credential
-        # carried IN a URL: it is pasted into a desktop client's config file,
-        # it lands in screenshots and shell history, and `/mcp/{secret}` needs
-        # nothing else — no JWT — to read that person's whole health record.
-        # A year of that with no way to revoke it (there was none) is the
-        # combination a security audit flags. Thirty days by default, and
-        # `MCP_URL_TTL_DAYS` for a deployment that wants otherwise.
-        from ..utils.config import safe_read_cfg
+        # How long a personal MCP URL stays valid. This was a hardcoded 365
+        # days, and the URL is a bearer credential carried IN a URL: pasted into
+        # a desktop client's config, landing in screenshots and shell history,
+        # and `/mcp/{secret}` needs nothing else to read that person's whole
+        # health record. A year of that with no revocation is what a security
+        # audit flags. Thirty days by default, `MCP_URL_TTL_DAYS` to change it.
+        from mirobody.utils.config import safe_read_cfg
 
         try:
             self._mcp_url_ttl_days = max(1, int(safe_read_cfg("MCP_URL_TTL_DAYS") or 30))
@@ -289,14 +275,14 @@ class McpService:
         """Tool names to HIDE from tools/list for this user.
 
         A data-reading tool for a user with none of that data can only ever
-        answer "no data" — listing it makes every client carry its schema for
-        nothing. Fails OPEN per probe (nothing hidden) — a DB hiccup must not
+        answer "no data": listing it makes every client carry its schema for
+        nothing. Fails OPEN per probe (nothing hidden): a DB hiccup must not
         shrink the tool surface of a user who does have data.
         """
         if not user_id:
             return set()
 
-        from ..utils import execute_query
+        from mirobody.utils import execute_query
 
         hidden: set[str] = set()
         for name, probe in self._DATA_GATED.items():
@@ -340,8 +326,8 @@ class McpService:
         try:
             jsonrpc = json.loads(body)
         except Exception:
-            # This used to `print()` the full URL, EVERY request header — including
-            # `Authorization: Bearer …` — and the entire unbounded body to stdout.
+            # This used to `print()` the full URL, EVERY request header: including
+            # `Authorization: Bearer …`, and the entire unbounded body to stdout.
             # Any unauthenticated caller could trigger it by posting invalid JSON,
             # making it both a bearer-token/PHI leak into the logs and a log-flood
             # DoS. Log the shape of the failure, never its credentials or content.
@@ -363,7 +349,7 @@ class McpService:
             )
 
         # According to the MCP specification the ID field should always be
-        # there — but a request that omits it is still well-formed JSON, and
+        # there, but a request that omits it is still well-formed JSON, and
         # every error branch below used to re-index `jsonrpc["id"]` directly.
         # An unauthenticated POST without "id" therefore raised KeyError from
         # inside the handler; with FastAPI debug enabled (which follows
@@ -397,7 +383,7 @@ class McpService:
 
         # The revision THIS request is speaking. 2026-07-28 removed the
         # initialize/initialized handshake, so there is no session in which to
-        # remember a negotiated version — the client restates it in `_meta` on
+        # remember a negotiated version: the client restates it in `_meta` on
         # every call, and the server has to settle it per request. Handshake-era
         # clients send no `_meta`; they fall through to our newest supported
         # revision, exactly as before.
@@ -408,41 +394,28 @@ class McpService:
         #-------------------------------------------------
 
         # The caller's identity, resolved per request: a JWT on the header, or a
-        # permanent personal-URL secret on the path. (A third source — a
+        # permanent personal-URL secret on the path. (A third source: a
         # short-lived /mcp/<secret> minted per chat turn for BaseAgent, whose
-        # payload also carried an agent name that filtered tools/list — went
+        # payload also carried an agent name that filtered tools/list: went
         # with BaseAgent.)
         user_id     = ""
         session_id  = ""
 
         #-------------------------------------------------
 
-        # What this server answers, and what it deliberately does not. The
-        # previous version of this comment listed the whole MCP method surface
-        # without marking which half was wired, so it read as a support matrix
-        # when it was a spec crib sheet — three of the methods it named fall
-        # through to CODE_METHOD_NOT_FOUND.
-        #
-        #   IMPLEMENTED
-        #     tools/list                 tool definitions with schemas
-        #     tools/call                 execute one tool
-        #     prompts/list               always [] — this server exposes none
-        #     initialize                 handshake revisions only
-        #     server/discover            2026-07-28 stateless discovery
-        #     notifications/initialized, ping
-        #
-        #   NOT IMPLEMENTED — method-not-found is the correct answer, not a gap:
-        #     prompts/get                we advertise zero prompts, so there is
-        #                                nothing any name could resolve to
-        #     resources/*                `_CAPABILITIES` declares no resources,
-        #                                so a spec-conforming client never
-        #                                sends these
+        #   IMPLEMENTED: tools/list, tools/call, prompts/list (always []),
+        #     initialize (handshake revisions only), server/discover
+        #     (2026-07-28 stateless discovery), notifications/initialized, ping
+        #   NOT IMPLEMENTED, where method-not-found is the answer and not a gap:
+        #     prompts/get    zero prompts are advertised, so no name resolves
+        #     resources/*    `_CAPABILITIES` declares none, so a conforming
+        #                    client never sends these
 
         if method == "tools/list":
             # Data-dependent exposure: query_genetic_data answers from the user's
             # uploaded genotype file, and most users never upload one. Listing
             # the tool anyway makes every external MCP client carry its schema
-            # and lets a model call it just to learn "no data" — so when the
+            # and lets a model call it just to learn "no data", so when the
             # caller is identifiable and has no genetic rows, the tool is not
             # listed at all. Unidentifiable callers (bare /mcp before OAuth)
             # keep the full list: capability discovery must not require auth.
@@ -614,7 +587,7 @@ class McpService:
             # carrying `redirect_to_upload` was replaced by an "open /drive and
             # upload" message. Its only producer was the genetics tool's no-rows
             # branch, and `_DATA_GATED` already hides that tool from a user with
-            # no genetic rows — so the redirect could only fire for a user who
+            # no genetic rows, so the redirect could only fire for a user who
             # HAS uploaded a genotype file and asked about rsIDs it does not
             # carry, where "upload your data first" is the wrong answer. The
             # tool now says "not typed" in its envelope and this branch is gone.
@@ -657,8 +630,8 @@ class McpService:
 
         if method == "initialize":
             # Negotiate: honour the client's requested revision when we speak it.
-            # 2026-07-28 clients never send this at all — they carry the version
-            # per request in `_meta` — so this branch exists purely for the
+            # 2026-07-28 clients never send this at all (they carry the version
+            # per request in `_meta`) so this branch exists purely for the
             # handshake-based revisions, which are supported for a year-long
             # offramp.
             requested = None
@@ -731,7 +704,7 @@ class McpService:
     async def _personal_mcp_subject(self, request: Request) -> tuple[str, Response | None]:
         """Whose personal MCP URL this request is about.
 
-        Shared by mint and revoke so the two cannot drift on authorization —
+        Shared by mint and revoke so the two cannot drift on authorization:
         the shape of bug that let a caller act on someone else's record once
         already (`/ws/upload-health-report`, 2026-08-23).
         """
@@ -739,7 +712,7 @@ class McpService:
             return "", json_response_with_code(-1, "No JWT token validator.", request=request)
 
         # 401, not 200-with-an-error-body: this route is consumed by MCP
-        # clients, and a client that reads the status code — most do — took
+        # clients, and a client that reads the status code (most do) took
         # "no token" for success. `/api/chat` has always answered 401 here, so
         # the two halves of the same API disagreed. The envelope is unchanged.
         payload, err = self._token_validator.verify_token(get_jwt_token(request))
@@ -765,14 +738,14 @@ class McpService:
             # The personal MCP URL can be minted for someone else's record only
             # if the care circle says so. `check_relationship` used to answer
             # this by parsing a permissions bag out of `th_share_relationship`
-            # and returning an error STRING — with two bugs in the parse
+            # and returning an error STRING: with two bugs in the parse
             # (`isinstance(obj)` one-arg, and an unbound `e` in the handler)
             # that made the success path raise.
-            from ..user.care_circle import CareCircleDenied, resolve_subject
+            from mirobody.user.care_circle import CareCircleDenied, resolve_subject
             try:
                 await resolve_subject(user_id, beneficiary_user_id)
             except CareCircleDenied as denied:
-                # 403: authenticated, and not allowed. Deliberately not 404 —
+                # 403: authenticated, and not allowed. Deliberately not 404:
                 # the care circle already refuses to say whether the subject
                 # exists (see user/test_care_circle.py), and the body carries
                 # that same non-committal message.
@@ -791,7 +764,7 @@ class McpService:
         until its expiry. Deleting both directions of the mapping is what makes
         the next mint hand out a new secret.
 
-        Idempotent on purpose — revoking a URL that was never minted, or twice,
+        Idempotent on purpose: revoking a URL that was never minted, or twice,
         is a success. A client cannot tell those apart and does not need to.
         """
         if self._redis:

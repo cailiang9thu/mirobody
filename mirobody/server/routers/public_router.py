@@ -7,22 +7,23 @@ SECTION INDEX (line numbers are approximate):
     ~28   Request/Response Models (AuthType, LinkProviderRequest, StandardResponse, ProviderInfo, etc.)
     ~164  Helper: _sort_providers_by_priority()
     ~204  Helper: handle_redirect()
-    ~229  GET  /providers              — list all available providers
-    ~365  GET  /user/providers         — list user's connected providers
-    ~415  POST /user/providers/link    — link a provider (OAuth/password/custom)
+    ~229  GET  /providers              list all available providers
+    ~365  GET  /user/providers         list user's connected providers
+    ~415  POST /user/providers/link    link a provider (OAuth/password/custom)
     ~502  Helper: _generate_oauth_completion_html()
-    ~565  GET  /{platform}/{provider}/callback — OAuth callback handler
-    ~626  POST /user/providers/unlink  — unlink a provider
-    ~701  POST /user/providers/llm-access — update LLM access permission
-    ~828  POST /{platform}/webhook     — universal webhook receiver
-    ~879  POST /{platform}/{provider}/webhook — provider-specific webhook
+    ~565  GET  /{platform}/{provider}/callback (OAuth callback handler
+    ~626  POST /user/providers/unlink  unlink a provider
+    ~701  POST /user/providers/llm-access) update LLM access permission
+    ~828  POST /{platform}/webhook     universal webhook receiver
+    ~879  POST /{platform}/{provider}/webhook: provider-specific webhook
     ~930  Helper: get_provider_slug(), get_msg_id()
-    ~959  POST /{platform}/token       — get theta token
-    ~1022 GET  /theta/indicators       — list theta indicators
+    ~959  POST /{platform}/token       get theta token
+    ~1022 GET  /theta/indicators       list theta indicators
 """
 
 import json
 import logging
+import os
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -31,17 +32,26 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from ...pulse.core import LinkType
-from ...pulse.core import ProviderStatus
-from ...pulse.core.user import get_platform_user_service
+from mirobody.collect.core import LinkType
+from mirobody.collect.core import ProviderStatus
+from mirobody.collect.core.user import get_platform_user_service
 # Import platform manager
-from ...pulse.manager import platform_manager
-from ..auth import verify_token, verify_token_optional
+from mirobody.collect.manager import platform_manager
+from mirobody.server.auth import verify_token, verify_token_optional
 
 logger = logging.getLogger(__name__)
 
-# Create router
-router = APIRouter(prefix="/api/v1/pulse", tags=["pulse"])
+#: Where these routes answer. The path says `pulse` because that was the
+#: package's name when deployments first registered their OAuth redirect URIs
+#: with Garmin, Oura and Whoop: those are registered in the vendor's console,
+#: against the deployment's own host, and we cannot change them from here.
+#: A deployment that has registered nothing yet, or is willing to re-register,
+#: can set COLLECT_API_PREFIX. It is read from the environment rather than the
+#: config object because the router is built at import time, before
+#: `Config.init` has run.
+API_PREFIX = os.environ.get("COLLECT_API_PREFIX", "/api/v1/pulse").rstrip("/")
+
+router = APIRouter(prefix=API_PREFIX, tags=["collect"])
 
 
 class AuthType(str, Enum):
@@ -99,11 +109,11 @@ class ProviderTokenRequest(BaseModel):
     certification: str = Field(..., description="Authentication credentials from device manufacturer")
 
 
-from ..envelope import ErrorResponse, StandardResponse
+from mirobody.server.envelope import ErrorResponse, StandardResponse
 
 # Import ConnectInfoField for type hints
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
-from mirobody.pulse.core.models import ConnectInfoField as CoreConnectInfoField
+from mirobody.collect.core.models import ConnectInfoField as CoreConnectInfoField
 
 
 # ProviderInfo model - Unified definition
@@ -432,7 +442,7 @@ async def link_provider(request: LinkProviderRequest, req: Request, current_user
 
         host = req.headers.get("Host", "unknown")
         scheme = req.url.scheme if req.url.scheme else "https"
-        options["default_return_url"] = f"{scheme}://{host}/api/v1/pulse/{actual_platform}/{provider_slug}/callback"
+        options["default_return_url"] = f"{scheme}://{host}{API_PREFIX}/{actual_platform}/{provider_slug}/callback"
 
         # Call PlatformManager's simplified interface (business logic has been delegated)
         result_data = await platform_manager.link_provider(
@@ -904,7 +914,7 @@ async def get_theta_indicators():
     """
     try:
         # Use manage data source but maintain theta filtering logic
-        from ...pulse.standardize import get_all_indicators_info
+        from mirobody.collect.standardize import get_all_indicators_info
 
         # Get complete manage data
         manage_data = get_all_indicators_info()
@@ -913,14 +923,12 @@ async def get_theta_indicators():
         categories_info = {}
 
         # The categories this endpoint publishes, spelled the way
-        # `get_all_indicators_info()` spells them — WITH SPACES. They were
-        # written with underscores ("vital_signs", "sleep", "activity"), which
-        # intersects the real labels in exactly zero places, so the filter
+        # `get_all_indicators_info()` spells them: WITH SPACES. Written with
+        # underscores they intersect the real labels nowhere, so the filter
         # dropped all 296 indicators and the route answered
-        # `{"indicators": [], "total": 0}` with HTTP 200 and code 0: an empty
-        # catalogue that looks like a successful one. The six below select
-        # 195 of the 296. (2026-09-14 regression report, F-2;
-        # tests/server/routers/test_theta_indicators.py pins the intersection)
+        # `{"indicators": [], "total": 0}` with HTTP 200: an empty catalogue
+        # that looks like a successful one. The six below select 195 of the 296;
+        # tests/server/routers/test_theta_indicators.py pins the intersection.
         theta_supported_categories = {
             "vital signs",
             "body composition",

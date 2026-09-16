@@ -2,8 +2,8 @@
 
 The web client's Indicators tab needs the same answer the agent gets from the
 `query_health_indicators` tool: what indicators does this person have, and what are
-the readings. Both go through the ONE read authority — `query.HealthQuery`,
-implemented by `PostgresHealthQuery` — so this router is a serialization
+the readings. Both go through the ONE read authority (`query.HealthQuery`,
+implemented by `PostgresHealthQuery`) so this router is a serialization
 boundary and nothing more. It must never grow a second copy of the query; when
 it did, the chat answer and the dashboard could disagree on screen about the
 same day.
@@ -19,7 +19,7 @@ and `render_compact` are the two serializations of one envelope; everything
 upstream of them is shared.
 
 Until this existed the Indicators tab showed "No indicators yet" while the tab
-badge — fed by a different endpoint that counts rows directly — said 21. The
+badge (fed by a different endpoint that counts rows directly) said 21. The
 list call was 404ing and the client's fallback path was 404ing too; a
 contradiction on screen was the only symptom.
 """
@@ -31,12 +31,13 @@ import logging
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from ...pulse.query import REST_CATALOG_MAX, PostgresHealthQuery
-from ...agent.tools.health_indicators_service import HealthIndicatorsService, render_rest
-from ...utils import execute_query
-from ...user.care_circle import CareCircleDenied, resolve_subject
-from ..auth import verify_token
-from ..envelope import ErrorResponse, StandardResponse
+from mirobody.collect.query import REST_CATALOG_MAX, PostgresHealthQuery
+from mirobody.agent.tools._render import render_rest
+from mirobody.agent.tools.health_indicators_service import HealthIndicatorsService
+from mirobody.utils import execute_query
+from mirobody.user.care_circle import CareCircleDenied, resolve_subject
+from mirobody.server.auth import verify_token
+from mirobody.server.envelope import ErrorResponse, StandardResponse
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ async def health_indicators(
     """Catalog when neither `keywords` nor `indicators` is given; readings otherwise.
 
     Answers in the house envelope (`{code, msg, data}`) because the web client's
-    response interceptor returns `response.data.data` on success — a bare
+    response interceptor returns `response.data.data` on success: a bare
     payload arrives at the component as `undefined`, which is exactly how this
     endpoint first shipped: 200, correct rows on the wire, and an empty list on
     screen.
@@ -80,7 +81,7 @@ async def health_indicators(
     owner_id = user_id
 
     # Reading someone else's record goes through the care-circle check, not a
-    # trusted query parameter — the same rule the agent's tools follow.
+    # trusted query parameter: the same rule the agent's tools follow.
     if target_user_id and target_user_id != user_id:
         try:
             await resolve_subject(user_id, target_user_id)
@@ -96,7 +97,7 @@ async def health_indicators(
         "resolution": resolution,
         "aggregate": aggregate,
     }
-    # `limit` only applies to raw rows without aggregation — the same rule the
+    # `limit` only applies to raw rows without aggregation: the same rule the
     # model is held to, so the two surfaces cannot answer differently for the
     # same arguments.
     if (resolution, aggregate) == ("raw", "none"):
@@ -115,7 +116,7 @@ class ReadingPatch(BaseModel):
 
     Extraction is an LLM reading a lab report: it mis-reads a value now and
     then, and until this endpoint existed the only fix was deleting and
-    re-uploading the whole file. Owner-only on purpose — care-circle "health"
+    re-uploading the whole file. Owner-only on purpose: care-circle "health"
     permission grants reading, not rewriting someone else's record.
     """
 
@@ -169,11 +170,11 @@ class FileDatePatch(BaseModel):
     page only, so the other pages' readings were filed under the upload day
     and the report's timeline split in two (#53). Extraction runs one file at
     a time and cannot tell "page 2 of the same report" from "a second report
-    whose date did not come out", so it must not inherit a date on its own —
+    whose date did not come out", so it must not inherit a date on its own,
     it labels the guess (`date_source: upload_time`, see
     `FileParserDatabaseService.resolve_report_date`) and the Data page asks.
-    The three answers — a sibling file's extracted date, a typed date, or
-    "keep the upload time" — all land here.
+    The three answers (a sibling file's extracted date, a typed date, or
+    "keep the upload time") all land here.
     """
 
     file_key: str = Field(min_length=1, max_length=255)
@@ -191,13 +192,13 @@ async def patch_file_date(patch: FileDatePatch, user_id: str = Depends(verify_to
     (`query_user_id` on a proxy upload), which is the `user_id` every
     th_series_data row from that file carries; rewriting someone else's record
     needs the care-circle write grant, the same rule the upload itself enforces.
-    What "set the date" means — including a reading whose indicator already
-    has a row on the target date staying put and being counted as `skipped` —
+    What "set the date" means (including a reading whose indicator already
+    has a row on the target date staying put and being counted as `skipped`) 
     is `services.report_date.set_file_report_date`, shared with the agent tool.
     """
-    from ...pulse.file_parser.services.db_utils import parse_date
-    from ...pulse.file_parser.services.file_db_service import FileDbService
-    from ...pulse.file_parser.services.report_date import set_file_report_date
+    from mirobody.collect.file_parser.services.db_utils import parse_date
+    from mirobody.collect.file_parser.services.file_db_service import FileDbService
+    from mirobody.collect.file_parser.services.report_date import set_file_report_date
 
     row = await FileDbService.get_file_by_key(patch.file_key)
     if not row:

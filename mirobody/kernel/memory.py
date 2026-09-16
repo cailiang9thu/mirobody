@@ -3,14 +3,14 @@
 The shape production converged on: a background pass *extracts* facts from
 what the person says and uploads; a slower pass *rewrites* the profile
 document from those facts; the agent sees the rewritten document plus the
-facts learned since the last rewrite, injected raw — knowing something must
+facts learned since the last rewrite, injected raw: knowing something must
 not wait on tidying it. The person's own edits live in a second document the
 rewrite never touches.
 
 Two invariants are enforced by signature rather than by review:
 
 * :func:`rewrite_input` builds the material for a rewrite from the fact
-  stream and the person's edits — it has **no parameter for the previous
+  stream and the person's edits, it has **no parameter for the previous
   system document**, so a rewrite cannot feed its own output back to itself
   and drift (the bootstrapping failure).
 * :func:`render_profile` bounds the raw fresh facts; hitting the bound is a
@@ -32,14 +32,14 @@ from datetime import UTC, datetime
 
 #: Stamped into the system document as an HTML comment, so it never reaches
 #: the model's eyes but tells the delta query where "since" starts. The token
-#: is `mirobody:rewritten-at=` — the spelling the first production consumer's
+#: is `mirobody:rewritten-at=`: the spelling the first production consumer's
 #: stored documents already carry; a reader accepts the underscore variant an
 #: earlier draft of this module wrote, so no document is ever "never rewritten"
 #: because of a hyphen.
 MARKER_TOKEN = "mirobody:rewritten-at="
 MARKER_PREFIX = "<!-- " + MARKER_TOKEN
 _MARKER_RE = re.compile(r"<!--\s*mirobody:rewritten[-_]at=([0-9T:.+\-Z]+)\s*-->")
-#: The token without its comment — what is left when a model echoed the
+#: The token without its comment: what is left when a model echoed the
 #: watermark and a cleaner already removed the ``<!-- -->`` delimiters.
 _BARE_MARKER_RE = re.compile(r"mirobody:rewritten[-_]at=[0-9T:.+\-Z]*")
 
@@ -64,7 +64,7 @@ class ProfileDoc:
 
 def strip_watermark(text: str) -> str:
     """``text`` without any watermark: the full comment, and a bare token a
-    model echoed into its own answer. The watermark is the store's to write —
+    model echoed into its own answer. The watermark is the store's to write:
     one a model wrote would corrupt the schedule of every later rewrite."""
     return _BARE_MARKER_RE.sub("", _MARKER_RE.sub("", text or ""))
 
@@ -78,7 +78,7 @@ def stamp(doc: str, at: datetime) -> str:
 
 
 def rewritten_at(doc: str) -> datetime | None:
-    """When the system document was last regenerated, or ``None`` (never —
+    """When the system document was last regenerated, or ``None`` (never,
     which means every stored fact is still un-reconciled)."""
     m = _MARKER_RE.search(doc or "")
     if not m:
@@ -104,7 +104,7 @@ class Rendered:
 
 
 def render_profile(doc: ProfileDoc, fresh: Sequence[ExtractedFact], *, max_fresh: int, basics: str = "") -> Rendered:
-    """The one rendering of a profile — for the system prompt and for the
+    """The one rendering of a profile: for the system prompt and for the
     agent's own ``read_file`` alike, so the two can never disagree.
     ``basics`` is an already-safe demographics line (an age, never a birth
     date). Empty everything renders an empty string, which a harness treats
@@ -142,7 +142,7 @@ class RewriteInput:
 def rewrite_input(facts: Sequence[ExtractedFact], *, edit: str, as_of: datetime) -> RewriteInput:
     """The material for a full regeneration: every stored fact (oldest
     first, de-duplicated by text) and the person's own notes. The previous
-    generated document is not an input — a rewrite that reads its own output
+    generated document is not an input: a rewrite that reads its own output
     accumulates its own errors."""
     seen: set[str] = set()
     kept: list[ExtractedFact] = []
@@ -158,7 +158,7 @@ def rewrite_input(facts: Sequence[ExtractedFact], *, edit: str, as_of: datetime)
 
 
 def slice_lines(text: str, offset: int, limit: int) -> str:
-    """Lines ``offset..offset+limit`` of ``text`` — the ``read_file`` window
+    """Lines ``offset..offset+limit`` of ``text``: the ``read_file`` window
     over a projected document."""
     lines = text.splitlines()
     if offset >= len(lines):
@@ -168,7 +168,7 @@ def slice_lines(text: str, offset: int, limit: int) -> str:
 
 def grep_lines(text: str, pattern: str, *, max_line: int = 500) -> tuple[tuple[int, str], ...]:
     """``(line_number, line)`` for every line containing ``pattern``
-    (literal, case-sensitive) — the ``grep`` over a projected document."""
+    (literal, case-sensitive): the ``grep`` over a projected document."""
     return tuple((i, line[:max_line]) for i, line in enumerate(text.splitlines(), start=1) if pattern in line)
 
 

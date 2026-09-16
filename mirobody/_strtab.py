@@ -1,7 +1,7 @@
 """A read-only string table: one utf-8 blob plus an int32 offset array.
 
-The resolver's four big tables — 921k alias keys, 677k corpus names, and the
-LOINC axis table's nine fields across 97k rows — are all the same shape: a
+The resolver's four big tables (921k alias keys, 677k corpus names, and the
+LOINC axis table's nine fields across 97k rows) are all the same shape: a
 fixed list of short strings, read a handful at a time, never mutated. Holding
 them as Python objects cost about 1.6 million allocations and ~360 MB of the
 resolver's resident memory, to serve lookups that touch a few hundred entries
@@ -11,8 +11,8 @@ A blob costs what the text costs, and nothing per entry. Everything here works
 on ``bytes`` slices; ``get`` decodes, and callers only call it for the row they
 actually answer with.
 
-**Ordering is by utf-8 bytes**, which is the same order as by code point — utf-8
-is order-preserving — so a table built from a Python-sorted list bisects
+**Ordering is by utf-8 bytes**, which is the same order as by code point (utf-8
+is order-preserving) so a table built from a Python-sorted list bisects
 correctly here. ``scripts/build_runtime_index.py`` asserts that the shipped
 arrays really are in that order rather than trusting it, because a bisect over
 an unsorted table returns some other entry's row instead of failing.
@@ -50,8 +50,8 @@ class StringTable:
         """Index of *needle*, or -1.
 
         Without *order* the table is assumed sorted and the answer is the entry
-        index. With *order* — an int32 permutation putting the table in sorted
-        order — the answer is ``order[i]``, i.e. the ROW the entry belongs to.
+        index. With *order*: an int32 permutation putting the table in sorted
+        order: the answer is ``order[i]``, i.e. the ROW the entry belongs to.
         That indirection is what lets one blob carry several sort orders (the
         axis table is bisected by LOINC code and by folded long name) without
         storing the text twice.
