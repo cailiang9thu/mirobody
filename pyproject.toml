@@ -657,7 +657,35 @@ forbidden_modules = [
     "mirobody.collect.query",
     "mirobody.collect.readings",
     "mirobody.collect.setup",
-    "mirobody.collect.standardize",
+]
+ignore_imports = []
+
+[[tool.importlinter.contracts]]
+name = "translate has one front door (② Translate is imported as a package)"
+type = "forbidden"
+allow_indirect_imports = true
+# `standardize/` moved out of `collect/` in 1.4.4 and became this package, so
+# "collect only collects" is something the tree shows rather than a sentence in
+# a document. The contents are 1.5.0's to rewrite: LOINC coding, the
+# comparability key, one standardized table. Naming the 14 crossing symbols in
+# `translate/__init__` means that rewrite moves modules without touching a
+# caller.
+#
+# `collect` is a source here on purpose. It imports this package 25 times (a
+# provider declares metrics with `StandardIndicator`, `ingest` converts units
+# before writing) and those are legitimate; reaching past the package to
+# whichever module holds the symbol today is not.
+source_modules = [
+    "mirobody.agent",
+    "mirobody.collect",
+    "mirobody.server",
+]
+forbidden_modules = [
+    "mirobody.translate.fhir_mapping",
+    "mirobody.translate.indicators_info",
+    "mirobody.translate.std_indicator_registry",
+    "mirobody.translate.units",
+    "mirobody.translate.value_range_validator",
 ]
 ignore_imports = []
 

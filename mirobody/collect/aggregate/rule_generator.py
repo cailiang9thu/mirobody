@@ -9,7 +9,7 @@ import logging
 
 from .models import AggregationRule
 from .naming import build_indicator_name
-from mirobody.collect.standardize.indicators_info import StandardIndicator, HealthDataType
+from mirobody.translate import StandardIndicator, HealthDataType
 
 logger = logging.getLogger(__name__)
 

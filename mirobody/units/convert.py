@@ -36,7 +36,7 @@ editing one.
 The tier split and the conventions below come from a design worked out and
 validated against real unit-conversion cases, not invented for this module.
 
-**Not to be confused with** :func:`mirobody.collect.standardize.units.convert_to_standard`,
+**Not to be confused with** :func:`mirobody.translate.units.convert_to_standard`,
 which is a different job on the other side of the pipeline: it takes a
 ``StandardIndicator`` enum member and converts to *that device indicator's*
 declared canonical unit (① Collect, one target per indicator). This module takes

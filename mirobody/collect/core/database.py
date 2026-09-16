@@ -180,7 +180,7 @@ class ManageDatabaseService(CacheableDatabaseService):
             is_summary = (indicator_type == 'summary')
         else:
             # Fallback to heuristic for backward compatibility
-            from mirobody.collect.standardize.indicators_info import is_summary_indicator
+            from mirobody.translate import is_summary_indicator
             is_summary = is_summary_indicator(indicator)
         
         if is_summary:

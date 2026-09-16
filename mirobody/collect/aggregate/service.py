@@ -13,8 +13,8 @@ from typing import Any
 from .aggregators import SQLAggregator, AggregatorProtocol
 from .database_service import AggregateDatabaseService
 from .rule_generator import get_rules_by_source_indicator
-from mirobody.collect.standardize.fhir_mapping import get_fhir_id, FhirMapping
-from mirobody.collect.standardize.indicators_info import StandardIndicator
+from mirobody.translate import get_fhir_id, FhirMapping
+from mirobody.translate import StandardIndicator
 
 logger = logging.getLogger(__name__)
 

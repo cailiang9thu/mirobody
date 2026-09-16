@@ -177,13 +177,13 @@ an explicit migration: it is irreversible for anyone holding data.
 
 **Status:** the readable half is done; the moves are not proposed any more.
 
-Renaming `pulse/` to `vendor/` was considered and rejected on measurement, and
-the measurement has since changed: with `insight/` and `monitor/` deleted, the
-package is ~30.5k lines of which external-source integration is `providers/`
-(~6.4k) + `apple/` (~1.2k) + `file_parser/` (~8.5k), the pipeline is `ingest/` +
-`standardize/` + `aggregate/` (~10.8k), and `core/` is down from 41% to ~8%.
-Naming the whole package after one part of it would recreate the name/content
-mismatch this repo has been removing, so the rejection stands.
+Renaming the package after one part of it was considered and rejected on
+measurement. The package is `collect/` now, which is the stage name, and the
+rejection reads better than it did: external-source integration is
+`providers/` (Apple included since 1.4.4) plus `file_parser/`, the pipeline is
+`ingest/` + `aggregate/`, and `core/` is down from 41% to ~8%. Standardization
+left the package entirely in 1.4.4, to `mirobody/translate/`, which is ②
+Translate's own stage.
 
 What was actually wrong was legibility, not the names. The directory listing
 sorts `aggregate/` before `providers/`, so the tree shows the pipeline in an

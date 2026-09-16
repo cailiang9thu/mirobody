@@ -8,7 +8,7 @@
     models.py            the provider contract's own types
 
 Not here, deliberately: what a value MEANS (the indicator catalogue, unit
-conversion, value ranges, fhir_id) is `collect.standardize`, and the pipeline
+conversion, value ranges, fhir_id) is `mirobody.translate`, and the pipeline
 stage that turns a series into daily summaries is `collect.aggregate`. Both
 lived in here once, which is what made "core" a grab-bag: the pipeline was
 invisible in the directory tree, and pure data modules sat beside the server

@@ -33,10 +33,7 @@ from zoneinfo import ZoneInfo
 
 from mirobody.collect.ingest.repositories.health_data import HealthDataRepository
 from mirobody.collect.aggregate.service import AggregateIndicatorService
-from mirobody.collect.standardize.indicators_info import (
-    HealthDataType,
-    get_indicators_in_same_categories,
-)
+from mirobody.translate import HealthDataType, get_indicators_in_same_categories
 
 logger = logging.getLogger(__name__)
 

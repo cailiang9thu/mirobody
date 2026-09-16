@@ -163,7 +163,7 @@ helpers raise.
 snapshot is reviewed before it becomes the baseline. Updating one is explicit:
 
 ```bash
-MIROBODY_UPDATE_GOLDEN=1 pytest tests/collect/standardize/test_indicators_info.py
+MIROBODY_UPDATE_GOLDEN=1 pytest tests/translate/test_indicators_info.py
 ```
 
 A behaviour change is then a visible diff in review, never a silent

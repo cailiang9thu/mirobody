@@ -914,7 +914,7 @@ async def get_theta_indicators():
     """
     try:
         # Use manage data source but maintain theta filtering logic
-        from mirobody.collect import get_all_indicators_info
+        from mirobody.translate import get_all_indicators_info
 
         # Get complete manage data
         manage_data = get_all_indicators_info()

@@ -33,7 +33,7 @@ async def init():
     # StandardIndicator enum + derived aggregation rules to
     # standard_indicators_device once a day.
     try:
-        from mirobody.collect import start_std_indicator_registry
+        from mirobody.translate import start_std_indicator_registry
         await start_std_indicator_registry()
         logger.info("Std indicator registry task started")
     except Exception as e:

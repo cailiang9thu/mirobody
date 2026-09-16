@@ -215,7 +215,7 @@ docker compose logs mirobody | grep "Loaded provider"
 ```python
 from mirobody.collect.base import ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
-from mirobody.collect.standardize.indicators_info import StandardIndicator
+from mirobody.translate.indicators_info import StandardIndicator
 from mirobody.collect.ingest.models.requests import (
     StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord,
 )

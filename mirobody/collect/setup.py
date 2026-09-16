@@ -57,7 +57,7 @@ async def setup_platform_system_async(providers: list[BasePullProvider] | None =
             continue
 
     # 6. Initialize FHIR mapping (optional, config-driven)
-    from .standardize.fhir_mapping import FhirMapping
+    from mirobody.translate import FhirMapping
     fhir_mapping = await FhirMapping.initialize()
     if fhir_mapping:
         logger.info("  - FHIR mapping initialized")

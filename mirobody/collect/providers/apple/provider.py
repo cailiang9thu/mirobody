@@ -12,7 +12,7 @@ from mirobody.kernel import decoders, meds
 from .models import AppleHealthRecord, MetaInfo
 from mirobody.collect.base import LinkRequest, Provider, ProviderInfo
 from mirobody.collect.core import LinkType, ProviderStatus
-from mirobody.collect.standardize.indicators_info import StandardIndicator
+from mirobody.translate import StandardIndicator
 from mirobody.collect.ingest.models.requests import FormatDataInput, StandardPulseData, StandardPulseMetaInfo, StandardPulseRecord
 from mirobody.collect.providers._platform.normalize import records_from_facts
 

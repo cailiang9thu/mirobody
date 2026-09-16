@@ -1,4 +1,4 @@
-# `collect/standardize` — indicators, units and standardization
+# `mirobody/translate` — indicators, units and standardization
 
 The layer that decides what a value *means*: which indicators exist, what unit
 each is stored in, and the conversion every provider's raw number passes through
@@ -24,7 +24,7 @@ Provides unified health indicator and unit management services for all Pulse pla
 ## 📁 File structure
 
 ```
-mirobody/collect/standardize/
+mirobody/translate/
 ├── indicators_info.py       # StandardIndicator: the catalogue — name, category,
 │                            #   stored unit, aggregation methods, per language
 ├── units.py                 # convert_to_standard() and the conversion tables
@@ -66,7 +66,7 @@ indicator must be added to the catalogue, not merely sent.
 ### **Utility Function Usage (Testing and Validation)**
 
 ```python
-from mirobody.collect.standardize import (
+from mirobody.translate import (
     convert_to_standard,
     StandardIndicator,
     is_valid_indicator,
@@ -98,7 +98,7 @@ print(f"Total units: {units_info['total_units']}")
 
 Members are **UPPERCASE** (`StandardIndicator.HEART_RATE`), and the unit shown
 is the one values are STORED in after conversion — not necessarily the unit a
-device reports. The full catalogue is `mirobody/collect/standardize/indicators_info.py`;
+device reports. The full catalogue is `mirobody/translate/indicators_info.py`;
 this table is generated from it.
 
 | Member | Stored unit | Name |

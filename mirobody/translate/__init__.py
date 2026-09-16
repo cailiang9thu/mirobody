@@ -1,0 +1,90 @@
+"""② Translate: what a value MEANS.
+
+    indicators_info.py       the indicator catalogue
+    units.py                 unit conversion
+    value_range_validator.py what counts as a plausible value
+    fhir_mapping.py          indicator to fhir_id
+    std_indicator_registry/  publishes the catalogue to the database
+
+① Collect stores what a device or a document said, verbatim and traceable.
+This stage decides what it means. The two were one package until 1.4.4, with
+the catalogue sitting inside `collect/` as `standardize/`, so "collect only
+collects" was a sentence in a document rather than something the tree showed.
+
+The frame is up; the contents are 1.5.0's. That version brings LOINC coding,
+the comparability key and one standardized table, and these five modules are
+what it rewrites against.
+
+Still entangled, and named here rather than hidden: `collect/` imports this
+package in 26 places, because a provider declares its metrics with
+`StandardIndicator` and `ingest` converts units before it writes. Untangling
+that is content work, not a move. `mirobody.collect` therefore still
+re-exports `StandardIndicator` and `UNIT_CONVERSIONS`, so a provider plugin
+keeps one import path.
+
+Nothing here is third-party: stdlib plus `mirobody` only. Keep it that way,
+the same rule the library layer lives by.
+
+Lazy (PEP 562): importing this package must not pull the server stack.
+"""
+
+from typing import TYPE_CHECKING
+
+# name -> submodule that defines it. Every symbol another package needs is
+# here: 14 of them, measured, not guessed. A caller outside this package
+# imports `mirobody.translate`, so 1.5.0 can rewrite the modules behind these
+# names without a call-site edit anywhere else.
+_EXPORTS = {
+    # the catalogue
+    "StandardIndicator": "indicators_info",
+    "HealthDataType": "indicators_info",
+    "get_all_indicators_info": "indicators_info",
+    "get_indicator_by_str": "indicators_info",
+    "get_indicators_in_same_categories": "indicators_info",
+    "get_standard_unit": "indicators_info",
+    "is_valid_indicator": "indicators_info",
+    "is_series_indicator": "indicators_info",
+    "is_summary_indicator": "indicators_info",
+    "normalize_indicator_name": "indicators_info",
+    # units
+    "UNIT_CONVERSIONS": "units",
+    "convert_to_standard": "units",
+    "get_all_units_info": "units",
+    # ranges, fhir ids, and the registry task
+    "ValueRangeValidator": "value_range_validator",
+    "FhirMapping": "fhir_mapping",
+    "get_fhir_id": "fhir_mapping",
+    "start_std_indicator_registry": "std_indicator_registry.startup",
+}
+__all__ = [*_EXPORTS]
+
+if TYPE_CHECKING:  # static analyzers resolve the real symbols
+    from .fhir_mapping import FhirMapping, get_fhir_id
+    from .indicators_info import (
+        HealthDataType,
+        StandardIndicator,
+        get_all_indicators_info,
+        get_indicator_by_str,
+        get_indicators_in_same_categories,
+        get_standard_unit,
+        is_series_indicator,
+        is_summary_indicator,
+        is_valid_indicator,
+        normalize_indicator_name,
+    )
+    from .std_indicator_registry.startup import start_std_indicator_registry
+    from .units import UNIT_CONVERSIONS, convert_to_standard, get_all_units_info
+    from .value_range_validator import ValueRangeValidator
+
+
+def __getattr__(name: str):
+    import importlib
+
+    where = _EXPORTS.get(name)
+    if where is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module = importlib.import_module(f".{where}", __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value

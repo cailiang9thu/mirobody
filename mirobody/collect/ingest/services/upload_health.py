@@ -15,9 +15,9 @@ from .repair_reconcile import RepairReconciler
 from mirobody.collect.ingest.models.requests import StandardPulseData
 from mirobody.collect.ingest.repositories.health_data import HealthDataRepository
 from mirobody.collect.readings import upsert_readings
-from mirobody.collect.standardize.indicators_info import is_summary_indicator, is_series_indicator, normalize_indicator_name
-from mirobody.collect.standardize.fhir_mapping import get_fhir_id
-from mirobody.collect.standardize.value_range_validator import ValueRangeValidator
+from mirobody.translate import is_summary_indicator, is_series_indicator, normalize_indicator_name
+from mirobody.translate import get_fhir_id
+from mirobody.translate import ValueRangeValidator
 from mirobody.user.platform import PlatformUserService
 
 logger = logging.getLogger(__name__)

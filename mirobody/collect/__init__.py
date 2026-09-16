@@ -8,8 +8,10 @@ Two source shapes, one convergence point, then meaning:
          ↓
     ingest/      all three converge on StandardPulseData → th_series_data
          ↓
-    standardize/ what a value MEANS: indicator catalogue, units, ranges, fhir_id
     aggregate/   series → daily summaries and derived indicators
+
+What a value MEANS is ② Translate's, not this stage's: the indicator
+catalogue, units, ranges and fhir_id are `mirobody.translate`.
 
 `core/` is what those stand on, not a stage: the provider contract types, the
 scheduler, the DB base classes, the distributed lock. Sub-package sizes and
@@ -62,8 +64,8 @@ _EXPORTS = {
     "DataFormatter": "providers._platform.normalize",
     "TimeUtils": "providers._platform.normalize",
     "records_from_facts": "providers._platform.normalize",
-    "StandardIndicator": "standardize.indicators_info",
-    "UNIT_CONVERSIONS": "standardize.units",
+    "StandardIndicator": "mirobody.translate.indicators_info",
+    "UNIT_CONVERSIONS": "mirobody.translate.units",
     # Apple Health implementations
     "AppleHealthPlatform": "providers.apple",
     "AppleHealthProvider": "providers.apple",
@@ -75,12 +77,10 @@ _EXPORTS = {
     # move without a router edit, which is the whole point: `db_utils`,
     # `database_services` and `providers/platform/` all moved in 1.4.4.
     "start_aggregate_indicator_scheduler": "aggregate.startup",
-    "start_std_indicator_registry": "standardize.std_indicator_registry.startup",
     "start_theta_pull_scheduler": "providers._platform.startup",
     "backfill_day_columns": "backfill",
     "ConnectInfoField": "core.models",
     "installed_provider_slugs": "providers.installed",
-    "get_all_indicators_info": "standardize",
     "PostgresHealthQuery": "query",
     "REST_CATALOG_MAX": "query",
     "upsert_readings": "readings",
@@ -122,18 +122,16 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
         StandardPulseRecord,
     )
     from .providers._platform.normalize import DataFormatter, TimeUtils, records_from_facts
-    from .standardize.indicators_info import StandardIndicator
-    from .standardize.units import UNIT_CONVERSIONS
+    from mirobody.translate import StandardIndicator
+    from mirobody.translate import UNIT_CONVERSIONS
     from .providers import BasePullProvider, ProviderPlatform
     from .providers.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
     from .providers.apple.statistics_service import process_apple_health_statistics
     from .aggregate.startup import start_aggregate_indicator_scheduler
-    from .standardize.std_indicator_registry.startup import start_std_indicator_registry
     from .providers._platform.startup import start_theta_pull_scheduler
     from .backfill import backfill_day_columns
     from .core.models import ConnectInfoField
     from .providers.installed import installed_provider_slugs
-    from .standardize import get_all_indicators_info
     from .query import PostgresHealthQuery, REST_CATALOG_MAX
     from .readings import upsert_readings
     from .meds import PostgresDoseLogStore, PostgresMedicationStore
@@ -157,6 +155,14 @@ def __getattr__(name: str):
     import importlib
 
     if name in _EXPORTS:
-        module = importlib.import_module(f".{_EXPORTS[name]}", __name__)
+        where = _EXPORTS[name]
+        # An absolute path means the symbol left this package. Two did, when
+        # `standardize/` became `mirobody.translate`: they keep resolving here
+        # because a provider plugin names its metrics with `StandardIndicator`
+        # and declares units with `UNIT_CONVERSIONS`, and the plugin contract
+        # is one import path, not two. The catalogue reads the server does went
+        # straight to `mirobody.translate` instead.
+        module = importlib.import_module(where if "." in where and where.startswith("mirobody.")
+                                         else f".{where}", __name__)
         return getattr(module, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
