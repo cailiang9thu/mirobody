@@ -43,7 +43,7 @@ get_requires_for_build_editable = _orig.get_requires_for_build_editable
 prepare_metadata_for_build_editable = _orig.prepare_metadata_for_build_editable
 
 #: 28 MB of `mirobody/res/` that NO runtime code path reads — grep server/,
-#: agent/, pulse/, mcp/ and task/ for `concept_graph` or `taxonomy` and it comes
+#: agent/, collect/, mcp/ and task/ for `concept_graph` or `taxonomy` and it comes
 #: back empty. Their readers are `mirobody/indicator/`'s bundle-build tooling
 #: (which runs from a git checkout) and the v2 semantic pipeline (which also
 #: needs a ~200 MB embedding matrix that is not distributed). Shipping them made

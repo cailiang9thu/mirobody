@@ -30,8 +30,8 @@ LANGUAGE_CODES = {
     "zh_cn": "zh",
     "zh-hans": "zh",
     "zh_hans": "zh",
-    # Traditional variants map to the Simplified bundle: we ship a
-    # archived/README.zh-TW.md, and Chinese text is closer than the English default.
+    # Traditional variants map to the Simplified bundle: the zh-TW README is
+    # archived, and Chinese is closer to a reader than the English default.
     "zh-tw": "zh",
     "zh_tw": "zh",
     "zh-hant": "zh",

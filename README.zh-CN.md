@@ -99,7 +99,7 @@ resolve("血脂").resolved                                 # False    类别，�
 | 单位 | 约 310 个 UCUM 单位族，带量纲分析和按 LOINC 码索引的摩尔质量桥；305 个标准 pulse 指标 |
 | 覆盖率 | **213/213**：一份普通体检会印出来的各类面板，按报告的原始写法，覆盖英文、中文（简繁）和日文（[`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)） |
 | 词表版本 | LOINC 2.82：`mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285`——版本号、切割日期和词表成员的摘要 |
-| 安装体积 | `pip install mirobody` 只有 **2 个包**，仅依赖 numpy —— macOS 上约 52 MB，Linux 上约 100 MB（numpy 在那边自带一份 BLAS） |
+| 安装体积 | `pip install mirobody` 只有 **2 个包**，仅依赖 numpy —— macOS 上约 67 MB，Linux 上约 100 MB（numpy 在那边自带一份 BLAS） |
 
 为什么停在 2.82 没有升 2.83、LOINC 在穿戴指标上覆盖到哪里、以及那个默认不开、开了就不留空的
 语义层：→ [标准化详解](docs/standardization.md)

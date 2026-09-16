@@ -273,10 +273,11 @@ def lint_paths(paths: Iterable[Path | str], *, root: Path | None = None) -> tupl
 #: list like this drift and the drift is silent.
 DEFAULT_TREES: tuple[str, ...] = (
     "mirobody/agent",
-    "mirobody/mcp",
     "mirobody/collect",
+    "mirobody/mcp",
     "mirobody/server",
     "mirobody/task",
+    "mirobody/translate",
     "mirobody/user",
     "mirobody/utils",
 )

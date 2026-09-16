@@ -12,9 +12,16 @@ long-lived venv:
 
 | install | packages | tests |
 | --- | --- | --- |
-| `'.[test]'` | 17 | 191 passed, 16 skipped — resolve, units, lexical, the README gates |
-| `'.[test,parse]'` | 74 | 269 passed, 6 skipped — + document extraction, model clients |
-| `'.[test,app]'` | 146 | 333 passed — everything a clone can run |
+| `'.[test]'` | 17 | 33 passed |
+| `'.[test,parse]'` | 74 | 33 passed |
+| `'.[test,app]'` | 146 | 33 passed |
+
+The extras no longer change what a clone can run, and that is not a mistake in
+the table. Since 1.4.3 one gate module ships (`test_engine_coverage.py`, the
+resolver score the README links); the other twenty joined the maintainers'
+local suite. That module needs no extras, so all three installs run it and
+nothing else. What the extras still decide is what the SERVER needs, which is
+what the package counts are for.
 
 <sub>Measured 2026-09-14 on a clone-shaped tree (1.4.2). `pytest` in a checkout
 that also has the maintainers' local suite collects more; these are the numbers
@@ -55,7 +62,7 @@ a clone can re-run it.
 
 | Module | Covers | Notes |
 | --- | --- | --- |
-| `test_engine_coverage.py` | **the published accuracy number** | 204 cases: the panels an ordinary checkup prints, in English, 简体中文, 繁體中文 and 日本語, plus device vocabulary, report shapes (`名称(缩写)`, `Name-ABBREV`, snake_case, full-width), unit-dependent codes and non-numeric readings. Run with `-s` to print the score; `COVERAGE_FLOOR = 1.0` |
+| `test_engine_coverage.py` | **the published accuracy number** | 213 cases: the panels an ordinary checkup prints, in English, 简体中文, 繁體中文 and 日本語, plus device vocabulary, report shapes (`名称(缩写)`, `Name-ABBREV`, snake_case, full-width), unit-dependent codes and non-numeric readings. Run with `-s` to print the score; `COVERAGE_FLOOR = 1.0` |
 
 ```bash
 pytest mirobody/tests/test_engine_coverage.py -s
@@ -192,12 +199,12 @@ code, keep the directory, diff it after.
 
 ```bash
 ruff check mirobody                                 # the lint gate; 0 findings on main
-lint-imports                                        # FOUR contracts, machine-checked
+lint-imports                                        # SIX contracts, machine-checked
 python -m build && python scripts/check_wheel_data.py dist/*   # artifacts carry real data, not LFS stubs
 python3 -c "import mirobody.kernel.meds, mirobody.kernel.query"   # the library layer, on a bare interpreter
 ```
 
-The four import-linter contracts, and what each one is for:
+The six import-linter contracts, and what each one is for:
 
 | Contract | Says |
 |---|---|
@@ -205,11 +212,16 @@ The four import-linter contracts, and what each one is for:
 | the library layer stands alone | the kernel modules import each other and nothing else in the package |
 | the library layer is stdlib + numpy | and no third-party distribution this project declares, except numpy |
 | engine does not import the agent layer | no seams: the health profile moved to `user/profile.py` |
+| collect has one front door | `agent` and `server` import `mirobody.collect`, never its submodules |
+| translate has one front door | and neither does `collect` reach past `mirobody.translate` |
 
 The third is regenerated from `pyproject.toml`'s own dependency lists by the
 local suite, so adding a dependency without adding it to the contract fails.
-**A new library-layer module must be added to all four contracts AND to that
-suite's list of library modules**, or the test is green for the wrong reason.
+**A new library-layer module must be added to the first four contracts AND to
+that suite's list of library modules**, or the test is green for the wrong
+reason. The last two are the opposite shape: they forbid rather than permit, so
+a new submodule under `collect/` or `translate/` is covered the moment its
+parent is listed.
 
 `lint-imports` must analyse the repo source: run it from a venv with this repo
 installed editable. Inside a venv holding an older published wheel it passes
