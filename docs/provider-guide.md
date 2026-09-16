@@ -206,7 +206,7 @@ providers/                       # or mirobody/collect/providers/ for a core pro
 ### Class Hierarchy
 
 ```
-BasePullProvider (from mirobody.collect.providers.platform.base)
+BasePullProvider (from mirobody.collect)
     ↓
 YourProvider (your implementation)
 ```
@@ -261,21 +261,25 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
-# Core imports
-from mirobody.collect.base import ProviderInfo
-from mirobody.collect.core import LinkType, ProviderStatus
-from mirobody.collect.standardize.indicators_info import StandardIndicator
-from mirobody.collect.core.push_service import push_service
-from mirobody.collect.standardize.units import UNIT_CONVERSIONS
-from mirobody.collect.ingest.models.requests import (
+# Everything a provider needs, from one import. These names are the contract:
+# where they live inside the package can change, this line cannot.
+from mirobody.collect import (
+    BasePullProvider,
+    DataFormatter,
     FormatDataContext,
     FormatDataInput,
+    LinkType,
+    ProviderInfo,
+    ProviderStatus,
+    StandardIndicator,
     StandardPulseData,
     StandardPulseMetaInfo,
     StandardPulseRecord,
+    TimeUtils,
+    UNIT_CONVERSIONS,
+    push_service,
+    records_from_facts,
 )
-from mirobody.collect.providers.platform.base import BasePullProvider
-from mirobody.collect.providers.platform.normalize import DataFormatter, TimeUtils
 from mirobody.utils import execute_query
 from mirobody.utils.config import safe_read_cfg, global_config
 

@@ -46,6 +46,24 @@ _EXPORTS = {
     # Concrete implementations
     "ProviderPlatform": "providers",
     "BasePullProvider": "providers",
+    # The provider-plugin contract. A third party writing a provider needs
+    # exactly these names, and used to need four internal paths to find them
+    # (`collect.base`, `collect.core`, `collect.ingest.models.requests`,
+    # `collect.providers.platform.base`). They are one import now, so moving
+    # any of those modules stops being a breaking change for plugins.
+    "LinkType": "core",
+    "ProviderStatus": "core",
+    "push_service": "core.push_service",
+    "FormatDataContext": "ingest.models.requests",
+    "FormatDataInput": "ingest.models.requests",
+    "StandardPulseData": "ingest.models.requests",
+    "StandardPulseMetaInfo": "ingest.models.requests",
+    "StandardPulseRecord": "ingest.models.requests",
+    "DataFormatter": "providers.platform.normalize",
+    "TimeUtils": "providers.platform.normalize",
+    "records_from_facts": "providers.platform.normalize",
+    "StandardIndicator": "standardize.indicators_info",
+    "UNIT_CONVERSIONS": "standardize.units",
     # Apple Health implementations
     "AppleHealthPlatform": "apple",
     "AppleHealthProvider": "apple",
@@ -60,6 +78,18 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .base import LinkRequest, Platform, Provider, ProviderInfo, UserProvider
     from .manager import PlatformManager, platform_manager
     from .setup import get_platform_manager, setup_platform_system, setup_platform_system_async
+    from .core import LinkType, ProviderStatus
+    from .core.push_service import push_service
+    from .ingest.models.requests import (
+        FormatDataContext,
+        FormatDataInput,
+        StandardPulseData,
+        StandardPulseMetaInfo,
+        StandardPulseRecord,
+    )
+    from .providers.platform.normalize import DataFormatter, TimeUtils, records_from_facts
+    from .standardize.indicators_info import StandardIndicator
+    from .standardize.units import UNIT_CONVERSIONS
     from .providers import BasePullProvider, ProviderPlatform
 
 
