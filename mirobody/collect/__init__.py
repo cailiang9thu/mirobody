@@ -68,6 +68,40 @@ _EXPORTS = {
     "AppleHealthPlatform": "providers.apple",
     "AppleHealthProvider": "providers.apple",
     "CDAProvider": "providers.apple",
+    "AppleHealthRequest": "providers.apple.models",
+    "AppleHealthStatisticsRequest": "providers.apple.models",
+    "process_apple_health_statistics": "providers.apple.statistics_service",
+    # What `mirobody.server` needs. Named here so the modules behind them can
+    # move without a router edit, which is the whole point: `db_utils`,
+    # `database_services` and `providers/platform/` all moved in 1.4.4.
+    "start_aggregate_indicator_scheduler": "aggregate.startup",
+    "start_std_indicator_registry": "standardize.std_indicator_registry.startup",
+    "start_theta_pull_scheduler": "providers._platform.startup",
+    "backfill_day_columns": "backfill",
+    "ConnectInfoField": "core.models",
+    "installed_provider_slugs": "providers.installed",
+    "get_all_indicators_info": "standardize",
+    "PostgresHealthQuery": "query",
+    "REST_CATALOG_MAX": "query",
+    "upsert_readings": "readings",
+    # Files, shared by server and agent.
+    "get_websocket_file_upload_manager": "file_parser.file_upload_manager",
+    "FileDbService": "file_parser.services.file_db_service",
+    "FileUploadData": "file_parser.services.file_processing_service",
+    "delete_all_files_from_message": "file_parser.services.file_processing_service",
+    "delete_files_from_message": "file_parser.services.file_processing_service",
+    "upload_files_to_storage": "file_parser.services.file_processing_service",
+    "process_files_async": "file_parser.services.file_processing_service",
+    "get_uploaded_files_paginated": "file_parser.services.drive_listing",
+    "regenerate_file_url": "file_parser.services.drive_listing",
+    "get_user_data_distribution": "file_parser.services.list_my_data",
+    "set_file_report_date": "file_parser.services.report_date",
+    "FileAbstractExtractor": "file_parser.services.file_abstract_extractor",
+    "lookup_extracted_text": "file_parser.services.file_abstract_extractor",
+    "GeneticHandler": "file_parser.handlers.genetic",
+    # What `mirobody.agent` needs beyond the above.
+    "PostgresDoseLogStore": "meds",
+    "PostgresMedicationStore": "meds",
     # Note: Specific providers (GarminProvider, etc.) are auto-loaded
     # and can be imported from .providers if needed
 }
@@ -91,6 +125,32 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .standardize.indicators_info import StandardIndicator
     from .standardize.units import UNIT_CONVERSIONS
     from .providers import BasePullProvider, ProviderPlatform
+    from .providers.apple.models import AppleHealthRequest, AppleHealthStatisticsRequest
+    from .providers.apple.statistics_service import process_apple_health_statistics
+    from .aggregate.startup import start_aggregate_indicator_scheduler
+    from .standardize.std_indicator_registry.startup import start_std_indicator_registry
+    from .providers._platform.startup import start_theta_pull_scheduler
+    from .backfill import backfill_day_columns
+    from .core.models import ConnectInfoField
+    from .providers.installed import installed_provider_slugs
+    from .standardize import get_all_indicators_info
+    from .query import PostgresHealthQuery, REST_CATALOG_MAX
+    from .readings import upsert_readings
+    from .meds import PostgresDoseLogStore, PostgresMedicationStore
+    from .file_parser.file_upload_manager import get_websocket_file_upload_manager
+    from .file_parser.handlers.genetic import GeneticHandler
+    from .file_parser.services.drive_listing import get_uploaded_files_paginated, regenerate_file_url
+    from .file_parser.services.file_abstract_extractor import FileAbstractExtractor, lookup_extracted_text
+    from .file_parser.services.file_db_service import FileDbService
+    from .file_parser.services.file_processing_service import (
+        FileUploadData,
+        delete_all_files_from_message,
+        delete_files_from_message,
+        process_files_async,
+        upload_files_to_storage,
+    )
+    from .file_parser.services.list_my_data import get_user_data_distribution
+    from .file_parser.services.report_date import set_file_report_date
 
 
 def __getattr__(name: str):

@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import BinaryIO
 
-from mirobody.collect.file_parser.services.file_abstract_extractor import FileAbstractExtractor, lookup_extracted_text
+from mirobody.collect import FileAbstractExtractor, lookup_extracted_text
 from mirobody.utils.db import execute_query
 from mirobody.documents import detect
 from .naming import guess_mime, is_multimodal

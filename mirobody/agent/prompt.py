@@ -71,7 +71,7 @@ async def report_date_status(attached: list[dict[str, Any]]) -> str:
     within seconds, but this note is built at the very start of the turn, so
     the row may not know yet; the model then reads the document itself and
     asks only if the text shows no examination date."""
-    from mirobody.collect.file_parser.services.file_db_service import FileDbService
+    from mirobody.collect import FileDbService
 
     lines = []
     for f in attached:

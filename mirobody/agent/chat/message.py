@@ -5,7 +5,7 @@ render. It is NOT the agent's conversation memory: that is the LangGraph
 checkpointer (agent/checkpointer.py), keyed on thread_id = session_id.
 """
 
-from mirobody.collect.file_parser.services.drive_listing import regenerate_file_url
+from mirobody.collect import regenerate_file_url
 import json
 import logging
 import uuid

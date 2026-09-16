@@ -12,8 +12,8 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from mirobody.collect.file_parser.services.file_processing_service import process_files_async
-from mirobody.collect.file_parser.services.file_db_service import FileDbService
+from mirobody.collect import process_files_async
+from mirobody.collect import FileDbService
 from mirobody.utils.file_types import guess_mime
 from mirobody.utils.config.storage import get_storage_client
 from mirobody.utils.tasks import spawn
@@ -176,7 +176,7 @@ def _detect_batch_scene(files_info: list[dict[str, Any]]) -> str:
     excel/csv from the filename extension. Keeps chat uploads consistent with
     drive uploads so the same file gets the same scene + downstream handling.
     """
-    from mirobody.collect.file_parser.handlers.genetic import GeneticHandler
+    from mirobody.collect import GeneticHandler
 
     has_genetic = has_excel = has_csv = False
     for fi in files_info:

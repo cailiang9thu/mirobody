@@ -621,6 +621,46 @@ forbidden_modules = [
 # model through `utils.llm`, which is engine-side, so it moved.
 ignore_imports = []
 
+[[tool.importlinter.contracts]]
+name = "collect has one front door (the answer layer imports mirobody.collect)"
+type = "forbidden"
+# DIRECT imports only. `mirobody.collect` imports its own submodules to
+# re-export them, so following the chain would flag the front door itself.
+allow_indirect_imports = true
+# ③ Agent reads what ① Collect stored, so the edge is legitimate. What is not
+# legitimate is reaching past the package into whichever module happens to hold
+# the symbol today: 33 such imports named 19 submodules, and 1.4.4 moved four of
+# them (`core/user.py`, `db_utils.py`, `database_services.py`,
+# `providers/platform/`). Every one would have been a router edit.
+#
+# `mirobody.collect` re-exports what these two layers need, lazily (PEP 562),
+# so nothing is imported that was not going to be. Adding a name to `_EXPORTS`
+# is the way to widen this, and it is one line.
+#
+# Tests are exempt by construction: they live in `tests/`, outside the graph.
+# That is the right privilege for them. A regression test for `readings.py`
+# should import `readings.py`, including its underscore-private names.
+source_modules = [
+    "mirobody.agent",
+    "mirobody.server",
+]
+forbidden_modules = [
+    "mirobody.collect.aggregate",
+    "mirobody.collect.backfill",
+    "mirobody.collect.base",
+    "mirobody.collect.core",
+    "mirobody.collect.file_parser",
+    "mirobody.collect.ingest",
+    "mirobody.collect.manager",
+    "mirobody.collect.meds",
+    "mirobody.collect.providers",
+    "mirobody.collect.query",
+    "mirobody.collect.readings",
+    "mirobody.collect.setup",
+    "mirobody.collect.standardize",
+]
+ignore_imports = []
+
 # ── Lint gate (run: ruff check mirobody) ─────────────────────────────────────
 #
 # Narrow on purpose: every rule here is either a real defect class (F: undefined

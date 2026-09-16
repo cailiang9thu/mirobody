@@ -2,7 +2,7 @@
 WebSocket routes for data_server with file upload progress and real-time communication
 """
 
-from mirobody.collect.file_parser.services.drive_listing import get_uploaded_files_paginated
+from mirobody.collect import get_uploaded_files_paginated
 import asyncio
 import json
 import logging
@@ -19,16 +19,12 @@ from mirobody.utils.req_ctx import set_req_ctx
 from mirobody.server.auth import verify_token, verify_token_string
 from mirobody.user.care_circle import CareCircleDenied, resolve_subject
 
-from mirobody.collect.file_parser.file_upload_manager import get_websocket_file_upload_manager
-from mirobody.collect.file_parser.services.list_my_data import get_user_data_distribution
+from mirobody.collect import get_websocket_file_upload_manager
+from mirobody.collect import get_user_data_distribution
 
 # Additional imports for async file processing
-from mirobody.collect.file_parser.services.file_processing_service import (
-    delete_files_from_message,
-    delete_all_files_from_message,
-    upload_files_to_storage
-)
-from mirobody.collect.file_parser.services.file_processing_service import FileUploadData
+from mirobody.collect import delete_files_from_message, delete_all_files_from_message, upload_files_to_storage
+from mirobody.collect import FileUploadData
 from mirobody.utils.log import secret_fingerprint
 
 logger = logging.getLogger(__name__)
