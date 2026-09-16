@@ -1,5 +1,107 @@
 # Changelog
 
+## 1.4.3
+
+A reading extracted from an uploaded report now carries a LOINC code, which is
+the headline promise and did not hold for the main way readings arrive. Two
+packages are renamed after the stage they implement, and Apple Health exports
+import without the mobile app. The resolver evaluation is unmoved: 7,354 cases,
+coverage 0.963, wrong-rate 0.032.
+
+### Breaking
+
+- **`mirobody.pulse` is `mirobody.collect`.** `pulse` was the product name this
+  code was extracted from; the stage it implements is ① Collect, and 1.5.0 adds
+  `translate/` beside it. 352 module paths moved. No compatibility alias: the
+  import fails loudly with `ModuleNotFoundError`, which is the signal. The HTTP
+  prefix `/api/v1/pulse` and the `db_config="pulse"` key are contracts, not
+  paths, and do not move.
+- **`mirobody.kernel.vendors` is `mirobody.kernel.decoders`.** "Vendor" and
+  "provider" mean the same thing in English, so the two directory names hid a
+  boundary import-linter enforces. The name was already inside the module: the
+  dispatch dict is `DECODERS`. The other side keeps "provider" (505 sites, and
+  `mirobody.providers` is a third-party plugin entry point).
+- **`render_compact` and `render_rest` left
+  `agent.tools.health_indicators_service` for `agent.tools._render`.** That
+  module was both the readings tool and the other two tools' utility module, so
+  the three record tools were not peers; `_base.RecordTool` now holds the
+  authorization and the never-raises contract. `tools/list` publishes the same
+  six tools with the same parameter counts.
+- **Twenty test modules left the package.** `mirobody/tests/test_engine_coverage.py`
+  is the one that ships, because the README links its score. A clone runs 33
+  tests.
+
+### Added
+
+- **`mirobody import apple export.zip` reads the archive the Health app
+  makes.** The Apple provider accepted only JSON shaped like one Flutter
+  plugin's output, so a self-hosted user could not import their own data
+  without running our mobile app. It needs no key, no database, no server and
+  no extra. The reader streams: a measured export is 109 MB and about 446,670
+  records.
+- **The Apple decoder table covers what HealthKit declares**: 47 data types and
+  51 metrics, including the category types whose reading is a name rather than
+  a number. `record_time_ms` reads epoch milliseconds as well as Apple's own
+  format. A unit is read per record, not per type, because one export holds
+  `mg/dL` beside `mmol/L`.
+- **`COLLECT_API_PREFIX`.** `/api/v1/pulse` is the OAuth redirect URI each
+  deployment registered with Garmin, Oura and Whoop, so it cannot be renamed
+  here. The default stays; a deployment that has registered nothing yet can set
+  `/api/v1/collect`.
+
+### Fixed
+
+- **An analyte off an uploaded report had no terminology identity.**
+  `GET /api/v1/health-indicators` answered `system: ""` and `code: ""` for all
+  130 indicators extracted from two real checkup reports, while `mirobody
+  resolve` printed the codes for the same names: `fhir_indicators` has no rows
+  on a fresh deployment, the two read paths disagreed, and the fallback was
+  keyed on catalogue names an extractor's free text never matches. One funnel
+  answers both paths now, and it resolves from the VALUE rather than the name,
+  because a report prints `Abdomen | No abnormalities seen` beside
+  `ALT | 38.1 U/L` and the name alone returned 11947-9 for the first.
+- **The unit was written where no reader could reach it.** The file path left
+  `fhir_mapping_info` NULL and put the unit only in `comment`, which is
+  encrypted; every read path selects `fhir_mapping_info ->> 'unit'`. Rows
+  written before this keep an empty unit until re-uploaded.
+- **The model was not handed the code it then quoted.** `system` and `code`
+  reached only the `catalog` result, so asked for a reading's LOINC code the
+  agent answered from memory and gave 1558-6, the [Mass/volume] glucose code,
+  for a value it had just printed as 5.4 mmol/L. Every method that prints a
+  value carries the identity now; `compact` hoists a constant code into one
+  line, so a 200-row result pays for it once.
+- **`auth_type: gcp_adc` posted `project` and `location` in every request
+  body.** They derive the Vertex endpoint and are not request parameters, but
+  langchain-openai moved them into `model_kwargs`. The same branch embedded the
+  raw location in the URL path while normalising it for the host, so
+  `location: " US "` built a 404 that named nothing. (#75)
+- **A first `mirobody serve` without Postgres ended in a traceback.**
+  `create_schema` opened its connection unguarded, so a database stack trace
+  was the first thing a new reader saw, before the config banner. Outside
+  production it now says what is wrong and starts: with Postgres unreachable
+  and no keys at all, `/api/health` answers 200. Production still raises.
+- **Extraction failure named providers it had not tried.** It reported "every
+  configured provider returned an error" when exactly one is ever selected, and
+  now names that one.
+
+### Changed
+
+- **The third stage is Agent, not Answer.** C·T·A named the stages
+  Collect · Translate · Answer while no package was named after its stage.
+  Answer would have cost 73 rename sites, Agent costs none. Both README
+  editions follow, and the Chinese is written rather than translated.
+- **The README no longer implies the model runs on your hardware.** Nothing
+  here runs one: there is no GPU, Ollama or local-inference path in the code.
+  "Offline" is scoped to the resolver, and both editions say the negative where
+  the claim is made.
+- **Comment style is a CI gate.** No block over eight lines, no em-dash in a
+  comment or docstring (runtime strings are exempt). 1,335 em-dashes and 307
+  comment lines went; both thresholds are measured against thirteen installed
+  libraries rather than chosen.
+- **A cross-directory import is spelled in full**, with ruff TID252 selected so
+  a new one cannot land: 296 statements across 126 files. `from .sibling` is
+  untouched.
+
 ## 1.4.2
 
 The genetic tool answers like its two siblings, a `(value, unit)` pair says when
