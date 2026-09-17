@@ -94,7 +94,7 @@ There is no `router/` here any more — the HTTP endpoints moved to
 ### Adding a new health indicator
 **Not in this package** since 1.4.4:
 - `mirobody/translate/indicators_info.py` — `StandardIndicator` + `IndicatorInfo`
-- `mirobody/translate/units.py` — unit conversion definitions
+- `mirobody/translate/canonical_units.py` — unit conversion definitions
 - `mirobody/kernel/decoders/apple.py` — the HealthKit identifier, if it comes
   from Apple. One table serves both the push endpoint and `mirobody import apple`.
 

@@ -1,7 +1,9 @@
 """② Translate: what a value MEANS.
 
     indicators_info.py       the indicator catalogue
-    units.py                 unit conversion
+    canonical_units.py       a reading in the unit the catalogue declares
+                             for its indicator (NOT `mirobody.units`, the
+                             UCUM engine it borrows its arithmetic from)
     value_range_validator.py what counts as a plausible value
     fhir_mapping.py          indicator to fhir_id
     aggregate/               a day of points to one number, and which source
@@ -60,10 +62,10 @@ _EXPORTS = {
     "is_series_indicator": "indicators_info",
     "is_summary_indicator": "indicators_info",
     "normalize_indicator_name": "indicators_info",
-    # units
-    "UNIT_CONVERSIONS": "units",
-    "convert_to_standard": "units",
-    "get_all_units_info": "units",
+    # canonical units
+    "UNIT_CONVERSIONS": "canonical_units",
+    "convert_to_standard": "canonical_units",
+    "get_all_units_info": "canonical_units",
     # ranges, fhir ids, and the registry task
     "ValueRangeValidator": "value_range_validator",
     "FhirMapping": "fhir_mapping",
@@ -99,7 +101,7 @@ if TYPE_CHECKING:  # static analyzers resolve the real symbols
     from .aggregate.startup import start_aggregate_indicator_scheduler
     from .derive.task import start_derived_scheduler
     from .std_indicator_registry.startup import start_std_indicator_registry
-    from .units import UNIT_CONVERSIONS, convert_to_standard, get_all_units_info
+    from .canonical_units import UNIT_CONVERSIONS, convert_to_standard, get_all_units_info
     from .value_range_validator import ValueRangeValidator
 
 

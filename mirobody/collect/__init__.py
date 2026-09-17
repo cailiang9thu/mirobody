@@ -64,7 +64,7 @@ _EXPORTS = {
     "TimeUtils": "providers._platform.normalize",
     "records_from_facts": "providers._platform.normalize",
     "StandardIndicator": "mirobody.translate.indicators_info",
-    "UNIT_CONVERSIONS": "mirobody.translate.units",
+    "UNIT_CONVERSIONS": "mirobody.translate.canonical_units",
     # Apple Health implementations
     "AppleHealthPlatform": "providers.apple",
     "AppleHealthProvider": "providers.apple",

@@ -437,6 +437,11 @@ mirobody/translate/aggregate/task.py	interpolation	e
 mirobody/translate/aggregate/task.py	interpolation	stats_dict['execution_time_ms']
 mirobody/translate/aggregate/task.py	interpolation	stats_dict['summaries_created']
 mirobody/translate/aggregate/task.py	interpolation	stats_dict['users_affected']
+mirobody/translate/canonical_units.py	interpolation	e
+mirobody/translate/canonical_units.py	interpolation	from_unit
+mirobody/translate/canonical_units.py	interpolation	indicator
+mirobody/translate/canonical_units.py	interpolation	standard_unit
+mirobody/translate/canonical_units.py	interpolation	unit
 mirobody/translate/derive/rules.py	interpolation	computed
 mirobody/translate/derive/rules.py	interpolation	day
 mirobody/translate/derive/rules.py	interpolation	denominator
@@ -464,11 +469,6 @@ mirobody/translate/std_indicator_registry/task.py	interpolation	rule.source_indi
 mirobody/translate/std_indicator_registry/task.py	interpolation	rule.target_indicator
 mirobody/translate/std_indicator_registry/task.py	interpolation	stats['aggregation_rows']
 mirobody/translate/std_indicator_registry/task.py	interpolation	stats['source_rows']
-mirobody/translate/units.py	interpolation	e
-mirobody/translate/units.py	interpolation	from_unit
-mirobody/translate/units.py	interpolation	indicator
-mirobody/translate/units.py	interpolation	standard_unit
-mirobody/translate/units.py	interpolation	unit
 mirobody/translate/value_range_validator.py	interpolation	e
 mirobody/translate/value_range_validator.py	interpolation	indicator
 mirobody/translate/value_range_validator.py	interpolation	loaded
