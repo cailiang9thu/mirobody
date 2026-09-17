@@ -36,7 +36,7 @@ editing one.
 The tier split and the conventions below come from a design worked out and
 validated against real unit-conversion cases, not invented for this module.
 
-**Not to be confused with** :func:`mirobody.translate.units.convert_to_standard`.
+**Not to be confused with** :func:`mirobody.translate.canonical_units.convert_to_standard`.
 That one takes a ``StandardIndicator`` and converts to the unit that indicator
 declares, one target per indicator, and it builds on this module: it imports
 `conversion_factor` and `MOLAR_MASS` from here rather than carrying its own
