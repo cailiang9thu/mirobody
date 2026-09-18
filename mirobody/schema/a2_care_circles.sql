@@ -5,8 +5,8 @@
 -- something the product does not do. That pair stored a DIRECTED grant — owner
 -- O lets member M read O's record — in a row whose `permissions` was a
 -- schemaless jsonb bag defaulting to `{"all": 1}`. Four separate things were
--- wrong with it, and the README's own diagram (docs/images/your-care-circle.svg)
--- describes the model this file builds instead:
+-- wrong with it, and the four promises in docs/walkthrough.md#the-four-promises
+-- describe the model this file builds instead:
 --
 --   1. "health stays off until you allow it" / "your switch — off by default".
 --      The old default was `{"all": 1}`: read access to everything, on by

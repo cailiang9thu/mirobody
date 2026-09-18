@@ -189,14 +189,19 @@ class PostgresHealthQuery:
         where = _window_clause(params, window)
         rows = await execute_query(
             f"""
-            SELECT id, indicator, start_time, value, info, source_table_id, total, day_known FROM (
+            SELECT id, indicator, start_time, value, info, source_table_id, file_name,
+                   total, day_known FROM (
                 SELECT tsd.id, tsd.indicator, tsd.start_time, tsd.value,
                        tsd.fhir_mapping_info AS info,
                        tsd.local_date IS NOT NULL AS day_known,
                        CASE WHEN tsd.source_table = 'th_files' THEN tsd.source_table_id END AS source_table_id,
+                       decrypt_content(f.file_name) AS file_name,
                        COUNT(*) OVER (PARTITION BY tsd.indicator) AS total,
                        ROW_NUMBER() OVER (PARTITION BY tsd.indicator ORDER BY tsd.start_time DESC) AS rn
                   FROM th_series_data tsd
+                  LEFT JOIN th_files f
+                         ON tsd.source_table = 'th_files'
+                        AND f.file_key = split_part(tsd.source_table_id, '_#_', 1)
                  WHERE tsd.user_id = :uid AND tsd.deleted = 0
                    AND tsd.indicator = ANY(:names) {where}
             ) s
@@ -627,6 +632,10 @@ def _reading_row(r: dict, coding: dict[str, dict]) -> dict:
         "time": _text(r.get("start_time")),
         "value": _text(r.get("value")),
         "unit": (info.get("unit") if isinstance(info, dict) else "") or "",
+        # `file_key` opens the document; `file` is what a person calls it. The
+        # model used to be handed only the key and cited
+        # "web_uploads/17eaf4f6-…-edbee3267ea6.pdf" as the source of a value.
+        "file": _text(r.get("file_name")) or file_key,
         "file_key": file_key,
         "row_id": r.get("id"),
         "system": code.get("system", ""),

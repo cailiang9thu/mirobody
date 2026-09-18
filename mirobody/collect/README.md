@@ -276,4 +276,3 @@ something a `pip install` should carry into `site-packages`:
 - [`docs/provider-guide.md`](../../docs/provider-guide.md) — writing a data provider, end to end
 - [`docs/file-processing.md`](../../docs/file-processing.md) — the file-parsing pipeline
 - [`docs/apple-health.md`](../../docs/apple-health.md) — Apple Health / CDA import
-- [`docs/aggregation-tests.md`](../../docs/aggregation-tests.md) — the aggregation test suite
