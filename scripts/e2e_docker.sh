@@ -15,7 +15,7 @@
 set -uo pipefail
 
 BASE="${BASE:-http://127.0.0.1:18060}"
-EMAIL="${EMAIL:-caregiver@mirobody.ai}"
+EMAIL="${EMAIL:-you@mirobody.ai}"
 CODE="${CODE:-111111}"
 CONTAINER="${CONTAINER:-mirobody-mirobody-1}"
 FAILURES=0

@@ -131,11 +131,15 @@ PG_MAX_CONNECTION: 20
 # EMAIL_TEMPLATE: ''
 # EMAIL_SMTP_PASS: ''
 
-# The demo account: you sign in as the CAREGIVER; the record you read belongs
-# to "Demo (synthetic)" (SEED_DEMO_DATA). The code is listed here, so it needs
-# no mail provider — and it is public. Your own account: POST /password/register.
+# The demo accounts (SEED_DEMO_DATA). You sign in as `you` and read `mom`'s
+# record, shared view-only. The codes are listed here, so they need no mail
+# provider, and they are public. Your own account: POST /password/register.
+# Two accounts on purpose: the seed gives each a DIFFERENT record
+# (`server/demo.py:_PROFILES`), so the same question, "how has my HbA1c been",
+# answers differently depending on who signed in. One account cannot show that.
 EMAIL_PREDEFINE_CODES:
-  caregiver@mirobody.ai: '111111'
+  you@mirobody.ai: '111111'
+  mom@mirobody.ai: '111111'
 
 # JWT (HS256). JWT_PRIVATE_KEY switches to RS256.
 JWT_KEY: REPLACE_THIS_VALUE_IN_PRODUCTION
@@ -158,16 +162,14 @@ JWT_SCOPE: "mcp:read mcp:write"
 # revokes one now, and the next mint issues a fresh secret.
 MCP_URL_TTL_DAYS: 30
 
-# Plug-in directories: MCP tools, the agent class, device pull providers, Agent
-# Skills (SKILL.md packages). Add your own directory to extend.
+# Plug-in directories: MCP tools, the agent class, device pull providers.
+# Add your own directory to extend.
 MCP_TOOL_DIRS:
   - mirobody/agent/tools
 AGENT_DIRS:
   - mirobody/agent
 PROVIDER_DIRS:
   - mirobody/collect/providers
-SKILL_DIRS:
-  - mirobody/agent/skills
 
 #-----------------------------------------------------------------------------
 # File processing.

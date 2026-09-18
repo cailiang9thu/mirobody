@@ -97,15 +97,16 @@ if [ ! -f "${config_filename}" ]; then
 JWT_KEY: $(generate_random_string 32)
 
 # Predefined email addresses and verification codes for testing purposes.
-# The demo login itself (caregiver@mirobody.ai / 111111) ships in config.yaml —
-# do NOT redeclare EMAIL_PREDEFINE_CODES here unless you mean to REPLACE it:
-# overlay dicts substitute the whole key, they do not merge (an earlier
-# generated block did exactly that, and the README's stated login stopped
-# working on every ./deploy.sh install). To ADD accounts, list the caregiver
-# line again alongside yours:
+# The demo logins themselves (you@mirobody.ai and mom@mirobody.ai, code
+# 111111) ship in config.yaml — do NOT redeclare EMAIL_PREDEFINE_CODES here
+# unless you mean to REPLACE it: overlay dicts substitute the whole key, they
+# do not merge (an earlier generated block did exactly that, and the README's
+# stated login stopped working on every ./deploy.sh install). To ADD accounts,
+# list the demo lines again alongside yours:
 # EMAIL_PREDEFINE_CODES:
-#   caregiver@mirobody.ai: '111111'
-#   you@example.com: '<your code>'
+#   you@mirobody.ai: '111111'
+#   mom@mirobody.ai: '111111'
+#   me@example.com: '<your code>'
 #
 # BEFORE EXPOSING THIS DEPLOYMENT TO A NETWORK, set the two lines below and
 # remove the predefined codes (see SECURITY.md). With PRODUCTION: true the
@@ -328,9 +329,11 @@ if ! docker compose up -d --remove-orphans; then
     exit 1
 fi
 echo ""
-echo "Up. Open http://localhost:18060 and sign in as caregiver@mirobody.ai / 111111."
-echo "The boot log below ends with 'LLM models by surface': if a surface reads '--',"
-echo "put ONE LLM API key in .env (the names are listed there) and run:"
+echo "Up. Open http://localhost:18060 and sign in as you@mirobody.ai / 111111."
+echo "The boot log below ends with 'LLM models by surface', or, while no key is"
+echo "set at all, with 'no LLM model on any surface'. For either of those, and for"
+echo "a surface that reads '--', put ONE LLM API key in .env (the names are listed"
+echo "there) and run:"
 echo "    docker compose restart"
 echo "Details any time:  docker compose exec mirobody python -m mirobody doctor"
 echo ""

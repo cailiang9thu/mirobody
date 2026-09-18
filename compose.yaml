@@ -92,6 +92,12 @@ services:
       - ENV=${ENV}               # a real env var, so `ENV=prod ./deploy.sh` beats a stale .env
       - PYTHONUNBUFFERED=1
       - PIP_INDEX_URL=${PIP_INDEX_URL:-https://pypi.org/simple}   # a mirror when pypi.org is slow
+      # A container does not inherit the shell that ran ./deploy.sh, so a
+      # deployment behind a proxy reached the model provider as "Cannot connect
+      # to host" with nothing pointing at the proxy. Empty unless set.
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-pg,redis,localhost,127.0.0.1}
       - HTTP_HOST=0.0.0.0
       - HTTP_PORT=18060
       # Seeds one synthetic person's two-year record into the demo account's
