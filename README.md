@@ -283,8 +283,9 @@ pip install -e '.[test]' && pytest -q && lint-imports
 
 **[docs.mirobody.ai](https://docs.mirobody.ai/)**, in English and Chinese — start
 at the [Quickstart](https://docs.mirobody.ai/en/quickstart/) or the
-[API reference](https://docs.mirobody.ai/en/api-reference/); contributor guides
-are in [`docs/`](docs/README.md).
+[API reference](https://docs.mirobody.ai/en/api-reference/). The edition that
+ships with the code is [`docs/quickstart.md`](docs/quickstart.md), and the rest
+of the contributor guides are in [`docs/`](docs/README.md).
 
 Mirobody's design draws on the following standards and projects, with thanks:
 [HL7 FHIR](https://hl7.org/fhir/),

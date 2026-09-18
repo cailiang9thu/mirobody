@@ -256,8 +256,9 @@ pip install -e '.[test]' && pytest -q && lint-imports
 
 **[docs.mirobody.ai](https://docs.mirobody.ai/)**，中英双语，从
 [快速上手](https://docs.mirobody.ai/zh/quickstart/)或
-[API 参考](https://docs.mirobody.ai/zh/api-reference/)开始看；给贡献者的文档在
-[`docs/`](docs/README.md)。
+[API 参考](https://docs.mirobody.ai/zh/api-reference/)开始看；
+随代码一起发布的那一份是 [`docs/quickstart.md`](docs/quickstart.md)，
+其余给贡献者的文档在 [`docs/`](docs/README.md)。
 
 本项目的设计参考了以下标准与项目，特此鸣谢：
 [HL7 FHIR](https://hl7.org/fhir/)、
