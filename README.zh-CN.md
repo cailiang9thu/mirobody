@@ -1,9 +1,8 @@
+<div align="center">
+
 # Mirobody
 
-**去年体检写 `A1c`，今年医院写 `HbA1c`，换家机构又成 `糖化血红蛋白`。一项检查三个名字，读不懂，也比不了。
-Mirobody 是 AI 原生的健康数据引擎：不同来源、格式、表述的健康信息，规整成一套语言、一个体系，由 AI 回答你的
-问题，每个指标都有出处，可追溯、可对比、可展示。我的血压这几年怎么变？妈妈的糖尿病指标好转了吗？宝宝历年体检
-有什么变化？最精准、最个人化、最专业的解答，且完全自托管，数据就在你自己手中。**
+**自托管的 AI 原生健康数据引擎：任何来源，一套标准，每个答案都有出处。**
 
 **[English](README.md)** · **中文**
 
@@ -14,6 +13,15 @@ Mirobody 是 AI 原生的健康数据引擎：不同来源、格式、表述的�
 [![GitHub stars](https://img.shields.io/github/stars/thetahealth/mirobody?style=social)](https://github.com/thetahealth/mirobody/stargazers)
 
 **[📚 文档](https://docs.mirobody.ai/)** · **[▶ 在线 Demo（免注册）](https://chat.mirobody.ai/demo)** · **[🔌 API 平台](https://platform.mirobody.ai/)**
+
+</div>
+
+---
+
+去年体检写 `A1c`，今年医院写 `HbA1c`，换家机构又成 `糖化血红蛋白`。一项检查三个名字，读不懂，也比不了。
+Mirobody 把不同来源、格式、表述的健康信息，规整成一套语言、一个体系，再由 AI 在这份记录上回答你的问题，
+每个指标都有出处，可追溯、可对比、可展示。我的血压这几年怎么变？妈妈的糖尿病指标好转了吗？
+宝宝历年体检有什么变化？全部自托管，数据就在你自己手中。
 
 <p align="center">
   <img src="docs/images/ask-own-demo.zh-CN.gif"
