@@ -2,12 +2,14 @@
 
 **[English](walkthrough.md)** · **中文**
 
-README 从前完整收录的那份关爱圈演示。每一段都是对着一套跑起来的 `./deploy.sh`、
-并且开着 `SEED_DEMO_DATA` 录的；README 放了四幕里的三幕，第四幕链到这里。
+README 从前完整收录的那份关爱圈演示。第 2 到第 4 段是对着一套跑起来的
+`./deploy.sh`、并且开着 `SEED_DEMO_DATA` 录的；第 1 段是画的 ——
+它讲的是授权那条路，而画出来的东西能拿去和 `user/care_circle.py` 对照，
+录屏不能。README 放了四幕里的三幕，第四幕链到这里。
 
 `SEED_DEMO_DATA` 默认打开，所以 `./deploy.sh` 一跑完，① → ② → ③ 这条链就能走：登录
 和浏览种子记录不需要任何 key；第 2、3 段的抽取和第 4 段的提问，走的是前面配的那一
-把 key。四段，每一段都对着跑起来的这套录。
+把 key。
 
 **1 · 进门。** 你用 `you@mirobody.ai` 登录，看到的是两份记录，不是一份。你自己的：
 一年的自测体征，加去年 11 月的一份化验单。`mom@mirobody.ai` 的形状一样，但那是另一
@@ -15,8 +17,11 @@ README 从前完整收录的那份关爱圈演示。每一段都是对着一套�
 个问题，两个答案，而两份记录里只有一份是你的。隔离是你能看见的，不是只能读到的。
 
 <p align="center">
-  <img src="images/care-circle-demo.zh-CN.gif"
-       alt="自己账号的指标与化验单，切换到共享给你的那份记录" width="880">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/your-care-circle-dark.zh-CN.svg">
+    <source media="(prefers-color-scheme: light)" srcset="images/your-care-circle.zh-CN.svg">
+    <img src="images/your-care-circle.zh-CN.svg" alt="一个人如何读到另一个人的健康记录：请求经过 resolve_subject，它要求双方成员关系都已接受、且对方自己打开了 health_access 开关，然后要么返回按请求裁剪过的权限，要么抛出 403" width="920">
+  </picture>
 </p>
 
 <a id="the-four-promises"></a>

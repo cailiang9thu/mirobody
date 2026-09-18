@@ -19,6 +19,7 @@ notes to PyPI under a filename that told open-source readers to ignore it.
 
 | | Guide | For |
 | --- | --- | --- |
+| | [quickstart.md](quickstart.md) | the three ways in — the library, the Docker stack, a checkout — what each needs and what it does not |
 | | [pipeline.md](pipeline.md) | the eleven stages a reading passes through, the invariant each holds, and what is deliberately NOT done |
 | ① | [provider-setup.md](provider-setup.md) | turning ON Garmin / Oura / Whoop — credentials, callback URLs, boot-log truth |
 | ① | [provider-guide.md](provider-guide.md) | writing a data provider end to end — the long one |
@@ -34,7 +35,8 @@ notes to PyPI under a filename that told open-source readers to ignore it.
 | | [backup-restore.md](backup-restore.md) | what to copy, how to get it back, and what changes on upgrade |
 | | [testing.md](testing.md) | test layout, markers, snapshots, release gates |
 
-Start at [repository-layout.md](repository-layout.md) if you want the map rather than a
+Start at [quickstart.md](quickstart.md) if you have not run it yet,
+[repository-layout.md](repository-layout.md) if you want the map rather than a
 specific subsystem, and [roadmap.md](roadmap.md) for known gaps and deferred
 work — each entry states the measurement that motivated it.
 

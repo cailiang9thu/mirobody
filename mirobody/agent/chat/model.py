@@ -12,10 +12,11 @@ class ChatStreamRequest(BaseModel):
     a caller's typo (or a natural guess like `model`) answers with the accepted
     names instead of a bare 500.
 
-    `agent`, `enable_mcp`, `group_id` and `reference_task_id` are ACCEPTED AND
-    IGNORED. There is one agent; `provider` picks the model. They stay until
-    every client has stopped sending them, because forbidding a field a client
-    still sends turns every message into a 400.
+    Four fields used to be accepted and ignored here (`agent`, `enable_mcp`,
+    `group_id`, `reference_task_id`) for clients that had not stopped sending
+    them. No client in this repository sends any of them and none was ever
+    read, so they are gone: with `extra="forbid"`, a sender now learns that
+    rather than having the value silently dropped.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -54,10 +55,6 @@ class ChatStreamRequest(BaseModel):
     #: What `th_messages.scene` records: which surface the turn came from.
     scene: str = "web"
 
-    agent: str = ""
-    enable_mcp: int = 1
-    group_id: str = ""
-    reference_task_id: str = ""
     trace_id: str = ""
 
 

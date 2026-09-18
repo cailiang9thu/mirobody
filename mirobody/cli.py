@@ -22,7 +22,8 @@ Commands:
 * ``mirobody doctor [config.yaml ...]``, which LLM provider each surface
   (chat, vision, structured extraction, text, embeddings) would select with
   the current configuration, and what to set where one has none. Needs no
-  database and no extra.
+  database, but it reads the configuration layer, so it needs ``[app]`` or
+  ``[parse]``.
 """
 
 from __future__ import annotations
@@ -217,6 +218,12 @@ def _cmd_doctor(args: argparse.Namespace) -> None:
     """The provider self-check, on demand. Exit status 1 when NO surface has a
     provider, so a deploy script can gate on it; a partial deployment (a key
     with no embedding model, say) exits 0 with the gap named in the table."""
+    # `dotenv` rather than a stack of its own: the configuration layer is what
+    # this reads, and it arrives with either [app] or [parse]. Without the
+    # guard a default install answered `mirobody doctor` with a traceback out
+    # of `utils/config/config.py`, which is the failure the guard exists for.
+    _require_extra("doctor", "app", "dotenv", "the configuration stack")
+
     from mirobody.utils.config import Config
     from mirobody.utils.config.doctor import format_report, provider_report
 
@@ -400,7 +407,7 @@ def main(argv: list[str] | None = None) -> None:
     p_worker.add_argument("configs", nargs="*", help="extra config YAML files, layered over config.yaml")
     p_worker.set_defaults(func=_cmd_worker)
 
-    p_doctor = sub.add_parser("doctor", help="show which LLM provider each surface selects with the current config, and what is missing")
+    p_doctor = sub.add_parser("doctor", help="show which LLM provider each surface selects with the current config, and what is missing (requires the [app] or [parse] extra)")
     p_doctor.add_argument("configs", nargs="*", help="extra config YAML files, layered over config.yaml")
     p_doctor.set_defaults(func=_cmd_doctor)
 

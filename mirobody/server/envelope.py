@@ -10,10 +10,13 @@ The dicts and the models serialized identically except that the dict error
 carried `"data": {}` and the model error did not; the model now carries it
 too, which is the only observable change.
 
-What this is NOT: the `{"success", "code", "msg", "data"}` envelope of
-`utils/http.py:json_response_with_code`. That is the Starlette-era shape the
-chat and user endpoints (`agent/chat/service.py`, `user/service.py`) speak
-and the web client expects from them; it stays where it is.
+`utils/http.py:json_response_with_code` answers with the same three keys.
+It used to add `success` and to omit `data` when there was none, which is why
+this docstring once said the two shapes were different and had to stay that
+way: the web client was believed to depend on the Starlette-era one. It does
+not (its single response handler reads `code === 0 || success`), so the two
+are one shape now, and a client can read `data.x` off either without knowing
+which router answered.
 """
 
 from __future__ import annotations

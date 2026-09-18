@@ -2,15 +2,17 @@
 
 **English** · **[中文](walkthrough.zh-CN.md)**
 
-The care-circle walkthrough the README used to carry in full. Each part is
-recorded against a running `./deploy.sh` stack with `SEED_DEMO_DATA` on; the
-README shows three of the four scenes and links here for the fourth.
+The care-circle walkthrough the README used to carry in full. Parts 2 to 4 are
+recorded against a running `./deploy.sh` stack with `SEED_DEMO_DATA` on; part 1
+is drawn, because what it shows is the authorization path and a drawing of that
+can be checked against `user/care_circle.py` while a recording cannot. The
+README carries three of the four scenes and links here for the fourth.
 
 
 `SEED_DEMO_DATA` defaults to on, so the ① → ② → ③ chain is walkable the moment
 `./deploy.sh` finishes — signing in and browsing the seeded record need no key;
 the extraction in parts 2 and 3 and the questions in part 4 ride the one key
-configured above. Four parts, each recorded against the running stack.
+configured above.
 
 **1 · Arrive.** You sign in as `you@mirobody.ai` and find two records, not one.
 Yours: a year of self-tracked vitals and a lab panel from last November.
@@ -20,8 +22,11 @@ and their HbA1c has crossed out of range. Same question, two answers, and only
 one of the two records is yours. Isolation you can see, not just read about.
 
 <p align="center">
-  <img src="images/care-circle-demo.gif"
-       alt="Your own account's indicators and lab panel, then switching to the record shared with you" width="880">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/your-care-circle-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="images/your-care-circle.svg">
+    <img src="images/your-care-circle.svg" alt="How one person reaches another's health record: a request passes resolve_subject, which requires both memberships accepted and the subject's own health_access switch, and either returns access trimmed to the request or raises a 403" width="920">
+  </picture>
 </p>
 
 <a id="the-four-promises"></a>

@@ -161,11 +161,6 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 `false`，这两个账号就不会建。**设置 → 添加成员**，收录的是一个完全不会自己登录
 的人：父母，孩子，你替他们保管这份记录。
 
-<p align="center">
-  <img src="docs/images/care-circle-demo.zh-CN.gif"
-       alt="自己账号的指标与化验单，切换到共享给你的那份记录" width="880">
-</p>
-
 把一份文件拖到 Data 页，看它变成指标。[`demo/upload/`](demo/) 里放着四份种子
 数据故意没写进库的文件：一份化验单 PDF、一张打印报告的手机照片、一个表格、另
 一家化验所导出的 CSV。每一项分析物都会带着数值、单位和 LOINC 码被抽出来，并链
@@ -183,11 +178,23 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 汇总出来的结果，而不是模型自己把一行行数字加起来。
 
 同一个问题问到共享给你的那份记录上，答案就是另一个人的，而且那份数据你只能看，
-不能改。共享是邀请制，默认关闭，权限严格控制。
+不能改。这种共享叫**关爱圈**：邀请制，默认关闭，权限严格控制。
 
 <p align="center">
   <img src="docs/images/ask-circle-demo.zh-CN.gif"
        alt="同一个问题问到共享记录上；答案来自另一个人的文件" width="880">
+</p>
+
+这三件事各是一道检查，而且都收在同一个函数里。
+一个账号要读到不属于自己的记录，只有 `resolve_subject` 这一条路；
+光是同在一个圈子里，什么也读不到。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/your-care-circle-dark.zh-CN.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/your-care-circle.zh-CN.svg">
+    <img src="docs/images/your-care-circle.zh-CN.svg" alt="一个人如何读到另一个人的健康记录：请求经过 resolve_subject，它要求双方成员关系都已接受、且对方自己打开了 health_access 开关，然后要么返回按请求裁剪过的权限，要么抛出 403" width="920">
+  </picture>
 </p>
 
 → [四分钟完整演示](docs/walkthrough.zh-CN.md) ·
@@ -256,8 +263,9 @@ pip install -e '.[test]' && pytest -q && lint-imports
 
 **[docs.mirobody.ai](https://docs.mirobody.ai/)**，中英双语，从
 [快速上手](https://docs.mirobody.ai/zh/quickstart/)或
-[API 参考](https://docs.mirobody.ai/zh/api-reference/)开始看；给贡献者的文档在
-[`docs/`](docs/README.md)。
+[API 参考](https://docs.mirobody.ai/zh/api-reference/)开始看；
+快速上手也随代码一起发布，就是 [`docs/quickstart.md`](docs/quickstart.md)，
+所以它不会和仓库里的命令走偏；给贡献者的文档在 [`docs/`](docs/README.md)。
 
 本项目的设计参考了以下标准与项目，特此鸣谢：
 [HL7 FHIR](https://hl7.org/fhir/)、
@@ -271,3 +279,18 @@ pip install -e '.[test]' && pytest -q && lint-imports
 分发的术语许可在 [`LICENSE-3RD-PARTY`](LICENSE-3RD-PARTY) 里。
 
 <div align="center">
+
+<a href="https://www.star-history.com/#thetahealth/mirobody&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date" />
+  </picture>
+</a>
+
+*如果它替你读懂了一份报告，点个 star，下一个人就更容易找到它。
+基本每周都有新版本 —— [Watch](https://github.com/thetahealth/mirobody/subscription) 一下就能第一时间收到。*
+
+Apache 2.0 · © 2026 [Theta Health](https://thetahealth.ai)
+
+</div>

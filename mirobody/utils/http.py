@@ -121,7 +121,14 @@ def json_response(content: any, status_code: int = 200, request: Request = None,
 
 def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, request: Request = None,
                            disable_log: bool = False, status: int = 200) -> Response:
-    """The `{success, code, msg, data}` envelope.
+    """The `{code, msg, data}` envelope: the same one `server/envelope.py` has.
+
+    There used to be two. This one also carried `success`, which said exactly
+    what `code == 0` says, and it OMITTED `data` entirely when there was none,
+    so a client reading `data.x` had to null-check this shape and not the
+    other. Both are gone: `success` because it was redundant, the omission
+    because `data` is now always an object. The web client's one response
+    handler already read `code === 0 || success`, so it needs no change.
 
     `status` exists for the routes where the HTTP status is part of the
     contract: an MCP client keys on 401, not on a body it may not parse.
@@ -142,13 +149,10 @@ def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, re
             logger.info(msg, stacklevel=2, extra=extra)
 
     content = {
-        "success"   : True if code == 0 else False,
         "code"      : code,
-        "msg"       : msg
+        "msg"       : msg,
+        "data"      : {} if data is None else data
     }
-
-    if data is not None:
-        content["data"] = data
     
     return Response(
         content     = json.dumps(
