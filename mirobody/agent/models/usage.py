@@ -1,4 +1,4 @@
-"""Token usage for one agent turn, and the ``costStatistics`` chunk it becomes.
+"""Token usage for one agent turn, and the ``usage`` block it becomes.
 
 LangChain normalises every provider's usage into ``AIMessage.usage_metadata``:
 ``input_tokens`` (which ALREADY includes cache reads and writes: unlike raw
@@ -9,15 +9,15 @@ this repository has run: OpenAI-compatible backends emit one usage chunk per
 call when ``stream_usage=True``; Anthropic splits input and output across the
 first and last chunk; summing is right either way.
 
-``costStatistics`` deliberately reports TOKENS ONLY. It used to also compute a
+The block deliberately reports TOKENS ONLY. It used to also compute a
 dollar figure, which was the operator's provider cost, not the user's bill.
 Pricing (if a deployment meters) is that deployment's table.
 
-Cache accounting is ONE field, ``cache_read_tokens``. Cache *creation* is
-counted here (a meter may want it) but never shown: only Anthropic reports it
-separately, it is already inside ``input_tokens``, and a second cache field
-that appears for one provider family is a client special-case for a number
-nobody acts on. Reads are what a cache saves, so reads are what the frame says.
+Cache accounting is ONE field, ``input_token_details.cache_read``. Cache
+*creation* is counted here (a meter may want it) but never shown: only
+Anthropic reports it separately, it is already inside ``input_tokens``, and a
+second cache field that appears for one provider family is a client
+special-case for a number nobody acts on. Reads are what a cache saves.
 """
 
 from __future__ import annotations
@@ -54,20 +54,25 @@ class UsageAccumulator:
         return self.input_tokens == 0 and self.output_tokens == 0
 
 
-def cost_statistics_message(usage: UsageAccumulator | None, model_name: str) -> dict | None:
-    """The ``costStatistics`` chunk a turn ends with, or ``None`` when nothing was
-    used. All values are strings (the web client's contract); ``thought_tokens``
-    and ``cache_read_tokens`` appear only when non-zero."""
+def usage_block(usage: UsageAccumulator | None, model_name: str) -> dict | None:
+    """The ``usage`` block a turn ends with, or ``None`` when nothing was used.
+
+    Field names and nesting are LangChain's ``usage_metadata``, and the counts
+    are integers: they used to be strings in a chunk called ``costStatistics``,
+    which is the same numbers under names only this repository used. The detail
+    dicts appear only when non-zero.
+    """
     if usage is None or usage.empty:
         return None
-    content = {
+    block = {
+        "type": "usage",
         "model": model_name or "unknown",
-        "input_tokens": str(usage.input_tokens),
-        "output_tokens": str(usage.output_tokens),
-        "total_tokens": str(usage.input_tokens + usage.output_tokens),
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "total_tokens": usage.input_tokens + usage.output_tokens,
     }
-    if usage.reasoning > 0:
-        content["thought_tokens"] = str(usage.reasoning)
     if usage.cache_read > 0:
-        content["cache_read_tokens"] = str(usage.cache_read)
-    return {"type": "costStatistics", "content": content}
+        block["input_token_details"] = {"cache_read": usage.cache_read}
+    if usage.reasoning > 0:
+        block["output_token_details"] = {"reasoning": usage.reasoning}
+    return block
