@@ -6,8 +6,8 @@ database and no key: the decision is a value object and two properties, and
 those are the real ones — `mirobody.user.care_circle.Membership` is the type the
 repository returns, not a stand-in written for this script.
 
-What the diagram in `docs/images/your-care-circle.svg` promises, and what the
-schema enforces:
+What the four promises in `docs/walkthrough.md#the-four-promises` state, and what
+the schema enforces:
 
     health stays off until you allow it   ->  health_access DEFAULT 0
     your switch — off by default          ->  it is on YOUR OWN member row
@@ -15,6 +15,7 @@ schema enforces:
                                               about A sharing with B
     acceptance required to join           ->  status, and pending is not accepted
 
+pip install mirobody
 Run:  python examples/06_care_circle_rules.py
 """
 

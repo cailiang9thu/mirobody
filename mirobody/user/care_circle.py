@@ -6,8 +6,8 @@ check standing between one person's health record and another's.
 
 **Why this replaced `th_share_relationship`.** That table stored a directed
 grant, "owner O lets member M read O's record", with the level in a schemaless
-`permissions` jsonb defaulting to `{"all": 1}`. The README's own diagram
-(`docs/images/your-care-circle.svg`) promises the opposite arrangement:
+`permissions` jsonb defaulting to `{"all": 1}`. The four promises in
+`docs/walkthrough.md#the-four-promises` describe the opposite arrangement:
 
     "health stays off until you allow it" · "your switch (off by default"
     "mutual) each member controls their own"
