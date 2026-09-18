@@ -59,7 +59,21 @@ chain is worth copying; the data source is the open question.
 
 ### Names a report prints that the resolver does not know
 
-**Status:** the shape gaps are closed; four corpus gaps remain.
+**Status:** the shape gaps are closed; four corpus gaps remain, and a real
+hospital report shows a fifth kind.
+
+Measured 2026-09-18 on a 2 MB Chinese hospital check-up PDF through the running
+stack: 102 indicators extracted, and of the 110 catalogue entries afterwards
+**51 carried a LOINC code and 59 did not**. Free-text ultrasound impressions
+belong in the second group and are right to be there. The lab analytes are not:
+`Absolute Neutrophil Count` resolves to nothing, while the Chinese the report
+actually printed, `中性粒细胞绝对值`, resolves to 26499-4. So does `Neutrophils`
+(751-8) and `NEUT#`. The code is lost in the extraction step, which renders the
+analyte name in English, and in a phrasing no alias carries: `Neutrophil Count`
+and `Absolute Neutrophils` miss too. Five of the eight differential counts go
+this way. Either the extractor keeps the source spelling for resolution, or
+these phrasings become aliases; a row in `resolver_overrides.tsv` fixes one at
+a time.
 
 Running `mirobody parse` over the shipped demo report — the file the README tells
 a new user to upload — produced **12 readings and 0 resolved codes**. It is 8/12
