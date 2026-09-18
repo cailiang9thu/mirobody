@@ -1,5 +1,7 @@
 # Repository layout
 
+**English** · **[中文](repository-layout.zh-CN.md)**
+
 Where each of the three stages — ① Collect, ② Translate (standardize), ③ Agent — lives,
 and the two forms the code ships in. Moved here from the README in 1.4.1; the
 README keeps the one-line map.
