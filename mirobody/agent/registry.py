@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractAgent:
-    """What a replacement agent has to provide.
+    """What a replacement agent has to provide: the whole contract, here.
 
-    `generate_response` is called once per turn with the kwargs
-    `ChatProtocolAdapter._prepare_agent_kwargs` builds (`user_id`, `session_id`,
-    `messages`, `provider`, `prompt_name`, `file_list`, ...) and yields chunk
-    dicts `{"type": ..., "content": ...}`: see `agent/README.md` for the types.
+    `__init__` receives the `MODELS` / `PROMPTS` / `ALLOWED_TOOLS` /
+    `DISALLOWED_TOOLS` settings merged with the turn's own values, so it takes
+    `**kwargs` and reads what it knows.
+
     `load_llm_clients` is optional: given the `MODELS` table it returns
     `{provider_name: client}`; an agent that needs no model returns `{}`.
     """
@@ -51,7 +51,35 @@ class AbstractAgent:
     def __init__(self, **kwargs):
         pass
 
-    async def generate_response(self, *args: Any, **kwargs: Any) -> AsyncGenerator[dict[str, Any], None]: ...
+    async def generate_response(
+        self,
+        user_id: str,
+        messages: list[dict[str, Any]],
+        language: str = "",
+        session_id: str = "",
+        file_list: list[dict[str, Any]] | None = None,
+        provider: str = "",
+        prompt_name: str = "",
+        **kwargs: Any,
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        """One turn, as the blocks in `agent/wire/blocks.py`.
+
+        Yield `{"type": "text", "text": ...}` for the answer and any of
+        `reasoning` / `tool_call` / `tool_result` / `usage` / `notice` /
+        `interrupt` / `error` beside it. `start`, `heartbeat` and `end` are the
+        chat layer's, not yours. `agent/README.md` has the field table.
+
+        `user_id` is the person whose record this turn is ABOUT (the care-circle
+        target when someone is asking on another's behalf), already authorised.
+        `messages` carries ONLY this turn; conversation state belongs to the
+        agent (the shipped one keys a LangGraph checkpointer on `session_id`).
+        `file_list` is this turn's attachments as `{"file_key", "file_name", …}`
+        dicts. `timezone` and `token` also arrive, and `**kwargs` is required:
+        the chat layer may add a keyword without breaking a plugin that
+        predates it.
+        """
+        raise NotImplementedError
+        yield {}  # pragma: no cover - makes this an async generator
 
     @classmethod
     def load_llm_clients(cls, llm_client_config: dict[str, Any]) -> dict[str, Any]:

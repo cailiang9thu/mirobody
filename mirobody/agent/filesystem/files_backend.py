@@ -74,7 +74,7 @@ class ThFilesBackend(PgFilesystemBackend):
         # upload pass asks an LLM for a descriptive name and overwrites the
         # column DURING the turn, concurrently with the agent. That column is
         # the right name for `/library/`, discovered by `ls`, and the wrong one
-        # here: `_attachment_reminder` has already told the model the request's
+        # here: `attachment_reminder` has already told the model the request's
         # name, so a rename mid-turn turned that path into `file_not_found`.
         self._turn_names = {str(k): str(v) for k, v in (turn_names or {}).items() if v}
 

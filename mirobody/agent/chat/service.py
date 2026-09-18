@@ -2,6 +2,7 @@ import functools
 import logging
 
 from psycopg_pool import AsyncConnectionPool
+from pydantic import ValidationError
 
 from mirobody.agent.registry import available_models, load_agent
 from .session import (
@@ -15,7 +16,7 @@ from .message import (
     get_chat_history,
     set_message_rating
 )
-from .adapters import HTTPChatAdapter
+from . import turn
 
 from mirobody.user import JwtTokenValidator
 from mirobody.user.user import get_user_info
@@ -306,7 +307,8 @@ class ChatService:
         try:
             params = await request.json()
             params["user_id"] = str(user_id)
-            params["token"] = request.headers.get("Authorization")
+            # `or ""`: a missing header is a str field, not None.
+            params["token"] = request.headers.get("Authorization") or ""
 
         except Exception as e:
             return json_response_with_code(-1, str(e), request=request)
@@ -349,26 +351,31 @@ class ChatService:
 
         #-------------------------------------------------
 
-        # Reject unknown fields the way the MCP surface does, instead of
-        # letting `ChatStreamRequest(**params)` turn a caller's typo (or a
-        # natural guess like `model`) into a bare 500.
-        import inspect
-        accepted = set(inspect.signature(ChatStreamRequest.__init__).parameters) - {"self"}
-        unknown = sorted(set(params) - accepted)
-        if unknown:
-            return json_response_with_code(
-                -4,
-                f"Unknown field(s): {', '.join(unknown)}. "
-                f"Accepted: {', '.join(sorted(accepted))}.",
-                request=request,
-            )
-
-        adapter = HTTPChatAdapter()
+        # Unknown fields are rejected the way the MCP surface does, instead of
+        # letting a caller's typo (or a natural guess like `model`) become a
+        # bare 500. `ChatStreamRequest` forbids extras, so pydantic names them.
+        # A field with the wrong TYPE is a different mistake and says so: one
+        # message for both reported `file_list: "oops"` as an unknown field.
+        try:
+            body = ChatStreamRequest(**params)
+        except ValidationError as e:
+            errors = e.errors()
+            unknown = sorted(str(err["loc"][0]) for err in errors
+                             if err["type"] == "extra_forbidden" and err["loc"])
+            if unknown:
+                accepted = sorted(ChatStreamRequest.model_fields)
+                return json_response_with_code(
+                    -4,
+                    f"Unknown field(s): {', '.join(unknown)}. "
+                    f"Accepted: {', '.join(accepted)}.",
+                    request=request,
+                )
+            bad = "; ".join(f"{'.'.join(str(p) for p in err['loc'])}: {err['msg']}"
+                            for err in errors)
+            return json_response_with_code(-2, f"Invalid field(s): {bad}", request=request)
 
         return StreamingResponse(
-            adapter.handle_request(
-                params=ChatStreamRequest(**params),
-            ),
+            turn.stream(body),
             headers=sse_headers(),
             media_type="text/event-stream"
         )

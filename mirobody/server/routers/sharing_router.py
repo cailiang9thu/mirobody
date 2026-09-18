@@ -9,8 +9,9 @@ three (`shared-by-me/update-nickname`, `shared-with-me/update-nickname`,
 answers where two did.
 
 **The endpoint this adds is the one the product always promised.**
-`docs/images/your-care-circle.svg` says "health stays off until you allow it ·
-your switch (off by default · mutual) each member controls their own". There
+The four promises in `docs/walkthrough.md#the-four-promises` are "health stays off
+until you allow it", "your switch, off by default", "on your own row" and
+"each member controls their own". There
 was no API for that switch. The only way permissions were ever set was
 `shared-by-me/authorize`, where the INVITER chose them, defaulting to
 `{"all": 1}`: read everything. `POST /invitation/health-access` is the member's

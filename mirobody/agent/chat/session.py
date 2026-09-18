@@ -263,7 +263,7 @@ async def delete_session(user_id: str, session_id: str) -> str | None:
         # questions and the tool results answering them) sitting in the
         # checkpoint tables under this session id. Deleting a conversation has
         # to delete it, not just stop listing it. Best-effort by design (see
-        # deep.checkpointer.delete_thread): the user-visible rows are already
+        # agent.checkpointer.delete_thread): the user-visible rows are already
         # gone, and a checkpoint-cleanup failure must not turn that into an error.
         from mirobody.agent.checkpointer import delete_thread
         await delete_thread(session_id)

@@ -1,4 +1,4 @@
-"""The chat surface: sessions, messages, the SSE adapter and `ChatService`.
+"""The chat surface: sessions, messages, one turn and `ChatService`.
 
 Exports resolve lazily (PEP 562): `mirobody.agent.chat.model` and
 `mirobody.agent.chat.session` are imported by the server layer on their own,
