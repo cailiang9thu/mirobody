@@ -182,8 +182,11 @@ account is created. **Settings → Add member** covers someone who will never
 sign in at all, a parent, a child, with a record you hold on their behalf.
 
 <p align="center">
-  <img src="docs/images/care-circle-demo.gif"
-       alt="Your own account's indicators and lab panel, then switching to the record shared with you" width="880">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/your-care-circle-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/your-care-circle.svg">
+    <img src="docs/images/your-care-circle.svg" alt="How one person reaches another's health record: a request passes resolve_subject, which requires both memberships accepted and the subject's own health_access switch, and either returns access trimmed to the request or raises a 403" width="920">
+  </picture>
 </p>
 
 Drop a file on the Data page and watch it become indicators.

@@ -162,8 +162,11 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 的人：父母，孩子，你替他们保管这份记录。
 
 <p align="center">
-  <img src="docs/images/care-circle-demo.zh-CN.gif"
-       alt="自己账号的指标与化验单，切换到共享给你的那份记录" width="880">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/your-care-circle-dark.zh-CN.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/your-care-circle.zh-CN.svg">
+    <img src="docs/images/your-care-circle.zh-CN.svg" alt="一个人如何读到另一个人的健康记录：请求经过 resolve_subject，它要求双方成员关系都已接受、且对方自己打开了 health_access 开关，然后要么返回按请求裁剪过的权限，要么抛出 403" width="920">
+  </picture>
 </p>
 
 把一份文件拖到 Data 页，看它变成指标。[`demo/upload/`](demo/) 里放着四份种子
