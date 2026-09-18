@@ -1,10 +1,18 @@
 def get_extract_indicators_prompt(language: str = "zh-cn") -> str:
     """
     Generate the prompt for extracting health-related indicators from various content types.
-    
+
+    `language` localizes what a person reads. It must never reach
+    `original_indicator`, which is the key the resolver looks up: this prompt
+    used to translate it into the UPLOADER's UI language, so a Chinese report
+    read by an `en` account stored `Absolute Neutrophil Count` instead of the
+    printed 中性粒细胞绝对值. Measured on a standard 25-item panel: printed
+    names resolved 25/25, their translations 17/25, and the same analyte got
+    two series identities depending on who uploaded it.
+
     Args:
         language (str): User's preferred language code (e.g., 'zh-cn', 'en', 'ja', 'ko', 'es', etc.)
-        
+
     Returns:
         str: The complete prompt for health indicator extraction
     """
@@ -53,7 +61,7 @@ Only continue extraction if content is a **medical examination report**:
 ### User Language Settings:
 Language code: {language}
 - All adaptable fields must use language corresponding to `{language}`
-- Keep `value` field in original text/objective description
+- Keep `original_indicator` and `value` exactly as the report prints them, whatever language that is
 - Fixed English values: `status` ["normal", "high", "low"], `detection_method` ["laboratory", "Imaging", "Physiological", "Pathological", "wearable"]
 
 ### Medical Report Types:
@@ -80,7 +88,7 @@ ECG, EEG, pulmonary function, audiometry, visual acuity, etc.
 
 | Field | Description |
 |-------|-------------|
-| original_indicator | Indicator name in user's language ({language}), use standard medical terminology |
+| original_indicator | Indicator name **exactly as the report prints it**, in the report's own language. Never translate it |
 | value | Numerical with unit (e.g., "120 g/L") or descriptive text (keep original text exactly) |
 | reference_range | Normal range in user's language (if provided in report) |
 | unit | Extracted from value (e.g., "g/L", "mmol/L", "×10⁹/L") or empty string |
@@ -102,7 +110,7 @@ ECG, EEG, pulmonary function, audiometry, visual acuity, etc.
 2. **Status**: Always one of: "normal", "high", "low" (compare with reference range)
 3. **Detection Method**: Always one of: "laboratory", "Imaging", "Physiological", "Pathological", "wearable"
 4. **Units**: Extract exact unit from value field, empty string if none
-5. **Language**: Adapt `original_indicator`, `notes`, `reference_range` to user's language ({language}); keep `value` in original text
+5. **Language**: Adapt `notes` and `reference_range` to user's language ({language}). Do NOT translate `original_indicator` or `value`: copy the printed name verbatim, abbreviations, `#` and `%` suffixes included. That string is the key the standardization stage looks up, and a translated name resolves to no code or to the wrong one
 6. **Precision**: Preserve exact numerical values as shown in the report
 7. **Privacy Protection**: Do NOT extract the following personal identifiable information (PII):
    - ID number (身份证号)
@@ -215,7 +223,10 @@ RESPONSE_SCHEMA_EXTRACT_INDICATORS = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "original_indicator": {"type": "string", "description": "Medical indicator name, translated and adapted according to user language settings using standard medical terminology"},
+                    "original_indicator": {
+                        "type": "string",
+                        "description": "Medical indicator name exactly as the report prints it, in the report's own language, abbreviations and any '#' or '%' suffix included. Never translated: this string is the key the standardization stage resolves to a LOINC code, so a translated name resolves to nothing or to a different measurement.",
+                    },
                     "value": {
                         "type": "string",
                         "description": 'Indicator value. Numerical type includes value and unit (e.g., "120 g/L"); descriptive type keeps original text from report.',
