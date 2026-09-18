@@ -1,16 +1,12 @@
-<div align="center">
-
 # Mirobody
 
-**Last year's checkup wrote `A1c`. This year the hospital panel says `HbA1c`.
-You changed clinics and the new report says `Glycated Hemoglobin`. One test,
-three names, nothing you can read across. Mirobody is an AI-native health data
-engine: it takes health information from any source, in any format, under any
-name, and settles it into one language and one system, then answers your
-questions over that record, citing where every number came from. One standard,
-traceable, comparable, chartable. How has my blood pressure moved these past
-years? Are mom's diabetes markers improving? What changed across my child's
-checkups? Self-host all of it, and your health record stays in your hands.**
+**Last year's checkup wrote `A1c`, this year's panel `HbA1c`, the new clinic
+`Glycated Hemoglobin`. One test, three names, nothing to compare. Mirobody is an
+AI-native health data engine: any source, any format, any name, settled into one
+language and one system, then answered, every number citing its source. One
+standard: traceable, comparable, chartable. How has my blood pressure moved? Are
+mom's diabetes markers improving? What changed across my child's checkups?
+Self-host it all, and your health record stays in your hands.**
 
 **English** · **[中文](README.zh-CN.md)**
 
@@ -21,8 +17,6 @@ checkups? Self-host all of it, and your health record stays in your hands.**
 [![GitHub stars](https://img.shields.io/github/stars/thetahealth/mirobody?style=social)](https://github.com/thetahealth/mirobody/stargazers)
 
 **[📚 Documentation](https://docs.mirobody.ai/)** · **[▶ Live demo — no sign-up](https://chat.mirobody.ai/demo)** · **[🔌 API platform](https://platform.mirobody.ai/)**
-
-</div>
 
 <p align="center">
   <img src="docs/images/ask-own-demo.gif"
