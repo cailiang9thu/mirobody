@@ -49,6 +49,15 @@ you how to start was the one page a clone did not have.
   against the module. The diagram deleted in 1.4.4 could not be: it promised
   "unshare a thread anytime", which no endpoint implements.
 
+### Fixed
+
+- **`mirobody doctor` on a default install says what to install.** It answered
+  with a `ModuleNotFoundError` out of `utils/config/config.py`, and `cli.py`'s
+  own docstring said it needed "no database and no extra". It reads the
+  configuration layer, which arrives with `[app]` or `[parse]`, and it now
+  checks that up front the way `serve`, `dev`, `worker` and `parse` do. A test
+  fails when a command imports one of those stacks without the check.
+
 ## 1.4.4
 
 Two stages were carrying each other's work, and both put it down. ① Collect
