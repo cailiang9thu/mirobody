@@ -68,6 +68,11 @@ a clone can re-run it.
 pytest mirobody/tests/test_engine_coverage.py -s
 ```
 
+The daily-rollup aggregator has a maintainer script there too; it needs a
+live database and a real user id, and the day-boundary rule it checks (a
+night is filed on an 18:00-18:00 day, everything else on 00:00-24:00) is
+recorded with its measurement in `mirobody/translate/aggregate/windows.py`.
+
 Everything else lives in the gitignored `tests/` at the repo root: the golden
 LOINC codes, the units vectors, the gates on the READMEs' figures and links,
 the export tables, the one-key provider matrix, and the authorization
