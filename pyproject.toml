@@ -192,7 +192,8 @@ agent = [
     # (`azure-identity`, which [parse] carries) adds that one package — instead
     # of every install carrying all of them for a configuration it never has.
     # `langchain_community` was declared and never imported; gone.
-    "langchain>=1.3.15",
+    # 1.4.0 is deepagents 0.7.14's floor.
+    "langchain>=1.4.0",
     "langchain-openai>=1.4.3",
     # 4.2.4 relaxed its google-genai cap to <3.0.0 (earlier 4.x pinned <2.0.0,
     # which would block the google-genai>=2.0 required by [parse]).
@@ -211,10 +212,14 @@ agent = [
     # NOTE 0.7 also DROPPED `TodoListMiddleware` from the default middleware
     # stack, so `write_todos` no longer exists unless a caller adds it back.
     # the agent intentionally does not — see agent/agent.py `_build_agent`.
-    "deepagents>=0.7.5",
+    # Floor raised to 0.7.14 on 2026-09-16; the API this repository binds
+    # (`create_deep_agent`, `HarnessProfile`, the backends, `get_model_provider`)
+    # is byte-identical across 0.7.5..0.7.14, and 0.7.14 pulls langchain 1.4.
+    "deepagents>=0.7.14",
     # In-process JS/TS interpreter middleware — the agent's code sandbox, with
-    # no external sandbox service or key.
-    "langchain-quickjs>=0.1.3",
+    # no external sandbox service or key. 0.3.7 is deepagents 0.7.14's floor
+    # for its own `quickjs` extra.
+    "langchain-quickjs>=0.3.7",
     # Conversation memory: the agent graph is compiled with an AsyncPostgresSaver
     # keyed on thread_id = session_id, so LangGraph replays the real message
     # objects. This replaced a hand-rolled rebuild of history from persisted UI
