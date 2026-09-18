@@ -16,7 +16,6 @@ agent runtime.
 """
 
 import logging
-import os
 import uuid
 from typing import Any, TYPE_CHECKING
 from collections.abc import AsyncGenerator
@@ -34,11 +33,12 @@ from mirobody.utils.config.llm import chat_default, chat_entries
 
 from . import harness
 from .errors import AgentError, ConfigError, client_safe_error
-from .hitl import ASK_USER_INTERRUPT, ask_user, pending_answer, widget_chunk
+from .hitl import ASK_USER_INTERRUPT, ask_user, interrupt_block, pending_answer
 from .models.clients import build_llm_clients
-from .models.usage import cost_statistics_message
+from .models.usage import usage_block
 from .prompt import attachment_reminder, build_system_prompt
-from .wire.stream import StreamConverter, TokenUsageCallback
+from .wire.blocks import ERROR, NOTICE
+from .wire.stream import TokenUsageCallback, stream_blocks
 from .middleware import (
     UniversalPromptCachingMiddleware,
 )
@@ -210,25 +210,6 @@ class MirobodyAgent:
                 user_message=f"Failed to build the agent's system prompt. Details: {str(e)}"
             ) from e
     
-    @staticmethod
-    def _skills_source_dir() -> str:
-        """The local directory holding Agent Skills, or "" when none exists.
-
-        First existing entry of ``SKILL_DIRS`` wins; the packaged
-        ``mirobody/agent/skills`` (ships in the wheel) is the fallback, so skills
-        work on a bare pip install with zero configuration. Deployments list
-        their own directory first to override.
-        """
-        from mirobody.utils.config import global_config
-
-        cfg = global_config()
-        dirs = cfg.get_dirs("SKILL_DIRS", []) if cfg else []
-        packaged = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
-        for d in [*(dirs or []), packaged]:
-            if d and os.path.isdir(d):
-                return os.path.abspath(d)
-        return ""
-
     async def _build_backend(
         self, session_id: str, user_id: str, file_list: list[dict[str, Any]] | None = None,
         supports_file_block: bool = False,
@@ -243,15 +224,11 @@ class MirobodyAgent:
           /memories/...  → ProfileBackend                   health profile, ro
           /uploads/...   → ThFilesBackend(scope='uploads')  this request's files, ro
           /library/...   → ThFilesBackend(scope='library')  file history, ro
-          /skills/...    → Agent Skills from SKILL_DIRS (local, ro)
 
         ``/uploads/`` and ``/library/`` project ``th_files`` directly (no byte
         copy; parsed text inlined for grep, bytes surfaced multimodally on
-        read). ``/skills/`` is the read half of SkillsMiddleware's progressive
-        disclosure: the middleware injects each skill's frontmatter at startup,
-        and the agent ``read_file``s the full SKILL.md through this mount only
-        when a task calls for it. Anonymous calls fall back to ``StateBackend``.
-        Returns ``(backend, permissions)``.
+        read). Anonymous calls fall back to ``StateBackend``. Returns
+        ``(backend, permissions)``.
         """
         if not user_id:
             from deepagents.backends import StateBackend
@@ -295,14 +272,6 @@ class MirobodyAgent:
             "/uploads/": uploads,
             "/library/": library,
         }
-        # Agent Skills ride the same composite: SkillsMiddleware lists them,
-        # the native read_file serves their bodies from this mount. Local
-        # directory, read-only: the agent must never edit its own skills.
-        skills_dir = self._skills_source_dir()
-        if skills_dir:
-            from deepagents.backends import FilesystemBackend
-            routes["/skills/"] = FilesystemBackend(root_dir=skills_dir)
-
         # Every mount is a PROJECTION (a table, a directory the agent must not
         # edit), so `read_only_mounts` denies writes on all of them up front:
         # a refusal the model does not have to spend a tool call to discover.
@@ -313,25 +282,22 @@ class MirobodyAgent:
         return harness.read_only_mounts(routes)
 
 
-    def _create_stream_config(self, user_id: str, token_counter: Any, session_id: str = "") -> dict:
-        user_info = {
-            "user_id": user_id,
-            "token": self.token,
-            "success": True
-        }
+    def _create_stream_config(self, token_counter: Any, session_id: str = "") -> dict:
+        """`thread_id` is what the checkpointer keys conversation state on. One
+        session == one thread, so a resumed session continues its own history
+        and a new session starts clean.
 
-        config = {
+        `configurable` carried a `user_info` dict too. Nothing read it: the
+        tools are bound to their caller at load time (`tool_loader`), and
+        LangGraph does not put `configurable` into checkpoint metadata, so the
+        bearer token it held was neither reaching a tool nor reaching Postgres.
+        """
+        config: dict[str, Any] = {
             "recursion_limit": self.recursion_limit,
             "callbacks": [token_counter],
-            "configurable": {
-                "user_info": user_info
-            }
         }
-        # `thread_id` is what the checkpointer keys conversation state on. One
-        # session == one thread, so a resumed session continues its own history
-        # and a new session starts clean.
         if session_id:
-            config["configurable"]["thread_id"] = session_id
+            config["configurable"] = {"thread_id": session_id}
         return config
 
     async def _prepare_context(
@@ -460,16 +426,10 @@ class MirobodyAgent:
         llm_client: "BaseChatModel",
         system_prompt: str,
         tools: list[BaseTool],
-        messages: list[dict[str, Any]] | list[BaseMessage],
         file_list: list[dict[str, Any]] | None = None,
         supports_file_block: bool = False,
-    ) -> tuple[Any, Any, list]:
-        """
-        Build agent with backend and handle file uploads.
-
-        Returns:
-            Tuple of (agent, backend, messages)
-        """
+    ) -> tuple[Any, Any]:
+        """The compiled graph and the backend it reads through."""
         try:
             # Build the deepagents virtual filesystem (CompositeBackend). User
             # uploads + history are auto-mounted at /uploads/ and /library/ as
@@ -482,20 +442,14 @@ class MirobodyAgent:
 
             # The stack itself (fault containment → retry governance → invalid-call
             # repair → model-call budget → per-tool caps → interpreter) is
-            # `harness.standard_middleware`; what this agent adds at the tail is
-            # Agent Skills and cross-provider prompt caching, last so its
-            # decision wins.
+            # `harness.standard_middleware`.
             from langchain_quickjs import CodeInterpreterMiddleware
 
-            tail: list[Any] = []
-            # Agent Skills (agentskills.io), deepagents-native: frontmatter is
-            # injected into the system prompt at startup; the body is read
-            # through the /skills/ mount only when a task needs it. Skipped for
-            # anonymous sessions (StateBackend, no /skills/ mount to read from).
-            if user_id and self._skills_source_dir():
-                from deepagents.middleware.skills import SkillsMiddleware
-                tail.append(SkillsMiddleware(backend=backend, sources=[("/skills/", "Mirobody")]))
-            tail.append(UniversalPromptCachingMiddleware(ttl="5m", unsupported_model_behavior="ignore"))
+            # What this agent adds at the tail: cross-provider prompt caching,
+            # last so its decision wins.
+            tail: list[Any] = [
+                UniversalPromptCachingMiddleware(ttl="5m", unsupported_model_behavior="ignore")
+            ]
 
             middleware = harness.standard_middleware(
                 retry_limit=self._RETRY_LIMIT,
@@ -534,7 +488,7 @@ class MirobodyAgent:
             )
 
             logger.info(f"Agent built successfully for session: {session_id}")
-            return agent, backend, messages
+            return agent, backend
 
         except AgentError:
             raise
@@ -547,12 +501,9 @@ class MirobodyAgent:
         agent: Any,
         messages: list[dict[str, Any]] | list[BaseMessage],
         config: dict,
-        chat_context: Any = None,
-        skip_tool_names: set[str] | None = None,
         resume: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
-        """
-        Stream agent response with optional tool filtering.
+        """Stream one run of the graph as `wire.blocks`.
 
         `resume` is the user's answer to an open `ask_user` question: the
         thread is paused on that interrupt, so the answer goes in as the
@@ -566,20 +517,16 @@ class MirobodyAgent:
         else:
             graph_input = {"messages": messages}
 
-        # Track tool_ids that should be skipped (for filtering queryDetail)
-        skipped_tool_ids: set[str] = set()
-
         try:
             # subgraphs=True surfaces subagent (subgraph) events: without it the
             # parent graph only sees a single `task` ToolMessage when the subagent
             # FINISHES, so nothing streams during a subagent run (the original bug).
             # With it, each item becomes a (namespace, stream_type, payload) triple;
             # the subagent's react subgraph reuses node names "model"/"tools", so its
-            # tokens/tool-calls flow through process_stream_event into the existing
-            # reply/queryTitle/queryDetail event types, no frontend change needed.
+            # tokens and tool calls flow through `stream_blocks` into the same
+            # text/tool_call/tool_result blocks, no client change needed.
             async for stream_item in agent.astream(
                 graph_input,
-                context=chat_context,
                 stream_mode=["messages", "updates"],
                 subgraphs=True,
                 config=config
@@ -590,39 +537,19 @@ class MirobodyAgent:
                 else:
                     namespace, (stream_type, stream_event) = (), stream_item
                 # An `ask_user` call: the middleware paused the graph after the
-                # model step. Hand the question to the client as a widget and
-                # end the turn; the next user message resumes this thread.
+                # model step. Hand the pending question to the client and end
+                # the turn; the next user message resumes this thread.
                 if stream_type == "updates" and isinstance(stream_event, dict) and "__interrupt__" in stream_event:
-                    widget = widget_chunk(stream_event["__interrupt__"])
-                    if widget:
-                        yield widget
+                    pending = interrupt_block(stream_event["__interrupt__"])
+                    if pending:
+                        yield pending
                     return
                 try:
-                    async for event in StreamConverter.process_stream_event(
+                    async for block in stream_blocks(
                         stream_type, stream_event, trace_id=trace_id, namespace=namespace
                     ):
-                        if not event:
-                            continue
-
-                        # Filter specified tools and their results
-                        if skip_tool_names:
-                            event_type = event.get('type')
-                            tool_id = event.get('tool_id', '')
-
-                            if event_type == 'queryTitle':
-                                tool_name = event.get('content', '')
-                                if tool_name in skip_tool_names:
-                                    if tool_id:
-                                        skipped_tool_ids.add(tool_id)
-                                    logger.debug(f"Skipping tool: {tool_name}, tool_id={tool_id}")
-                                    continue
-
-                            elif event_type == 'queryDetail':
-                                if tool_id in skipped_tool_ids:
-                                    logger.debug(f"Skipping tool result, tool_id={tool_id}")
-                                    continue
-
-                        yield event
+                        if block:
+                            yield block
                 except Exception as e:
                     logger.error("Error processing stream chunk: error_type=%s trace_id=%s", type(e).__name__, trace_id)
                     continue
@@ -644,7 +571,7 @@ class MirobodyAgent:
                     " The model provider's endpoint may be unreachable from "
                     "this network; see the DashScope fallback in config.yaml."
                 )
-            yield {"type": "error", "content": detail}
+            yield {"type": ERROR, "message": detail}
 
     async def generate_response(
         self,
@@ -660,28 +587,20 @@ class MirobodyAgent:
     ) -> AsyncGenerator[dict[str, Any], None]:
 
         if not messages:
-            yield {"type": "error", "content": "Empty message"}
+            yield {"type": ERROR, "message": "Empty message"}
             return
 
         if not user_id:
-            yield {"type": "error", "content": "User ID is required"}
+            yield {"type": ERROR, "message": "User ID is required"}
             return
 
         logger.info(f"agent request: session={session_id}, provider={provider}, messages={len(messages)}")
 
         try:
-            # `files_data` (the HTTP layer's pre-downloaded bytes) is deliberately
-            # NOT consumed here, it arrives via **kwargs and is ignored. Uploads
-            # reach the agent as FILES, not as message payload: _build_backend
-            # projects them into /uploads/ by file_key (ThFilesBackend over
-            # th_files, no byte copy) and the prompt tells the model to
-            # read_file them on demand. Injecting the bytes into the turn would
-            # duplicate that and blow up the context.
-
-            # The attachment reminder is built AFTER the mount exists: see the
-            # append below, and `attachment_reminder` for why the paths have to
-            # come from the mount rather than from this request.
-
+            # Uploads reach the agent as FILES, never as message payload:
+            # `_build_backend` projects them into /uploads/ by file_key
+            # (ThFilesBackend over th_files, no byte copy) and the prompt tells
+            # the model to read_file them on demand.
             llm_client, model_name, fallback_msg, loaded_tools, system_prompt = await self._prepare_context(
                 user_id=user_id,
                 session_id=session_id,
@@ -692,33 +611,35 @@ class MirobodyAgent:
             )
 
             if fallback_msg:
-                yield {"type": "thinking", "content": fallback_msg}
+                # The SYSTEM speaking, not the model. On the reasoning channel
+                # it was indistinguishable from the model's own trace.
+                yield {"type": NOTICE, "message": fallback_msg}
 
             supports_file_block = self._supports_file_block(llm_client)
 
-            agent, backend, final_messages = await self._build_agent(
+            agent, backend = await self._build_agent(
                 session_id=session_id,
                 user_id=user_id,
                 llm_client=llm_client,
                 system_prompt=system_prompt,
                 tools=loaded_tools,
-                messages=messages,
                 file_list=file_list,
                 supports_file_block=supports_file_block,
             )
 
-            # Tell the model exactly which files this turn attached and where to
-            # read them, so it never needs an `ls /uploads/` round-trip and never
-            # silently misses one. Transient: appended to the run's messages
-            # only, not the cached system prompt. Matches the list's element type
-            # (BaseMessage vs dict) to avoid mixing forms.
             token_counter = TokenUsageCallback()
-            stream_config = self._create_stream_config(user_id, token_counter, session_id)
+            stream_config = self._create_stream_config(token_counter, session_id)
 
             # A thread paused on `ask_user` takes this message as the answer;
             # the attachment note belongs to a NEW turn only.
+            final_messages = messages
             resume = await pending_answer(agent, stream_config, messages, user_id)
             if resume is None:
+                # Name this turn's attachments and where to read them, so the
+                # model never needs an `ls /uploads/` round trip and never
+                # silently misses one. Transient: appended to the run's messages,
+                # not to the cached system prompt. Matches the list's element
+                # type (BaseMessage vs dict) rather than mixing forms.
                 reminder = await attachment_reminder(backend, file_list)
                 if reminder:
                     if final_messages and isinstance(final_messages[-1], BaseMessage):
@@ -735,23 +656,19 @@ class MirobodyAgent:
             ):
                 yield event
 
-            cost = cost_statistics_message(token_counter.usage, model_name)
-            if cost:
-                yield cost
+            usage = usage_block(token_counter.usage, model_name)
+            if usage:
+                yield usage
 
         except AgentError as e:
             # An AgentError's message is ours (configuration, no provider…) and
             # safe to show; anything else is reported by type only.
             logger.error("agent error: error_type=%s", type(e).__name__)
-            yield {"type": "error", "content": str(e)}
+            yield {"type": ERROR, "message": str(e)}
 
         except Exception as e:
             logger.error("Unexpected error: error_type=%s", type(e).__name__, exc_info=not is_driver_exception(e))
-            yield {"type": "error", "content": client_safe_error(e)}
-    
-    #-------------------------------------------------------------------------
-
-    #-------------------------------------------------------------------------
+            yield {"type": ERROR, "message": client_safe_error(e)}
 
     @classmethod
     def load_llm_clients(cls, llm_client_config: dict[str, Any]) -> dict[str, Any]:
