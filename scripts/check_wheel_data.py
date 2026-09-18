@@ -57,12 +57,6 @@ FORBIDDEN = (
     # fhir_id_map.npy is not listed because it no longer exists: it mapped
     # canonical ids to `fhir_indicators.id`, one database's PRIMARY KEYS, and was
     # deleted rather than merely unshipped.
-    # 1.4.0: the care-circle demo fixture and the lab report it asks you to
-    # upload live in the repo-root `demo/`, beside `frontend/` and for the same
-    # reason — the application is a checkout, so a library install paid 230 KB
-    # for a demo it can never run.
-    "mirobody/demo/care_circle_demo.json.gz",
-    "mirobody/demo/lab_report_2025-10-15.pdf",
 )
 
 # Same standard, applied to CODE. These two subtrees are 19,000 lines nobody
@@ -90,6 +84,12 @@ FORBIDDEN_PREFIXES = (
     "mirobody/indicator/fhir/graph_builder.py",
     "mirobody/indicator/fhir/loinc_lookups.py",
     "mirobody/indicator/fhir/locales/",
+    # 1.4.0: the demo data lives in the repo-root `demo/`, beside `frontend/`
+    # and for the same reason. The application is a checkout, so a library
+    # install paid for a demo it can never run. A prefix, not the file names:
+    # 1.4.4 replaced a vendored fixture with generated files, and the gate
+    # should not have to be edited every time one is added.
+    "mirobody/demo/",
 )
 
 # The bundle members a `pip install` must have, and the ones it must not. The
@@ -189,8 +189,8 @@ def check(path: str) -> list[str]:
         total = sum(s for _, s in code_stowaways)
         problems.append(
             f"UNWANTED  {len(code_stowaways)} files ({total/1e6:.1f} MB) under "
-            f"{'/, '.join(FORBIDDEN_PREFIXES)} — build-time-only code that no "
-            "install can run; check scripts/build_backend.py::_BUILD_ONLY_CODE "
+            f"{'/, '.join(FORBIDDEN_PREFIXES)} — trees no install can run; "
+            "check scripts/build_backend.py::_BUILD_ONLY_CODE "
             f"and MANIFEST.in (first: {code_stowaways[0][0]})"
         )
     members = _bundle_members(path)

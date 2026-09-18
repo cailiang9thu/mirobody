@@ -1,13 +1,16 @@
 # Connecting a device provider (Garmin · Oura · Whoop)
 
+**English** · **[中文](provider-setup.zh-CN.md)**
+
 The three shipped pull providers are OAuth clients of their vendor. Nothing in
 this repo can talk to Garmin, Oura or Whoop until **you** hold credentials from
 that vendor's developer programme — they are issued per application, and cannot
 be bundled with an open-source release.
 
-This page is the path from "installed" to "pulling data". If you only want to
-prove the provider mechanism works before dealing with any vendor, jump to
-[the zero-credential check](#the-zero-credential-check).
+This page is the path from "installed" to "pulling data". To prove the
+provider mechanism works before dealing with any vendor, skip to
+[Verify](#verify): a provider that declines for missing credentials still says
+so in the boot log, which is the mechanism working.
 
 The settings live in [`config.devices.yaml`](../config.devices.yaml) (named by the
 `INCLUDE` list at the top of `config.yaml`), not in `config.yaml` itself: a
@@ -123,9 +126,8 @@ The line that means *credentials are missing*, not *code is broken*:
 Provider OuraProvider declined to start (not configured)
 ```
 
-Both are INFO. A `Failed to load provider …` at WARNING is a different problem —
-that is an import error, and there is a regression test for it
-(`collect/providers/test_provider_loading.py`).
+Both are INFO. A `Failed to load provider …` at WARNING is a different problem:
+that is an import error, and a regression test covers it.
 
 **2. It is offered to users.**
 
@@ -148,8 +150,6 @@ startup, or via webhook — `POST /api/v1/pulse/{platform}/{provider}/webhook`,
 which is the endpoint you give the vendor for push notifications.
 
 ---
-
-## Troubleshooting
 
 ## Troubleshooting
 

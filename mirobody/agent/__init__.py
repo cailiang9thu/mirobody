@@ -18,7 +18,6 @@
     middleware/     fault containment, retry governance, prompt caching
     tools/          the tools, served over `/mcp` and handed to the agent
     chat/           the HTTP chat product: sessions, messages, SSE
-    skills/         Agent Skills, mounted read-only at `/skills/`
 
 `models/`, `filesystem/document_backend.py`, `filesystem/naming.py`, `wire/events_bridge.py`,
 `harness.py` and `middleware/` are the LIBRARY half: what

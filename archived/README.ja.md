@@ -404,7 +404,7 @@ frontend/        同梱のwebクライアント     アウトにだけあり、p
 | ② 標準化 | [`indicator/`](../mirobody/indicator/README.md) · [indicators & units](../mirobody/pulse/standardize/README.md) |
 | ③ 回答 | [`agent/`](../mirobody/agent/README.md) · [tools](../mirobody/agent/tools/README.md) · [the one data tool](../docs/answers.md) · [medications](../docs/medications.md) |
 | 下ばたらき | [configuration](../mirobody/utils/config/README.md) · [database schema](../mirobody/schema/README.md) · [the web client](../docs/frontend.md) · [backup & restore](../docs/backup-restore.md) |
-| 開発に参加 | [CONTRIBUTING.md](../CONTRIBUTING.md) · [AGENTS.md](../AGENTS.md) · [testing](../docs/testing.md) · [aggregator script](../docs/aggregation-tests.md) · [roadmap](../docs/roadmap.md) · [CHANGELOG](../CHANGELOG.md) · [SECURITY](../SECURITY.md) |
+| 開発に参加 | [CONTRIBUTING.md](../CONTRIBUTING.md) · [AGENTS.md](../AGENTS.md) · [testing](../docs/testing.md) · [roadmap](../docs/roadmap.md) · [CHANGELOG](../CHANGELOG.md) · [SECURITY](../SECURITY.md) |
 
 ---
 

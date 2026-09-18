@@ -7,12 +7,45 @@ the extractor found in one document and lands it through
 
 import json
 import logging
+import re
 from datetime import datetime
 from typing import Any
 
 from mirobody.collect.readings import upsert_readings
 
 logger = logging.getLogger(__name__)
+
+
+#: A value ending in letters, a percent sign or a slashed unit: the tail this
+#: splits off. Anchored at a digit so "Negative" keeps its whole self.
+#: MICRO SIGN and GREEK SMALL MU are different code points and both get
+#: typed for micromoles; DEGREE CELSIUS is a third single-character unit.
+_UNIT = "A-Za-z%\u00b0\u00b5\u03bc\u2103\u2109"
+_TRAILING_UNIT = re.compile(rf"^(?P<value>.*\d\s*)(?P<unit>[{_UNIT}][{_UNIT}/0-9.^\-]*)$")
+
+
+def split_unit(value: Any, unit: Any) -> tuple[str, str]:
+    """`("5.2 %", "%")` -> `("5.2", "%")`: the number alone, and the unit.
+
+    Extraction returns the unit twice, once in its own field and once still
+    attached to the value, because that is how the page prints it. Stored as
+    it arrived, `th_series_data.value` held "4.9 mmol/L", the Indicators table
+    rendered "4.9 mmol/Lmmol/L", and nothing downstream could compare, average
+    or chart the reading without parsing the string first. The device path has
+    always written a bare number here.
+
+    A value that is not a measurement is returned untouched: "Negative" keeps
+    its whole self, and "120/80 mmHg" keeps "120/80".
+    """
+    text, declared = str(value or "").strip(), str(unit or "").strip()
+    if declared and text.lower().endswith(declared.lower()):
+        stripped = text[: -len(declared)].strip()
+        if stripped and stripped[-1].isdigit():
+            return stripped, declared
+    match = _TRAILING_UNIT.match(text)
+    if match:
+        return match.group("value").strip(), declared or match.group("unit").strip()
+    return text, declared
 
 
 async def _save_to_series_data(db_params: list[dict[str, Any]]) -> int:
@@ -82,11 +115,13 @@ async def save_indicators_to_db(
             # Generate source_table_id with file-level precision
             source_table_id = generate_source_table_id(msg_id, file_key)
 
+            value, unit = split_unit(indicator.get("value", ""), indicator.get("unit", ""))
+
             # Build comment JSON with unit, reference_range, detection_method
             # and the date's provenance (see resolve_report_date).
             try:
                 comment_data = {
-                    "unit": indicator.get("unit", ""),
+                    "unit": unit,
                     "reference_range": indicator.get("reference_range", ""),
                     "detection_method": indicator.get("detection_method", ""),
                     "date_source": date_source,
@@ -105,13 +140,13 @@ async def save_indicators_to_db(
                 {
                     "user_id": str(user_id),
                     "indicator": original_indicator,
-                    "value": indicator.get("value", ""),
+                    "value": value,
                     "start_time": start_time,
                     "end_time": end_time,
                     "source_table": source_table,
                     "source_table_id": source_table_id,
                     "comment": comment_json,
-                    "fhir_mapping_info": json.dumps({"unit": indicator.get("unit", "")}),
+                    "fhir_mapping_info": json.dumps({"unit": unit}),
                 }
             )
 

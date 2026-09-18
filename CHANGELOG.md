@@ -1,10 +1,27 @@
-## Unreleased
+## 1.4.4
 
-① Collect only collects. The indicator catalogue, the daily rollups and a
-second identity implementation have gone to the stages they belong to.
+Two stages were carrying each other's work, and both put it down. ① Collect
+only collects: the indicator catalogue, the daily rollups and a second identity
+implementation went to the stages that own them. ③ Agent's chat layer speaks
+LangChain's names instead of a dialect invented here, and its transport is one
+module rather than a class hierarchy with one implementation. The web client is
+rewritten on the new vocabulary.
+
+Nothing about the engine moved: the resolver evaluation is unchanged at 7,354
+cases, coverage 0.963, wrong-rate 0.032.
 
 ### Breaking
 
+- **The demo seeds one record and hands you four files.** The 207 KB vendored
+  care-circle fixture and `demo/lab_report_2025-10-15.pdf` are deleted. The two
+  sign-in accounts are renamed and are the circle now: `mom@mirobody.ai` shares
+  a record with `you@mirobody.ai`, view-only, and each gets a generated year of
+  device readings plus one lab panel (2,019 rows in total). Everything else
+  lives in `demo/upload/` and is deliberately NOT seeded, so uploading it walks
+  ① Collect and ② Translate instead of being a no-op: a PDF, a phone photo, a
+  spreadsheet and a CSV, every analyte resolving to a LOINC code, and one file
+  written in a second lab's vocabulary so the same code covers two spellings.
+  `demo/README.md` says what each file is; `demo/generate.py` rebuilds them.
 - **The Apple push endpoint speaks HealthKit.** `POST /apple/health` took a
   `FlutterHealthTypeEnum` (`HEART_RATE`) and mapped it onto the catalogue with
   its own 74-row table, while `mirobody import apple` read the same catalogue
@@ -20,8 +37,110 @@ second identity implementation have gone to the stages they belong to.
   `mirobody.translate` re-export what leaves them and a contract forbids
   reaching past, so the next move costs no caller an edit.
 
+
+- **A replacement agent yields `text`, not `reply`.** The block rename below
+  is the plugin contract too, and the example plugin — the template a third
+  party copies — was still on the old names. A plugin that stays on them is
+  not an error: its answer reads as a turn that produced none.
+- **The chat stream speaks LangChain's names.** `reply` / `thinking` /
+  `queryTitle` / `queryArguments` / `queryDetail` / `costStatistics` / `widget`
+  over one `content` field are now `text` / `reasoning` / `tool_call` /
+  `tool_result` / `usage` / `interrupt`, each carrying the field
+  `langchain_core.messages.content` gives it. `queryArguments` is gone: a
+  `tool_call` carries its own arguments, which that block JSON-encoded a
+  second time despite never being a partial delta. On a pre-1.4.4 transcript,
+  where `queryTitle` carried the name alone, its contents are folded into the
+  `tool_call` rather than dropped. `error` carries `message`.
+  Transcripts written under the old names are renamed when they load
+  (`agent.wire.blocks.upgrade`), so existing conversations still render.
+- **Agent Skills are gone, and `SKILL_DIRS` with them.** The one shipped skill
+  (`lab-report-walkthrough`) is part of the system prompt now. deepagents 0.7
+  removed its own built-in prompt to stop competing with the caller's; a
+  progressive-disclosure layer over a single document was the same competition
+  one level up.
+- **`agent.models.usage.cost_statistics_message` is `usage_block`**, and it
+  answers a flat block of integers rather than a `costStatistics` chunk of
+  strings under `content`. A consumer importing the old name gets an
+  `ImportError`, which is the signal; `UsageAccumulator` is unchanged.
+- **`ChatStreamRequest` is a pydantic model**, so `POST /api/chat` rejects an
+  unknown field with the accepted names rather than through an `inspect`
+  signature read. `ChatFileObject` is deleted (nothing constructed one) and
+  `msg_id` is gone, being an alias of `question_id`.
+
+### Added
+
+- **A `notice` block**: the system talking to the user ("that model is not
+  configured, using the default") rode the reasoning channel, where nothing
+  told it apart from the model's own trace. `kernel.events.Notice` has named
+  that as a defect since it was written.
+
+### Changed
+
+- **Four README claims were false, and are gone.** An adversarial pass over the
+  rewrite checked every sentence against the code. "Four languages, one code"
+  captioned a demo that shows three languages and three codes (only the
+  hemoglobin pair lands on one, 718-7) — wrong since 1.4.0, and baked into the
+  GIF's generator, so all four locales were regenerated. "→ FHIR R4" in the new
+  diagram claimed an output nothing produces: every `resourceType` in the tree
+  is mirobody READING FHIR-shaped input. "Stored verbatim" described ① Collect,
+  which converts units on the way in and keeps the original when conversion
+  fails; `translate/__init__.py` said the same thing and now says what the code
+  does. "Cites the file behind every number" is true only of file-sourced
+  readings; a device reading has no file. Also corrected: ② Translate links all
+  three packages that implement it, because `translate/` is named for the stage
+  but does no coding; backbone mode has no server tools, not "our data layer";
+  uploaded files live in a volume, not in Postgres; a scanned page sends the
+  image, not text; 326 UCUM units, not ~310.
+- **The README is rewritten around C·T·A.** It said its five core claims two
+  to six times each ("offline" seven times) and buried the three stages under a
+  deployment section four times their length. 2,224 words to 1,605, with a new
+  section that answers the question a health-data reader actually arrives with:
+  what runs on your machine and what does not. The two 960×452 diagrams are
+  replaced by one wide C·T·A strip that names the stages, ships light and dark,
+  and is drawn for both
+  editions in its own language (four files: two languages by two themes, all from
+  `scripts/make_diagrams.py --check`); the care-circle diagram's four promises
+  are a table in `docs/walkthrough.md`, which a diff can check and a picture
+  cannot.
+- **The README GIFs are re-recorded**, against the rewritten web client and the
+  redesigned demo, in English and 中文: the two records side by side, a PDF
+  going in and its analytes coming out coded, and the same question answered
+  from two different people's files. `docs/walkthrough.md` walks all four.
+- **The seams an application binds are written down** (`agent/README.md`
+  §Seams), and the replacement-agent contract is spelled out on
+  `registry.AbstractAgent` rather than pointing at a private function.
+  `chat.turn.run` yields blocks and `chat.turn.stream` is the SSE framing over
+  it, so a transport that is not SSE is five lines rather than a subclass.
+- **`chat/adapters/` is one module, `chat/turn.py`.** The abstract base class
+  had one abstract method, five lines of SSE framing, under 700 lines of
+  pipeline a second transport would have inherited unchanged. There is one
+  transport; the layer that does have a second reader is `kernel.events`.
+- **The system prompt is 113 lines, from 323 plus a 68-line skill** — 19.3 KB
+  to 9.9 KB, with every rule kept: `vis-chart` was specified twice and the
+  response requirements three times.
+- **deepagents 0.7.14** (from 0.7.5), which raises the langchain floor to 1.4.0
+  and langchain-quickjs to 0.3.7. The API this repository binds is unchanged
+  across the range.
+
 ### Fixed
 
+- **The agent cited a storage key as a source.** A reading handed the model
+  only `file_key`, so an answer about cholesterol named
+  `web_uploads/17eaf4f6-29b0-48b9-8e88-edbee3267ea6.pdf` as where a number came
+  from. `query_health_indicators` returns the document's NAME as `file` and
+  shows the model that instead; `file_key` still rides in the envelope, which
+  is what the web client opens the document with.
+- **An extracted reading's value held its unit.** A panel printing `4.9 mmol/L`
+  was stored with that whole string in `th_series_data.value`, so the
+  Indicators table rendered `4.9 mmol/Lmmol/L` and nothing downstream could
+  compare, average or chart the reading without parsing it first. The number
+  and the unit come apart at the one write point for extracted readings
+  (`collect.files.services.indicator_store.split_unit`), which is what the
+  device path has always done. A value that is not a measurement keeps its
+  whole self: `Negative` stays `Negative` and `120/80 mmHg` keeps `120/80`.
+- **`examples/03_parse_a_lab_report.py` never parsed a file.** `parse_file` is
+  async; the script called it without awaiting and died on `len()` of a
+  coroutine for every path anyone gave it. Only the no-argument half worked.
 - **A WebSocket upload answered in English whatever the client asked for.**
   `JwtMiddleware` is a `BaseHTTPMiddleware`, which Starlette runs for http
   scopes only, so the upload socket carried no language.
@@ -29,6 +148,18 @@ second identity implementation have gone to the stages they belong to.
   filesystem's copy of the extractable-extensions table, so a Word file came
   back as its zip container decoded as prose. `mirobody/documents/` is the one
   place that answers that question now, and the one place that opens a file.
+
+
+- **A reopened conversation can say the turn was cut off.** The stored `end`
+  block carries `finish_reason` now. The live client was told and the saved
+  transcript was not, so a turn the budget ended reopened as an ordinary
+  truncated answer.
+- **A chat upload's `created_source_id` now names a message that exists.** With
+  no `question_id` in the request the turn minted a `q_…` for the file rows and
+  let `save_message` mint its own `app_…` for the message.
+- **The chat layer stopped downloading every attachment for nobody.** The bytes
+  were fetched, base64-ed, cached in Redis and handed to the agent, which
+  documented that it ignores them: uploads reach the model through `/uploads/`.
 
 ## 1.4.3
 

@@ -116,7 +116,7 @@ def standard_middleware(
     5. one cap per named tool (``exit_behavior="continue"``: the tool is
        removed for the rest of the turn, the turn goes on);
     6. the code interpreter, if given;
-    7. ``tail``: whatever the agent adds last (skills, prompt caching).
+    7. ``tail``: whatever the agent adds last (prompt caching).
 
     A fresh stack per build is a fresh retry ledger per turn, which is what
     "already tried that" has to mean.

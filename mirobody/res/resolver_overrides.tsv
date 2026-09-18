@@ -559,6 +559,103 @@ RhD血型	Rh typing
 单核细胞绝对值	Monocytes [#/volume] in Blood
 嗜碱性粒细胞绝对值	Basophils [#/volume] in Blood
 
+# The same distinction on the English side, which was still inverted.
+#
+# `surface_variants` strips a trailing `#` or `%` to a bare stem, so `NEUT#`
+# and `NEUT%` both reach `neut`. In Chinese the bare stem carries a row above
+# and lands on the ratio, which is why `中性粒细胞%` is already right. English
+# has no such row: `neut` matched the index at 751-8 `[#/volume] by Automated
+# count`, so `NEUT%` answered an ABSOLUTE code and `LYMPH#` a PERCENTAGE one.
+# Exact-surface rows win because variants are tried most-specific first.
+#
+# Targets are the method-less codes the rows above use, so a report printing
+# NEUT# and one printing 中性粒细胞绝对值 land on one series.
+NEUT#	Neutrophils [#/volume] in Blood
+NEUT abs	Neutrophils [#/volume] in Blood
+NEU#	Neutrophils [#/volume] in Blood
+NEU abs	Neutrophils [#/volume] in Blood
+neutrophils absolute	Neutrophils [#/volume] in Blood
+absolute neutrophils	Neutrophils [#/volume] in Blood
+absolute neutrophil count	Neutrophils [#/volume] in Blood
+neutrophil count	Neutrophils [#/volume] in Blood
+neutrophil absolute count	Neutrophils [#/volume] in Blood
+ANC	Neutrophils [#/volume] in Blood
+NEUT%	Neutrophils/Leukocytes in Blood
+NEU%	Neutrophils/Leukocytes in Blood
+neutrophils %	Neutrophils/Leukocytes in Blood
+neutrophils%	Neutrophils/Leukocytes in Blood
+neutrophil percentage	Neutrophils/Leukocytes in Blood
+neutrophil percent	Neutrophils/Leukocytes in Blood
+neutrophils relative	Neutrophils/Leukocytes in Blood
+LYMPH#	Lymphocytes [#/volume] in Blood
+LYMPH abs	Lymphocytes [#/volume] in Blood
+LYM#	Lymphocytes [#/volume] in Blood
+LYM abs	Lymphocytes [#/volume] in Blood
+lymphocytes absolute	Lymphocytes [#/volume] in Blood
+absolute lymphocytes	Lymphocytes [#/volume] in Blood
+absolute lymphocyte count	Lymphocytes [#/volume] in Blood
+lymphocyte count	Lymphocytes [#/volume] in Blood
+lymphocyte absolute count	Lymphocytes [#/volume] in Blood
+lymphs abs	Lymphocytes [#/volume] in Blood
+LYMPH%	Lymphocytes/Leukocytes in Blood
+LYM%	Lymphocytes/Leukocytes in Blood
+lymphocytes %	Lymphocytes/Leukocytes in Blood
+lymphocytes%	Lymphocytes/Leukocytes in Blood
+lymphocyte percentage	Lymphocytes/Leukocytes in Blood
+lymphocyte percent	Lymphocytes/Leukocytes in Blood
+lymphocytes relative	Lymphocytes/Leukocytes in Blood
+lymphs %	Lymphocytes/Leukocytes in Blood
+lymphs%	Lymphocytes/Leukocytes in Blood
+MONO#	Monocytes [#/volume] in Blood
+MONO abs	Monocytes [#/volume] in Blood
+monocytes absolute	Monocytes [#/volume] in Blood
+absolute monocytes	Monocytes [#/volume] in Blood
+absolute monocyte count	Monocytes [#/volume] in Blood
+monocyte count	Monocytes [#/volume] in Blood
+monocyte absolute count	Monocytes [#/volume] in Blood
+monos abs	Monocytes [#/volume] in Blood
+MONO%	Monocytes/Leukocytes in Blood
+monocytes %	Monocytes/Leukocytes in Blood
+monocytes%	Monocytes/Leukocytes in Blood
+monocyte percentage	Monocytes/Leukocytes in Blood
+monocyte percent	Monocytes/Leukocytes in Blood
+monocytes relative	Monocytes/Leukocytes in Blood
+monos %	Monocytes/Leukocytes in Blood
+monos%	Monocytes/Leukocytes in Blood
+EOS#	Eosinophils [#/volume] in Blood
+EOS abs	Eosinophils [#/volume] in Blood
+EO#	Eosinophils [#/volume] in Blood
+EO abs	Eosinophils [#/volume] in Blood
+eosinophils absolute	Eosinophils [#/volume] in Blood
+absolute eosinophils	Eosinophils [#/volume] in Blood
+absolute eosinophil count	Eosinophils [#/volume] in Blood
+eosinophil count	Eosinophils [#/volume] in Blood
+eosinophil absolute count	Eosinophils [#/volume] in Blood
+EOS%	Eosinophils/Leukocytes in Blood
+EO%	Eosinophils/Leukocytes in Blood
+eosinophils %	Eosinophils/Leukocytes in Blood
+eosinophils%	Eosinophils/Leukocytes in Blood
+eosinophil percentage	Eosinophils/Leukocytes in Blood
+eosinophil percent	Eosinophils/Leukocytes in Blood
+eosinophils relative	Eosinophils/Leukocytes in Blood
+eos %	Eosinophils/Leukocytes in Blood
+BASO#	Basophils [#/volume] in Blood
+BASO abs	Basophils [#/volume] in Blood
+basophils absolute	Basophils [#/volume] in Blood
+absolute basophils	Basophils [#/volume] in Blood
+absolute basophil count	Basophils [#/volume] in Blood
+basophil count	Basophils [#/volume] in Blood
+basophil absolute count	Basophils [#/volume] in Blood
+basos abs	Basophils [#/volume] in Blood
+BASO%	Basophils/Leukocytes in Blood
+basophils %	Basophils/Leukocytes in Blood
+basophils%	Basophils/Leukocytes in Blood
+basophil percentage	Basophils/Leukocytes in Blood
+basophil percent	Basophils/Leukocytes in Blood
+basophils relative	Basophils/Leukocytes in Blood
+basos %	Basophils/Leukocytes in Blood
+basos%	Basophils/Leukocytes in Blood
+
 # `Hemoglobin A1c` — the full English name — was the only one of four spellings
 # that answered 41995-2 (a mass concentration almost no report means) while
 # 糖化血红蛋白 / HbA1c / A1c all answered 4548-4, the ratio every lab prints as a
@@ -642,3 +739,60 @@ CA199	Cancer Ag 19-9
 尿pH	pH of Urine
 尿酸碱度	pH of Urine
 25羟基维生素D	25-hydroxyvitamin D3
+
+# ── red-cell and platelet indices, and two identities split by language ─────
+#
+# Every abbreviation resolved and every spelled-out English name missed: MCV
+# answered 30428-7 while `Mean Corpuscular Volume` answered nothing, and the
+# same held for MCH, MCHC, RDW and MPV. An English report is as likely to
+# print the words.
+#
+# 红细胞沉降率 answered 4539-3 `by Zetafuge`, an obsolete instrument, while 血沉
+# and ESR both answered the method-less 30341-2. Bare 红细胞分布宽度 answered
+# the SD code and bare RDW the CV one. RDW-CV and RDW-SD stay apart: LOINC
+# models a width and an entitic volume, and reports print both.
+#
+# `Leukocytes` and `Erythrocytes` get no row on purpose: a urinalysis prints
+# both, and a blood code would be a confident wrong answer.
+Mean Corpuscular Volume	MCV [Entitic mean volume] in Red Blood Cells
+Mean Cell Volume	MCV [Entitic mean volume] in Red Blood Cells
+Mean Corpuscular Hemoglobin	MCH [Entitic mass] by Automated count
+Mean Cell Hemoglobin	MCH [Entitic mass] by Automated count
+Mean Corpuscular Haemoglobin	MCH [Entitic mass] by Automated count
+Mean Corpuscular Hemoglobin Concentration	MCHC
+Mean Cell Hemoglobin Concentration	MCHC
+Mean Corpuscular Haemoglobin Concentration	MCHC
+Red Cell Distribution Width	Erythrocyte [DistWidth] in Blood
+Red Blood Cell Distribution Width	Erythrocyte [DistWidth] in Blood
+Red Cell Distribution Width-CV	Erythrocyte [DistWidth] in Blood
+Red Blood Cell Distribution Width-CV	Erythrocyte [DistWidth] in Blood
+Red Cell Distribution Width-SD	Erythrocyte distribution width
+Red Blood Cell Distribution Width-SD	Erythrocyte distribution width
+Mean Platelet Volume	Platelet [Entitic mean volume] in Blood
+Platelets	Platelets [#/volume] in Blood
+Erythrocyte Sedimentation Rate	Erythrocyte [Sedimentation Rate] in Blood
+Sed Rate	Erythrocyte [Sedimentation Rate] in Blood
+红细胞沉降率	Erythrocyte [Sedimentation Rate] in Blood
+红细胞分布宽度	Erythrocyte [DistWidth] in Blood
+红细胞分布宽度CV	Erythrocyte [DistWidth] in Blood
+红细胞分布宽度SD	Erythrocyte distribution width
+
+# ── CK-MB: stripping the trailing token changed the measurement ─────────────
+#
+# `_TRAILING_ACRONYM` reads `-MB` as a repeat of the stem and strips it, the
+# way it correctly strips `TC` from `Total cholesterol TC`. Here the token ADDS
+# meaning: `Creatine Kinase-MB` answered 2157-6, TOTAL creatine kinase, and
+# with ng/mL it crossed to 50756-6, total CK in Blood. A cardiac marker became
+# an enzyme activity with no cardiac specificity, and the answer looked
+# confident. `CK-MB` and `Creatine kinase.MB` were always right, so the two
+# spellings of one test disagreed.
+#
+# Target is the method-less mass code, which is the eval ground truth for both
+# `CK-MB` and `肌酸激酶MB`; U/L still crosses to 32673-6, the activity sibling.
+Creatine Kinase-MB	Creatine kinase.MB
+Creatine Kinase MB	Creatine kinase.MB
+Creatine kinase-MB	Creatine kinase.MB
+CK-MB mass	Creatine kinase.MB
+肌酸激酶MB	Creatine kinase.MB
+肌酸激酶同工酶MB	Creatine kinase.MB
+肌酸激酶-MB	Creatine kinase.MB

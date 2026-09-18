@@ -17,6 +17,7 @@ Without an argument this runs the resolver half on a synthetic panel, so you can
 see the shape of the output without a key or a file.
 """
 
+import asyncio
 import os
 import sys
 
@@ -45,7 +46,10 @@ if len(sys.argv) > 1:
     if not any(os.environ.get(k) for k in keys):
         sys.exit(f"Set one of {', '.join(keys)} first — extraction is the one step that needs a model.")
     print(f"Parsing {path} …")
-    show(parse_file(path))
+    # `parse_file` is async: it initializes config and may call a vision
+    # provider page by page. Calling it without awaiting returned a coroutine
+    # and this script died on `len()` for every file anyone gave it.
+    show(asyncio.run(parse_file(path)))
     raise SystemExit
 
 # ── no file given: demonstrate the deterministic half on its own ─────────────

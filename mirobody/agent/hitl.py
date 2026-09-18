@@ -3,7 +3,7 @@
 `ask_user` is a deepagents human-in-the-loop interrupt: the tool body never
 runs. When the model calls it, `HumanInTheLoopMiddleware` pauses the graph
 after the model step, `MirobodyAgent._stream_agent_response` turns the pending
-call into a `widget` chunk (question + options) and the turn ends; the user's
+call into an `interrupt` block (question + options) and the turn ends; the user's
 next message resumes the SAME thread as the tool's result
 (`Command(resume={"decisions": [{"type": "respond", ...}]})`). The thread is
 the LangGraph checkpointer (`checkpointer.py`), so nothing else has to
@@ -29,6 +29,8 @@ from typing import Any
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 
+from .wire.blocks import INTERRUPT
+
 logger = logging.getLogger(__name__)
 
 #: The `interrupt_on` entry that makes `ask_user` pause the run. "respond" is
@@ -52,7 +54,7 @@ def ask_user(question: str, options: list[str] | None = None,
     need another call. Offer dates found on the message's other attachments
     as options, plus "就按今天".
     """
-    return ""  # never executed: the interrupt turns the call into a widget
+    return ""  # never executed: the interrupt turns the call into an `interrupt` block
 
 
 _KEEP_WORDS = ("今天", "today", "keep", "上传日", "upload")
@@ -147,13 +149,14 @@ def pending_report_date_files(interrupts: Any) -> list[str]:
         return []
 
 
-def widget_chunk(interrupts: Any) -> dict[str, Any] | None:
-    """The `widget` chunk for a pending `ask_user` call, or None.
+def interrupt_block(interrupts: Any) -> dict[str, Any] | None:
+    """The `interrupt` block for a pending `ask_user` call, or None.
 
-    Shape mirrors the hosted product's widget frame so the same client code
-    renders both: `question`, `widget_type` ("single_select" when the tool
-    passed `options`, else "text") and `config.options`. Only `ask_user` can
-    pause this graph (this module), so the first pending action is the one.
+    LangGraph's own shape: the paused call under its own name and arguments,
+    rather than a `widget_type` / `config` frame invented here. A client
+    renders `args.question` with `args.options` as one-tap buttons. Only
+    `ask_user` can pause this graph (this module), so the first pending action
+    is the one.
     """
     try:
         first = list(interrupts or [])[0]
@@ -165,16 +168,15 @@ def widget_chunk(interrupts: Any) -> dict[str, Any] | None:
     question = str(args.get("question") or "").strip()
     if not question:
         return None
-    options = [str(o) for o in (args.get("options") or []) if str(o).strip()]
-    payload = {
-        "widget_type": "single_select" if options else "text",
-        "question": question,
-        "config": {"options": options},
+    return {
+        "type": INTERRUPT,
+        "interrupt_id": getattr(first, "id", "") or "",
+        "name": "ask_user",
+        "args": {
+            "question": question,
+            "options": [str(o) for o in (args.get("options") or []) if str(o).strip()],
+        },
     }
-    # `content` carries the same payload: the web client keeps every chunk as
-    # {type, content} (store/Chart/data.js), so a top-level-only shape would
-    # render as an empty message.
-    return {"type": "widget", "content": payload, **payload}
 
 
 async def pending_answer(agent: Any, config: dict, messages: Any, user_id: str = "") -> str | None:

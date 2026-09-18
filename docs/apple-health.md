@@ -1,4 +1,4 @@
-# Apple Health Integration Guide
+# Apple Health: export and CDA import
 
 Two front doors, one vocabulary. Both decode through
 [`mirobody/kernel/decoders/apple.py`](../mirobody/kernel/decoders/apple.py), so a

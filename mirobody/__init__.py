@@ -101,4 +101,4 @@ try:
     __version__ = _version("mirobody")
 except Exception:
     import os
-    __version__ = os.environ.get("MIROBODY_VERSION") or "1.4.3"
+    __version__ = os.environ.get("MIROBODY_VERSION") or "1.4.4"

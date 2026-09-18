@@ -1,15 +1,13 @@
 """LangGraph Postgres checkpointer: the agent's conversation memory.
 
 This replaces a hand-rolled replay layer. Before this module, every turn
-rebuilt the agent's message list by parsing the persisted UI chunk list
-(``element_list``: the `reply`/`thinking`/`queryTitle`/`queryArguments`/
-`queryDetail` dicts the SSE stream emits) back into LangChain
-``AIMessage``/``ToolMessage`` objects: 424 lines of it, since deleted along
-with the agent that needed it. That is precisely what a checkpointer does, except
-the round trip was
-lossy by construction: the wire format is shaped for a UI, so `thinking` never
-survived it, tool arguments came back as re-parsed JSON strings, and anything
-the stream did not model was simply gone.
+rebuilt the agent's message list by parsing the persisted transcript (the
+blocks the SSE stream emits) back into LangChain ``AIMessage``/``ToolMessage``
+objects: 424 lines of it, since deleted along with the agent that needed it.
+That is precisely what a checkpointer does, except the round trip was lossy by
+construction: the wire format is shaped for a UI, so reasoning never survived
+it, tool arguments came back as re-parsed JSON strings, and anything the stream
+did not model was simply gone.
 
 Now the graph is compiled with ``checkpointer=`` and invoked with
 ``thread_id = session_id``, so LangGraph persists the REAL message objects and
@@ -145,8 +143,8 @@ async def delete_thread(session_id: str) -> None:
     ``thread_id == session_id``, so this is the checkpointer half of "delete
     this conversation". Without it, ``chat/session.delete_session`` would clear
     ``th_messages``/``th_sessions`` while the agent's own copy of the same turns
- (health questions and the tool results answering them) survived
-    indefinitely under the session id. A user who deletes a conversation must
+    (health questions and the tool results answering them) survived indefinitely
+    under the session id. A user who deletes a conversation must
     have it deleted, not merely hidden from the history endpoint.
 
     Best-effort: a failure here is logged, never raised, so it cannot block the

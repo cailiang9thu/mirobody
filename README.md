@@ -2,22 +2,21 @@
 
 # Mirobody
 
-**The AI-native health data engine — Collect · Translate · Agent.**
-
-One lab prints `A1c`, the next `HbA1c`, a third `hemoglobin A1c` — one test,
-three spellings, and that is before the units disagree. Mirobody turns lab
-reports, wearables and genomics into one language AI can read: LOINC-coded,
-UCUM-normalized, FHIR-ready. The resolver runs offline, and the engine powers
-**[Theta Wellness](https://www.thetahealth.ai/)**, a live consumer health
-product with 5,000+ registered users and 500+ daily active.
+**Last year's checkup wrote `A1c`. This year the hospital panel says `HbA1c`.
+You changed clinics and the new report says `Glycated Hemoglobin`. One test,
+three names, nothing you can read across. Mirobody is an AI-native health data
+engine: it takes health information from any source, in any format, under any
+name, and settles it into one language and one system, then answers your
+questions over that record, citing where every number came from. One standard,
+traceable, comparable, chartable. How has my blood pressure moved these past
+years? Are mom's diabetes markers improving? What changed across my child's
+checkups? Self-host all of it, and your health record stays in your hands.**
 
 **English** · **[中文](README.zh-CN.md)**
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
 [![PyPI Downloads](https://img.shields.io/pepy/dt/mirobody?label=PyPI%20Downloads&color=orange)](https://pepy.tech/projects/mirobody)
-[![Benchmarks](https://img.shields.io/badge/%F0%9F%A4%97_Benchmarks-4k%2B_downloads_each-FFD21E.svg)](https://huggingface.co/mirobody)
-[![arXiv](https://img.shields.io/badge/arXiv-2604.02834-b31b1b.svg)](https://arxiv.org/abs/2604.02834)
 [![Docs](https://img.shields.io/badge/Docs-docs.mirobody.ai-black)](https://docs.mirobody.ai/)
 [![GitHub stars](https://img.shields.io/github/stars/thetahealth/mirobody?style=social)](https://github.com/thetahealth/mirobody/stargazers)
 
@@ -25,25 +24,54 @@ product with 5,000+ registered users and 500+ daily active.
 
 </div>
 
-## ⚡ Try it in 60 seconds
+<p align="center">
+  <img src="docs/images/ask-own-demo.gif"
+       alt="Asking how cholesterol has changed: the agent finds three files that name the test differently, resolves them to one code, and charts the trend" width="880">
+</p>
 
-No key, no config, no network — and with `uvx`, no install either:
+<p align="center"><em>Three files, three names for the same test, one LOINC code. The agent finds
+all three, aggregates the trend, and names the file every number came from.</em></p>
+
+## What Mirobody does
+
+- **One record for the whole family.** Invite a partner, a parent, even a child
+  who never signs in at all, and keep the household's health history in one
+  place.
+- **Every source, one record.** Garmin, Oura and Whoop connect directly;
+  anything already written into Apple Health comes with it; PDFs, phone photos,
+  spreadsheets, exports: 23 file types in all, and Mirobody reads them.
+- **No hallucinations, everything traceable.** Every indicator lands in one
+  settled system: either it gets a definite code, or it says it could not
+  resolve one. It never invents one in between. Built and tested against real
+  reports, in English, Chinese and Japanese.
+- **The agent reasons only over coded data.** Trends by minute, hour, day,
+  week or month, drawn as a chart; a baseline and how far a number has moved in
+  one call; comparisons across labs, files and devices, because one standard
+  (LOINC and UCUM) sits under all of them. It reads medications and genetic
+  variants too.
+- **Runs on a laptop.** Four containers, 791 MiB resident, under 5% CPU idle.
+  No GPU, no Node.js.
+- **Your model, your key, your data.** Model calls go to the model you chose.
+  Everything else stays on your machine.
+
+## Try it in 60 seconds
+
+One command, five spellings: watch which ones it recognises, and which one it
+refuses. No key, no config, no network, and with `uvx`, no install either:
 
 ```bash
 uvx mirobody resolve "LDL cholesterol" 血红蛋白 ヘモグロビン "空腹血糖(GLU)" 血脂
 ```
 
-<sub>`pip install mirobody` instead if you want it on your PATH. Either way the
-resolver answers from a bundle that ships with the package.</sub>
-
 <p align="center">
   <img src="docs/images/resolve-demo.gif"
-       alt="mirobody resolve: four languages landing on one LOINC code, fully offline" width="880">
+       alt="mirobody resolve: 血红蛋白 and ヘモグロビン landing on the same LOINC code, and one deliberate abstention" width="880">
 </p>
 
-`血红蛋白` and `ヘモグロビン` land on the same code as `hemoglobin`, LOINC `718-7`;
-`空腹血糖(GLU)` on fasting glucose. `血脂` (lipids) is a category, not an
-observation, so the resolver returns nothing rather than a plausible wrong code.
+`血红蛋白` and `ヘモグロビン`: two languages, one code, 718-7. `血脂` (lipids)
+names a category, not one observation, so it resolves to **nothing**. The
+resolver would rather return nothing than guess a code, because a wrong one
+puts two different tests on the same trend line.
 
 ```python
 from mirobody.engine import resolve, resolve_reading
@@ -59,218 +87,217 @@ resolve_reading("中性粒细胞", "4.2", "10*9/L").loinc       # '26499-4' ...a
 resolve("血脂").resolved                                 # False    a category, not an observation
 ```
 
-**Pass the value and the unit when you have them.** LOINC encodes the unit and
-the result type into the identity, so the same name resolves to different codes.
-`resolve` abstains rather than guessing: an empty code is a gap worth a second
-look; `method="refused"` is a decision.
+**Pass the value and the unit when you have them.** A different unit means a
+different test, and LOINC folds that into the code's own identity, so one name
+is deliberately several codes.
 → [Engine reference](https://docs.mirobody.ai/en/engine/) · [Indicators](https://docs.mirobody.ai/en/concepts/indicators/)
-
-## Why Mirobody
-
-- **Two reports, same test, different spelling and units.** That is the problem.
-  Mirobody translates any reading, in any language, to LOINC + UCUM — and refuses
-  to guess when it does not know the term.
-- **AI can only reason over what it can read.** The agent reads the original
-  documents, charts lab draws against sensor-derived series, and cites the page
-  it read from.
-- **Self-hosted, standards-based, Apache-2.0.** One `./deploy.sh` runs the whole
-  stack on your own machine; what comes out is LOINC-coded, FHIR-ready records
-  you can take anywhere, and the same tools are served over MCP to Claude
-  Desktop, Cursor or your own agent. **No GPU: the app is self-hosted, the model
-  is not.** You bring one API key to a hosted provider; nothing runs inference on
-  your machine. "Offline" here means the resolver — name to code, with no network
-  and no key — not a local LLM.
 
 ## Collect · Translate · Agent
 
 <p align="center">
-  <img src="docs/images/where-your-data-comes-from.svg" alt="From wearables to food photos — one standard format, ready for AI." width="920">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/collect-translate-agent-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/collect-translate-agent.svg">
+  <img src="docs/images/collect-translate-agent.svg" alt="Collect, Translate, Agent: three stages, left to right" width="920">
+</picture>
 </p>
 
-The engine does three things, and the codebase, the docs and
-[Contributing](#-contributing) are organized around exactly these three stages:
+An indicator takes three steps from arriving to being cited. Each one leaves a
+trace, so the answer at the end can be followed back to the page it came off:
 
-| Stage | What it means | Where |
+| Stage | What it does | Where |
 | --- | --- | --- |
-| **① Collect** | Pull signals in: 3 device providers · 7 file formats · Apple Health (`mirobody import apple export.zip`, or a signed iOS client POSTs it in) | [`collect/`](mirobody/collect/) |
-| **② Translate** (standardize) | One standard: resolve any reading to canonical codes (LOINC · SNOMED CT · RxNorm), normalize units to UCUM, land on FHIR-recognized code systems | [`indicator/`](mirobody/indicator/) |
-| **③ Agent** | Reason: an agent reads the *original documents* through a virtual filesystem and answers with charts and citations | [`agent/`](mirobody/agent/) |
+| **① Collect** | Lab reports, wearables, phone photos, genetic files, all pulled in. The source file is kept as it was, so every indicator points back to the page it was read from. | [`collect/`](mirobody/collect/) |
+| **② Translate** | One name to one code, one unit to UCUM, offline and deterministic. `A1c`, `HbA1c` and `Glycated Hemoglobin` become the same test here. | [`engine.py`](mirobody/engine.py) · [`indicator/`](mirobody/indicator/) · [`translate/`](mirobody/translate/) |
+| **③ Agent** | Ask over the coded record. Trend a value by minute, hour, day, week or month; get count, min, max, avg or change over any window in one call; compare across labs and devices, because they share one code. It charts the result in its reply, reads medications and genetic variants too, and names the file every number came from. | [`agent/`](mirobody/agent/) |
 
-## By the numbers
+① records how the source spelled it, ② decides what it actually is, ③ answers
+on that footing. Comparing a number across two labs, charting three years of
+it, computing a baseline: all of it rests on the code ② hands over.
 
-| | |
-| --- | --- |
-| Concept graph | 440,961 nodes · 22,044,110 cross-vocabulary edges · 595,746 source ids distilled into canonical concepts (LOINC · SNOMED CT · RxNorm bridges) |
-| Aliases | 49,253 multilingual (中文 22,578 · 日本語 16,809 · de·es·fr·ko·ru); `hemoglobin`, `血红蛋白`, `血紅素` and `ヘモグロビン` all land on 718-7 |
-| Traditional Chinese | a shipped 3,336-character zh-Hant → zh-Hans fold table, plus curated Traditional rows — a curated row always beats a fold |
-| Units | ~310 UCUM families with dimensional analysis and a molar-mass bridge keyed by LOINC code; 305 standard pulse indicators |
-| Coverage | **213/213** on the panels an ordinary checkup prints, in English, Chinese (Simplified and Traditional) and Japanese ([`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)) |
-| Bundle | LOINC 2.82: `mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285` — release, cut date and a digest over the bundle's own members |
-| Install | `pip install mirobody` is **2 packages**, on numpy only — ~67 MB on macOS, ~100 MB on Linux, where numpy bundles its own BLAS |
+**The agent does not have to be ours.** Every tool it uses is served at `/mcp`
+as well, gated per user. Claude Desktop, Cursor or your own loop run the same
+tools over the same record, and get back the same indicators.
 
-Why 2.82 and not 2.83, what LOINC covers of the wearable world, and the opt-in
-semantic tier that cannot abstain: → [Standardization in depth](docs/standardization.md)
+Garmin, Oura and Whoop connect with your own credentials from each vendor;
+[the setup guide](docs/provider-setup.md) walks it through. Apple Health goes
+another way: a client on the phone hands the data over, so any band, ring or
+scale reaches your record the moment it writes into Apple Health, with nothing
+to integrate here at all.
 
-## 📊 Benchmarks — open and independently reproducible
+## Privacy
 
-The most-downloaded health-AI benchmarks in their category on Hugging Face,
-4,000+ downloads a month each:
-[ESL-Bench](https://huggingface.co/datasets/mirobody/ESL-Bench) (event-driven
-longitudinal health agents — 100 synthetic users, 10,000 queries,
-[arXiv:2604.02834](https://arxiv.org/abs/2604.02834)) ·
-[MedHall-Bench](https://huggingface.co/datasets/mirobody/MedHall-Bench) (medical
-hallucination) · [MedHarm-Bench](https://huggingface.co/datasets/mirobody/MedHarm-Bench)
-(harmful medical advice). Reproduce any of them with one command via
-**[mirobody-eval](https://github.com/thetahealth/mirobody-eval)**, which also seeds
-a deployment with synthetic, PHI-free trajectories.
+Nothing leaves your machine except calls to the model you chose. Reading a
+photo of a report, pulling indicators out of a PDF, answering your question:
+all three call it. Which provider and which model is the one key in your `.env`.
 
-## 🚀 Run the whole thing
+**② Translate** stays local entirely: a name to a code, a unit to UCUM, looked
+up against a bundle that ships inside the package. No key, no network, no GPU,
+no model. Your record lives in your own Postgres, in containers you run, and
+nothing here reports usage anywhere.
+
+**One key, and it is the only secret you hold.** Put an
+[OpenRouter key](https://openrouter.ai/keys) (`OPENROUTER_API_KEY`), a
+[Gemini key](https://aistudio.google.com/apikey) (`GOOGLE_API_KEY`), an
+[OpenAI key](https://platform.openai.com/api-keys) (`OPENAI_API_KEY`) or an
+[Anthropic key](https://platform.claude.com/settings/keys)
+(`ANTHROPIC_API_KEY`) in the `.env` beside `compose.yaml`, then
+`docker compose restart`. DeepSeek, DashScope or any OpenAI-compatible gateway
+works alone too. Which model chats, which reads report photos, which extracts
+indicators and which embeds are four lines in
+[`config.llm.yaml`](config.llm.yaml), and that file names the *variable*
+(`api_key: OPENROUTER_API_KEY`), never the secret. `mirobody doctor` prints
+what each surface selected, and names the fix where one has nothing.
+
+The quickstart ships its secrets as placeholders, and encryption at rest does
+not yet cover every field. Before this reaches a network you do not control,
+read [SECURITY.md](SECURITY.md): it also lists exactly what the server calls
+off your machine.
+
+## 🚀 See it end to end
 
 ```bash
 git clone --depth 1 https://github.com/thetahealth/mirobody.git && cd mirobody
-git lfs install && git lfs pull   # the resolver's LOINC bundle; a fresh clone holds a pointer stub until you do
+git lfs install && git lfs pull   # the resolver's LOINC bundle, 40 MB; a fresh clone holds a pointer stub until you do
 ./deploy.sh                       # Postgres + pgvector, Redis, server, worker → http://localhost:18060
 ```
 
-`--depth 1` because the history is mostly superseded frontend builds and you
-almost certainly do not want it: it takes the clone from ~125 MB to ~99 MB
-(measured 2026-09-14 — most of what is left is the LFS bundle, which both
-copies need).
-Drop the flag if you plan to send a pull request. `./deploy.sh` also fetches
-the 22 MB concept graph behind semantic indicator search, which is a release
-asset rather than a tracked file — see [`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv).
+(`--depth 1` skips the history of superseded frontend builds; drop it if you
+plan to send a pull request.)
 
-Sign in as `caregiver@mirobody.ai`, code `111111`. No mail provider needed: the
-sign-in page opens on password, and an account of your own is one request away:
+Sign in as `you@mirobody.ai`, code `111111`, no mail provider needed. An
+account of your own is one request away:
 
 ```bash
 curl -X POST localhost:18060/password/register -H 'Content-Type: application/json' \
-     -d '{"email":"you@example.com","password":"at-least-8-chars"}'
+     -d '{"email":"me@example.com","password":"at-least-8-chars"}'
 ```
 
-**Your care circle.** The account is named for the role it plays: you sign in as
-the caregiver, and the record you read belongs to someone else. A circle is the
-unit of sharing — each member holds their own record and decides, on their own
-row, whether the others may view it.
-
-<div align="center">
-<img src="docs/images/your-care-circle.svg" alt="Your own thin record next to hers — the thick one you can only view." width="820">
-</div>
-
-`SEED_DEMO_DATA` is on by default, so the circle is already populated: you own a
-**thin** record — a few weeks of self-tracked vitals and one unremarkable
-checkup — and one synthetic person shares a **thick** one with you,
-**Demo (synthetic)**: **244 indicators, 14,273 readings** across two years, five
-documents the agent can read. Same question, two records: *your* HbA1c answers
-with one boring-normal value from data you own; *hers* with a two-year story from
-data you can only view. The recording walks both sides — your own indicators and
-files, then the switch to her shared record and its two years of HbA1c:
+`SEED_DEMO_DATA` is on by default, so two accounts are already there with
+**2,019 indicators** between them: you, and `mom@mirobody.ai`, who shares her
+record with you view-only. Set it to `false` to hold real data and neither
+account is created. **Settings → Add member** covers someone who will never
+sign in at all, a parent, a child, with a record you hold on their behalf.
 
 <p align="center">
   <img src="docs/images/care-circle-demo.gif"
-       alt="Your own account's indicators and an uploaded report, then switching to Demo's shared record and opening two years of HbA1c" width="880">
+       alt="Your own account's indicators and lab panel, then switching to the record shared with you" width="880">
 </p>
 
-The switch in that diagram is a column, not a promise:
-`care_circle_members.health_access`, `NOT NULL DEFAULT 0`, on **your own** row.
-Being invited into a circle shares nothing — the member decides, and no other
-person's action can raise it. A route that forgets to check answers 403 instead of
-handing over a record. [`examples/06_care_circle_rules.py`](examples/06_care_circle_rules.py)
-prints the whole decision table offline. Set `SEED_DEMO_DATA=false` for a
-deployment that will hold real data.
-
-**One key runs everything, and none of it is your GPU.** The key points at a
-hosted model; your machine runs no inference. Browsing the seeded record needs no key; the upload
-and the questions below ride one. Put ONE key in the `.env` next to `compose.yaml`
-and `docker compose restart` — the app re-reads `/app/.env`; a shell `export` does
-not reach the containers. The `.env` is the only place for the key:
-`config.llm.yaml` names the variable (`api_key: OPENROUTER_API_KEY`), never the
-secret. An [OpenRouter key](https://openrouter.ai/keys) as
-`OPENROUTER_API_KEY` is the recommended one; a DashScope key when openrouter.ai is
-unreachable from your network; a Google, [OpenAI](https://platform.openai.com/api-keys)
-(`OPENAI_API_KEY`), [Anthropic](https://platform.claude.com/settings/keys)
-(`ANTHROPIC_API_KEY`) or DeepSeek key works alone as well. Every model decision —
-which model chats, which reads report photos, which extracts the indicators, which
-embeds — is a line in [`config.llm.yaml`](config.llm.yaml), where you can read and
-change it (a self-hosted gateway is one `<PREFIX>_BASE_URL` in `.env`). The boot
-log, and `mirobody doctor`, print what each surface selected and name the fix
-where one has nothing.
-
-**① Collect + ② Translate.** Drop [`demo/lab_report_2025-10-15.pdf`](demo/lab_report_2025-10-15.pdf)
-on the Data page and twelve analytes come out with values and units, each
-linking back to the page it was read from:
+Drop a file on the Data page and watch it become indicators.
+[`demo/upload/`](demo/) holds four files the seed deliberately leaves out: a
+lab PDF, a phone photo of a printed report, a spreadsheet and another lab's
+CSV export. Each analyte comes out with a value, a unit and a LOINC code,
+linked back to the page it was read from.
 
 <p align="center">
   <img src="docs/images/upload-demo.gif"
-       alt="Dropping a lab-report PDF on the Data page; twelve analytes extracted, each linked to its source file" width="880">
+       alt="Dropping a lab-report PDF on the Data page; its analytes are extracted and appear in the indicators table, each with a LOINC code" width="880">
 </p>
 
-**③ Agent.** Ask about her HbA1c and the agent finds the data, charts
-the three lab draws against 104 sensor-derived estimates, and says plainly that
-the improvement did not hold. Ask again about the report you just uploaded and it
-reads that instead — the fourth scene of
-[the four-minute walkthrough](docs/walkthrough.md).
+Ask how the cholesterol has moved and the agent finds every file that carries
+it: one lab writes `Cholesterol, Total` where the others write
+`Total Cholesterol-TC`, and both are **14647-2**. It charts the trend and names
+the file each number came off: `4.60 → 4.45 → 4.38 mmol/L`. Ask for a baseline
+or a monthly average instead and the same tool aggregates over the whole
+record, rather than handing back rows for the model to add up itself.
+
+Ask the same question of the record shared with you and it is a different
+person's answer, from data you can only view. Sharing is invite-only, off by
+default, and strictly permission-checked.
 
 <p align="center">
   <img src="docs/images/ask-circle-demo.gif"
-       alt="Asking about the shared record's HbA1c; the agent queries, charts lab and sensor series together, and reads the trend" width="880">
+       alt="The same question asked on the shared record; the agent answers from a different person's files" width="880">
 </p>
 
-→ [Docker deployment](https://docs.mirobody.ai/en/deployment/docker/) ·
-[Configuration](https://docs.mirobody.ai/en/configuration/) ·
-[Local Python setup](https://docs.mirobody.ai/en/development/setup/)
+→ [The four-minute walkthrough](docs/walkthrough.md) ·
+[`examples/06_care_circle_rules.py`](examples/06_care_circle_rules.py) prints the
+whole sharing decision table offline ·
+[Docker deployment](https://docs.mirobody.ai/en/deployment/docker/) ·
+[Configuration](https://docs.mirobody.ai/en/configuration/)
+
+## Check any of it yourself
+
+Every figure below comes with its source: a command you can run, or a public
+dataset.
+
+- **213/213** on the tests an ordinary checkup prints, in English, Chinese
+  (Simplified and Traditional) and Japanese. The set is deliberately the least
+  flattering one — everyday panels, written the way a report prints them, which
+  is what every new user tries in their first minute.
+  [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) prints the
+  score when you run it.
+- **Three open benchmarks**, public datasets, one command each: longitudinal
+  health agents, medical hallucination, harmful medical advice.
+  [mirobody-eval](https://github.com/thetahealth/mirobody-eval) ·
+  [datasets](https://huggingface.co/mirobody) ·
+  [arXiv:2604.02834](https://arxiv.org/abs/2604.02834).
+- **The package names the vocabulary that answered you**:
+  `mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285`, the release,
+  the cut date, and a digest over the bundle's own contents.
+- **305 standard pulse indicators** and 326 UCUM units with dimensional
+  analysis. The full counts, and why the bundle holds at LOINC 2.82 rather than
+  2.83, are in [Standardization in depth](docs/standardization.md).
+- **`pip install mirobody` is 2 packages**, numpy the only dependency.
+
+The engine powers **[Theta Wellness](https://www.thetahealth.ai/)**, a live
+consumer health product with 5,000+ registered users.
 
 ## 🔌 Use it, extend it
 
-| You want | Do this | Docs |
-| --- | --- | --- |
-| Offline resolution and units in your code | `pip install mirobody` — 2 packages, no key, no network | [Engine](https://docs.mirobody.ai/en/engine/) |
-| A document turned into readings | `pip install 'mirobody[parse]'` — PDF, image, Excel, Word, PowerPoint, text; only a scanned page reaches a vision model | [Engine](https://docs.mirobody.ai/en/engine/) |
-| The agent harness as a library | `pip install 'mirobody[agent]'` — middleware, virtual-filesystem backends, checkpointer | [Bringing your own agent](CONTRIBUTING.md#-bringing-your-own-agent) |
-| These tools in Claude Desktop, Cursor or your own loop | Settings → MCP: every agent tool is also served at `/mcp`, gated per user | [MCP servers](https://docs.mirobody.ai/en/api-reference/mcp-servers/) · [`examples/07_claude_agent_sdk.py`](examples/07_claude_agent_sdk.py) |
-| Your app talking to a deployment | HTTP API, or backbone mode: your agent, our data layer | [API overview](https://docs.mirobody.ai/en/api-reference/overview/) · [Backbone](https://docs.mirobody.ai/en/api-reference/backbone-mode/) |
-| A new tool, skill or device provider | Drop a file into `mirobody/agent/tools/`, `mirobody/agent/skills/` or `mirobody/collect/providers/` and restart — or `pip install` a package declaring a `mirobody.providers` / `mirobody.tools` / `mirobody.agents` entry point | [Adding tools](https://docs.mirobody.ai/en/tools/adding-tools/) · [Skills](https://docs.mirobody.ai/en/tools/skills/) · [Providers](https://docs.mirobody.ai/en/development/provider-integration/) |
-| Your own agent harness | `AGENT_DIRS` → your directory replaces the shipped agent | [`mirobody/agent/README.md`](mirobody/agent/README.md) |
-| The LOINC axis table and alias sources at build time | `mirobody.bundle` — for generating a seed or a corpus | [`mirobody/bundle.py`](mirobody/bundle.py) |
+| You want | Do this |
+| --- | --- |
+| Offline resolution and units in your code | `pip install mirobody` — no key, no network |
+| A document turned into indicators | `pip install 'mirobody[parse]'` — PDF, image, Excel, Word, PowerPoint, text; only a scanned page reaches a vision model |
+| These tools in Claude Desktop, Cursor or your own loop | Settings → MCP: every agent tool is also served at `/mcp`, gated per user |
+| Your app talking to a deployment | The HTTP API, against the deployment you run — your app, your data layer |
+| A new tool or device provider | Drop a file into `mirobody/agent/tools/` or `mirobody/collect/providers/` and restart, or `pip install` a package declaring a `mirobody.providers` / `mirobody.tools` / `mirobody.agents` entry point |
+| Your own agent harness | `pip install 'mirobody[agent]'` for the middleware and virtual-filesystem backends, or point `AGENT_DIRS` at your directory to replace the shipped agent outright |
+
+→ [API overview](https://docs.mirobody.ai/en/api-reference/overview/) ·
+[MCP integration](https://docs.mirobody.ai/en/tools/mcp-integration/) ·
+[Adding tools](https://docs.mirobody.ai/en/tools/adding-tools/) ·
+[Bringing your own agent](CONTRIBUTING.md#-bringing-your-own-agent)
 
 ## 🤝 Contributing
 
 The highest-leverage contribution is a term the resolver gets wrong. Run
 `mirobody resolve "<term>"`; if the answer is wrong or empty,
 [report it](https://github.com/thetahealth/mirobody/issues/new?template=wrong-term.yml)
-or add a row to [`resolver_overrides.tsv`](mirobody/res/resolver_overrides.tsv) plus a
-case to [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) — the
-coverage score is the review.
+or add a row to [`resolver_overrides.tsv`](mirobody/res/resolver_overrides.tsv)
+plus a case to [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) —
+the coverage score is the review.
 
 ```bash
 pip install -e '.[test]' && pytest -q && lint-imports
 ```
 
-→ [CONTRIBUTING.md](CONTRIBUTING.md) · [Contributing guide](https://docs.mirobody.ai/en/development/contributing/) ·
-[Repository layout](docs/repository-layout.md) · [Roadmap](docs/roadmap.md) · [CHANGELOG](CHANGELOG.md) · [SECURITY](SECURITY.md)
+→ [CONTRIBUTING.md](CONTRIBUTING.md) · [Local Python setup](https://docs.mirobody.ai/en/development/setup/) ·
+[Repository layout](docs/repository-layout.md) ·
+[Roadmap](docs/roadmap.md) · [CHANGELOG](CHANGELOG.md) · [SECURITY](SECURITY.md)
 
-## 📚 Documentation
+## 📚 Documentation, and what shaped this
 
-**[docs.mirobody.ai](https://docs.mirobody.ai/)**, in English and Chinese — start at the
-[Quickstart](https://docs.mirobody.ai/en/quickstart/), or go straight to the
-[API reference](https://docs.mirobody.ai/en/api-reference/). Long-form guides for
-contributors live in [`docs/`](docs/README.md).
+**[docs.mirobody.ai](https://docs.mirobody.ai/)**, in English and Chinese — start
+at the [Quickstart](https://docs.mirobody.ai/en/quickstart/) or the
+[API reference](https://docs.mirobody.ai/en/api-reference/); contributor guides
+are in [`docs/`](docs/README.md).
 
-## 🙏 Acknowledgements
-
-Projects that shaped the kernel's rules — none of their code is included here:
-[Open Wearables](https://github.com/the-momentum/open-wearables) (the
-data-standardization failure modes `kernel/series` and `kernel/quality` close),
-[Home Assistant](https://github.com/home-assistant/core) (`state_class`),
-[Open mHealth](https://github.com/openmhealth/schemas) / IEEE 1752 (field names),
-[wearipedia](https://github.com/Stanford-Health/wearipedia) (synthetic payloads),
-[dlt](https://github.com/dlt-hub/dlt) / [Airbyte](https://github.com/airbytehq/airbyte-python-cdk) / [Singer](https://github.com/meltano/sdk) (connector shape),
-[deepagents](https://github.com/langchain-ai/deepagents), LangChain and [langchain-quickjs](https://github.com/langchain-ai/langchain-quickjs) (the harness, the file-system projection, the `eval` REPL),
-Regenstrief Institute (LOINC), UCUM, HL7 FHIR, OHDSI OMOP — see `LICENSE-3RD-PARTY`.
-
-## ⭐ Star History
+Mirobody's design draws on the following standards and projects, with thanks:
+[HL7 FHIR](https://hl7.org/fhir/),
+[Regenstrief Institute](https://www.regenstrief.org/) ([LOINC](https://loinc.org/)),
+[UCUM](https://ucum.org/), [OHDSI OMOP](https://www.ohdsi.org/),
+[Open Wearables](https://github.com/the-momentum/open-wearables),
+[Open mHealth](https://github.com/openmhealth/schemas) / IEEE 1752,
+[wearipedia](https://github.com/Stanford-Health/wearipedia),
+[dlt](https://github.com/dlt-hub/dlt) / [Airbyte](https://github.com/airbytehq/airbyte-python-cdk) / [Singer](https://github.com/meltano/sdk),
+[deepagents](https://github.com/langchain-ai/deepagents) and LangChain. The
+terminology licences this ships under are in
+[`LICENSE-3RD-PARTY`](LICENSE-3RD-PARTY).
 
 <div align="center">
+
 <a href="https://www.star-history.com/#thetahealth/mirobody&Date">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date&theme=dark" />
@@ -281,8 +308,6 @@ Regenstrief Institute (LOINC), UCUM, HL7 FHIR, OHDSI OMOP — see `LICENSE-3RD-P
 
 *If it read a report for you, a star helps the next person find it.
 Releases land most weeks — [Watch](https://github.com/thetahealth/mirobody/subscription) for them.*
-
-**[📚 Docs](https://docs.mirobody.ai/)** · **[▶ Demo](https://chat.mirobody.ai/demo)** · **[🔌 Platform](https://platform.mirobody.ai/)** · **[🧪 Eval](https://github.com/thetahealth/mirobody-eval)**
 
 Apache 2.0 · © 2026 [Theta Health](https://thetahealth.ai)
 

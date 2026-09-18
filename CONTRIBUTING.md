@@ -18,7 +18,7 @@ We love new ideas! Please open an issue to discuss your feature idea before impl
 mirobody ships **one** agent — `MirobodyAgent` in `mirobody/agent/agent.py`,
 built on [deepagents](https://github.com/langchain-ai/deepagents), which is the
 most complete Python harness of the coding-agent kind (virtual filesystem,
-in-process REPL, skills, human-in-the-loop, checkpointed memory). It is the
+in-process REPL, human-in-the-loop, checkpointed memory). It is the
 reference implementation of the answer layer, not a menu entry: there is no
 switching between agents at request time and no per-agent configuration.
 

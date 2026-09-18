@@ -68,12 +68,19 @@ others:
   protects nothing, and the server warns if it sees that pattern without
   the switch. Set `BOOTSTRAP_SCHEMA: false` too if you provision the schema
   yourself.
-- Replace the demo accounts. `config.yaml` ships a predefined login
-  (`caregiver@mirobody.ai` / code `111111`) — remove `EMAIL_PREDEFINE_CODES`
-  entirely. With `PRODUCTION: true` the server enforces this instead of
+- Replace the demo accounts. `config.yaml` ships two predefined logins
+  (`you@mirobody.ai` and `mom@mirobody.ai`, code `111111`) — remove
+  `EMAIL_PREDEFINE_CODES` entirely. With `PRODUCTION: true` the server enforces this instead of
   trusting the checklist.
 - Generate your own `CONFIG_ENCRYPTION_KEY` and keep `.env` out of version
   control. `deploy.sh` generates one; do not copy a key between environments.
+- **The database-content key is `PG_ENCRYPTION_KEY`, a separate value from
+  `CONFIG_ENCRYPTION_KEY`.** It backs the Postgres-side `encrypt_content()`
+  function (`pgcrypto`'s `encrypt(..., 'aes')`), which covers chat message
+  content, uploaded file name/content/extracted text, medication free text and
+  the user profile's stored markdown. Indicator values in `th_series_data` are
+  not covered. Generate and set `PG_ENCRYPTION_KEY` too; `config.yaml` ships it
+  under the same `REPLACE_THIS_VALUE_IN_PRODUCTION` placeholder.
 - Restrict CORS to the origins you actually serve.
 - Terminate TLS in front of the service. Set `MCP_PUBLIC_URL` to an HTTPS URL —
   the MCP surface carries the same health data as the API.

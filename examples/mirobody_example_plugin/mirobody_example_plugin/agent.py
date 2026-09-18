@@ -19,5 +19,9 @@ class EchoAgent:
         return {}
 
     async def generate_response(self, user_id: str, messages: list[dict], **kwargs):
+        """Blocks, named the way LangChain names them: see
+        `mirobody/agent/wire/blocks.py`. `**kwargs` is not optional — the chat
+        layer passes `language`, `session_id`, `file_list`, `provider`,
+        `prompt_name`, `timezone` and `token`, and may add one."""
         last = messages[-1]["content"] if messages else ""
-        yield {"type": "reply", "content": f"You said: {last}"}
+        yield {"type": "text", "text": f"You said: {last}"}

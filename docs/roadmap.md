@@ -28,6 +28,25 @@ pins both directions, and its positive control is now `.doc` — the two previou
 choices for that control (`.dwg`, then `.docx`) both stopped being refused,
 which is why it is worth keeping one.
 
+### An answer about someone else's record still says "your file"
+
+**Status:** open. The data boundary is right; only the wording is wrong.
+
+Asking about a record shared with you returns that person's numbers, verified:
+a reviewer on a clean deployment got mom's total cholesterol 5.30 where their
+own reads 4.38, and the reverse direction is refused before the model is
+reached. But the reply calls it "your file", because the system prompt has no
+slot for whose record the turn is about. `MirobodyAgent.__init__` takes the
+CALLER's `user_id` and `user_name`; `query_user_id` reaches the tools and never
+the prompt, so the model cannot know it is answering for someone else.
+
+Closing it means threading a subject label from `chat/service.py`, where
+`query_user_id` is resolved, into `build_system_prompt`, plus one line in
+`prompts/mirobody.jinja`. The label already exists: `chat/session.py` reads a
+member's `nickname` off `care_circle_members` for exactly this case when it
+builds session summaries. Rendering is strict, so a new template variable must
+be supplied by every caller.
+
 ### Reference ranges and abnormal flagging
 
 Readings are stored and charted, but nothing marks a value as outside its
@@ -40,7 +59,21 @@ chain is worth copying; the data source is the open question.
 
 ### Names a report prints that the resolver does not know
 
-**Status:** the shape gaps are closed; four corpus gaps remain.
+**Status:** the shape gaps are closed; four corpus gaps remain, and a real
+hospital report shows a fifth kind.
+
+Measured 2026-09-18 on a 2 MB Chinese hospital check-up PDF through the running
+stack: 102 indicators extracted, and of the 110 catalogue entries afterwards
+**51 carried a LOINC code and 59 did not**. Free-text ultrasound impressions
+belong in the second group and are right to be there. The lab analytes are not:
+`Absolute Neutrophil Count` resolves to nothing, while the Chinese the report
+actually printed, `中性粒细胞绝对值`, resolves to 26499-4. So does `Neutrophils`
+(751-8) and `NEUT#`. The code is lost in the extraction step, which renders the
+analyte name in English, and in a phrasing no alias carries: `Neutrophil Count`
+and `Absolute Neutrophils` miss too. Five of the eight differential counts go
+this way. Either the extractor keeps the source spelling for resolution, or
+these phrasings become aliases; a row in `resolver_overrides.tsv` fixes one at
+a time.
 
 Running `mirobody parse` over the shipped demo report — the file the README tells
 a new user to upload — produced **12 readings and 0 resolved codes**. It is 8/12
@@ -263,7 +296,8 @@ replace all three.
 The old entry here asked for "one write path" for a table that had four. The
 table was the problem. `permissions jsonb DEFAULT '{"all": 1}'` is
 read-everything, on by default, chosen by the other party — and
-`docs/images/your-care-circle.svg`, the diagram the README embeds, promises the
+`docs/images/your-care-circle.svg`, the diagram the README embedded then (the
+four promises are a table in `docs/walkthrough.md` since 1.4.4), promised the
 opposite in four places: "acceptance required to join", "health stays off until
 you allow it", "your switch — off by default", "mutual — each member controls
 their own". The shipped code contradicted the picture on every one.
@@ -601,8 +635,8 @@ field name while this was a whole payload under a neutral one. Grepping a
 container after a real turn is what found it.
 
 What is still not covered by the script: a model conversation (needs a key, so
-it is run by hand — two turns were, for 1.4.0), an upload through the parser,
-and the Agent Skills path.
+it is run by hand — two turns were, for 1.4.0) and an upload through the
+parser.
 
 ### Rejected readings have nowhere to go
 

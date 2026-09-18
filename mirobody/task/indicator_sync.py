@@ -412,7 +412,10 @@ class IndicatorSyncTask(BaseRedisTask):
             try:
                 embeddings = await text_embedding(texts, provider=dim_provider)
             except Exception as e:
-                logger.error(f"embed: batch {batch_num} failed: {e}")
+                # TimeoutError() stringifies to "", so name the type: the line used to
+                # end at "failed: " with nothing after it.
+                logger.error("embed: batch %s failed: %s: %s",
+                             batch_num, type(e).__name__, e)
                 total_failed += len(batch)
                 continue
 

@@ -6,7 +6,7 @@
                  thinking budget, Gemini on Vertex or AI Studio)
     messages.py  a message's text and its reasoning, across provider shapes
     usage.py     one accumulator over LangChain's `usage_metadata`, and the
-                 `costStatistics` chunk it becomes
+                 `usage` block it becomes
 
 This is the half of the agent layer a consumer running its own agent imports
 most: none of it touches this repository's database, HTTP surface or storage.

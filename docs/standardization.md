@@ -1,12 +1,20 @@
 # Standardization in depth
 
+**English** · **[中文](standardization.zh-CN.md)**
+
 The long form of the README's **② Translate (standardize)** stage: what the shipped
 vocabulary is, what it deliberately does not do, which LOINC release it is cut
 from and why, and the opt-in semantic tier. Every exact figure here is the same
 one the README quotes; the README is held to the artifacts those figures come
 from, and this page follows it.
 
-<p align="center"><img src="images/where-your-data-comes-from.svg" alt="From wearables to food photos — one standard format, ready for AI." width="920"></p>
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/collect-translate-agent-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="images/collect-translate-agent.svg">
+  <img src="images/collect-translate-agent.svg" alt="Collect, Translate, Agent: three stages, left to right" width="920">
+</picture>
+</p>
 
 ## What the layer provides
 
@@ -23,7 +31,7 @@ Standardization here is not a lookup table but a complete terminology-normalizat
   usage picks different words, and folding `血紅素` yields the HbA1c code. Those
   terms are curated under their Traditional spelling, and a curated row always
   beats a fold.
-- **Units** normalized to ~310 UCUM families, with dimensional analysis, a
+- **Units** normalized to 326 UCUM families, with dimensional analysis, a
   molar-mass bridge keyed by LOINC code, and an explicit refusal for `%` vs
   `10*9/L`. 305 standard pulse indicators.
 - **A second tier exists, and stays opt-in.** Everything above is lexical, so it

@@ -25,15 +25,20 @@ from mirobody.kernel import query, tools
 MAX_RENDER_CHARS = 40_000
 
 #: Columns each method renders, in order. Anything not listed never reaches the
-#: model: `row_id` is for the web client's edit button, `total` and `day_known`
-#: are bookkeeping, `provenance` rides in the envelope.
+#: model: `row_id` is for the web client's edit button, `file_key` is the handle
+#: it opens the document with, `total` and `day_known` are bookkeeping, and
+#: `provenance` rides in the envelope.
+
+#: `file` is the document's NAME. Handed `file_key` instead, the model cited
+#: "web_uploads/17eaf4f6-….pdf" as the source of a value.
+
 #: `system`/`code` ride on every method that prints a VALUE: withheld, the model
 #: filled them in from memory and gave 1558-6, the [Mass/volume] glucose code,
 #: for a value it had just printed as 5.4 mmol/L. Both, never one: a
 #: device-namespace row carries the indicator's own name in `code`.
 _COLUMNS: dict[str, tuple[str, ...]] = {
     "catalog": ("indicator", "system", "code", "count", "first_date", "last_date"),
-    "readings": ("indicator", "time", "value", "unit", "system", "code", "file_key"),
+    "readings": ("indicator", "time", "value", "unit", "system", "code", "file"),
     "buckets": ("indicator", "period", "avg", "min", "max", "n", "unit", "system", "code"),
     "stats": ("indicator", "count", "min", "max", "avg", "first", "first_date", "last", "last_date",
               "change", "unit", "system", "code"),

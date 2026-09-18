@@ -9,6 +9,7 @@ import json
 import logging
 from datetime import datetime
 from typing import Any
+from mirobody.agent.wire.blocks import answer_text, upgrade
 from mirobody.utils import execute_query
 from mirobody.utils.llm import async_get_text_completion
 from mirobody.utils.llm_output import strip_code_fence, strip_wrapping
@@ -19,12 +20,12 @@ logger = logging.getLogger(__name__)
 #-----------------------------------------------------------------------------
 
 def _reply_text(content):
-    """Flatten a stored element_list down to just its reply text.
+    """Flatten a stored transcript down to just what was said.
 
-    A message row holds either plain text or the JSON element_list the adapter
-    persisted (reply / thinking / tool chunks). For a title we want only what
-    was actually said, so non-reply elements are dropped. Anything that is not
-    that shape is returned untouched, this runs over very old rows too.
+    A message row holds either plain text or the JSON transcript a turn
+    persisted (text / reasoning / tool blocks). For a title we want only the
+    answer. Anything that is not that shape is returned untouched: this runs
+    over very old rows too, which is what `upgrade` is for.
     """
     if not isinstance(content, str):
         return content
@@ -34,9 +35,7 @@ def _reply_text(content):
         return content
     if not isinstance(parsed, list):
         return content
-    return "".join(
-        block.get("content", "") for block in parsed if block.get("type") == "reply"
-    )
+    return answer_text(upgrade(parsed))
 async def generate_summary(conversation_text: str, provider: str | None = None) -> str:
     """Generate a topic title from the user's question only."""
     try:

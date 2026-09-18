@@ -5,7 +5,6 @@ render. It is NOT the agent's conversation memory: that is the LangGraph
 checkpointer (agent/checkpointer.py), keyed on thread_id = session_id.
 """
 
-from mirobody.collect import regenerate_file_url
 import json
 import logging
 import uuid
@@ -13,6 +12,8 @@ import uuid
 from datetime import datetime
 from typing import Any
 
+from mirobody.agent.wire.blocks import answer_text, upgrade
+from mirobody.collect import regenerate_file_url
 from mirobody.utils import execute_query
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def parse_stored_content(raw: Any) -> Any:
     """Parse a ``th_messages.content`` value, or return None if it is not JSON.
 
     ``save_message`` writes this column, and it writes exactly two shapes: a
-    ``json.dumps`` of the assistant's element_list / the user's file bubble, or
+    ``json.dumps`` of the assistant's transcript / the user's file bubble, or
     a plain string (the user's question). So strict parsing is the whole job:
     valid JSON parses, prose does not, and there is no third case.
 
@@ -61,7 +62,6 @@ async def save_message(
     question_id: str | None = None,
     message_type: str = "text",
     provider: str | None = None,
-    **kwargs
 ) -> str:
     """
     Unified message saving function for all protocols
@@ -237,15 +237,12 @@ async def get_chat_history(user_id: str, session_id: str) -> list[dict[str, Any]
 
             for msg in db_messages:
                 content = msg.get("content", "")
-                content_json_obj = parse_stored_content(msg.get("content", ""))
-                thinking_chunks = []
+                # Upgraded on the way out: a row written before 1.4.4 holds the
+                # old block names, and a type the client does not know renders
+                # as nothing at all.
+                content_json_obj = upgrade(parse_stored_content(msg.get("content", "")))
                 if isinstance(content_json_obj, list) and msg.get("message_type") == "text":
-                    blocks = [b for b in content_json_obj if isinstance(b, dict)]
-                    content = "".join(b.get("content", "") for b in blocks if b.get("type") == "reply")
-                    thinking_chunks = [
-                        b for b in blocks
-                        if b.get("type") in ("thinking", "queryTitle", "queryArguments", "queryDetail")
-                    ]
+                    content = answer_text(content_json_obj)
 
                 try:
                     await _refresh_file_urls_in_content(content_json_obj)
@@ -261,7 +258,6 @@ async def get_chat_history(user_id: str, session_id: str) -> list[dict[str, Any]
                     ),
                     "id": msg.get("id"),
                     "provider": msg.get("provider", ""),  # Always include provider field
-                    "thinking_chunks": thinking_chunks,
                 }
 
                 if msg.get("reasoning"):

@@ -15,7 +15,7 @@
 set -uo pipefail
 
 BASE="${BASE:-http://127.0.0.1:18060}"
-EMAIL="${EMAIL:-caregiver@mirobody.ai}"
+EMAIL="${EMAIL:-you@mirobody.ai}"
 CODE="${CODE:-111111}"
 CONTAINER="${CONTAINER:-mirobody-mirobody-1}"
 FAILURES=0
@@ -92,11 +92,14 @@ check "$([ "$(echo "$BAD" | jqp "d['code']")" != "0" ] && echo 0 || echo 1)" \
 # the first surface would have missed the gate entirely, which is what this
 # script used to do — while also naming a tool that no longer exists
 # (`query_health_data` became `query_health_indicators`, with medications split
-# out into `query_medications`, CHANGELOG 1.4.0).
+# out into `query_medications`, CHANGELOG 1.4.0). It happened a second time:
+# this list still said `get_genetic_data` after the tool became
+# `query_genetic_data`, so the check could not pass on any tree. The name comes
+# from `genetic_service.TOOL_NAME`.
 LIST=$(curl -s -X POST "$BASE/mcp" -H "$AUTH" -H 'Content-Type: application/json' \
        -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}')
 NAMES=$(echo "$LIST" | jqp "','.join(sorted(t['name'] for t in d['result']['tools']))")
-EXPECT="convert_unit,get_genetic_data,normalize_unit,query_health_indicators,query_medications,resolve_indicator"
+EXPECT="convert_unit,normalize_unit,query_genetic_data,query_health_indicators,query_medications,resolve_indicator"
 check "$([ "$NAMES" = "$EXPECT" ] && echo 0 || echo 1)" \
       "tools/list advertises the whole surface to an unidentified caller" "got: $NAMES"
 

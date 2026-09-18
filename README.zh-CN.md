@@ -2,260 +2,266 @@
 
 # Mirobody
 
-**AI 原生的健康数据引擎 —— 收集 · 转译 · 问答（Collect · Translate · Agent）。**
-
-一份报告写"谷丙转氨酶"，另一份写"ALT"，第三份写"丙氨酸氨基转移酶"——同一项指标，换一家
-医院就换一种写法，单位也未必一致。Mirobody 把体检报告、穿戴设备和基因数据都落到同一套
-编码上：LOINC 编码、UCUM 单位、FHIR 就绪，AI 才谈得上真读懂。解析器离线可用；引擎驱动着
-已上线的消费级健康产品 **[Theta Wellness](https://www.thetahealth.ai/)**——注册用户
-5,000+，日活 500+。
+**去年的体检中心写 `A1c`，今年医院的血检报告写的是 `HbA1c`，后来换了一家体检公司，报告上又成了 `糖化血红蛋白`，读不懂，也比不了。Mirobody 是一套 AI 原生的健康数据引擎，它把不同来源、不同格式、不同表述的健康信息收进来，规整
+成一套语言、一个体系，再由 AI 系统化地回答你的健康问题，引用的每一个指标都有出处，所有信息统一标准，可追溯、可对比、可展示：我的血压这几年是怎么变的，妈妈的糖尿病指标有没有好转，宝宝历年的体检报告有什么变化。我们提供最精准、最个人化、最专业的健康数据分析和解答。Mirobody 支持完全自托管，你的健康数据就在你自己手中。**
 
 **[English](README.md)** · **中文**
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
 [![PyPI Downloads](https://img.shields.io/pepy/dt/mirobody?label=PyPI%20Downloads&color=orange)](https://pepy.tech/projects/mirobody)
-[![Benchmarks](https://img.shields.io/badge/%F0%9F%A4%97_Benchmarks-4k%2B_downloads_each-FFD21E.svg)](https://huggingface.co/mirobody)
-[![arXiv](https://img.shields.io/badge/arXiv-2604.02834-b31b1b.svg)](https://arxiv.org/abs/2604.02834)
 [![Docs](https://img.shields.io/badge/Docs-docs.mirobody.ai-black)](https://docs.mirobody.ai/)
 [![GitHub stars](https://img.shields.io/github/stars/thetahealth/mirobody?style=social)](https://github.com/thetahealth/mirobody/stargazers)
 
-**[📚 文档](https://docs.mirobody.ai/zh/)** · **[▶ 在线演示（无需注册）](https://chat.mirobody.ai/demo)** · **[🔌 API 平台](https://platform.mirobody.ai/)**
+**[📚 文档](https://docs.mirobody.ai/)** · **[▶ 在线 Demo（免注册）](https://chat.mirobody.ai/demo)** · **[🔌 API 平台](https://platform.mirobody.ai/)**
 
 </div>
 
-## ⚡ 60 秒试一下
+<p align="center">
+  <img src="docs/images/ask-own-demo.zh-CN.gif"
+       alt="用中文问胆固醇怎么变的，agent 找到三份用不同写法记录同一项检查的文件，把它们解析成同一个码，并画出趋势" width="880">
+</p>
 
-不需要 key、不需要配置、不需要联网——用 `uvx` 的话连装都不用装：
+<p align="center"><em>三份文件，三种写法，同一个 LOINC 码。agent 把三份都找出来，
+汇总出趋势，并说明每个数字来自哪份文件。</em></p>
+
+## Mirobody 能做什么
+
+- **把全家人的记录合成一份。** 用关爱圈邀请伴侣、父母，甚至是一个完全不会自己登录的孩子，管理家庭的健康档案。
+- **所有来源，照单全收。** Garmin、Oura、Whoop 直接对接；任何写进 Apple Health 的手环、
+  戒指、体重秤，也一并进来。PDF、照片、表格、导出文件，23 种文件类型，Mirobody 都能看懂。
+- **0 幻觉，可追溯。** 每一条健康数据都会落进一套确定的指标体系：要么给出一个确定的编码，
+  要么明说没解析出来，绝不自己编一个。基于真实报告开发和测试，英文、中文、日文的写法都认。
+- **Agent 只在编码过的数据上推理。** 按分钟、小时、天、周、月给出趋势，并画成图；一次调
+  用就能算出基线和变化了多少；因为统一到了同一套标准（LOINC/UCUM），跨化验所、跨文件、跨设备
+  可以直接比较；用药记录和基因型数据也读得了。
+- **一台笔记本就能跑。** 四个容器，常驻 791 MiB，空载 CPU 占用不到 5%。不用
+  GPU，不用 Node.js。
+- **你的模型，你的 key，你的数据。** 模型调用走你自己选的那个模型，其余的一切都留
+  在你自己的机器上。
+
+## 60 秒试一下
+
+一条命令，五种写法，看它认出哪几个、又会在哪一个上停下来。不用 key，不用配置，
+不用联网；用 `uvx`，连装都省了：
 
 ```bash
 uvx mirobody resolve "LDL cholesterol" 血红蛋白 ヘモグロビン "空腹血糖(GLU)" 血脂
 ```
 
-<sub>想把它装到 PATH 上就用 `pip install mirobody`。两种方式解析器读的都是随包分发的词表。</sub>
-
 <p align="center">
   <img src="docs/images/resolve-demo.zh-CN.gif"
-       alt="mirobody resolve：四种语言落到同一个 LOINC 码，完全离线" width="880">
+       alt="mirobody resolve：血红蛋白和 ヘモグロビン 落在同一个 LOINC 码上，血脂 是一次故意的弃答" width="880">
 </p>
 
-`血红蛋白`、`ヘモグロビン`、`hemoglobin` 落到同一个码 LOINC `718-7`，`空腹血糖(GLU)`
-落到空腹血糖。`血脂` 是一类检查的统称，不是某一项具体检验，所以解析器宁可留空，也不给一个
-看着像回事的错码。
+`血红蛋白` 和 `ヘモグロビン`，两种语言，同一个码 718-7。`血脂` 说的是一个类别，
+不是一项具体检查，所以它解析不出结果：认不出来的词，解析器宁可空着，也不猜一个
+码给你。一个猜错的码，会把两项不同的检查画进同一条趋势里。
 
 ```python
 from mirobody.engine import resolve, resolve_reading
 
-resolve("血红蛋白").loinc                                # '718-7'   任何语言，同一个码
+resolve("血红蛋白").loinc                                # '718-7'   any language, one code
 resolve("total cholesterol").loinc                     # '2093-3'  [Mass/volume]
 resolve_reading("total cholesterol", "5.0", "mmol/L")   # '14647-2' [Moles/volume]
-resolve_reading("total cholesterol", "193", "mg/dL")    # '2093-3'  单位决定码
+resolve_reading("total cholesterol", "193", "mg/dL")    # '2093-3'  the unit picks the code
 
-resolve("中性粒细胞百分比").loinc                          # '26511-6' 中性粒细胞/白细胞
-resolve_reading("中性粒细胞", "62 %", None).loinc          # '26511-6' 百分比……
-resolve_reading("中性粒细胞", "4.2", "10*9/L").loinc       # '26499-4' ……和计数是两个码
-resolve("血脂").resolved                                 # False    类别，不是观测项
+resolve("中性粒细胞百分比").loinc                          # '26511-6' Neutrophils/Leukocytes
+resolve_reading("中性粒细胞", "62 %", None).loinc          # '26511-6' a percentage...
+resolve_reading("中性粒细胞", "4.2", "10*9/L").loinc       # '26499-4' ...and a count are two codes
+resolve("血脂").resolved                                 # False    a category, not an observation
 ```
 
-**有数值和单位就一起传。** LOINC 把单位和结果类型编进了标识本身，同一个名字
-会因单位不同而落到不同的码。`resolve` 宁可留空也不猜：空码是一个值得再看一眼的缺口，
-`method="refused"` 则是一个明确的决定。
+**有数值和单位，就一起传进来。** 单位不一样，就是两项不同的检查，LOINC 把这件事
+写进了码本身的定义里，所以同一个名字按设计会对应好几个码。
 → [引擎参考](https://docs.mirobody.ai/zh/engine/) · [指标](https://docs.mirobody.ai/zh/concepts/indicators/)
 
-## 为什么是 Mirobody
-
-- **一个人的报告攒在好几家医院，写法各是各的。** 这是健康数据的第一道坎，不迈过去，
-  后面的分析都建在沙子上。Mirobody 把任何语言的任何读数转译成 LOINC + UCUM；不认识的
-  词就明确留空，不硬凑一个看起来合理的码。
-- **AI 读不懂的数据，推理出来的都不作数。** agent 读的是原始文件本身，把化验值和传感器
-  序列画进同一张图，并告诉你结论出自哪一页。
-- **自己托管，用公开标准，Apache-2.0。** `./deploy.sh` 一条命令在自己机器上跑起整套；
-  数据以 LOINC 编码、FHIR 就绪的形式留在你手里，想带走随时能带走。同一组工具也通过
-  MCP 给 Claude Desktop、Cursor 或你自己的 agent 用。**自己托管的是这套应用，不是
-  模型。** 模型在云端，你出一把 key 就行，本机不跑推理，也不用 GPU。上面说"解析器离线"，
-  指的是名称到编码那一步不联网、不用 key——和在本地跑大模型是两回事。
-
-## 收集 · 转译 · 问答
+## 收集 · 转译 · 智能体
 
 <p align="center">
-  <img src="docs/images/where-your-data-comes-from.zh-CN.svg" alt="从穿戴设备到饭菜照片 —— 一种标准格式，AI 可直接读取。" width="920">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/collect-translate-agent-dark.zh-CN.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/collect-translate-agent.zh-CN.svg">
+  <img src="docs/images/collect-translate-agent.zh-CN.svg" alt="收集、转译、智能体：三个阶段，从左到右" width="920">
+</picture>
 </p>
 
-引擎只做三件事，代码库、文档和[贡献指南](#-贡献)都严格按这三个阶段组织：
+一项指标从进门到被引用，要走三步。每一步都留下痕迹，所以最后那个答案，你能一路
+查回到它出自的那一页：
 
-| 阶段 | 含义 | 位置 |
-| --- | --- | --- |
-| **① 收集 Collect** | 接入数据：3 个设备数据源 · 7 种文件格式 · Apple Health（`mirobody import apple export.zip`，或由已签名的 iOS 客户端推送进来） | [`collect/`](mirobody/collect/) |
-| **② 转译 Translate**（standardize） | 归到一套标准：任意写法的读数解析成标准编码（LOINC · SNOMED CT · RxNorm），单位统一成 UCUM，用的都是 FHIR 认可的编码体系 | [`indicator/`](mirobody/indicator/) |
-| **③ 问答 Agent** | 拿来推理：agent 通过虚拟文件系统读*原始文件*，作答时给图，也给出处 | [`agent/`](mirobody/agent/) |
+| 阶段                        | 做什么                                                                                                                                                                                                                     | 在哪                                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **① 收集 Collect**   | 化验单、穿戴设备、手机照片、基因文件，都收进来。源文件原样留下，每一项指标都能指回它被读出来的那一页。                                                                                                                     | [`collect/`](mirobody/collect/)                                                                                   |
+| **② 转译 Translate** | 一个名字解析成一个码，一个单位统一到 UCUM，全程离线、结果确定。`A1c`、`HbA1c`、`糖化血红蛋白` 在这一层变成同一项检查。                                                                                               | [`engine.py`](mirobody/engine.py) · [`indicator/`](mirobody/indicator/) · [`translate/`](mirobody/translate/) |
+| **③ 智能体 Agent**   | 在编码后的记录上提问。按分钟、小时、天、周、月给出趋势，一次调用就能算出计数、最小值、最大值、均值和变化量；同一个码，跨化验所、跨设备直接比较。图表画在回复里，用药记录和基因型数据也读得了，每个数字都说明出自哪份文件。 | [`agent/`](mirobody/agent/)                                                                                       |
 
-## 用数字说话
+① 记下来源怎么写，② 判断它到底是什么，③ 在这个基础上作答。跨化验所比一个数字、
+画一条三年的趋势、算一个基线，靠的都是 ② 给出的那个码。
 
-| | |
-| --- | --- |
-| 概念图谱 | 440,961 个节点 · 22,044,110 条跨词表边 · 595,746 个来源 ID，归并成一套标准概念（LOINC · SNOMED CT · RxNorm 互通） |
-| 别名 | 49,253 条多语言别名（中文 22,578 · 日本語 16,809 · 另有 de·es·fr·ko·ru）；`hemoglobin`、`血红蛋白`、`血紅素`、`ヘモグロビン` 都落到 718-7 |
-| 繁体中文 | 内置 3,336 字的繁→简折叠表，加上按繁体拼写单独维护的词条——人工词条永远优先于折叠 |
-| 单位 | 约 310 个 UCUM 单位族，带量纲分析和按 LOINC 码索引的摩尔质量桥；305 个标准 pulse 指标 |
-| 覆盖率 | **213/213**：一份普通体检会印出来的各类面板，按报告的原始写法，覆盖英文、中文（简繁）和日文（[`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py)） |
-| 词表版本 | LOINC 2.82：`mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285`——版本号、切割日期和词表成员的摘要 |
-| 安装体积 | `pip install mirobody` 只有 **2 个包**，仅依赖 numpy —— macOS 上约 67 MB，Linux 上约 100 MB（numpy 在那边自带一份 BLAS） |
+**智能体不一定得是我们这一个。** 它用的每一个工具同时挂在 `/mcp` 上，按用户鉴权。
+Claude Desktop、Cursor，或者你自己写的 loop，用的是同一套工具、同一份记录，问出
+来的是同一批指标。
 
-为什么停在 2.82 没有升 2.83、LOINC 在穿戴指标上覆盖到哪里、以及那个默认不开、开了就不留空的
-语义层：→ [标准化详解](docs/standardization.md)
+Garmin、Oura、Whoop 用你自己在厂商那边申请的凭证接入，步骤写在
+[接入指南](docs/provider-setup.zh-CN.md)里。Apple Health 走的是另一条路：数据由手机上
+的客户端交过来，所以任何牌子的手环、戒指、体重秤，只要写进了 Apple Health，就
+一起进到你的记录里，这边什么都不用对接。
 
-## 📊 基准——公开、可独立复现
+## 隐私
 
-Hugging Face 上同类下载量最高的健康 AI 基准，每个月各 4,000+ 次下载：
-[ESL-Bench](https://huggingface.co/datasets/mirobody/ESL-Bench)（事件驱动的纵向健康
-agent 评测——100 个合成用户、10,000 个问题，[arXiv:2604.02834](https://arxiv.org/abs/2604.02834)）·
-[MedHall-Bench](https://huggingface.co/datasets/mirobody/MedHall-Bench)（医学幻觉）·
-[MedHarm-Bench](https://huggingface.co/datasets/mirobody/MedHarm-Bench)（有害医疗建议）。
-用 **[mirobody-eval](https://github.com/thetahealth/mirobody-eval)** 一条命令复现任何一个，
-它还能给部署注入合成的、不含 PHI 的轨迹数据。
+除了你自己选的那个大模型，没有任何数据离开你的机器。读一张体检报告照片、从 PDF
+里抽出指标、回答你的提问，这几件事都要调用它；用哪家、用哪个模型，由你 `.env`
+里那一把 key 说了算。
 
-## 🚀 跑起整套系统
+**② 转译**这一层完全在本地：名字对到码、单位换算成 UCUM，查的是随包发布的词表，
+不用 key，不联网，不跑模型，也不用 GPU。你的记录存在你自己的 Postgres 里，容器
+是你自己起的，这里不会把任何使用情况报给谁。
+
+**一把 key，也是你唯一要保管的秘密。** 把
+[DeepSeek key](https://platform.deepseek.com/api_keys)（`DEEPSEEK_API_KEY`）或
+[DashScope key](https://dashscope.console.aliyun.com/apiKey)（`DASHSCOPE_API_KEY`）
+写进 `compose.yaml` 旁边的 `.env`，`docker compose restart`，就跑起来了。
+[OpenRouter](https://openrouter.ai/keys)（`OPENROUTER_API_KEY`）、
+[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_API_KEY`）、Anthropic、
+Google，或者任何 OpenAI 兼容网关，单独一家都能把整套跑通。聊天用哪个模型、报告
+照片交给谁读、指标交给谁抽、向量交给谁算，是 [`config.llm.yaml`](config.llm.yaml)
+里的四行；那个文件写的是变量名（`api_key: OPENROUTER_API_KEY`），不是密钥本身。
+`mirobody doctor` 会把每一环选中了什么列出来，缺了什么也直接告诉你怎么补。
+
+快速上手用的那几个密钥都是占位符，落库加密也还没覆盖到每一个字段。要把它接到一
+个你控制不了的网络上，先过一遍 [SECURITY.md](SECURITY.md)：服务端到底会往外发哪
+些请求，也写在那里。
+
+## 🚀 从头到尾跑一遍
 
 ```bash
 git clone --depth 1 https://github.com/thetahealth/mirobody.git && cd mirobody
-git lfs install && git lfs pull   # 解析器的 LOINC 数据包；不执行的话新克隆里只有 LFS 指针
-./deploy.sh                       # Postgres + pgvector、Redis、服务、worker → http://localhost:18060
+git lfs install && git lfs pull   # 解析器的 LOINC 词表，40 MB；新克隆下来是个指针文件，直到你跑这条命令
+./deploy.sh                       # Postgres + pgvector、Redis、服务端、worker → http://localhost:18060
 ```
 
-用 `--depth 1` 是因为历史里大半是已被取代的前端构建产物，你多半不需要：克隆体积
-从约 125 MB 降到约 99 MB（2026-09-14 实测；剩下的大头是 LFS 词表包，两种克隆都得下）。打算提 PR 的话去掉这个参数。`./deploy.sh` 还会取回语义
-指标检索所需的 22 MB 概念图谱——它是 release 附件而不是仓库文件，见
-[`mirobody/res/EXTERNAL.tsv`](mirobody/res/EXTERNAL.tsv)。
+（`--depth 1` 跳过历史里那些已经被替换掉的前端构建产物；要提 PR 就去掉它。）
 
-用 `caregiver@mirobody.ai`、验证码 `111111` 登录。不需要邮件服务：登录页默认是密码登录，
-一条请求就能创建你自己的账号：
+用 `you@mirobody.ai`、验证码 `111111` 登录，不需要邮件服务。注册自己的账号也
+只要一个请求：
 
 ```bash
 curl -X POST localhost:18060/password/register -H 'Content-Type: application/json' \
-     -d '{"email":"you@example.com","password":"at-least-8-chars"}'
+     -d '{"email":"me@example.com","password":"at-least-8-chars"}'
 ```
 
-**你的关爱圈。** 账号名就写明了身份：你是以照护者的身份登录的，读到的记录属于另一个人。
-共享以圈子为单位，但记录始终是各人自己的——看不看得见，由记录的主人在自己那一行上说了算。
-
-<div align="center">
-<img src="docs/images/your-care-circle.zh-CN.svg" alt="你自己薄薄的一份，旁边是她厚厚的一份——后者你只能查看。" width="820">
-</div>
-
-`SEED_DEMO_DATA` 默认开启，所以圈子一开始就不是空的：你名下有一份**薄**记录——数周的
-自测体征和一次结果正常的年度体检——同时一位合成人物向你共享了一份**厚**记录：
-**Demo (synthetic)**，两年跨度、**244 个指标、14,273 条读数**、五份 agent 能读的文件。
-同一个问题，两份记录：问*你自己*的糖化血红蛋白，答案是你名下一条平平无奇的正常值；
-问*她*的，答案来自一份你只有查看权限的两年记录。下面的录屏把两边都走了一遍：先是你
-自己的指标和文件，再切到她共享的记录，打开两年的糖化血红蛋白：
+`SEED_DEMO_DATA` 默认打开，所以一开始就有两个账号，合计 **2,019 条指标**：你
+自己，和把记录以只读方式共享给你的 `mom@mirobody.ai`。要存真实数据，把它设成
+`false`，这两个账号就不会建。**设置 → 添加成员**，收录的是一个完全不会自己登录
+的人：父母，孩子，你替他们保管这份记录。
 
 <p align="center">
   <img src="docs/images/care-circle-demo.zh-CN.gif"
-       alt="自己账号的指标与上传文件，切换到 Demo 的共享记录，打开两年的 HbA1c" width="880">
+       alt="自己账号的指标与化验单，切换到共享给你的那份记录" width="880">
 </p>
 
-图里那个开关是一个数据库列，不是一句承诺：`care_circle_members.health_access`，
-`NOT NULL DEFAULT 0`，落在**你自己**那一行上。被邀请进圈子不共享任何东西——由成员自己决定，
-别人的任何操作都抬不高它。忘了检查的路由会回 403，而不是把记录交出去。
-[`examples/06_care_circle_rules.py`](examples/06_care_circle_rules.py) 能离线打印整张决策表。
-要保存真实数据时，设 `SEED_DEMO_DATA=false`。
-
-**一把 key 就够。** 看种子记录不用 key，上传和提问要一把。把它写进 `compose.yaml`
-旁边的 `.env`，再 `docker compose restart`——容器读的是 `/app/.env`，在 shell 里
-`export` 传不进去。key 只存在于 `.env`：`config.llm.yaml` 里写的是变量名
-（`api_key: OPENROUTER_API_KEY`），不是密钥本身。
-
-**一把 key 跑通全部，跟你的机器配置无关**：模型在云端，本机不跑推理，不用 GPU。
-哪一把都行：[OpenRouter](https://openrouter.ai/keys)（`OPENROUTER_API_KEY`，推荐）、
-DashScope、Google、[OpenAI](https://platform.openai.com/api-keys)（`OPENAI_API_KEY`）、
-[Anthropic](https://platform.claude.com/settings/keys)（`ANTHROPIC_API_KEY`）、DeepSeek，
-任选其一都能跑通全链路——openrouter.ai 在你的网络里不可达，就换一把能达的。
-
-聊天用哪个模型、报告照片交给谁读、指标用谁抽、向量用谁算，四个决定都是
-[`config.llm.yaml`](config.llm.yaml) 里的一行，看得见也改得动；自建网关在 `.env` 里加一行
-`<PREFIX>_BASE_URL` 就指过去了。启动日志和 `mirobody doctor` 会把每一环选到了什么列出来，
-缺什么直接告诉你怎么补。
-
-**① 收集 + ② 转译。** 把 [`demo/lab_report_2025-10-15.pdf`](demo/lab_report_2025-10-15.pdf)
-拖到 Data 页，十二个分析物连同数值和单位被抽出来，每一个都链回它所在的那一页：
+把一份文件拖到 Data 页，看它变成指标。[`demo/upload/`](demo/) 里放着四份种子
+数据故意没写进库的文件：一份化验单 PDF、一张打印报告的手机照片、一个表格、另
+一家化验所导出的 CSV。每一项分析物都会带着数值、单位和 LOINC 码被抽出来，并链
+回它来源的那一页。
 
 <p align="center">
   <img src="docs/images/upload-demo.zh-CN.gif"
-       alt="把化验单 PDF 拖到 Data 页；十二个分析物被抽取出来，每一个都链回它的原文件" width="880">
+       alt="把化验单 PDF 拖到 Data 页；分析物被抽取出来，带着 LOINC 码出现在指标表里" width="880">
 </p>
 
-**③ 问答。** 问她的糖化血红蛋白，agent 自己找到数据，把三次化验值和 104 个传感器
-估算值画在一起，然后直说：那次改善没有保持住。再问一遍你刚上传的那份报告，它读的就换成
-那一份——这是[四分钟完整演示](docs/walkthrough.md)的第四幕。
+问一句胆固醇怎么变的，agent 会把带着这一项的文件全都找出来：一份化验所写的是
+`Cholesterol, Total`，另外几份写的是 `Total Cholesterol-TC`，两种写法同为
+**14647-2**。它把趋势画出来，并说明每个数字出自哪份文件：
+`4.60 → 4.45 → 4.38 mmol/L`。改问基线或者月均值，同一个工具给的是在整条记录上
+汇总出来的结果，而不是模型自己把一行行数字加起来。
+
+同一个问题问到共享给你的那份记录上，答案就是另一个人的，而且那份数据你只能看，
+不能改。共享是邀请制，默认关闭，权限严格控制。
 
 <p align="center">
   <img src="docs/images/ask-circle-demo.zh-CN.gif"
-       alt="用中文询问共享记录的 HbA1c；agent 查询、把化验值与传感器序列画在一起、读出趋势" width="880">
+       alt="同一个问题问到共享记录上；答案来自另一个人的文件" width="880">
 </p>
 
-→ [Docker 部署](https://docs.mirobody.ai/zh/deployment/docker/) ·
-[配置](https://docs.mirobody.ai/zh/configuration/) ·
-[本地 Python 环境](https://docs.mirobody.ai/zh/development/setup/)
+→ [四分钟完整演示](docs/walkthrough.zh-CN.md) ·
+[`examples/06_care_circle_rules.py`](examples/06_care_circle_rules.py) 能离线打印整张共享决策表 ·
+[Docker 部署](https://docs.mirobody.ai/zh/deployment/docker/) ·
+[配置](https://docs.mirobody.ai/zh/configuration/)
 
-## 🔌 用它，扩展它
+## 每一个数字，都可以复现
 
-| 你想要 | 这样做 | 文档 |
-| --- | --- | --- |
-| 在自己的代码里离线解析与换算单位 | `pip install mirobody`——2 个包，无 key，无网络 | [引擎](https://docs.mirobody.ai/zh/engine/) |
-| 把一份文件变成读数 | `pip install 'mirobody[parse]'`——PDF、图片、Excel、Word、PowerPoint、文本；只有扫描页才会送到视觉模型 | [引擎](https://docs.mirobody.ai/zh/engine/) |
-| 把 agent 框架当库用 | `pip install 'mirobody[agent]'`——中间件、虚拟文件系统后端、checkpointer | [接入你自己的 agent](CONTRIBUTING.md#-bringing-your-own-agent) |
-| 在 Claude Desktop、Cursor 或你自己的循环里用这些工具 | 设置 → MCP：每个 agent 工具同时通过 `/mcp` 提供，按用户鉴权 | [MCP 服务](https://docs.mirobody.ai/zh/api-reference/mcp-servers/) · [`examples/07_claude_agent_sdk.py`](examples/07_claude_agent_sdk.py) |
-| 你的应用对接一个部署 | HTTP API，或 backbone 模式：你的 agent，我们的数据层 | [API 概览](https://docs.mirobody.ai/zh/api-reference/overview/) · [Backbone](https://docs.mirobody.ai/zh/api-reference/backbone-mode/) |
-| 新工具、新技能或新设备接入 | 把文件放进 `mirobody/agent/tools/`、`mirobody/agent/skills/` 或 `mirobody/collect/providers/` 然后重启——或者 `pip install` 一个声明了 `mirobody.providers` / `mirobody.tools` / `mirobody.agents` 入口点的包 | [添加工具](https://docs.mirobody.ai/zh/tools/adding-tools/) · [技能](https://docs.mirobody.ai/zh/tools/skills/) · [提供者](https://docs.mirobody.ai/zh/development/provider-integration/) |
-| 换掉整个 agent | `AGENT_DIRS` → 你的目录替换内置 agent | [`mirobody/agent/README.md`](mirobody/agent/README.md) |
-| 构建期拿 LOINC 轴表和别名来源 | `mirobody.bundle`——用来生成种子或语料 | [`mirobody/bundle.py`](mirobody/bundle.py) |
+出处都附在后面：一条可以跑的命令，或者一个公开的数据集。
+
+- 常规体检会打印的那些项目，**213/213**，覆盖英文、中文（简体和繁体）和日文。
+  这套用例是故意挑的最不讨巧的一组：日常的几个套餐，按报告上真正的印法写，
+  也正是每个新用户第一分钟会去试的那些词。
+  [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) 跑一下
+  就会把分数打出来。
+- **三个公开基准**，数据集公开，各自一条命令可复现：长期健康 agent、医疗幻觉、
+  有害医疗建议。
+  [mirobody-eval](https://github.com/thetahealth/mirobody-eval) ·
+  [数据集](https://huggingface.co/mirobody) ·
+  [arXiv:2604.02834](https://arxiv.org/abs/2604.02834)。
+- **包会自己说清楚是哪份词表在回答你**：`mirobody.BUNDLE_VERSION` →
+  `loinc-2.82+2026.08.28-af2524b7a285`，发行版本、切分日期，加一份对词表内容
+  算出来的摘要。
+- **305 项标准 pulse 指标**，326 个带量纲分析的 UCUM 单位。完整数字，以及词表
+  为什么停在 LOINC 2.82 没跟进 2.83，都写在[标准化详解](docs/standardization.zh-CN.md)里。
+- **`pip install mirobody` 只装 2 个包**，只依赖 numpy。
+
+这套引擎驱动着 **[Theta Wellness](https://www.thetahealth.ai/)**：一款已经
+上线、面向个人用户的健康产品。
+
+## 🔌 使用和扩展
+
+| 你想要                                               | 这样做                                                                                                                                                                                          |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 在自己代码里做离线解析和单位换算                     | `pip install mirobody`：不用 key，不用联网，两个包                                                                                                                                            |
+| 把一份文件变成指标                                   | `pip install 'mirobody[parse]'`：PDF、图片、Excel、Word、PowerPoint、文本都行；只有扫描件才会送到视觉模型                                                                                     |
+| 在 Claude Desktop、Cursor 或自己的 loop 里用这些工具 | 设置 → MCP：每个 agent 工具同时挂在`/mcp` 上，按用户鉴权                                                                                                                                     |
+| 让自己的应用对接一套部署                             | 走 HTTP API，打到你自己跑的那套上：你的应用，你的数据层                                                                                                                                         |
+| 加一个工具或一个设备数据源                           | 往`mirobody/agent/tools/` 或 `mirobody/collect/providers/` 丢个文件重启，或者 `pip install` 一个声明了 `mirobody.providers` / `mirobody.tools` / `mirobody.agents` entry point 的包 |
+| 换掉自带的 agent 框架                                | `pip install 'mirobody[agent]'` 拿中间件和虚拟文件系统后端；或者把 `AGENT_DIRS` 指向自己的目录，整体替换自带的 agent                                                                        |
+
+→ [API 总览](https://docs.mirobody.ai/zh/api-reference/overview/) ·
+[MCP 接入](https://docs.mirobody.ai/zh/tools/mcp-integration/) ·
+[添加工具](https://docs.mirobody.ai/zh/tools/adding-tools/) ·
+[接入自己的 agent](CONTRIBUTING.md#-bringing-your-own-agent)
 
 ## 🤝 贡献
 
-最值钱的一次贡献，是报一个解析错了的词。跑一下 `mirobody resolve "<那个词>"`，答案不对或是空的，
-就[提个 issue](https://github.com/thetahealth/mirobody/issues/new?template=wrong-term.yml)；
-想直接动手，就往 [`resolver_overrides.tsv`](mirobody/res/resolver_overrides.tsv) 加一行、往
-[`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) 加一个用例——过不过，覆盖率分数说了算。
+最大的贡献，是找出一个解析器答错的词。拿你自己报告上的写法跑一下
+`mirobody resolve "<词>"`；如果答案错了，或者是空的，
+[提个 issue](https://github.com/thetahealth/mirobody/issues/new?template=wrong-term.yml)，
+或者往 [`resolver_overrides.tsv`](mirobody/res/resolver_overrides.tsv) 加一行，
+再往 [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) 加一
+个用例：覆盖率分数，就是评审。
 
 ```bash
 pip install -e '.[test]' && pytest -q && lint-imports
 ```
 
-→ [CONTRIBUTING.md](CONTRIBUTING.md) · [贡献指南](https://docs.mirobody.ai/zh/development/contributing/) ·
-[仓库结构](docs/repository-layout.md) · [路线图](docs/roadmap.md) · [CHANGELOG](CHANGELOG.md) · [SECURITY](SECURITY.md)
+→ [CONTRIBUTING.md](CONTRIBUTING.md) · [本地 Python 环境搭建](https://docs.mirobody.ai/zh/development/setup/) ·
+[仓库结构](docs/repository-layout.zh-CN.md) ·
+[路线图](docs/roadmap.md) · [CHANGELOG](CHANGELOG.md) · [SECURITY](SECURITY.md)
 
-## 📚 文档
+## 📚 文档，以及这套设计参考过的项目
 
-**[docs.mirobody.ai](https://docs.mirobody.ai/zh/)**，中英双语——从[快速开始](https://docs.mirobody.ai/zh/quickstart/)进入，
-或直接看 [API 参考](https://docs.mirobody.ai/zh/api-reference/)。面向贡献者的长篇指南在 [`docs/`](docs/README.md)。
+**[docs.mirobody.ai](https://docs.mirobody.ai/)**，中英双语，从
+[快速上手](https://docs.mirobody.ai/zh/quickstart/)或
+[API 参考](https://docs.mirobody.ai/zh/api-reference/)开始看；给贡献者的文档在
+[`docs/`](docs/README.md)。
 
-## 🙏 致谢
-
-塑造了内核规则的项目——这里不包含它们的任何代码：
-[Open Wearables](https://github.com/the-momentum/open-wearables)（`kernel/series` 与 `kernel/quality` 所封堵的那些数据标准化失效模式）、
-[Home Assistant](https://github.com/home-assistant/core)（`state_class`）、
-[Open mHealth](https://github.com/openmhealth/schemas) / IEEE 1752（字段命名）、
-[wearipedia](https://github.com/Stanford-Health/wearipedia)（合成设备数据）、
-[dlt](https://github.com/dlt-hub/dlt) / [Airbyte](https://github.com/airbytehq/airbyte-python-cdk) / [Singer](https://github.com/meltano/sdk)（连接器形态）、
-[deepagents](https://github.com/langchain-ai/deepagents)、LangChain 与 [langchain-quickjs](https://github.com/langchain-ai/langchain-quickjs)（agent 框架、文件系统投影、`eval` REPL）、
-Regenstrief Institute（LOINC）、UCUM、HL7 FHIR、OHDSI OMOP——见 `LICENSE-3RD-PARTY`。
-
-## ⭐ Star 历史
+本项目的设计参考了以下标准与项目，特此鸣谢：
+[HL7 FHIR](https://hl7.org/fhir/)、
+[Regenstrief Institute](https://www.regenstrief.org/)（[LOINC](https://loinc.org/)）、
+[UCUM](https://ucum.org/)、[OHDSI OMOP](https://www.ohdsi.org/)、
+[Open Wearables](https://github.com/the-momentum/open-wearables)、
+[Open mHealth](https://github.com/openmhealth/schemas) / IEEE 1752、
+[wearipedia](https://github.com/Stanford-Health/wearipedia)、
+[dlt](https://github.com/dlt-hub/dlt) / [Airbyte](https://github.com/airbytehq/airbyte-python-cdk) / [Singer](https://github.com/meltano/sdk)，
+以及 [deepagents](https://github.com/langchain-ai/deepagents) 和 LangChain。随包
+分发的术语许可在 [`LICENSE-3RD-PARTY`](LICENSE-3RD-PARTY) 里。
 
 <div align="center">
-<a href="https://www.star-history.com/#thetahealth/mirobody&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=thetahealth/mirobody&type=Date" />
-  </picture>
-</a>
-
-*如果它帮你读懂了一份报告，一个 star 能让下一个人找到它。
-基本每周都有发版——[Watch](https://github.com/thetahealth/mirobody/subscription) 就能收到。*
-
-**[📚 文档](https://docs.mirobody.ai/zh/)** · **[▶ 演示](https://chat.mirobody.ai/demo)** · **[🔌 平台](https://platform.mirobody.ai/)** · **[🧪 评测](https://github.com/thetahealth/mirobody-eval)**
-
-Apache 2.0 · © 2026 [Theta Health](https://thetahealth.ai)
-
-</div>

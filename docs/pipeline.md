@@ -105,6 +105,15 @@ quarantine you can only grep is a pile the next engineer cannot triage.
 open-ended clinical asset with a maintenance cost and a locale; this library
 maintains none. Only the physically impossible is rejected.
 
+**Not implemented.** A marker for which readings were unit-converted.
+`collect/ingest/services/base.py` converts a device reading's unit with
+`translate.convert_to_standard`, and keeps the original value and unit when the
+conversion raises, but neither path is tagged. `kernel/quality.py` computes a
+`unit_converted` flag (`FLAG_UNIT_CONVERTED`) for exactly this purpose and
+nothing downstream stores it, so a converted reading and one that arrived
+already in the catalogue's unit are the same shape in `th_series_data` today.
+`mirobody/translate/__init__.py` carries the plan to separate them.
+
 ## 6. Store
 
 **Implemented.** One writer (`collect/readings.py`) for `th_series_data`. It

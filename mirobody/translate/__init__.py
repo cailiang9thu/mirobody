@@ -12,10 +12,12 @@
                              heart-rate range
     std_indicator_registry/  publishes the catalogue to the database
 
-① Collect stores what a device or a document said, verbatim and traceable.
-This stage decides what it means. The two were one package until 1.4.4, with
-the catalogue sitting inside `collect/` as `standardize/`, so "collect only
-collects" was a sentence in a document rather than something the tree showed.
+① Collect should store what a device or a document said, verbatim, and this
+stage should decide what it means. The tree says that since 1.4.4; the code
+does not yet. `collect/ingest/services/base.py` converts a device reading to
+its standard unit on the way in and keeps the original when conversion fails,
+so a converted value and an untouched one are indistinguishable in the table.
+Separating them is 1.5.0's work, and `internal/plans/1.4.x/` has the measurement.
 
 The frame is up; the contents are 1.5.0's. That version brings LOINC coding,
 the comparability key and one standardized table, and these five modules are
