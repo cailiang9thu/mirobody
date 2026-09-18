@@ -41,11 +41,13 @@
   <text x="454" y="263" text-anchor="start" font-size="12.5" font-weight="bold" fill="#c9d1d9">能看不等于能改</text>
   <text x="454" y="279" text-anchor="start" font-size="10.5" font-weight="normal" fill="#8b949e">health_access = 1 只读，= 2 可写</text>
   <rect x="820" y="98" width="260" height="90" rx="12" fill="#0e2a19" stroke="#3fb96f" stroke-width="2"/>
-  <text x="950" y="136" text-anchor="middle" font-size="14" font-weight="bold" fill="#7ee2a8">Subject(access=view)</text>
-  <text x="950" y="160" text-anchor="middle" font-size="11" font-weight="normal" fill="#8b949e">只给请求要的那么多</text>
+  <text x="950" y="128" text-anchor="middle" font-size="14" font-weight="bold" fill="#7ee2a8">只读放行</text>
+  <text x="950" y="149" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#8b949e">只给请求要的那么多</text>
+  <text x="950" y="170" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#7ee2a8">Subject(access=view)</text>
   <rect x="820" y="220" width="260" height="90" rx="12" fill="#2d1512" stroke="#e0665a" stroke-width="2"/>
-  <text x="950" y="258" text-anchor="middle" font-size="14" font-weight="bold" fill="#f2a79d">CareCircleDenied</text>
-  <text x="950" y="282" text-anchor="middle" font-size="11" font-weight="normal" fill="#8b949e">抛出，不是返回 → 403</text>
+  <text x="950" y="250" text-anchor="middle" font-size="14" font-weight="bold" fill="#f2a79d">直接拒绝</text>
+  <text x="950" y="271" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#8b949e">抛出，不是返回 → 403</text>
+  <text x="950" y="292" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#f2a79d">CareCircleDenied</text>
   <path d="M348 204 H390" stroke="#7a8aa0" stroke-width="2.5" fill="none" marker-end="url(#careq)"/>
   <path d="M768 204 L809 143" stroke="#3fb96f" stroke-width="2.5" fill="none" marker-end="url(#caok)"/>
   <path d="M768 204 L809 265" stroke="#e0665a" stroke-width="2.5" fill="none" marker-end="url(#cano)"/>

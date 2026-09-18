@@ -220,8 +220,12 @@ CARE_STRINGS = {
         "checks": (("Both of you accepted", "status = accepted, on both rows"),
                    ("The switch is hers", "health_access starts at 0"),
                    ("Seeing is not editing", "health_access 1 reads, 2 writes")),
-        "allow": ("Subject(access=view)", "trimmed to what was asked"),
-        "deny": ("CareCircleDenied", "raised, not returned → 403"),
+        # Outcome first, class name last: `Subject` and `CareCircleDenied`
+        # appear nowhere else a reader has been, and led the card before.
+        "allow": ("Read-only access", "trimmed to what was asked",
+                  "Subject(access=view)"),
+        "deny": ("Refused", "raised, not returned → 403",
+                 "CareCircleDenied"),
         "foot": ("Your own record never takes this path: ",
                  "acting on your own data is not proxy access."),
         "alt": ("How one person reaches another's health record: a request passes "
@@ -238,8 +242,10 @@ CARE_STRINGS = {
         "checks": (("双方都接受了邀请", "status = accepted，两行都要"),
                    ("开关在她自己手上", "health_access 初始为 0"),
                    ("能看不等于能改", "health_access = 1 只读，= 2 可写")),
-        "allow": ("Subject(access=view)", "只给请求要的那么多"),
-        "deny": ("CareCircleDenied", "抛出，不是返回 → 403"),
+        "allow": ("只读放行", "只给请求要的那么多",
+                  "Subject(access=view)"),
+        "deny": ("直接拒绝", "抛出，不是返回 → 403",
+                 "CareCircleDenied"),
         "foot": ("你自己的记录不走这条路：", "操作自己的数据不是代理访问。"),
         "alt": ("一个人如何读到另一个人的健康记录：请求经过 resolve_subject，"
                 "它要求双方成员关系都已接受、且对方自己打开了 health_access 开关，"
@@ -302,11 +308,12 @@ def _care_exits(c, t):
     out = ""
     pairs = ((t["allow"], CARE_Y + 14, c["std_fill"], c["std_stroke"], c["std_title"]),
              (t["deny"], CARE_Y + 136, c["deny_fill"], c["deny_stroke"], c["deny_title"]))
-    for (head, note), yy, fill, stroke, title_fill in pairs:
+    for (head, note, sym), yy, fill, stroke, title_fill in pairs:
         out += (f'  <rect x="{x}" y="{yy}" width="{CARE_CW[2]}" height="{CARE_EXIT_H}" '
                 f'rx="12" fill="{fill}" stroke="{stroke}" stroke-width="2"/>\n')
-        out += _text(cx, yy + 38, head, size=14, weight="bold", fill=title_fill)
-        out += _text(cx, yy + 62, note, size=11, fill=c["muted"])
+        out += _text(cx, yy + 30, head, size=14, weight="bold", fill=title_fill)
+        out += _text(cx, yy + 51, note, size=10.5, fill=c["muted"])
+        out += _text(cx, yy + 72, sym, size=10.5, fill=title_fill)
     return out
 
 

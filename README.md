@@ -181,14 +181,6 @@ record with you view-only. Set it to `false` to hold real data and neither
 account is created. **Settings → Add member** covers someone who will never
 sign in at all, a parent, a child, with a record you hold on their behalf.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/your-care-circle-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/images/your-care-circle.svg">
-    <img src="docs/images/your-care-circle.svg" alt="How one person reaches another's health record: a request passes resolve_subject, which requires both memberships accepted and the subject's own health_access switch, and either returns access trimmed to the request or raises a 403" width="920">
-  </picture>
-</p>
-
 Drop a file on the Data page and watch it become indicators.
 [`demo/upload/`](demo/) holds four files the seed deliberately leaves out: a
 lab PDF, a phone photo of a printed report, a spreadsheet and another lab's
@@ -208,12 +200,24 @@ or a monthly average instead and the same tool aggregates over the whole
 record, rather than handing back rows for the model to add up itself.
 
 Ask the same question of the record shared with you and it is a different
-person's answer, from data you can only view. Sharing is invite-only, off by
-default, and strictly permission-checked.
+person's answer, from data you can only view. That sharing is a **care
+circle**: invite-only, off by default, and strictly permission-checked.
 
 <p align="center">
   <img src="docs/images/ask-circle-demo.gif"
        alt="The same question asked on the shared record; the agent answers from a different person's files" width="880">
+</p>
+
+Each of those three words is one check, and they all live in one function.
+`resolve_subject` is the only way an account reaches a record that is not its
+own — being in a circle together grants nothing by itself.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/your-care-circle-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/your-care-circle.svg">
+    <img src="docs/images/your-care-circle.svg" alt="How one person reaches another's health record: a request passes resolve_subject, which requires both memberships accepted and the subject's own health_access switch, and either returns access trimmed to the request or raises a 403" width="920">
+  </picture>
 </p>
 
 → [The four-minute walkthrough](docs/walkthrough.md) ·
@@ -286,9 +290,10 @@ pip install -e '.[test]' && pytest -q && lint-imports
 
 **[docs.mirobody.ai](https://docs.mirobody.ai/)**, in English and Chinese — start
 at the [Quickstart](https://docs.mirobody.ai/en/quickstart/) or the
-[API reference](https://docs.mirobody.ai/en/api-reference/). The edition that
-ships with the code is [`docs/quickstart.md`](docs/quickstart.md), and the rest
-of the contributor guides are in [`docs/`](docs/README.md).
+[API reference](https://docs.mirobody.ai/en/api-reference/). The Quickstart also
+ships with the code, as [`docs/quickstart.md`](docs/quickstart.md), so it cannot
+drift from the commands in this repository; the contributor guides are in
+[`docs/`](docs/README.md).
 
 Mirobody's design draws on the following standards and projects, with thanks:
 [HL7 FHIR](https://hl7.org/fhir/),

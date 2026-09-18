@@ -41,11 +41,13 @@
   <text x="454" y="263" text-anchor="start" font-size="12.5" font-weight="bold" fill="#22303f">Seeing is not editing</text>
   <text x="454" y="279" text-anchor="start" font-size="10.5" font-weight="normal" fill="#5a6b7a">health_access 1 reads, 2 writes</text>
   <rect x="820" y="98" width="260" height="90" rx="12" fill="#f3faf5" stroke="#2f7d4a" stroke-width="2"/>
-  <text x="950" y="136" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c5233">Subject(access=view)</text>
-  <text x="950" y="160" text-anchor="middle" font-size="11" font-weight="normal" fill="#5a6b7a">trimmed to what was asked</text>
+  <text x="950" y="128" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c5233">Read-only access</text>
+  <text x="950" y="149" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#5a6b7a">trimmed to what was asked</text>
+  <text x="950" y="170" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#1c5233">Subject(access=view)</text>
   <rect x="820" y="220" width="260" height="90" rx="12" fill="#fdf1ef" stroke="#c0453a" stroke-width="2"/>
-  <text x="950" y="258" text-anchor="middle" font-size="14" font-weight="bold" fill="#9c2f26">CareCircleDenied</text>
-  <text x="950" y="282" text-anchor="middle" font-size="11" font-weight="normal" fill="#5a6b7a">raised, not returned → 403</text>
+  <text x="950" y="250" text-anchor="middle" font-size="14" font-weight="bold" fill="#9c2f26">Refused</text>
+  <text x="950" y="271" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#5a6b7a">raised, not returned → 403</text>
+  <text x="950" y="292" text-anchor="middle" font-size="10.5" font-weight="normal" fill="#9c2f26">CareCircleDenied</text>
   <path d="M348 204 H390" stroke="#7a8aa0" stroke-width="2.5" fill="none" marker-end="url(#careq)"/>
   <path d="M768 204 L809 143" stroke="#2f7d4a" stroke-width="2.5" fill="none" marker-end="url(#caok)"/>
   <path d="M768 204 L809 265" stroke="#c0453a" stroke-width="2.5" fill="none" marker-end="url(#cano)"/>
