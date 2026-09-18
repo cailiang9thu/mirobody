@@ -284,7 +284,7 @@ class Config:
 
                 if self._encrypter.is_encrypted(value):
                     # Decrypt it.
-                    self._raw[upper_key] = self._encrypter.decrypt(value)
+                    self._raw[upper_key] = self._encrypter.decrypt(value, upper_key)
                     continue
 
                 if re.search(r"_KEY|_PASSWORD|_PASS|_PWD|_SECRET|_SK|_TOKEN", upper_key) and \

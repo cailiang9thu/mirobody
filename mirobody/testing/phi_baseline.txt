@@ -3,13 +3,6 @@ mirobody/agent/agent.py	interpolation	default_provider
 mirobody/agent/agent.py	interpolation	e
 mirobody/agent/agent.py	interpolation	original_provider
 mirobody/agent/agent.py	interpolation	str(e)
-mirobody/agent/chat/adapters/base.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/agent/chat/adapters/base.py	interpolation	denied
-mirobody/agent/chat/adapters/base.py	interpolation	e
-mirobody/agent/chat/adapters/base.py	interpolation	json.dumps(chunk, ensure_ascii=False)
-mirobody/agent/chat/adapters/base.py	interpolation	save_error
-mirobody/agent/chat/adapters/base.py	interpolation	str(e)
-mirobody/agent/chat/adapters/base.py	interpolation	summary_error
 mirobody/agent/chat/file.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
 mirobody/agent/chat/file.py	interpolation	e
 mirobody/agent/chat/file.py	interpolation	file_dict
@@ -518,8 +511,6 @@ mirobody/utils/config/config.py	interpolation	file
 mirobody/utils/config/config.py	interpolation	str(e)
 mirobody/utils/config/config.py	interpolation	upper_key
 mirobody/utils/config/encrypt.py	exc_info	traceback of a broad except: driver exceptions quote SQL and parameters
-mirobody/utils/config/encrypt.py	extra_key	s
-mirobody/utils/config/encrypt.py	interpolation	str(e)
 mirobody/utils/config/postgresql.py	extra_key	params
 mirobody/utils/config/postgresql.py	extra_key	records
 mirobody/utils/config/postgresql.py	extra_key	time_cost
