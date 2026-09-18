@@ -121,7 +121,7 @@ def json_response(content: any, status_code: int = 200, request: Request = None,
 
 def json_response_with_code(code: int = 0, msg: str = "ok", data: any = None, request: Request = None,
                            disable_log: bool = False, status: int = 200) -> Response:
-    """The `{code, msg, data}` envelope — the same one `server/envelope.py` has.
+    """The `{code, msg, data}` envelope: the same one `server/envelope.py` has.
 
     There used to be two. This one also carried `success`, which said exactly
     what `code == 0` says, and it OMITTED `data` entirely when there was none,

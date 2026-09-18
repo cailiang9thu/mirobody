@@ -12,8 +12,8 @@ class ChatStreamRequest(BaseModel):
     a caller's typo (or a natural guess like `model`) answers with the accepted
     names instead of a bare 500.
 
-    Four fields used to be accepted and ignored here — `agent`, `enable_mcp`,
-    `group_id`, `reference_task_id` — for clients that had not stopped sending
+    Four fields used to be accepted and ignored here (`agent`, `enable_mcp`,
+    `group_id`, `reference_task_id`) for clients that had not stopped sending
     them. No client in this repository sends any of them and none was ever
     read, so they are gone: with `extra="forbid"`, a sender now learns that
     rather than having the value silently dropped.
