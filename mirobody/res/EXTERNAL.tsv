@@ -33,3 +33,8 @@ RELEASE	data-2026-09-10
 fhir_concept_graph.bin	0779ade751bd2a4ecedfe693cd7150628fc31bf75845298f6f50e0c3d6912ddb	22445042	archive	nothing (was: semantic recall, deleted in 1.5.0)
 fhir_meta.csv.gz	3aeb649100dcd7b2d29d2947a34443cb943c4669a15dd953c789a8e9adb89d57	6899326	archive	nothing (was: the 677k-name corpus, replaced by corpus_names.bin cut from LOINC 2.83)
 fhir_snomed_ct_bundle.tar.gz	e287f202dff8634bbf746d6bd58335645d19467de850718a8dafd0c19247c250	137700	archive	nothing (was: the SNOMED bridge in the old bundle build)
+# --- rare-disease layer (plugins/mirobody-rare, docs/rare-mvp-plan.md §3.1). Built into
+# `~/.cache/mirobody_rare/` from the ontology drop by `mirobody_rare.hpo.build_bundle` /
+# `mirobody_rare.disease.build_orpha`; not in git, not in the wheel. Checksums = 2026-09-20 build.
+hpo_bundle.tar.gz	29e518c13202f411446e73f8a8480780aa79575dccc08bd196fbf42fb541ef4a	766460	runtime	mirobody_rare.hpo (HPO terms + synonyms + is_a + zh labels; hp.obo 2026-09 + hp-zh.babelon)
+orphanet_bundle.json.gz	5fb919fb576a3540d1441c5eb38b205f37e610226a22609a92dfe44f4a075e94	955800	runtime	mirobody_rare.disease (Orphanet product1/6 + phenotype.hpoa ORPHA rows)

@@ -1,0 +1,29 @@
+# mirobody-rare runtime configuration. Every knob lives here (AGENTS.md rule);
+# environment variables named below override the file so a deployment can point
+# at its own ontology drop without editing the package.
+ontology_dir: /data/xfs_recovery/caill/haenv-rare/data/ontology   # env: MIROBODY_RARE_ONTOLOGY_DIR
+cache_dir: ~/.cache/mirobody_rare                                  # env: MIROBODY_RARE_CACHE_DIR
+verbose: 1            # 0 = warnings, 1 = info, 2 = debug
+
+hpo:
+  min_label_chars: 2      # a label shorter than this never matches by containment
+  ambiguous: flag         # flag = code the top candidate and mark review=true; abstain = emit no code
+
+disease:
+  top_k: 5                # differential length
+  absent_penalty: 0.5     # weight of a negated term that a disease lists as a feature
+  family_weight: 0.5      # weight of a relative's phenotype in the proband's ranking
+
+server:
+  host: 127.0.0.1
+  port: 8765
+  model_name: mirobody-rare-coding
+
+# Optional LLM-backed assertion extraction (D1a §14.3 ④). Off by default: the
+# rule extractor is deterministic and is what the benchmark measures first.
+llm:
+  enabled: false
+  model_name: models/gemini-pro-latest
+  api_key_env: GEMINI_API_KEY
+  max_concurrency: 8
+  max_retries: 3

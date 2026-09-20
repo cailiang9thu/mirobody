@@ -77,3 +77,9 @@ Ask which one you are writing:
 Not `GUIDE`, not `DESIGN`, not `NOTES`, and never `CLAUDE.md` — that name is
 reserved for the gitignored working file at the repo root and must never be
 committed.
+
+## 罕见病(阶段一)
+
+- [rare-specs.md](rare-specs.md) — 需求
+- [rare-mvp-plan.md](rare-mvp-plan.md) — MVP 改造方案
+- [rare-mvp-impl.md](rare-mvp-impl.md) — 编码层实施记录与评测读数

@@ -1,0 +1,33 @@
+# mirobody-rare: the rare-disease coding layer (阶段一 MVP, docs/rare-mvp-plan.md §2).
+#
+#     uv pip install -e plugins/mirobody-rare
+#
+# A separate distribution on purpose: the main `mirobody` wheel stays numpy-only,
+# and everything here (HPO / Orphanet / HGNC tables, the coding shim) registers
+# through the `mirobody.tools` entry point the same way `examples/` does.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mirobody-rare"
+version = "0.1.0"
+description = "Rare-disease phenotype (HPO) / disease (ORPHA) / gene (HGNC) coding for mirobody"
+requires-python = ">=3.12"
+dependencies = ["mirobody", "pyyaml", "numpy"]
+
+[project.optional-dependencies]
+llm = ["google-genai", "tenacity", "tqdm"]
+test = ["pytest"]
+
+[project.entry-points."mirobody.tools"]
+rare = "mirobody_rare.tools"
+
+[project.scripts]
+mirobody-rare-serve = "mirobody_rare.serve_coding:main"
+
+[tool.setuptools.packages.find]
+include = ["mirobody_rare*"]
+
+[tool.setuptools.package-data]
+mirobody_rare = ["config.yaml"]
