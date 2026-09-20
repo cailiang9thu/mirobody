@@ -15,19 +15,30 @@ use of each is subject to the license terms of its sources:
 
   Artifact                        Derived from                Notice
   ------------------------------  --------------------------  -------------------------------
-  fhir_concept_graph.bin          UMLS, SNOMED CT, LOINC,     sections 1-5 below
-                                  RxNorm, ICD-10-CM
-  fhir_loinc_bundle.tar.gz        LOINC                       res/fhir_loinc_bundle.NOTICE
-  fhir_meta.csv.gz                LOINC, SNOMED CT, RxNorm    sections 1-4 below
-  fhir_snomed_ct_bundle.tar.gz    SNOMED CT                   res/fhir_snomed_ct_bundle.NOTICE
-  fhir_id_map.npy                 internal id map over the    sections 1-5 below
-                                  same vocabularies
-  aliases_src/zh.tsv              LOINC Linguistic Variants   section 3 below
+  fhir_loinc_bundle.tar.gz        LOINC 2.83                  res/fhir_loinc_bundle.NOTICE
+  aliases_src/zh.tsv              LOINC Linguistic Variants   section 1 below
                                   (claimed; see the note below)
-  aliases_src/{lang}_curated.tsv  hand-written (Apache-2.0)   —
+  crosswalks/*.tsv                LOINC codes; the mapping    section 1 below
+                                  judgements are ours         docs/device-crosswalk.md
+  metrics.tsv                     LOINC codes in the `loinc`  section 1 below
+                                  column; the rest is ours
+  labels/zh.tsv                   hand-written (Apache-2.0)   —
+  aliases_src/zh_curated.tsv      hand-written (Apache-2.0)   —
   resolver_overrides.tsv          hand-written (Apache-2.0)   —
+  recall_synonyms.tsv             hand-written (Apache-2.0)   —
+  dose_forms.tsv                  UCUM annotations; the       section 2 below
+                                  spellings are ours
   analyte_digit_src/              hand-written (Apache-2.0)   —
     analyte_digit_curated.tsv
+  EXTERNAL.tsv                    a manifest, no content      —
+
+1.5.0 cut the corpus to LOINC only. `fhir_concept_graph.bin`,
+`fhir_meta.csv.gz`, `fhir_snomed_ct_bundle.tar.gz` and `fhir_id_map.npy` are
+gone from the tree and refused by `scripts/check_wheel_data.py`, and with them
+every derivative of UMLS, SNOMED CT, RxNorm and ICD-10-CM. Nothing in this
+tree now requires a SNOMED CT Affiliate License or a UMLS Metathesaurus
+License. Releases up to 1.4.x did; their sections are kept at the end of this
+file for anyone reading one of those wheels.
 
 A NOTE ON `aliases_src/`, ADDED 2026-09-13, REVISED 2026-09-20
 --------------------------------------------------------------
@@ -84,29 +95,7 @@ The per-file NOTICE documents next to the bundles carry the full reproduction
 statements; this file lists the upstream licenses those statements rest on.
 
 
-1. UMLS Metathesaurus
----------------------
-Provider  : U.S. National Library of Medicine (NLM)
-License   : UMLS Metathesaurus License Agreement
-            https://uts.nlm.nih.gov/uts/license
-Scope     : MRREL relationship data used to build cross-vocabulary bridges
-            (SNOMED <-> LOINC, SNOMED <-> RxNorm) and CUI-based sibling groups.
-Note      : A free UMLS account is required.  The license covers original data
-            AND derivative works.
-
-
-2. SNOMED CT (US Edition)
--------------------------
-Provider  : SNOMED International / NLM (US Edition distributor)
-License   : SNOMED CT Affiliate License
-            https://www.snomed.org/get-snomed
-Scope     : IS-A hierarchy used for SNOMED sibling groups; concept codes used
-            in bridge mappings (ICD, MRREL, Jaccard).
-Note      : Use in production requires an affiliate license or membership
-            through a national release center.
-
-
-3. LOINC
+1. LOINC
 --------
 Provider  : Regenstrief Institute
 License   : LOINC License (free, requires attribution)
@@ -115,11 +104,11 @@ Scope     : LOINC 2.83. `fhir_loinc_bundle.tar.gz` carries 63,416 of the
             99,737 ACTIVE codes, cut by the rule in
             translate_build/loinc_cut.py; every column in it is a LOINC
             column with its content unchanged, rows are dropped and never
-            edited (licence section 3), and the 153 rows carrying a third
-            party's EXTERNAL_COPYRIGHT_NOTICE are dropped rather than
-            reproduced. Designations come from Loinc.csv and the 21
-            LinguisticVariants files. Also: the codes and long common names
-            in res/crosswalks/ (the device crosswalk) and res/metrics.tsv.
+            edited (section 3 of the LOINC licence itself), and the 153 rows
+            carrying a third party's EXTERNAL_COPYRIGHT_NOTICE are dropped
+            rather than reproduced. Designations come from Loinc.csv and
+            the 21 LinguisticVariants files. Also: the codes and long common
+            names in res/crosswalks/ and res/metrics.tsv.
 Attribution: This product includes all or a portion of the LOINC(R) table,
             LOINC panels and forms file, LOINC document ontology file,
             and/or LOINC hierarchies file, or is derived from one or more of
@@ -128,35 +117,7 @@ Attribution: This product includes all or a portion of the LOINC(R) table,
             Institute, Inc.
 
 
-4. RxNorm
----------
-Provider  : U.S. National Library of Medicine (NLM)
-License   : Public domain (no restrictions)
-            https://www.nlm.nih.gov/research/umls/rxnorm/docs/termsofservice.html
-Scope     : RXNCONSO and RXNREL used for RxNorm sibling groups and bridge
-            mappings to SNOMED/LOINC.
-
-
-5. ICD-10-CM
-------------
-Provider  : U.S. Centers for Medicare & Medicaid Services (CMS) / WHO
-License   : ICD-10-CM is in the public domain in the United States.
-            International use of ICD-10 is subject to WHO terms.
-            https://www.who.int/standards/classifications/classification-of-diseases/licensing
-Scope     : ICD-to-SNOMED mappings used for transitive bridge building.
-
-
-6. NHSA Drug Catalog (medicine_data.json)
------------------------------------------
-Provider  : National Healthcare Security Administration
-Source    : https://github.com/badman200/medicine
-License   : Government public information; no formal license specified.
-Scope     : Optional input for enriching RxNorm sibling groups with Chinese
-            drug names (via --nhsa-catalog flag during pipeline build).
-Note      : Not bundled in the binary; used only at build time when provided.
-
-
-7. UCUM (Unified Code for Units of Measure)
+2. UCUM (Unified Code for Units of Measure)
 -------------------------------------------
 Provider  : Regenstrief Institute, Inc. and the UCUM Organization
 Source    : https://ucum.org/
@@ -173,3 +134,64 @@ Scope     : `mirobody/units/` implements UCUM. `tokens.py` maps printed unit
             morphemes) are hand-written and Apache-2.0.
 Note      : `ucum-essence.xml` is NOT bundled. Our tables are hand-maintained
             against the published specification rather than generated from it.
+
+
+NO LONGER APPLICABLE TO THIS TREE
+=================================
+
+The sections below cover vocabularies this project distributed up to 1.4.x and
+does not distribute now. They are kept because a 1.4.x wheel is still on PyPI
+and its data is still governed by them. Nothing in the current tree derives
+from any of them: `mirobody/kernel/meds.py` defines the SNOMED and RxNorm FHIR
+system URIs so that a CALLER can supply a code under them, which is a string
+constant, not content.
+
+
+3. UMLS Metathesaurus
+---------------------
+Provider  : U.S. National Library of Medicine (NLM)
+License   : UMLS Metathesaurus License Agreement
+            https://uts.nlm.nih.gov/uts/license
+Scope     : MRREL relationship data used to build cross-vocabulary bridges
+            (SNOMED <-> LOINC, SNOMED <-> RxNorm) and CUI-based sibling groups.
+Note      : A free UMLS account is required.  The license covers original data
+            AND derivative works.
+
+
+4. SNOMED CT (US Edition)
+-------------------------
+Provider  : SNOMED International / NLM (US Edition distributor)
+License   : SNOMED CT Affiliate License
+            https://www.snomed.org/get-snomed
+Scope     : IS-A hierarchy used for SNOMED sibling groups; concept codes used
+            in bridge mappings (ICD, MRREL, Jaccard).
+Note      : Use in production requires an affiliate license or membership
+            through a national release center.
+
+
+5. RxNorm
+---------
+Provider  : U.S. National Library of Medicine (NLM)
+License   : Public domain (no restrictions)
+            https://www.nlm.nih.gov/research/umls/rxnorm/docs/termsofservice.html
+Scope     : RXNCONSO and RXNREL used for RxNorm sibling groups and bridge
+            mappings to SNOMED/LOINC.
+
+
+6. ICD-10-CM
+------------
+Provider  : U.S. Centers for Medicare & Medicaid Services (CMS) / WHO
+License   : ICD-10-CM is in the public domain in the United States.
+            International use of ICD-10 is subject to WHO terms.
+            https://www.who.int/standards/classifications/classification-of-diseases/licensing
+Scope     : ICD-to-SNOMED mappings used for transitive bridge building.
+
+
+7. NHSA Drug Catalog (medicine_data.json)
+-----------------------------------------
+Provider  : National Healthcare Security Administration
+Source    : https://github.com/badman200/medicine
+License   : Government public information; no formal license specified.
+Scope     : Optional input for enriching RxNorm sibling groups with Chinese
+            drug names (via --nhsa-catalog flag during pipeline build).
+Note      : Not bundled in the binary; used only at build time when provided.

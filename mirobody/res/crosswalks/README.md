@@ -67,3 +67,33 @@ from mirobody.kernel import metrics
 from mirobody.engine import resolve
 [m.name for m in metrics.ROWS if resolve(m.name).resolved]
 ```
+
+## Why the ranges are not in here, and these are not in the ranges
+
+`mirobody/schema/41_device_rules.sql` seeds `indicator_valid_rules`, one row
+per metric, saying what values are possible for it. It is keyed by the same
+catalogue name these tables use, so merging the two looks natural. It would be
+wrong in both directions.
+
+**These tables answer identity, the SQL answers plausibility.** Which LOINC
+code a vendor field is, against whether 350 bpm is a heart rate. A wrong code
+files a reading under another measurement; a wrong range marks a real reading
+as suspect. Neither answer helps with the other question.
+
+**These ship, the SQL does not.** `pip install mirobody` gets the crosswalks
+and reads them through `mirobody.translate.devices` with no database and no
+network, which is what lets `mirobody parse` code a device reading offline.
+The table exists only where there is a Postgres. Moving identity into SQL
+would put it behind a dependency the library contract forbids: import-linter
+holds `mirobody` to numpy and the standard library.
+
+**The layering is already two-tier and deliberate.** `kernel.quality.
+value_gate` refuses only dimension-level impossibilities (a percentage outside
+0 to 100, a non-finite number) and runs in the library; the per-metric ranges
+run in a deployment. The narrow gate is not a weaker copy of the wide one.
+
+What would be worth doing is the opposite direction: the ranges are the only
+device fact that exists ONLY in SQL, so a library user gets no per-metric
+gate at all. Two columns in `metrics.tsv` would fix that and leave the SQL
+seed derived from them. That is a change to the catalogue's shape, so it is
+the owner's call, not a refactor.

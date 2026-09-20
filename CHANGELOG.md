@@ -247,6 +247,14 @@ and the page telling you how to start was the one page a clone did not have.
   own rows are a wearable's and say so now, and its sleep rows write
   `dailyTotalSleepTime` (93832-4) rather than the uncoded `sleepDuration`
   nothing else produces. All 2,019 carry a code.
+- **`LICENSE-3RD-PARTY` stopped claiming vocabularies this tree does not
+  carry.** The table still listed `fhir_concept_graph.bin`, `fhir_meta.csv.gz`,
+  `fhir_snomed_ct_bundle.tar.gz` and `fhir_id_map.npy`, all of which the cut
+  removed and two of which the wheel gate now refuses, so the file told a
+  reader they need a SNOMED CT Affiliate License and a UMLS licence to use
+  this package. They are gone, the sections that cover them are marked as
+  applying to 1.4.x and earlier, and `fhir_snomed_ct_bundle.NOTICE` is deleted:
+  it had outlived its bundle by a release. The table now lists what ships.
 - **Nineteen coded metrics had no ingestion range.** `41_device_rules.sql`
   gates a device reading's value, and the members the device crosswalk added
   (HRV SDNN's siblings, the apnea indices, pulse wave velocity, the gait
