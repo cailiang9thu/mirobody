@@ -5,7 +5,7 @@ answers "is this number comparable to that one". Pure Python, no data bundle,
 no network: `pip install mirobody` gets all of it.
 
     normalize.py   normalize_unit, parse_value_unit, ParsedQuantity
-    families.py    UCUM_FAMILY (~310 families), AMBIGUOUS_UNITS, unit_family
+    families.py    UCUM_FAMILY (331 units over 59 families), AMBIGUOUS_UNITS, unit_family
     tokens.py      MORPHEMES and ALIASES (~600 multilingual surface tokens)
     convert.py     dimensional analysis, the molar-mass bridge, canonical form
 
@@ -39,7 +39,7 @@ unit_families("%")       # → frozenset({"MFr", "NFr", "AFr", "VFr", ...})  (am
 |---|---|---|
 | **morpheme** (`tokens.MORPHEMES`) | atomic tokens the tokenizer concatenates left-to-right | `Millimol` + `pro` + `Liter` → `mmol/L`; adding a new prefix (`Femtomol → fmol`) auto-composes with all stems |
 | **alias** (`tokens.ALIASES`) | full-string mappings for irreducible compounds | `mmHg → mm[Hg]`, `毫米汞柱 → mm[Hg]`, `10⁹/L → 10*9/L`, `eGFR → mL/min/{1.73_m2}` |
-| **family** (`families.UCUM_FAMILY`) | canonical UCUM → LOINC PROPERTY (`MCnc`, `SCnc`, `NRat`, `Pres`, ...) | covers 98%+ of LOINC `EXAMPLE_UCUM_UNITS` |
+| **family** (`families.UCUM_FAMILY`) | canonical UCUM → LOINC PROPERTY (`MCnc`, `SCnc`, `NRat`, `Pres`, ...) | 99.0% of the dimensional units in LOINC 2.83's `EXAMPLE_UCUM_UNITS`; bare annotations (`{titer}`) are not units and are out by design |
 
 **Languages covered**: en, zh-CN, zh-TW, ja, ko, ru, de, fr, es. Adding a new language is a single dict literal under `tokens.py` — the tokenizer is language-agnostic (longest-match-first across a global token table).
 
