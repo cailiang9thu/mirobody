@@ -256,7 +256,10 @@ def _member_series(member_id: str, email: str) -> list[dict]:
         for step in range(_SPAN_DAYS):
             day = first_day + timedelta(days=step)
             hours = _between(*profile["sleep_h"], step, _SPAN_DAYS) + rng.uniform(-0.8, 0.8)
-            rows.append(row("sleepDuration", round(hours, 1), day, "hours",
+            # `dailyTotalSleepTime`, not `sleepDuration`: the catalogue has
+            # both, and 93832-4 Sleep duration is on the first. No vendor
+            # crosswalk routes anything to the second (owner, 2026-09-20).
+            rows.append(row("dailyTotalSleepTime", round(hours, 1), day, "hours",
                             "Watch, self-tracked", time="07:00:00"))
 
     # The seeded panel, last, under the names a lab report PRINTS rather than
@@ -297,11 +300,11 @@ async def _put_blob(file_key: str, text: str) -> None:
 async def _seed_account(execute_query, member_id: str, email: str) -> int:
     """Give one account its year of readings and its one document."""
     # Imported here, not at module top: the sibling `_member_series` test runs
-    # on a bare `pip install mirobody`, and `collect.readings` pulls in `utils`.
-    from mirobody.collect import upsert_readings
+    # on a bare `pip install mirobody`, and `collect.observations` pulls in `utils`.
+    from mirobody.collect import observations
 
     rows = _member_series(member_id, email)
-    written = await upsert_readings(rows, on_conflict="update_revive")
+    written = await observations.ingest_legacy_rows(rows)
 
     # The file key here is the one `_member_series` wrote into the lab rows'
     # `source_table_id`, so a reading opens the document it was read off.

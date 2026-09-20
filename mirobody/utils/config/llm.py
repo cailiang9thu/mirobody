@@ -9,9 +9,9 @@ summaries) and `UTILS_EMBEDDING_MODEL`.
 A value is an entry name, a list of them (the FIRST whose key is present wins,
 that is how one key runs everything), a `provider/model` string, or an inline
 spec shaped like an entry. The chat picker is the `MODELS` table itself,
-first present key first. These are the keys mirovital's config-server already
-uses (`MODEL_PROVIDERS`, `UTILS_*_MODEL`), so a spec written for one reads in
-the other.
+first present key first. Every one of these is a plain environment variable,
+so whatever a deployment already uses to hand out configuration can set them
+without this package knowing about it.
 
 Why routing is data. Issue #68: a deployment with `DEEPSEEK_API_KEY` alone
 uploaded three documents into silence. The key was declared in config.yaml and
