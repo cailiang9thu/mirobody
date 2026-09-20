@@ -98,7 +98,7 @@ resolve("血脂").resolved                                 # False    a category
 | 阶段                        | 做什么                                                                                                                                                                                                                     | 在哪                                                                                                               |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | **① 收集 Collect**   | 化验单、穿戴设备、手机照片、基因文件，都收进来。源文件原样留下，每一项指标都能指回它被读出来的那一页。                                                                                                                     | [`collect/`](mirobody/collect/)                                                                                   |
-| **② 转译 Translate** | 一个名字解析成一个码，一个单位统一到 UCUM，全程离线、结果确定。`A1c`、`HbA1c`、`糖化血红蛋白` 在这一层变成同一项检查。                                                                                               | [`engine.py`](mirobody/engine.py) · [`indicator/`](mirobody/indicator/) · [`translate/`](mirobody/translate/) |
+| **② 转译 Translate** | 一个名字解析成一个码，一个单位统一到 UCUM，全程离线、结果确定。`A1c`、`HbA1c`、`糖化血红蛋白` 在这一层变成同一项检查。                                                                                               | [`engine.py`](mirobody/engine.py) · [`translate/`](mirobody/translate/) |
 | **③ 智能体 Agent**   | 在编码后的记录上提问。按分钟、小时、天、周、月给出趋势，一次调用就能算出计数、最小值、最大值、均值和变化量；同一个码，跨化验所、跨设备直接比较。图表画在回复里，用药记录和基因型数据也读得了，每个数字都说明出自哪份文件。 | [`agent/`](mirobody/agent/)                                                                                       |
 
 ① 记下来源怎么写，② 判断它到底是什么，③ 在这个基础上作答。跨化验所比一个数字、
@@ -142,11 +142,16 @@ Google，或者任何 OpenAI 兼容网关，单独一家都能把整套跑通。
 
 ```bash
 git clone --depth 1 https://github.com/thetahealth/mirobody.git && cd mirobody
-git lfs install && git lfs pull   # 解析器的 LOINC 词表，40 MB；新克隆下来是个指针文件，直到你跑这条命令
+git lfs install && git lfs pull   # 解析器的 LOINC 词表，13 MB；新克隆下来是个指针文件，直到你跑这条命令
 ./deploy.sh                       # Postgres + pgvector、Redis、服务端、worker → http://localhost:18060
 ```
 
 （`--depth 1` 跳过历史里那些已经被替换掉的前端构建产物；要提 PR 就去掉它。）
+
+有两件事 `deploy.sh` 会拦下来，并把修法写在报错里：一台机器同时只能跑一份，
+因为 `compose.yaml` 固定了这套栈的子网，再起一份要改 `mirobody_network` 的网段；
+另外，拒绝 named volume 的 Docker（rootless、受限环境）要改用 bind mount，
+`compose.override.yaml.example` 就是为这个准备的。
 
 用 `you@mirobody.ai`、验证码 `111111` 登录，不需要邮件服务。注册自己的账号也
 只要一个请求：
@@ -206,25 +211,28 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 
 出处都附在后面：一条可以跑的命令，或者一个公开的数据集。
 
-- 常规体检会打印的那些项目，**213/213**，覆盖英文、中文（简体和繁体）和日文。
+- 常规体检会打印的那些项目，**261/261**，覆盖英文、中文（简体和繁体）和日文。
   这套用例是故意挑的最不讨巧的一组：日常的几个套餐，按报告上真正的印法写，
   也正是每个新用户第一分钟会去试的那些词。
   [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) 跑一下
   就会把分数打出来。
+- **13 家可穿戴厂商，逐字段读过一遍**：447 个字段里 289 个落到 LOINC 码，每一个
+  都带置信度和它出自哪份厂商文档；另有 71 个量明确不落码，写明原因而不是猜。
+  表在[设备对照表](docs/device-crosswalk.md)。
 - **三个公开基准**，数据集公开，各自一条命令可复现：长期健康 agent、医疗幻觉、
   有害医疗建议。
   [mirobody-eval](https://github.com/thetahealth/mirobody-eval) ·
   [数据集](https://huggingface.co/mirobody) ·
   [arXiv:2604.02834](https://arxiv.org/abs/2604.02834)。
 - **包会自己说清楚是哪份词表在回答你**：`mirobody.BUNDLE_VERSION` →
-  `loinc-2.82+2026.08.28-af2524b7a285`，发行版本、切分日期，加一份对词表内容
+  `loinc-2.83+2026.09.17-aacb2c715b56`，发行版本、切分日期，加一份对词表内容
   算出来的摘要。
-- **305 项标准 pulse 指标**，326 个带量纲分析的 UCUM 单位。完整数字，以及词表
-  为什么停在 LOINC 2.82 没跟进 2.83，都写在[标准化详解](docs/standardization.zh-CN.md)里。
+- **315 项标准设备指标**，331 个带量纲分析的 UCUM 单位。完整数字，以及
+  LOINC 2.83 的切法留下了什么、丢掉了什么，都写在[标准化详解](docs/standardization.zh-CN.md)里。
 - **`pip install mirobody` 只装 2 个包**，只依赖 numpy。
 
 这套引擎驱动着 **[Theta Wellness](https://www.thetahealth.ai/)**：一款已经
-上线、面向个人用户的健康产品。
+上线、注册用户 5,000+ 的个人健康产品。
 
 ## 🔌 使用和扩展
 

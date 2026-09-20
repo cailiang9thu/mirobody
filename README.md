@@ -110,7 +110,7 @@ trace, so the answer at the end can be followed back to the page it came off:
 | Stage | What it does | Where |
 | --- | --- | --- |
 | **① Collect** | Lab reports, wearables, phone photos, genetic files, all pulled in. The source file is kept as it was, so every indicator points back to the page it was read from. | [`collect/`](mirobody/collect/) |
-| **② Translate** | One name to one code, one unit to UCUM, offline and deterministic. `A1c`, `HbA1c` and `Glycated Hemoglobin` become the same test here. | [`engine.py`](mirobody/engine.py) · [`indicator/`](mirobody/indicator/) · [`translate/`](mirobody/translate/) |
+| **② Translate** | One name to one code, one unit to UCUM, offline and deterministic. `A1c`, `HbA1c` and `Glycated Hemoglobin` become the same test here. | [`engine.py`](mirobody/engine.py) · [`translate/`](mirobody/translate/) |
 | **③ Agent** | Ask over the coded record. Trend a value by minute, hour, day, week or month; get count, min, max, avg or change over any window in one call; compare across labs and devices, because they share one code. It charts the result in its reply, reads medications and genetic variants too, and names the file every number came from. | [`agent/`](mirobody/agent/) |
 
 ① records how the source spelled it, ② decides what it actually is, ③ answers
@@ -160,12 +160,18 @@ off your machine.
 
 ```bash
 git clone --depth 1 https://github.com/thetahealth/mirobody.git && cd mirobody
-git lfs install && git lfs pull   # the resolver's LOINC bundle, 40 MB; a fresh clone holds a pointer stub until you do
+git lfs install && git lfs pull   # the resolver's LOINC bundle, 13 MB; a fresh clone holds a pointer stub until you do
 ./deploy.sh                       # Postgres + pgvector, Redis, server, worker → http://localhost:18060
 ```
 
 (`--depth 1` skips the history of superseded frontend builds; drop it if you
 plan to send a pull request.)
+
+Two things `deploy.sh` will stop and tell you about, both with the fix in the
+message: one checkout at a time, because `compose.yaml` pins the stack's
+subnet, so a second one needs a different `mirobody_network` subnet; and a
+Docker that refuses named volumes (rootless, hardened) needs bind mounts
+instead, which is what `compose.override.yaml.example` is for.
 
 Sign in as `you@mirobody.ai`, code `111111`, no mail provider needed. An
 account of your own is one request away:
@@ -231,23 +237,27 @@ whole sharing decision table offline ·
 Every figure below comes with its source: a command you can run, or a public
 dataset.
 
-- **213/213** on the tests an ordinary checkup prints, in English, Chinese
+- **261/261** on the tests an ordinary checkup prints, in English, Chinese
   (Simplified and Traditional) and Japanese. The set is deliberately the least
   flattering one — everyday panels, written the way a report prints them, which
   is what every new user tries in their first minute.
   [`test_engine_coverage.py`](mirobody/tests/test_engine_coverage.py) prints the
   score when you run it.
+- **13 wearable vendors, read field by field**: 289 of 447 fields carry a LOINC
+  code, each with a confidence and the vendor document it came from, and 71
+  quantities are declined with the reason rather than guessed.
+  [The device crosswalk](docs/device-crosswalk.md) is the table.
 - **Three open benchmarks**, public datasets, one command each: longitudinal
   health agents, medical hallucination, harmful medical advice.
   [mirobody-eval](https://github.com/thetahealth/mirobody-eval) ·
   [datasets](https://huggingface.co/mirobody) ·
   [arXiv:2604.02834](https://arxiv.org/abs/2604.02834).
 - **The package names the vocabulary that answered you**:
-  `mirobody.BUNDLE_VERSION` → `loinc-2.82+2026.08.28-af2524b7a285`, the release,
+  `mirobody.BUNDLE_VERSION` → `loinc-2.83+2026.09.17-aacb2c715b56`, the release,
   the cut date, and a digest over the bundle's own contents.
-- **305 standard pulse indicators** and 326 UCUM units with dimensional
-  analysis. The full counts, and why the bundle holds at LOINC 2.82 rather than
-  2.83, are in [Standardization in depth](docs/standardization.md).
+- **315 standard device indicators** and 331 UCUM units with dimensional
+  analysis. The full counts, and what the LOINC 2.83 cut keeps and drops, are
+  in [Standardization in depth](docs/standardization.md).
 - **`pip install mirobody` is 2 packages**, numpy the only dependency.
 
 The engine powers **[Theta Wellness](https://www.thetahealth.ai/)**, a live

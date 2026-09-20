@@ -52,9 +52,9 @@ logger = logging.getLogger(__name__)
 def _default_provider() -> str:
     """The model to chat with when the caller names none: the first
     `MODELS` entry (config order, utility-only entries excluded) whose key is
-    present: the order of that table is the contract, as it is in mirovital's
-    `MODEL_PROVIDERS`. With no key present, the first entry, so the error a
-    chat then raises names a real entry and its missing key."""
+    present: the order of that table is the contract. With no key present,
+    the first entry, so the error a chat then raises names a real entry and
+    its missing key."""
     return chat_default() or next(iter(chat_entries()), "")
 
 

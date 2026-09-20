@@ -4,6 +4,10 @@
 #
 #     scripts/fetch_data.sh          # what a deployment needs (the `runtime` rows)
 #     scripts/fetch_data.sh --all    # those, plus the bundle-build inputs
+#
+# As of 1.5.0 every row is `archive`: the bundle is cut from a LOINC release
+# by `translate_build/` and nothing in the package opens these files. Both
+# commands therefore download nothing, and both still exit 0.
 #     scripts/fetch_data.sh --check  # report what is present, download nothing
 #
 # What and why is `mirobody/res/EXTERNAL.tsv`, which this script reads rather
@@ -94,6 +98,9 @@ fetched=0
 while IFS=$'\t' read -r name sha bytes need _rest; do
     [[ -z "${name:-}" || "$name" == \#* || "$name" == "RELEASE" ]] && continue
     [[ "$need" == "build" && "$want_all" -eq 0 ]] && continue
+    # `archive` is a row nothing reads any more, kept so an older tag still
+    # resolves its checksums. Never downloaded, by --all either.
+    [[ "$need" == "archive" ]] && continue
 
     dest="${res_dir}/${name}"
     if [[ -f "$dest" ]]; then

@@ -137,11 +137,10 @@ no second turn, nothing to return.
 
 `DEFAULT_MODEL` names the entry a chat uses when the client sends none;
 unset, the default is the **first entry (in file order) whose key is present** —
-so the order of `MODELS` is a contract, as it is in mirovital's
-`MODEL_PROVIDERS`. An entry with `chat: false` is for the utility surfaces only
-(file parsing, indicator extraction, titles) and never reaches the picker; an
-entry with `embedding: <family>` is an embedding model and is used by nothing
-but `UTILS_EMBEDDING_MODEL`.
+so the order of `MODELS` is a contract. An entry with `chat: false` is for the
+utility surfaces only (file parsing, indicator extraction, titles) and never
+reaches the picker; an entry with `embedding: <family>` is an embedding model
+and is used by nothing but `UTILS_EMBEDDING_MODEL`.
 
 #### Multimodal capability (`supports_pdf` / `supports_image`)
 

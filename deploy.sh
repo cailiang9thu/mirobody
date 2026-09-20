@@ -323,8 +323,18 @@ check_ports_free 18060 18062 18069
 check_subnet_free
 
 if ! docker compose up -d --remove-orphans; then
+    # "nothing is running" was wrong and sent people the wrong way: compose
+    # starts pg and redis, then fails on mirobody, and the real cause (a pip
+    # install that could not reach an index, a rejected volume) is only in
+    # that container's log. An outside deployment report measured three
+    # containers Up under this message.
     echo ""
-    echo "Compose could not start the stack — the error is above; nothing is running."
+    echo "Compose could not finish. Some containers may be up and not ready:"
+    docker compose ps 2>/dev/null || true
+    echo ""
+    echo "The cause is usually in the mirobody container's own log:"
+    docker compose logs --tail 40 mirobody 2>/dev/null || true
+    echo ""
     echo "Nothing below this line ran. Fix the error and re-run ./deploy.sh."
     exit 1
 fi
