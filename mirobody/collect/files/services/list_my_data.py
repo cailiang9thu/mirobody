@@ -25,35 +25,32 @@ async def get_user_data_distribution(user_id: str) -> dict[str, Any]:
 
         logger.info(f"Getting user data distribution: user_id={user_id}")
 
-        # Aggregate counts from th_series_data + th_series_data_genetic.
-        # Categories are derived from th_series_dim.department, with 'Other'
-        # for rows whose indicator has no department mapping and 'genetic'
-        # if the user has any genetic records.
+        # `v_observation` hides amended and retracted rows, so a count off it
+        # is what the Indicators tab shows. The old query read th_series_data
+        # and th_series_dim.department; 90_retire.sql renames both, and
+        # nothing replaced `department`, so the category is the LOINC SYSTEM
+        # axis (the specimen: Ser/Plas, Bld, Urine) for coded rows, 'Other'
+        # for uncoded ones, and 'genetic' when the person has genotypes.
         query = """
         SELECT
             (
-                SELECT COUNT(1) FROM th_series_data
-                WHERE user_id = :user_id AND deleted = 0
+                SELECT COUNT(1) FROM v_observation
+                WHERE user_id = :user_id
             ) + (
                 SELECT COUNT(1) FROM th_series_data_genetic
                 WHERE user_id = :user_id AND is_deleted = false
             ) AS total_records,
             (
                 SELECT COUNT(DISTINCT cat) FROM (
-                    SELECT TRIM(d.dept) AS cat
-                    FROM th_series_data t1
-                    JOIN th_series_dim t2 ON t1.indicator = t2.original_indicator
-                    CROSS JOIN LATERAL unnest(string_to_array(t2.department, ',')) AS d(dept)
-                    WHERE t1.user_id = :user_id
-                      AND t2.department IS NOT NULL
-                      AND TRIM(t2.department) <> ''
-                      AND TRIM(d.dept) <> ''
+                    SELECT o.loinc_system AS cat
+                    FROM v_observation o
+                    WHERE o.user_id = :user_id
+                      AND o.loinc_system IS NOT NULL AND TRIM(o.loinc_system) <> ''
                     UNION
                     SELECT 'Other' WHERE EXISTS (
-                        SELECT 1 FROM th_series_data t1
-                        LEFT JOIN th_series_dim t2 ON t1.indicator = t2.original_indicator
-                        WHERE t1.user_id = :user_id
-                          AND (t2.department IS NULL OR TRIM(t2.department) = '')
+                        SELECT 1 FROM v_observation o
+                        WHERE o.user_id = :user_id
+                          AND (o.loinc_system IS NULL OR TRIM(o.loinc_system) = '')
                     )
                     UNION
                     SELECT 'genetic' WHERE EXISTS (

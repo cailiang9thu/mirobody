@@ -34,8 +34,9 @@ THE SINGLE-TERMINAL-OUTCOME INVARIANT: exactly one of ``Completed``,
 :func:`enforce_single_terminal_outcome` are the shared enforcement, proven
 here against synthetic sequences; the runtime wraps its own output with it.
 
-These definitions are shared verbatim with mirovital's agent runtime; the
-consumer's ``AgentRequest`` (a wire contract) deliberately is not here.
+These definitions are meant to be taken verbatim by a consumer's agent
+runtime; a consumer's ``AgentRequest`` (a wire contract) deliberately is not
+here.
 """
 
 from __future__ import annotations
