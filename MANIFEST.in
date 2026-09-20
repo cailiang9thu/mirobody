@@ -27,7 +27,6 @@ recursive-exclude frontend *
 exclude mirobody/res/fhir_concept_graph.bin
 exclude mirobody/res/fhir_snomed_ct_bundle.tar.gz
 exclude mirobody/res/fhir_meta.csv.gz
-exclude mirobody/res/analyte_digit_src/analyte_digit_curated.tsv
 
 # The sdist half of _BUILD_ONLY_CODE — the bundle-build passes and the v2
 # semantic pipeline. Neither can run from an install: the first needs raw

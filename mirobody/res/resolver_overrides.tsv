@@ -133,6 +133,13 @@ vitamin D3	Calcidiol
 25-OH vitamin D	Calcidiol
 25 hydroxy vitamin D	Calcidiol
 vitamin B12	Cobalamin
+# `vitamin B9` answered 81066-3, Vitamin B9 (Folate) INTAKE 24 hour Estimated:
+# a dietary rate on ^Patient, not a serum concentration. `folate` and `叶酸`
+# already give 2284-8. Every other vitamin and mineral was checked and lands
+# on a serum code; B9 is the only one with an intake sibling in the index.
+vitamin B9	Folate
+维生素B9	Folate
+叶酸片	Folate
 
 # ── extended panels ──────────────────────────────────────────────────────
 # Second sweep, from a 154-term hunt across the panels a physical actually
@@ -927,6 +934,24 @@ CK-MB mass	Creatine kinase.MB
 # Same third sweep, over production rows migrated out of th_series_data: the
 # index knows these by abbreviation or by their LOINC component, not by the
 # long form a translating extractor wrote.
+# ── curated rows whose target was not an index key ────────────────────────
+# `zh_curated.tsv` maps a printed surface to a PHRASE for the lexicon build,
+# and a phrase resolves only sometimes. These seven were the only rows in
+# that file whose target resolves on its own while the alias does not, which
+# is the failure this file exists to catch. MCHC and MCH are on every blood
+# count; the beta-2 glycoprotein rows differ by the I / Ⅰ codepoint.
+#
+# The target has to be an index KEY, not a phrase `resolve()` can reach some
+# other way: `Beta 2 glycoprotein 1` gives 1880-4 and the hyphenated spelling
+# gives nothing, while `B2 glycoprotein 1` gives 44447-1, a different code.
+平均红细胞血红蛋白浓度	MCHC
+平均紅細胞血紅蛋白濃度	MCHC
+平均红细胞血红蛋白量	MCH
+平均紅細胞血紅蛋白量	MCH
+β2糖蛋白I	Beta 2 glycoprotein 1
+β2糖蛋白Ⅰ	Beta 2 glycoprotein 1
+β2-GP1	Beta 2 glycoprotein 1
+
 lipoprotein a	Lp(a)
 total calcium	Calcium
 inorganic phosphorus	Phosphate

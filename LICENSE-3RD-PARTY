@@ -28,8 +28,6 @@ use of each is subject to the license terms of its sources:
   recall_synonyms.tsv             hand-written (Apache-2.0)   —
   dose_forms.tsv                  UCUM annotations; the       section 2 below
                                   spellings are ours
-  analyte_digit_src/              hand-written (Apache-2.0)   —
-    analyte_digit_curated.tsv
   EXTERNAL.tsv                    a manifest, no content      —
 
 1.5.0 cut the corpus to LOINC only. `fhir_concept_graph.bin`,

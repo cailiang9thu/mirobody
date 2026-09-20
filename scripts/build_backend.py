@@ -57,10 +57,6 @@ prepare_metadata_for_build_editable = _orig.prepare_metadata_for_build_editable
 _BUILD_ONLY_DATA = frozenset({
     "mirobody/res/fhir_concept_graph.bin",
     "mirobody/res/fhir_snomed_ct_bundle.tar.gz",
-    # The curated analyte-digit table. `BUNDLE_FORBIDDEN` already strips it
-    # from inside the tarball; the loose copy beside it was still shipping,
-    # and its only reader is a pass under a pruned tree.
-    "mirobody/res/analyte_digit_src/analyte_digit_curated.tsv",
     # 1.3.0: the resolver reads `corpus_names.bin` out of the bundle instead of
     # parsing this on every load. `engine.py` was its only runtime reader; the
     # passes that still read it are bundle-build tooling, which does not ship.

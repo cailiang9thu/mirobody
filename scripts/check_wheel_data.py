@@ -71,6 +71,9 @@ FORBIDDEN = (
     # used to parse this CSV on every load, which is where 677,643 of its
     # Python strings came from.
     "mirobody/res/fhir_meta.csv.gz",
+    # 1.5.0: deleted, not merely unshipped. It was the manual overlay for
+    # `mirobody indicator analyte-digit`, a build command that went with
+    # `indicator/`; nothing in translate_build or the resolver reads digits.
     "mirobody/res/analyte_digit_src/analyte_digit_curated.tsv",
     # fhir_id_map.npy is not listed because it no longer exists: it mapped
     # canonical ids to `fhir_indicators.id`, one database's PRIMARY KEYS, and was

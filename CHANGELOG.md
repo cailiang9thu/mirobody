@@ -247,6 +247,20 @@ and the page telling you how to start was the one page a clone did not have.
   own rows are a wearable's and say so now, and its sleep rows write
   `dailyTotalSleepTime` (93832-4) rather than the uncoded `sleepDuration`
   nothing else produces. All 2,019 carry a code.
+- **`vitamin B9` answered a dietary intake code.** 81066-3 is *Vitamin B9
+  (Folate) intake 24 hour Estimated*, a rate on `^Patient`; a serum folate is
+  2284-8, which `folate` and `叶酸` already gave. Every other vitamin and
+  mineral was checked and lands on a serum code. `维生素B9` and `叶酸片` now
+  resolve too.
+- **Seven curated Chinese rows pointed at a phrase the index does not key.**
+  `平均红细胞血红蛋白浓度` (MCHC) and `平均红细胞血红蛋白量` (MCH), both
+  Simplified and Traditional, and three spellings of beta-2 glycoprotein 1.
+  MCHC and MCH are on every blood count. Coverage over the 7,354 cases goes
+  0.915 to 0.916 and frontier 0.496 to 0.501, with the wrong-rate unchanged.
+- **`res/analyte_digit_src/` is deleted.** It was the manual overlay for
+  `mirobody indicator analyte-digit`, a build command that went with
+  `indicator/`; nothing in `translate_build` or the resolver reads digits, and
+  the wheel already excluded it. Auditing it is what found the B9 code.
 - **`LICENSE-3RD-PARTY` stopped claiming vocabularies this tree does not
   carry.** The table still listed `fhir_concept_graph.bin`, `fhir_meta.csv.gz`,
   `fhir_snomed_ct_bundle.tar.gz` and `fhir_id_map.npy`, all of which the cut
