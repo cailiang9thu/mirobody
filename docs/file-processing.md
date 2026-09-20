@@ -40,15 +40,18 @@ This module provides comprehensive health data file processing capabilities, inc
 | File Type | MIME Type | Handler | Description |
 |-----------|-----------|---------|-------------|
 | PDF | `application/pdf` | `PDFHandler` | Multi-page parallel processing with automatic health indicator extraction |
-| Images | `image/*` | `ImageHandler` | Supports JPEG, PNG, GIF, WebP; recognizes health reports and extracts indicators |
+| Images | `image/*` | `ImageHandler` | `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.webp`, `.heic`, `.heif`, `.tif`, `.tiff`; downscaled and OCR'd, then the same extraction path as PDF |
 | Genetic Data | Specific formats | `GeneticHandler` | Genetic test report parsing |
-| Text | `text/*` | `TextHandler` | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.html`, `.log` — decoded directly, same extraction path as PDF |
-| Excel | OOXML | `ExcelHandler` | `.xlsx`, `.xlsm` read with openpyxl as markdown tables under a row budget; the pre-2007 binary `.xls` is not read |
+| Text | `text/*` | `TextHandler` | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.html`, `.htm`, `.log` decoded directly, same extraction path as PDF |
+| Excel | OOXML | `ExcelHandler` | `.xlsx`, `.xlsm` read with openpyxl as markdown tables under a row budget. `.xls` and `.xlsb` upload but do not parse: openpyxl reads only the zip formats, and `detect.LEGACY_OFFICE_SUFFIXES` names them so a reader is told the file could not be read rather than handed container bytes as prose |
 | Word / PowerPoint | OOXML | `DocumentHandler` | `.docx`, `.pptx` as markdown (headings, paragraphs, tables, slides) |
 
-The routing table itself lives in `mirobody/utils/file_types.py`, so this list
-can lag it — when in doubt, that module is the contract (it is the one place
-the handler that accepts a file and the extractor that parses it both read).
+Two lists, and they are not the same list. `mirobody/utils/file_types.py` is
+the UPLOAD accept-list: what a user is allowed to hand the server. It carries
+`.xls` and `.xlsb`, which no parser here reads. What a file can be READ as is
+`mirobody/documents/detect.py`: `EXTRACTABLE_SUFFIXES` (15, through a parser
+or OCR) plus `TEXT_EXTENSIONS` (8, decoded directly) is the 23 the README
+counts. When this table and that module disagree, the module is the contract.
 
 Whatever the handler, the TEXT of a document comes from one place:
 `mirobody/documents/` (`detect.kind` by extension, content type and, when
@@ -393,7 +396,7 @@ Authorization: Bearer <token>
 │                   ┌─────────────────┐                          │
 │                   │    Database     │                          │
 │                   │  (th_messages,  │                          │
-│                   │  th_series_data)│                          │
+│                   │  th_observation)│                          │
 │                   └─────────────────┘                          │
 └───────────────────────────────────────────────────────────────┘
 ```
@@ -446,7 +449,7 @@ Multi-page PDF (>2 pages):
 #### 5. Result Saving Phase (95-100%)
 
 - Save processing results to database
-- Sync health indicators to `th_series_data`
+- Write the extracted indicators as observations (`th_observation`, coded on the way in)
 - Update user health profile
 
 ---
@@ -552,22 +555,24 @@ as not found.
 
 ### Data Storage
 
-Extracted indicator data is stored in the `th_series_data` table. The write goes
-through `collect/readings.py:upsert_readings(rows, on_conflict="revive_deleted")`
-— the one writer of that table — which means a report re-uploaded after its
-file was deleted revives its own soft-deleted rows, while a collision with a
-live reading leaves the live reading alone:
+Extracted indicator data is stored in the observation model (`th_observation`
+and its coding tables, `mirobody/schema/30_observations.sql`). The write
+goes through `collect/observations.py:ingest` — the one writer of those tables —
+which freezes the extraction as read (`th_extraction`), stores every field as
+printed, codes each row and skips a row the same file already wrote. A
+deleted file's rows are erased with it (the privacy path), so a re-upload
+after a delete writes them fresh:
 
-| Field | Description |
+| Column | Description |
 |-------|-------------|
-| user_id | User ID |
-| indicator_id | Indicator ID (linked to indicator dimension table) |
-| value | Indicator value |
-| unit | Unit of measurement |
-| source_table | Source table name |
-| source_table_id | Source record ID (the file_key) |
-| start_time / end_time | Report date (see above) |
-| comment | JSON: `unit`, `reference_range`, `detection_method`, `date_source` |
+| user_id | The person the file was uploaded into |
+| name_text / value_text / unit_text / ref_text / flag_text | As printed on the report, never translated or edited |
+| value_kind / value_num / comparator / unit_ucum | The typed layer derived from the text (`mirobody.translate.parse_value`) |
+| observed_start / observed_end / tz / local_date | The report date (see above), the zone it was placed in, and the local day computed once |
+| source_kind / source_ref | `file` / `th_files:<file_key>`: the handle back to the original document |
+| extraction_id | The frozen `th_extraction` row holding the model's output verbatim |
+| note_text | The extractor's note, encrypted at rest |
+| (th_coding_current) code / series_id / outcome / reason | The LOINC code and series, or why there is none (`needs-input`, `refused`) |
 
 ---
 
@@ -625,7 +630,7 @@ When deleting files, the system automatically performs cascade deletion:
 
 1. **Storage Deletion**: Delete file from object storage (S3/OSS)
 2. **Database Update**: Update file list in `th_messages` table
-3. **Health Data Cleanup**: Delete associated health indicators from `th_series_data`
+3. **Health Data Cleanup**: Erase the observations extracted from the file (`observations.erase`, cascading to their coding and day authority)
 4. **Genetic Data Cleanup**: If genetic file, delete data from `th_genetic_data`
 5. **Message Marking**: If all files are deleted, mark message as deleted
 
