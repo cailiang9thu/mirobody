@@ -4,13 +4,20 @@ The bundle is a single tarball holding every static LOINC-derived lookup the
 resolver needs::
 
     fhir_loinc_bundle.tar.gz
-    ├── VERSION                      # the corpus release this bundle was cut from
-    ├── loinc_axis.csv               # axis values per LOINC code
-    ├── loinc_skip.txt               # codes excluded from resolve
-    ├── loinc_demote.txt             # codes soft-demoted in sort
+    ├── VERSION                      # the release this bundle was cut from
+    ├── NOTICE                       # the LOINC copyright notice, per its licence
+    ├── axis_fields.bin/.npz         # AXIS_FIELDS values per code, plus sort orders
+    ├── corpus_names.bin/.npz        # LONG_COMMON_NAME per code, same row order
+    ├── alias_keys.bin/.npz          # folded designation -> rows (CSR postings)
     ├── loinc_rank_bonus.npy         # row-aligned float32 commonness prior
-    ├── loinc_alias_index.npz        # multilingual lexical alias index
-    └── fhir_dose_index.npz          # (value, UCUM unit) -> corpus rows
+    ├── loinc_skip.txt               # ACTIVE codes the cut leaves out
+    └── loinc_units.tsv              # EXAMPLE_UCUM_UNITS per code
+
+Every member is one blob plus an offset array, so a lookup slices bytes and
+allocates nothing per entry. `translate_build/build_bundle.py` mints them all
+from one LOINC release in one pass; before 1.5.0 they were repacked from a
+second set of members (`loinc_axis.csv`, `loinc_alias_index.npz`) that the cut
+no longer ships.
 
 **Why this module is at the package root rather than inside
 ``indicator/fhir/embeddings/``, where it used to live.** ``engine.py`` (the
@@ -180,7 +187,10 @@ AXIS_INDEX_MEMBER = "axis_index.npz"
 #: the fold have to happen in that order on the RAW value.
 AXIS_CODE, AXIS_COMPONENT, AXIS_PROPERTY, AXIS_SCALE = 0, 1, 2, 3
 AXIS_SYSTEM, AXIS_METHOD, AXIS_LCN, AXIS_ANALYTE, AXIS_FOLDED_LCN = 4, 5, 6, 7, 8
-AXIS_FIELDS = 9
+#: 9 and 10 arrived with the 1.5.0 cut: TIME_ASPCT is the sixth axis a
+#: series key needs, CLASS is what the gate reads. Both verbatim.
+AXIS_TIME, AXIS_CLASS = 9, 10
+AXIS_FIELDS = 11
 
 
 def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | None = None):
@@ -210,7 +220,7 @@ def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | Non
             f"{AXIS_BLOB_MEMBER} / {AXIS_INDEX_MEMBER} not found in "
             f"{bundle_path or BUNDLE_PATH}. Run `git lfs pull` for the data "
             "bundles; if the bundle predates 1.3.0, rebuild the runtime index "
-            "with `python scripts/build_runtime_index.py`."
+            "with `python -m translate_build.build_bundle --loinc <release>`."
         )
     import io
 
@@ -221,28 +231,14 @@ def load_axis(*, bundle_path: str | None = None, members: dict[str, bytes] | Non
     return FieldTable(blob, off, AXIS_FIELDS), order_code, order_name
 
 
-# Alias sources: ``res/aliases_src/{lang}.tsv`` (LOINC LinguisticVariant-
-# derived), ``{lang}_curated.tsv`` (hand-written corrections) and
-# ``res/resolver_overrides.tsv``, all loose files rather than bundle members.
-# Byte-identical copies used to live in the tarball too, read by the lexicon
-# build while the resolver read the loose files, and the two drifted: four rows
-# added to ``zh_curated.tsv`` were live for the resolver and invisible to the
-# build. The tarball members are gone; this is the one reader.
-
-#: The sibling bundle holding SNOMED CT-derived runtime data (the Body
-#: Structure subtree mask, the axis aliases). A separate file because the
-#: SNOMED licence terms differ from LOINC's, so each NOTICE obligation stays
-#: scoped to its own artifact. The READER lives here for the same reason
-#: `read_member` does: `fhir/index.py` calls it on the semantic path, and the
-#: build package that writes it is pruned from the wheel.
-SNOMED_BUNDLE_BASENAME = "fhir_snomed_ct_bundle.tar.gz"
-SNOMED_BUNDLE_PATH = os.path.join(RES_DIR, SNOMED_BUNDLE_BASENAME)
-
-
-def read_snomed_member(name: str, *, bundle_path: str | None = None) -> bytes | None:
-    """One member of the SNOMED bundle, or ``None``. Mirrors :func:`read_member`."""
-    return read_member_from(name, bundle_path or SNOMED_BUNDLE_PATH)
-
+# Alias sources: ``res/aliases_src/zh.tsv`` (claimed LOINC variant-derived,
+# see LICENSE-3RD-PARTY), ``{lang}_curated.tsv`` and
+# ``res/resolver_overrides.tsv``, loose files rather than bundle members.
+# Byte-identical copies used to live in the tarball too, and the two drifted:
+# four rows added to ``zh_curated.tsv`` were live for the resolver and
+# invisible to the build. The tarball members are gone; this is the one
+# reader. Other languages resolve through the release's own variants, which
+# the alias index is built from.
 
 ALIAS_SRC_DIR = os.path.join(RES_DIR, "aliases_src")
 OVERRIDES_PATH = os.path.join(RES_DIR, "resolver_overrides.tsv")
