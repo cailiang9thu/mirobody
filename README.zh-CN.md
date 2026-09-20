@@ -148,6 +148,11 @@ git lfs install && git lfs pull   # 解析器的 LOINC 词表，13 MB；新克�
 
 （`--depth 1` 跳过历史里那些已经被替换掉的前端构建产物；要提 PR 就去掉它。）
 
+有两件事 `deploy.sh` 会拦下来，并把修法写在报错里：一台机器同时只能跑一份，
+因为 `compose.yaml` 固定了这套栈的子网，再起一份要改 `mirobody_network` 的网段；
+另外，拒绝 named volume 的 Docker（rootless、受限环境）要改用 bind mount，
+`compose.override.yaml.example` 就是为这个准备的。
+
 用 `you@mirobody.ai`、验证码 `111111` 登录，不需要邮件服务。注册自己的账号也
 只要一个请求：
 
@@ -227,7 +232,7 @@ curl -X POST localhost:18060/password/register -H 'Content-Type: application/jso
 - **`pip install mirobody` 只装 2 个包**，只依赖 numpy。
 
 这套引擎驱动着 **[Theta Wellness](https://www.thetahealth.ai/)**：一款已经
-上线、面向个人用户的健康产品。
+上线、注册用户 5,000+ 的个人健康产品。
 
 ## 🔌 使用和扩展
 

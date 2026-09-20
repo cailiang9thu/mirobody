@@ -247,6 +247,15 @@ and the page telling you how to start was the one page a clone did not have.
   own rows are a wearable's and say so now, and its sleep rows write
   `dailyTotalSleepTime` (93832-4) rather than the uncoded `sleepDuration`
   nothing else produces. All 2,019 carry a code.
+- **`deploy.sh` said "nothing is running" while three containers were up.**
+  Compose starts pg and redis, then fails on mirobody, and the real cause (an
+  unreachable package index, a rejected volume) is only in that container's
+  log. The message now prints `compose ps` and the last 40 lines of that log.
+- **A second checkout and a rootless Docker are both walls, now both
+  documented.** The stack pins its subnet, so a second checkout needs a
+  different one; a Docker that refuses named volumes needs bind mounts, and
+  `compose.override.yaml.example` is the file to copy. Both READMEs say so at
+  the deploy step, where the message finds you.
 - **`vitamin B9` answered a dietary intake code.** 81066-3 is *Vitamin B9
   (Folate) intake 24 hour Estimated*, a rate on `^Patient`; a serum folate is
   2284-8, which `folate` and `叶酸` already gave. Every other vitamin and

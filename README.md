@@ -167,6 +167,12 @@ git lfs install && git lfs pull   # the resolver's LOINC bundle, 13 MB; a fresh 
 (`--depth 1` skips the history of superseded frontend builds; drop it if you
 plan to send a pull request.)
 
+Two things `deploy.sh` will stop and tell you about, both with the fix in the
+message: one checkout at a time, because `compose.yaml` pins the stack's
+subnet, so a second one needs a different `mirobody_network` subnet; and a
+Docker that refuses named volumes (rootless, hardened) needs bind mounts
+instead, which is what `compose.override.yaml.example` is for.
+
 Sign in as `you@mirobody.ai`, code `111111`, no mail provider needed. An
 account of your own is one request away:
 
