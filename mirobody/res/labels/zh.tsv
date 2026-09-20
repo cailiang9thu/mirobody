@@ -317,3 +317,13 @@ metric	BODY_MUSCLE_MASS	肌肉量	肌肉绝对质量
 metric	BODY_SKELETAL_MUSCLE_MASS	骨骼肌量	骨骼肌质量
 metric	BODY_VISCERAL_FAT_LEVEL	内脏脂肪等级	设备给出的内脏脂肪等级
 metric	BODY_WATER_MASS	体水分量	体内水分绝对质量
+metric	WALKING_DOUBLE_SUPPORT_PERCENTAGE	双支撑时间占比	步态周期中双脚同时触地的时间占比
+metric	WALKING_ASYMMETRY_PERCENTAGE	步态不对称占比	行走时步伐左右不对称的时间占比
+metric	STAIR_ASCENT_SPEED	上楼速度	上楼梯时的垂直速度
+metric	STAIR_DESCENT_SPEED	下楼速度	下楼梯时的垂直速度
+metric	SIX_MINUTE_WALK_DISTANCE	六分钟步行距离	六分钟步行试验中走过的距离
+metric	APNEA_HYPOPNEA_INDEX	呼吸暂停低通气指数	每小时睡眠中的呼吸暂停与低通气次数
+metric	OBSTRUCTIVE_APNEA_INDEX	阻塞性呼吸暂停指数	每小时睡眠中的阻塞性呼吸暂停次数
+metric	PULSE_WAVE_VELOCITY	脉搏波传导速度	动脉脉搏波的传导速度
+metric	HRV_SDNN	心率变异性 SDNN	以 NN 间期标准差表示的心率变异性
+metric	PERFUSION_INDEX	灌注指数	脉搏血氧仪测得的外周灌注指数
