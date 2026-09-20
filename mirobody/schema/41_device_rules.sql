@@ -1,6 +1,9 @@
--- Indicator value validation rules (TH-132 W1.1)
--- Rules are evaluated at data ingestion time by ValueRangeValidator.
--- Out-of-range values are marked task_id='filtered_out_of_range', not dropped.
+-- 41_device_rules.sql: the value ranges a device reading must fall in.
+--
+-- Evaluated at ingestion by translate/value_range_validator.py; a
+-- value outside its range is kept and marked task_id='filtered_out_of_range'.
+-- One row per (rule_set, indicator); the seed below is re-applied on every
+-- boot and never overwrites a row someone edited (ON CONFLICT DO NOTHING).
 
 CREATE TABLE IF NOT EXISTS indicator_valid_rules (
     id              bigserial PRIMARY KEY,
@@ -24,7 +27,10 @@ COMMENT ON COLUMN indicator_valid_rules.rules IS 'JSON array of rule expressions
 COMMENT ON COLUMN indicator_valid_rules.mapping_info IS 'Indicator metadata such as unit type, e.g. {"unit": "%"}';
 COMMENT ON COLUMN indicator_valid_rules.enabled IS 'Whether this rule is active. Disabled rules are skipped during validation.';
 
--- Seed data: ingestion_filter rules (120 indicators)
+-- Seed data: ingestion_filter rules. One per indicator that carries a number
+-- with a unit. `tests/test_device_rules.py` fails when a catalogue metric
+-- gains a LOINC code and no rule here; a vendor score with no published
+-- scale is exempt there by name rather than bounded by guess.
 INSERT INTO indicator_valid_rules (rule_set, indicator, rules, description) VALUES
 -- VITAL_SIGNS: Heart Rate
 ('ingestion_filter', 'heartRates',              '[">=25", "<=350"]',    'HR: <25=noise/fault, max~250'),
@@ -108,6 +114,7 @@ INSERT INTO indicator_valid_rules (rule_set, indicator, rules, description) VALU
 -- METABOLIC
 ('ingestion_filter', 'bloodGlucoses',            '[">=20", "<=600"]',    'CGM min 20, DKA~500, actual max=504'),
 ('ingestion_filter', 'hrvDatas',                 '[">=5", "<=500"]',     'Extreme low~5ms, actual p1=13'),
+('ingestion_filter', 'hrvSDNN',                  '[">=5", "<=500"]',     'Same as HRV; Apple SDNN'),
 ('ingestion_filter', 'hrvRMSSD',                 '[">=5", "<=500"]',     'Same as HRV'),
 ('ingestion_filter', 'hrvMax',                   '[">=5", "<=500"]',     'HRV max'),
 ('ingestion_filter', 'hrvMin',                   '[">=0", "<=500"]',     'HRV min: can be very low'),
@@ -152,5 +159,26 @@ INSERT INTO indicator_valid_rules (rule_set, indicator, rules, description) VALU
 ('ingestion_filter', 'workoutDurationLow',       '[">=0", "<=1440"]',    '0=none'),
 ('ingestion_filter', 'workoutDurationMedium',    '[">=0", "<=1440"]',    '0=none'),
 ('ingestion_filter', 'altitudeGain',             '[">=0", "<=15000"]',   'Everest 8849m'),
-('ingestion_filter', 'altitudeChange',           '[">=-15000", "<=15000"]','Can be negative')
+('ingestion_filter', 'altitudeChange',           '[">=-15000", "<=15000"]','Can be negative'),
+-- 1.5.0: the members the device crosswalk added, and the sleep totals that
+-- never had one. Units are the catalogue's standard_unit, which is what the
+-- validator compares against: it has no unit awareness of its own.
+('ingestion_filter', 'dailyTotalSleepTime',       '[">=0", "<=86400000"]','ms, 1 day'),
+('ingestion_filter', 'dailySleepDuration',        '[">=0", "<=86400000"]','ms, time in bed'),
+('ingestion_filter', 'dailyDeepSleep',            '[">=0", "<=86400000"]','ms'),
+('ingestion_filter', 'dailyLightSleep',           '[">=0", "<=86400000"]','ms'),
+('ingestion_filter', 'dailyRemSleep',             '[">=0", "<=86400000"]','ms'),
+('ingestion_filter', 'dailyAwakeTime',            '[">=0", "<=86400000"]','ms'),
+('ingestion_filter', 'dailySleepLatency',         '[">=0", "<=43200000"]','ms, max half a day'),
+('ingestion_filter', 'apneaHypopneaIndex',        '[">=0", "<=150"]',     'AHI: severe >30, reported up to ~120'),
+('ingestion_filter', 'obstructiveApneaIndex',     '[">=0", "<=150"]',     'Same scale as AHI'),
+('ingestion_filter', 'bodyWaterMass',             '[">=1", "<=200"]',     'kg, ~60% of body mass'),
+('ingestion_filter', 'perfusionIndex',            '[">=0", "<=20"]',      'PI is 0.02-20% by definition'),
+('ingestion_filter', 'pulseWaveVelocity',         '[">=1", "<=30"]',      'm/s: typical 4-15, extreme stiffness ~25'),
+('ingestion_filter', 'vo2Maxs',                   '[">=5", "<=100"]',     'mL/min/kg, record ~96'),
+('ingestion_filter', 'sixMinuteWalkDistance',     '[">=0", "<=1200"]',    'm, 0=cannot walk'),
+('ingestion_filter', 'stairAscentSpeed',          '[">=0", "<=5"]',       'm/s'),
+('ingestion_filter', 'stairDescentSpeed',         '[">=0", "<=5"]',       'm/s'),
+('ingestion_filter', 'walkingAsymmetryPercentage','[">=0", "<=100"]',     'percentage'),
+('ingestion_filter', 'walkingDoubleSupportPercentage','[">=0", "<=100"]', 'percentage')
 ON CONFLICT (rule_set, indicator) DO NOTHING;
