@@ -152,7 +152,6 @@ mirobody/collect/files/services/file_uploader.py	interpolation	storage.get_stora
 mirobody/collect/files/services/file_uploader.py	interpolation	str(e)
 mirobody/collect/files/services/genetic_processor.py	interpolation	e
 mirobody/collect/files/services/genetic_processor.py	interpolation	error_msg
-mirobody/collect/files/services/genetic_processor.py	interpolation	failed_batches
 mirobody/collect/files/services/genetic_processor.py	interpolation	line
 mirobody/collect/files/services/genetic_processor.py	interpolation	line_num
 mirobody/collect/files/services/genetic_processor.py	interpolation	loaded_records
@@ -170,8 +169,6 @@ mirobody/collect/files/services/indicator_extractor.py	exc_info	traceback of a b
 mirobody/collect/files/services/indicator_extractor.py	interpolation	e
 mirobody/collect/files/services/indicator_extractor.py	interpolation	file_name
 mirobody/collect/files/services/indicator_store.py	interpolation	e
-mirobody/collect/files/services/indicator_store.py	interpolation	original_indicator
-mirobody/collect/files/services/indicator_store.py	interpolation	str(e)
 mirobody/collect/files/services/list_my_data.py	interpolation	str(e)
 mirobody/collect/files/services/list_my_data.py	interpolation	total_categories
 mirobody/collect/files/services/list_my_data.py	interpolation	total_records
@@ -190,7 +187,6 @@ mirobody/collect/ingest/repositories/health_data.py	interpolation	i // batch_siz
 mirobody/collect/ingest/repositories/health_data.py	interpolation	sources
 mirobody/collect/ingest/repositories/health_data.py	interpolation	str(e)
 mirobody/collect/ingest/repositories/health_data.py	interpolation	successfully_processed
-mirobody/collect/ingest/repositories/health_data.py	interpolation	updated
 mirobody/collect/ingest/repositories/health_data.py	interpolation	window_from
 mirobody/collect/ingest/repositories/health_data.py	interpolation	window_to
 mirobody/collect/ingest/services/base.py	interpolation	e
@@ -286,9 +282,6 @@ mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	self.c
 mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	self.redirect_url
 mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	str(e)
 mirobody/collect/providers/mirobody_whoop/provider_whoop.py	interpolation	text
-mirobody/collect/readings.py	interpolation	on_conflict
-mirobody/collect/readings.py	interpolation	rejected
-mirobody/collect/readings.py	interpolation	sum(rejected.values())
 mirobody/collect/setup.py	interpolation	str(e)
 mirobody/mcp/service.py	extra_key	path
 mirobody/mcp/service.py	interpolation	e
@@ -372,13 +365,6 @@ mirobody/task/base.py	interpolation	cls.queue_key
 mirobody/task/base.py	interpolation	e
 mirobody/task/base.py	interpolation	int(now - last_active)
 mirobody/task/base.py	interpolation	payload
-mirobody/task/indicator_sync.py	interpolation	batch_num
-mirobody/task/indicator_sync.py	interpolation	col_name
-mirobody/task/indicator_sync.py	interpolation	e
-mirobody/task/indicator_sync.py	interpolation	skipped
-mirobody/task/indicator_sync.py	interpolation	total_failed
-mirobody/task/indicator_sync.py	interpolation	total_skipped
-mirobody/task/indicator_sync.py	interpolation	total_updated
 mirobody/task/loader.py	interpolation	dir
 mirobody/task/loader.py	interpolation	e
 mirobody/task/loader.py	interpolation	entry.name
@@ -416,10 +402,8 @@ mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	user_id
 mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	user_label
 mirobody/translate/aggregate/aggregators/sql_aggregator.py	interpolation	utc_time_str
 mirobody/translate/aggregate/database_service.py	interpolation	e
-mirobody/translate/aggregate/database_service.py	interpolation	total_processed
 mirobody/translate/aggregate/rule_generator.py	interpolation	rule.source_indicator
 mirobody/translate/aggregate/rule_generator.py	interpolation	rule.target_indicator
-mirobody/translate/aggregate/service.py	interpolation	backfilled
 mirobody/translate/aggregate/service.py	interpolation	e
 mirobody/translate/aggregate/service.py	interpolation	end_date.isoformat()
 mirobody/translate/aggregate/service.py	interpolation	last_timestamp
@@ -442,26 +426,11 @@ mirobody/translate/derive/rules.py	interpolation	e
 mirobody/translate/derive/rules.py	interpolation	numerator
 mirobody/translate/derive/rules.py	interpolation	result
 mirobody/translate/derive/rules.py	interpolation	rule.name
-mirobody/translate/derive/rules.py	interpolation	skipped
 mirobody/translate/derive/rules.py	interpolation	total_computed
-mirobody/translate/derive/rules.py	interpolation	total_skipped
 mirobody/translate/derive/task.py	interpolation	e
 mirobody/translate/derive/task.py	interpolation	stats['total_computed']
 mirobody/translate/derive/task.py	interpolation	stats['total_skipped']
-mirobody/translate/fhir_mapping.py	interpolation	', '.join(sorted(self._pending))
-mirobody/translate/fhir_mapping.py	interpolation	FHIR_INDICATOR_STANDARD
-mirobody/translate/fhir_mapping.py	interpolation	FHIR_TABLE_NAME
-mirobody/translate/fhir_mapping.py	interpolation	base_indicator
-mirobody/translate/fhir_mapping.py	interpolation	e
 mirobody/translate/indicators_info.py	interpolation	indicator
-mirobody/translate/std_indicator_registry/task.py	interpolation	TABLE_NAME
-mirobody/translate/std_indicator_registry/task.py	interpolation	e
-mirobody/translate/std_indicator_registry/task.py	interpolation	indicator.name
-mirobody/translate/std_indicator_registry/task.py	interpolation	row['id']
-mirobody/translate/std_indicator_registry/task.py	interpolation	rule.source_indicator
-mirobody/translate/std_indicator_registry/task.py	interpolation	rule.target_indicator
-mirobody/translate/std_indicator_registry/task.py	interpolation	stats['aggregation_rows']
-mirobody/translate/std_indicator_registry/task.py	interpolation	stats['source_rows']
 mirobody/translate/value_range_validator.py	interpolation	e
 mirobody/translate/value_range_validator.py	interpolation	indicator
 mirobody/translate/value_range_validator.py	interpolation	loaded

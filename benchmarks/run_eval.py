@@ -1,6 +1,6 @@
-"""Score every resolver tier and every fusion of them, per stratum.
+"""Score every resolver tier and every fusion of them, per scope and per stratum.
 
-    python benchmarks/run_eval.py --no-embed              # lexical tiers, offline, ~1s
+    python -m benchmarks.run_eval                         # lexical tiers, offline, ~1s
     python benchmarks/run_eval.py --matrix <path.npy>     # + the embedding tiers
     python benchmarks/run_eval.py --testset <cases.jsonl> # grade your own distribution
 
@@ -50,20 +50,25 @@ the strata are yours to choose. The ones worth having separate the failure
 modes: what already works (a regression guard), what currently MISSES but has
 ground truth (where recall actually lives), and the cases where the unit or the
 value's kind should pick a different code for the same analyte.
+
+`scope` is the other axis, and it is DERIVED rather than written: a stratum
+says how hard a case is, a scope says what kind of term it is. It comes off
+the shipped bundle's answer about the expected code (see `scope_of`), so a
+private test set gets the same sections without being edited, and a
+regression reads as "the everyday panels got worse" instead of as a number
+that moved. `checkup` is the section the release gate names.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
-import csv
-import io
 import json
-import os
 import pathlib
 import sys
 import time
 from collections import defaultdict
+from functools import lru_cache
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
@@ -72,32 +77,94 @@ DEFAULT_TESTSET = REPO / "eval" / "testset.jsonl"
 RESULTS = REPO / "eval" / "results"
 
 # The embedding matrix is multi-GB and ships on a volume, never in git, so
-# there is no defensible default path — it used to be one maintainer's Desktop,
-# which meant the runner with no flags only ran on one machine.
-# MIROBODY_EVAL_MATRIX keeps that machine's convenience without hardcoding it.
-DEFAULT_MATRIX = os.environ.get("MIROBODY_EVAL_MATRIX", "")
-
-
 def _analyte_table() -> dict[str, str]:
-    from mirobody.indicator.fhir.embeddings.bundle import read_member
+    """code -> its analyte, for "right analyte, different variant" credit.
 
-    raw = read_member(
-        "loinc_axis.csv", bundle_path=str(REPO / "mirobody" / "res" / "fhir_loinc_bundle.tar.gz")
-    )
+    Read off the axis table the resolver itself answers from. It used to parse
+    `loinc_axis.csv`, a whole second copy of the table that the 1.5.0 cut stopped
+    shipping; `AXIS_ANALYTE` is the same COMPONENT head, folded at build time.
+    """
+    from mirobody._bundle import AXIS_ANALYTE, AXIS_CODE, load_axis
+
+    axis, _order_code, _order_name = load_axis()
     out = {}
-    for row in csv.DictReader(io.StringIO(raw.decode("utf-8"))):
-        out[row["LOINC_NUM"]] = (row["COMPONENT"] or "").split("^")[0].strip().lower()
+    for row in range(len(axis)):
+        out[axis.field(row, AXIS_CODE)] = axis.field(row, AXIS_ANALYTE)
     return out
 
 
+#: LOINC CLASS families an ordinary checkup prints. The `*.ATOM` rows are the
+#: vital signs; the rest are the panels a 体检 or an annual physical runs. A
+#: code outside these is still clinical, just not what a first-time user is
+#: holding, which is the distinction `scope` exists to make.
+CHECKUP_CLASSES = frozenset({
+    "CHEM", "HEM/BC", "UA", "COAG", "SERO", "PANEL.VITALS",
+    "BP.ATOM", "BDYWGT.ATOM", "BDYHGT.ATOM", "HRTRATE.ATOM", "RESP.ATOM", "BDYTMP.ATOM",
+})
+
+#: Reported in this order. `symptom` is reserved for the ICPC-3 axis.
+SCOPES = ["checkup", "clinical-extended", "device", "out", "deprecated", "symptom", "refuse"]
+
+
+def _scope_table():
+    """`(class_of, skipped)` for deriving a case's scope from the bundle."""
+    from mirobody._bundle import AXIS_CLASS, AXIS_CODE, read_member
+    from mirobody.bundle import load_axis
+
+    axis, by_code, _by_name = load_axis()
+    class_of = {axis.field(i, AXIS_CODE): axis.field(i, AXIS_CLASS) for i in range(len(by_code))}
+    skipped = set((read_member("loinc_skip.txt") or b"").decode().split())
+    return class_of, skipped
+
+
+def scope_of(case: dict, class_of: dict[str, str], skipped: set[str]) -> str:
+    """The scope a case is reported under.
+
+    A case may carry its own `scope`; otherwise it is derived, so a private
+    test set gets the same sections without being edited. The derivation is
+    the bundle's own answer about the expected code and nothing else:
+
+      refuse             the case expects no code
+      device             the term is a name in the device catalogue
+      out                the code is ACTIVE in 2.83 and the cut drops it
+      deprecated         the code is not ACTIVE in 2.83
+      checkup            in the cut, in a CHECKUP_CLASSES family
+      clinical-extended  in the cut, anywhere else
+    """
+    if case.get("scope"):
+        return str(case["scope"])
+    code = case.get("expect_code")
+    if not code:
+        return "refuse"
+    if _is_device(case.get("term", "")):
+        return "device"
+    family = class_of.get(code)
+    if family is None:
+        return "out" if code in skipped else "deprecated"
+    return "checkup" if family in CHECKUP_CLASSES else "clinical-extended"
+
+
+@lru_cache(maxsize=1)
+def _device_names() -> frozenset[str]:
+    try:
+        from mirobody.kernel import metrics
+    except Exception:
+        return frozenset()
+    return frozenset(n.lower() for n in metrics.METRICS)
+
+
+def _is_device(term: str) -> bool:
+    return term.strip().lower() in _device_names()
+
+
 class Scorer:
-    """One config's tally, kept per stratum as well as overall."""
+    """One config's tally, kept per stratum and per scope as well as overall."""
 
     def __init__(self, name: str):
         self.name = name
         self.rows: list[dict] = []
 
-    def add(self, case: dict, code: str | None, analyte_of: dict[str, str]) -> None:
+    def add(self, case: dict, code: str | None, analyte_of: dict[str, str], scope: str = "") -> None:
         refuse = case["expect_code"] is None
         answered = bool(code)
         if refuse:
@@ -107,13 +174,17 @@ class Scorer:
             correct = answered and analyte_of.get(code, "") == case["expect_analyte"]
             exact = answered and code == case["expect_code"]
         self.rows.append({
-            "stratum": case["stratum"], "term": case["term"], "got": code,
+            "stratum": case["stratum"], "scope": scope, "term": case["term"], "got": code,
             "expect": case["expect_code"], "answered": answered,
             "correct": correct, "exact": exact,
         })
 
-    def tally(self, stratum: str | None = None) -> dict:
-        rows = [r for r in self.rows if stratum is None or r["stratum"] == stratum]
+    def tally(self, stratum: str | None = None, scope: str | None = None) -> dict:
+        rows = [
+            r for r in self.rows
+            if (stratum is None or r["stratum"] == stratum)
+            and (scope is None or r["scope"] == scope)
+        ]
         n = len(rows)
         if not n:
             return {}
@@ -151,19 +222,15 @@ async def main() -> int:
              "the shared asset; the cases need not be — point this at a private "
              "set to grade the same resolver against your own distribution.",
     )
-    ap.add_argument("--matrix", default=DEFAULT_MATRIX,
-                    help="embedding matrix .npy; or set MIROBODY_EVAL_MATRIX")
-    ap.add_argument("--no-embed", action="store_true")
+    # --no-embed is accepted and ignored: every caller and every runbook
+    # passes it, and there is no embedding tier left to turn off.
+    ap.add_argument("--no-embed", action="store_true", help=argparse.SUPPRESS)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
     testset = args.testset
     if not testset.is_file():
         print(f"no test set at {testset} — pass --testset <path>", file=sys.stderr)
-        return 2
-    if not args.no_embed and not args.matrix:
-        print("no embedding matrix: pass --matrix <path>, set MIROBODY_EVAL_MATRIX, "
-              "or use --no-embed for the lexical tiers only", file=sys.stderr)
         return 2
 
     cases = [json.loads(l) for l in testset.open(encoding="utf-8")]
@@ -175,6 +242,8 @@ async def main() -> int:
     print(f"{len(cases):,} cases from {testset}", flush=True)
 
     analyte_of = _analyte_table()
+    class_of, skipped = _scope_table()
+    scopes = [scope_of(c, class_of, skipped) for c in cases]
 
     from mirobody.engine import resolve, resolve_reading
 
@@ -184,61 +253,16 @@ async def main() -> int:
     lex_unit = [resolve_reading(c["term"], c["value"], c["unit"]) for c in cases]
     print(f"lexical tiers: {time.time()-t0:.1f}s", flush=True)
 
-    sem_plain: list[str | None] = [None] * len(cases)
-    sem_gated: list[str | None] = [None] * len(cases)
-    matrix_used = None
-    if not args.no_embed:
-        from mirobody.indicator.semantic import SemanticIndex
-        from mirobody.utils import Config
-
-        await Config.init(yaml_filenames=["config.yaml", "config.local.yaml"])
-        from mirobody.utils.embedding import text_embedding
-
-        index = SemanticIndex(args.matrix)
-        matrix_used = args.matrix
-        t0 = time.time()
-        vectors = await text_embedding([c["term"] for c in cases], provider="openrouter", cache=True)
-        print(f"embedded {len(cases):,} terms in {time.time()-t0:.1f}s", flush=True)
-
-        usable = [(i, v) for i, v in enumerate(vectors) if v]
-        gates = [
-            SemanticIndex.gate_for(cases[i]["value"], cases[i]["unit"], cases[i]["term"])
-            for i, _ in usable
-        ]
-        plain = index.search_vectors([v for _, v in usable], top_k=1)
-        gated = index.search_vectors([v for _, v in usable], top_k=1, gates=gates)
-        for (i, _), p, g in zip(usable, plain, gated, strict=True):
-            sem_plain[i] = p[0].loinc if p else None
-            sem_gated[i] = g[0].loinc if g else None
-
     # ── configs, all derived from the decisions above ────────────────────────
     configs: dict[str, list[str | None]] = {
         "T2 lexical": [r.loinc or None for r in lex],
         "T2+T3 lexical+unit-variant": [r.loinc or None for r in lex_unit],
     }
-    if not args.no_embed:
-        configs["T4 embedding (ungated)"] = sem_plain
-        configs["T4 embedding + axis gates"] = sem_gated
-        # A fallback that fires on EVERY non-answer, including the deliberate
-        # refusals. Kept as a config because it is what the first version did,
-        # and the eval is what caught it: the embedding tier answered all nine
-        # refusals and got all nine wrong.
-        configs["T2+T3 -> T4 gated, no refusal guard"] = [
-            (r.loinc or None) or s for r, s in zip(lex_unit, sem_gated, strict=True)
-        ]
-        # What `resolve_with_semantic_fallback` actually does: a refusal is a
-        # decision and stays a refusal; only genuine misses go on to the second
-        # tier.
-        configs["T2+T3 -> T4 gated  [PROPOSED]"] = [
-            (r.loinc or None) or (None if r.method == "refused" else s)
-            for r, s in zip(lex_unit, sem_gated, strict=True)
-        ]
-
     scorers = {}
     for name, codes in configs.items():
         sc = Scorer(name)
-        for case, code in zip(cases, codes, strict=True):
-            sc.add(case, code, analyte_of)
+        for case, code, scope in zip(cases, codes, scopes, strict=True):
+            sc.add(case, code, analyte_of, scope)
         scorers[name] = sc
 
     # This repo's own strata first, so its reports keep their reading order,
@@ -253,10 +277,13 @@ async def main() -> int:
     report = {
         "when": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "cases": len(cases),
-        "matrix": matrix_used,
         "overall": {n: s.tally() for n, s in scorers.items()},
         "by_stratum": {
             n: {st: s.tally(st) for st in strata if s.tally(st)} for n, s in scorers.items()
+        },
+        "by_scope": {
+            n: {sc: s.tally(scope=sc) for sc in SCOPES if s.tally(scope=sc)}
+            for n, s in scorers.items()
         },
     }
     RESULTS.mkdir(parents=True, exist_ok=True)
@@ -275,6 +302,12 @@ async def main() -> int:
                   f"{t['recall']:>7.3f} {t['wrong_rate']:>7.3f} {t['exact_code']:>7.3f}")
 
     table(f"OVERALL  (n={len(cases):,})", lambda s: s.tally())
+    # Scope first: it is what the release gate reads, and `checkup` is the
+    # section a first-time user's terms land in.
+    for sc in SCOPES:
+        n = scopes.count(sc)
+        if n:
+            table(f"scope {sc}  (n={n:,})", lambda s, sc=sc: s.tally(scope=sc))
     for st in strata:
         n = sum(1 for c in cases if c["stratum"] == st)
         if n:

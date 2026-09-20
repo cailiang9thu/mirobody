@@ -31,10 +31,15 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+# The tallies the observation model reports are past participles rather than
+# `*_count`: `report.inserted`, `report.skipped`, `report.coded`. They are
+# counts, and spelling each one `inserted_count` at every call site to satisfy
+# a regex would be the tail wagging the dog.
 SAFE_NAME = re.compile(
-    r"^(?:.*_)?(?:id|ids|uid|count|counts|len|length|n|i|idx|index|ms|seconds|secs|minutes|hours|days|kind|class|"
+    r"^(?:.*_)?(?:id|ids|uid|count|counts|len|length|n|i|ix|idx|index|ms|seconds|secs|minutes|hours|days|kind|class|"
     r"type|status|code|slug|version|level|size|bytes|total|attempt|attempts|limit|offset|step|steps|round|rounds|mode|"
-    r"action|method|reason|state|flag|ok|success|enabled|elapsed|duration|rate|pct|percent|ratio|threshold|tokens)$"
+    r"action|method|reason|state|flag|ok|success|enabled|elapsed|duration|rate|pct|percent|ratio|threshold|tokens|"
+    r"inserted|skipped|coded|rejected|scanned|changed|written|retracted|decided|undecrypted|outcomes|batches)$"
 )
 #: Exact names that are safe although they end in a word the regex does not know.
 SAFE_EXACT = frozenset(
