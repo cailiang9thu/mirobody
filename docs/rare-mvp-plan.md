@@ -693,3 +693,139 @@ D1 拆成 D1a/D1b 后，原 §9 的 W3–W4 两周严重不足。修订如下（
 | **语料与生产输入形态不符** | 在发表文本上调好的抽取器，遇到扫描件/手写病历直接失效 | 尽早取得 ≥5 份真实就诊资料做形态验证；`rareDieaseCollect` 只用于评测和词表，不作为生产链路的验收依据 |
 | 位图中变异名 OCR 混淆（`RecNciI`/`RecNci1`） | **静默错误** | MVP 一律转人工；任何时候都不接受未经人工确认的图源变异 |
 | 金标集只有 30 份，统计效力有限 | 指标波动大 | 只用于"是否退步"的回归判断，不宣称绝对准确率；阶段二扩到 100 份 |
+
+---
+
+## 16. 编码参考库:从进程内存迁到 Postgres(2026-09-21 补充)
+
+> 触发:层1/层2 落地后实测,一个进程常驻的编码参考库 **554 MB**(HPO 48 · Orphanet+IC 77 · HGNC 31 · 基因→HPO 35 · **ClinVar P/LP 351**),
+> server worker + 评测薄壳各一份就翻倍。§3.1 选"自有 bundle"是为了绕开 FHIR bundle 重建,没有说过参考库必须常驻内存。
+
+### 16.1 现状:什么已有索引,什么没有
+
+| 参考库 | 现在的形态 | 查法 | 索引 |
+| --- | --- | --- | --- |
+| HPO 标签/同义词(63,843 键) | `HpoAdapter._exact: dict` | 精确 → 最长包含 | 精确:哈希 O(1);包含:按键长降序的**顺序扫描** |
+| Orphanet 名称/同义词 | `DiseaseAdapter._names: dict` | 同上 | 同上 |
+| Orphanet HPO 注释闭包 + IC(4,355 病种) | `dict[orpha, frozenset]` + `dict[hpo, float]` | 每次编码对全部病种算 best-match IC | 无(本质是全表计算) |
+| HGNC / 基因→HPO | dict | 符号精确查 / 按基因取集合 | 哈希 |
+| ClinVar P/LP(348,988 行) | `dict["chrom:pos:ref:alt"]`(pickle 105 MB → 内存 351 MB) | 五元组精确查 | 哈希 |
+
+结论:**点查都有索引,包含匹配没有;问题不在索引而在常驻体积**,且 63% 来自 ClinVar 这一张纯 KV 表。
+
+### 16.2 决策:混合式,大而点查的进库,小而全表算的留内存
+
+| 参考库 | 去向 | 理由 |
+| --- | --- | --- |
+| ClinVar P/LP | **Postgres** `ref_clinvar` | 纯五元组点查,B-tree 完全胜任;省 351 MB |
+| HGNC、基因→HPO | **Postgres** `ref_hgnc`、`ref_gene_hpo` | 同上;省 66 MB |
+| Orphanet 名称/同义词/基因/OMIM/ICD | **Postgres** `ref_orpha_*`,`pg_trgm` 做包含匹配 | 查法可用索引表达 |
+| Orphanet HPO 闭包 + IC | **留内存**(≈60 MB) | 全表算,逐病种查库是几千次往返;阶段二可试 `ref_orpha_hpo_closure` 一条 `JOIN…GROUP BY…LIMIT k` 出榜 |
+| HPO 标签索引 | **留内存**(48 MB) | 每条断言都查,延迟敏感 |
+
+做完后常驻 **≈110 MB**(-80%);闭包也进库则 ≈50 MB。
+
+### 16.3 DDL:`36_rare_reference.sql`(主包只追加;数据不进 git、不进 wheel)
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 每张参考表都带 source_version:ClinVar 月更、HPO/Orphanet 季更,th_variant_annotation 已按此口径记版本
+CREATE TABLE IF NOT EXISTS ref_clinvar (
+    chrom          VARCHAR(8)  NOT NULL,          -- 不带 chr 前缀,GRCh38
+    pos            INTEGER     NOT NULL,
+    ref            TEXT        NOT NULL,
+    alt            TEXT        NOT NULL,
+    variation_id   VARCHAR(16) NOT NULL,
+    clnsig         VARCHAR(64) NOT NULL,          -- Pathogenic / Likely_pathogenic / Pathogenic/Likely_pathogenic
+    review_status  VARCHAR(80),
+    stars          SMALLINT    NOT NULL DEFAULT 0,
+    gene_symbol    VARCHAR(64),
+    consequence    VARCHAR(64),
+    condition_names TEXT[],
+    disease_db     TEXT,                           -- 原 CLNDISDB,含 Orphanet:/OMIM: 链接
+    source_version VARCHAR(32) NOT NULL,
+    PRIMARY KEY (chrom, pos, ref, alt)             -- 五元组点查走这一个索引
+);
+CREATE INDEX IF NOT EXISTS idx_ref_clinvar_gene ON ref_clinvar (gene_symbol);
+
+CREATE TABLE IF NOT EXISTS ref_hgnc (
+    symbol         VARCHAR(64) PRIMARY KEY,
+    hgnc_id        VARCHAR(16) NOT NULL,
+    name           TEXT,
+    location       VARCHAR(64),
+    source_version VARCHAR(32) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ref_hgnc_alias (                 -- 别名 / 曾用名 → 现行符号
+    alias          VARCHAR(64) NOT NULL,
+    symbol         VARCHAR(64) NOT NULL REFERENCES ref_hgnc(symbol),
+    kind           VARCHAR(8)  NOT NULL,          -- alias | prev
+    PRIMARY KEY (alias, symbol)
+);
+CREATE TABLE IF NOT EXISTS ref_gene_hpo (                   -- genes_to_phenotype.txt
+    gene_symbol    VARCHAR(64) NOT NULL,
+    hpo_id         VARCHAR(16) NOT NULL,
+    disease_id     VARCHAR(32),                    -- OMIM:nnn / ORPHA:nnn
+    source_version VARCHAR(32) NOT NULL,
+    PRIMARY KEY (gene_symbol, hpo_id, disease_id)
+);
+CREATE INDEX IF NOT EXISTS idx_ref_gene_hpo_disease ON ref_gene_hpo (disease_id);
+
+CREATE TABLE IF NOT EXISTS ref_orpha_disorder (
+    orpha_code     VARCHAR(16) PRIMARY KEY,
+    name           TEXT NOT NULL,
+    disorder_type  VARCHAR(64),
+    icd10          TEXT[],
+    omim           TEXT[],
+    source_version VARCHAR(32) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ref_orpha_name (                 -- 名称 + 同义词的折叠键,一行一键
+    name_key       TEXT NOT NULL,                  -- lexical.normalize(name)
+    orpha_code     VARCHAR(16) NOT NULL REFERENCES ref_orpha_disorder(orpha_code),
+    kind           VARCHAR(8)  NOT NULL,           -- label | synonym
+    PRIMARY KEY (name_key, orpha_code)
+);
+CREATE INDEX IF NOT EXISTS idx_ref_orpha_name_trgm ON ref_orpha_name USING gin (name_key gin_trgm_ops);  -- 包含匹配
+CREATE TABLE IF NOT EXISTS ref_orpha_gene (
+    orpha_code     VARCHAR(16) NOT NULL REFERENCES ref_orpha_disorder(orpha_code),
+    gene_symbol    VARCHAR(64) NOT NULL,
+    hgnc_id        VARCHAR(16),
+    association    VARCHAR(80),                    -- Disease-causing germline mutation(s) in / Major susceptibility factor in / ...
+    PRIMARY KEY (orpha_code, gene_symbol)
+);
+CREATE TABLE IF NOT EXISTS ref_orpha_hpo (                  -- phenotype.hpoa ORPHA 行(闭包仍在内存算)
+    orpha_code     VARCHAR(16) NOT NULL REFERENCES ref_orpha_disorder(orpha_code),
+    hpo_id         VARCHAR(16) NOT NULL,
+    frequency      REAL,                           -- HP:0040280..85 折成点估计;NULL = 未标
+    PRIMARY KEY (orpha_code, hpo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_ref_orpha_hpo_term ON ref_orpha_hpo (hpo_id);
+```
+
+索引取舍:ClinVar 只留主键 + 基因索引(月更 35 万行,索引越多装载越慢);Orphanet 名称表用 `pg_trgm` GIN 是为了"文本包含病名"的查法,精确查仍走主键;`ref_orpha_hpo` 的 `hpo_id` 索引给 `rank_rare_diseases` 阶段二进库用。
+
+### 16.4 装载与版本
+
+- 插件命令 `mirobody-rare-load-reference [clinvar|hgnc|orpha|all]`:源文件由 `res/EXTERNAL.tsv` 登记(不进 git),按 CLAUDE.md **分批、可重跑只补缺失**——先 `SELECT DISTINCT source_version` 判断该版本是否已装,同版本跳过,新版本 `ON CONFLICT DO UPDATE` 并把旧版本行标 `retired`(阶段二)或直接覆盖(MVP)。
+- ClinVar 装载约 35 万行,`COPY` 或 `executemany` 分 1 万行一批,预计 1–2 分钟;磁盘约 400 MB。
+- `source_version` 写法:`clinvar_grch38_plp:2026-09-01`、`hpo:2026-09`、`orphanet:2026-07`,与 `th_variant_annotation.source_version` 同一口径,"三个月前为什么判成致病"能回答。
+
+### 16.5 代码落点与切换(全部在插件包)
+
+| 文件 | 改动 |
+| --- | --- |
+| `mirobody/schema/36_rare_reference.sql` | 主包唯一新增(追加式) |
+| `mirobody_rare/reference/load.py` | 装载器 + 命令入口 |
+| `mirobody_rare/repo.py` | `RareRepo` 加 `ref_*` 读法:**五元组批量 JOIN**(临时表或 `VALUES` 列表)、符号查、trgm 包含查 |
+| `variant/clinvar.py` · `gene/hgnc.py` · `gene/phenotype.py` · `disease/adapter.py` | 各加库实现;调用方(`genome.py` / `ingest.py` / `coding.py`)不动 |
+| `config.yaml` | `reference.backend: memory \| pg`,默认 `memory`(评测薄壳与无库环境照旧) |
+
+**VCF 摄取的硬规则**:一条染色体十几万个 call,**禁止逐行查库**;按染色体分片后把过滤后的五元组一次性送进 `JOIN ref_clinvar`,与现有 ≤8 并发分片结构配合。
+
+### 16.6 代价与验收
+
+- 点查从 dict 微秒级变毫秒级;每例编码多几十次查库,评测薄壳 60 例实测对比前后耗时,**慢于 2× 就回退到 memory 后端**。
+- 验收:① 32–36 号 DDL 对干净库连跑三次零错误;② `reference.backend=pg` 与 `memory` 对 haenv `rare_coding-p1` 60 例的 `rc_*` **逐位相同**(后端只换存储,不换答案);③ 装载器中途 kill 后重跑,行数不变、无重复;④ 进程常驻 ≤ 150 MB。
+- 前提:本机尚无 Postgres,`PgRepo` 至今只写未回放;先起库(`compose.yaml`)回放 32–35 号 DDL 与 `PgRepo`,再做 ClinVar 进库。
+
+推进顺序:ClinVar → HGNC/基因注释 → Orphanet 名称表;HPO 索引与相似度闭包留内存,真实病例量上来后再评估。
