@@ -41,6 +41,7 @@ def _chroms_in(path: str | Path) -> list[str]:
 def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, sex: str | None,
                     clinvar, min_dp: int, min_gq: int, min_stars: int) -> tuple[list[dict], list[dict], int]:
     vrows, arows, n_raw = [], [], 0
+    pend: list[tuple[tuple, dict]] = []
     with _open(path) as fh:
         for line in fh:
             if line.startswith("#"):
@@ -59,16 +60,18 @@ def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, 
             if (dp is not None and dp < min_dp) or (gq is not None and gq < min_gq):
                 continue
             for alt in c[4].split(","):
-                cv = clinvar.lookup(c[0], int(c[1]), c[3], alt)
-                if not cv or cv.get("stars", 0) < min_stars:
-                    continue
-                vrows.append({"sample_id": sample_id, "user_id": user_id, "chrom": chrom, "pos": int(c[1]), "ref": c[3], "alt": alt,
-                              "genotype": gt, "zygosity": _zygosity(gt, c[0], sex), "depth": dp, "gq": gq, "filter": c[6],
-                              "gene_symbol": cv.get("gene") or None, "consequence": cv.get("mc") or None,
-                              "is_de_novo": None, "inheritance": "unknown"})
-                arows.append({"_key": (chrom, int(c[1]), c[3], alt), "source": "clinvar", "source_version": clinvar.version,
-                              "clinical_significance": cv.get("clnsig"), "review_status": cv.get("rev"),
-                              "condition_names": list(cv.get("dn") or [])})
+                pend.append(((chrom, int(c[1]), c[3], alt), dict(genotype=gt, zygosity=_zygosity(gt, c[0], sex), depth=dp, gq=gq, filter=c[6])))
+    hits = clinvar.lookup_many([k for k, _ in pend])          # one round-trip per shard, never per call
+    for k, f in pend:
+        cv = hits.get(k)
+        if not cv or cv.get("stars", 0) < min_stars:
+            continue
+        vrows.append({"sample_id": sample_id, "user_id": user_id, "chrom": k[0], "pos": k[1], "ref": k[2], "alt": k[3], **f,
+                      "gene_symbol": cv.get("gene") or None, "consequence": cv.get("mc") or None,
+                      "is_de_novo": None, "inheritance": "unknown"})
+        arows.append({"_key": k, "source": "clinvar", "source_version": clinvar.version,
+                      "clinical_significance": cv.get("clnsig"), "review_status": cv.get("rev"),
+                      "condition_names": list(cv.get("dn") or [])})
     return vrows, arows, n_raw
 
 

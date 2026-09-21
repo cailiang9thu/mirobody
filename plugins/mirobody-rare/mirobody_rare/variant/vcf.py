@@ -92,6 +92,7 @@ def read_candidates(path: str | Path, clinvar, sex: str | None = None, sample_ix
     """Every PASS non-reference call whose five-tuple is P/LP in ClinVar, plus counts."""
     n = n_pass = n_nonref = 0
     out: list[VariantCall] = []
+    pend: list[tuple[tuple, dict]] = []          # (five-tuple, call fields) — resolved in one lookup_many
     with _open(path) as fh:
         for line in fh:
             if line.startswith("#"):
@@ -113,10 +114,13 @@ def read_candidates(path: str | Path, clinvar, sex: str | None = None, sample_ix
             if (dp is not None and dp < min_dp) or (gq is not None and gq < min_gq):
                 continue
             for alt in c[4].split(","):
-                cv = clinvar.lookup(c[0], int(c[1]), c[3], alt)
-                if cv:
-                    out.append(VariantCall(chrom=c[0].replace("chr", ""), pos=int(c[1]), ref=c[3], alt=alt, gt=gt,
-                                           zygosity=_zygosity(gt, c[0], sex), filter=c[6], depth=dp, gq=gq, clinvar=cv))
+                pend.append(((c[0].replace("chr", ""), int(c[1]), c[3], alt),
+                             dict(gt=gt, zygosity=_zygosity(gt, c[0], sex), filter=c[6], depth=dp, gq=gq)))
+    hits = clinvar.lookup_many([k for k, _ in pend])
+    for k, f in pend:
+        cv = hits.get(k)
+        if cv:
+            out.append(VariantCall(chrom=k[0], pos=k[1], ref=k[2], alt=k[3], clinvar=cv, **f))
     return out, {"n_records": n, "n_pass": n_pass, "n_nonref": n_nonref, "n_clinvar_plp": len(out)}
 
 

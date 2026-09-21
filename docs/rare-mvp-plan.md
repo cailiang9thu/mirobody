@@ -829,3 +829,44 @@ CREATE INDEX IF NOT EXISTS idx_ref_orpha_hpo_term ON ref_orpha_hpo (hpo_id);
 - 前提:本机尚无 Postgres,`PgRepo` 至今只写未回放;先起库(`compose.yaml`)回放 32–35 号 DDL 与 `PgRepo`,再做 ClinVar 进库。
 
 推进顺序:ClinVar → HGNC/基因注释 → Orphanet 名称表;HPO 索引与相似度闭包留内存,真实病例量上来后再评估。
+
+### 16.7 补充(2026-09-21 实测后)
+
+**索引现状与提速空间**(本机实测,中位数):
+
+| 查法 | 现状 | 加索引后(原型) | 倍数 |
+| --- | --- | --- | --- |
+| HPO / Orphanet / HGNC / ClinVar 精确点查 | 0.005 ms 以下(哈希) | 不变 | 已最优 |
+| HPO 包含匹配(顺序扫 64k 键) | 8.2 ms | 0.01 ms(最稀有二元组倒排) | ≈800× |
+| Orphanet 病名包含匹配(扫 26k 键) | 2.7–3.8 ms | ≈0.01 ms(同法) | ≈300× |
+| 病种表型排序(4,355 病种全算) | 230 ms | 83 ms(term→病种倒排预筛到 ≈1,200 候选,top-5 不变) | 2.8× |
+
+折到一例:词表部分 ≈0.35 s → ≈0.1 s;整例中位 2.1 s(带 VCF 5–9 s)的大头是解压顺序读 VCF 与算 DICOM sha256,词表索引只省约 15%。
+下一步该优化的是 VCF 读取(bgzip + tabix 按区间取)。倒排原型的平票顺序尚未做成确定性,正式实现须保持「最长优先、同长按注释频次」,验收仍是 `rc_*` 逐位不变。
+
+**Postgres 不是为速度**:`ref_clinvar` 点查约 0.2–1 ms,比内存哈希慢;换来的是常驻内存 -351 MB、多进程共享一份、词表版本可审计。
+
+**`ref_clinvar` 主键改为 md5**:btree 单行上限约 2.7 kB,ClinVar 含更长的缺失/插入等位基因,五元组直接作主键在装载时报 `index row size exceeds btree maximum`。
+改为生成列 `vkey = md5(chrom:pos:ref:alt)` 作主键,`(chrom,pos)` 另建索引供区间扫描;`lookup_many` 对 `unnest` 的查询元组算同一 md5 再 JOIN。§16.3 的 DDL 以 `36_rare_reference.sql` 落盘版本为准。
+
+**部署**:测试库 `mirobody_test`,schema **`mirobody_rare`**(不用 `public`,与主包 `mirobody_ai` 隔离);连接串由 `MIROBODY_RARE_PG_DSN` 给,插件连接池对每条连接 `SET search_path`,
+32–36 号 DDL 用 `mirobody_rare.reference.run_schema()` 回放(三次零错误已验)。装载命令 `mirobody-rare-load-reference [clinvar|hgnc|gene_hpo|orpha|all]`。
+
+### 16.8 落地实测(2026-09-21,测试库 `mirobody_test` · schema `mirobody_rare`,AWS 远端)
+
+**装载**:`ref_clinvar` 348,988 行 271 s(4.47M 条 VCF 扫描 + 暂存表 COPY + 一次合并)· `ref_hgnc` 45,083 + 别名 60,713 · `ref_gene_hpo` 333,888 · Orphanet 病种 11,645 / 名称键 26,952 / 基因关联 8,503 / HPO 注释 115,745。
+同版本重跑全部 `skipped`(版本键 = 源文件 mtime 日期)。32–36 号 DDL 三次回放零错误。
+
+**两个被实测推翻的假设**:
+
+1. **"点查进库"在远端库上不成立**。到测试库的往返 ≈500 ms;一例 VCF 有 13–50 万个五元组,即便 `unnest` 一次送 15 万条也要 8 s,trio 例 30–70 s(内存后端 5 s)。
+   改为**键在本地、载荷在库**:进程启动时取 349k 个 `vkey` md5 摘要(16 B/个,≈35 MB,按 `source_version` 落盘缓存,首取 28 s),`lookup_many` 本地算 md5 过滤,只为命中的几条发一次 `WHERE vkey = ANY($1)`。
+   trio 例 50 万元组 → 1.1 s、一次往返。这仍是 §16.2 的目的(常驻内存从 351 MB 降到 67 MB、载荷与版本在库里可审计),只是"点查"发生在本地键集上。
+2. **asyncpg 连接池会 `RESET ALL`**,`init` 里的 `SET search_path` 在连接归还后失效,DDL 与装载静默落进 `public`。改为 `server_settings={"search_path": ...}`(启动参数,不被 reset);误建的空表已清理。
+   另:`ref_clinvar` 五元组直接作主键在装载时超过 btree 单行 2.7 kB 上限(长缺失/插入),改为 md5 生成列主键 + `(chrom,pos)` 索引。
+
+**等价性与代价**(60 例经两个薄壳各跑一遍,比较 `assertions/abstained/diagnosis/gene/variants/differential/signals`):
+**60/60 逐位相同**;延迟中位 4.72 s → 6.64 s(**1.41×**,≤2× 线内);薄壳常驻 608 MB → **352 MB**。
+常驻**未达 ≤150 MB**:ClinVar 这一项 351 → 67 MB 已兑现,剩下 HPO 48 + Orphanet 闭包 77 + HGNC 31 + 基因→HPO 35 仍在内存 —— 后两者已装进库,切客户端即可再降 ≈60 MB;HPO 与闭包按 §16.2 留内存,150 MB 这条线要靠它们瘦身(HPO 索引只留 zh/en 标签键、闭包改 int 编码)才够得着。
+
+**还留在内存里的**:HPO 索引 48 MB、Orphanet 闭包 + IC 77 MB、HGNC 31 MB、基因→HPO 35 MB。HGNC 与基因→HPO 已装进库但客户端未切换(阶段二,同"键本地/载荷在库"模式或直接点查,它们每例只查几十次)。

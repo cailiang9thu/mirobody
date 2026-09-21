@@ -23,6 +23,7 @@ plugins/mirobody-rare/                 独立发行包(不进主包 wheel)
 │   ├── repo.py                        四张表的仓储接口:PgRepo(execute_query,命名绑定)+ MemoryRepo(测试)
 │   ├── ingest.py                      VCF(按染色体分片 ≤8 并发、重跑只补缺失分片)/ PED / DICOM 入库作业
 │   ├── handlers.py                    上传处理器 VcfHandler / PedHandler / DicomHandler(entry point mirobody.file_handlers)
+│   ├── reference/db.py, load.py, sync.py  §16:asyncpg 连接池(schema mirobody_rare)、参考表装载命令、同步桥
 │   ├── coding.py                      管线;solver 合约 JSON
 │   ├── serve_coding.py                OpenAI 兼容薄壳(haenv 拍板 #5)
 │   ├── tools.py                       MCP 工具:层1 三个(resolve_hpo / code_phenotypes / rank_rare_diseases)
@@ -33,6 +34,7 @@ mirobody/schema/32_phenotype.sql       th_phenotype / th_disease_code(主包只�
 mirobody/schema/33_variant.sql         th_sequencing_sample / th_variant / th_variant_annotation(计划 a7_)
 mirobody/schema/34_pedigree_consent.sql th_pedigree / th_pedigree_member / th_consent(计划 a9_,§7.1 三级同意列)
 mirobody/schema/35_signal_index.sql    th_signal_object(计划 a8_)
+mirobody/schema/36_rare_reference.sql  ref_clinvar(md5 主键)/ ref_hgnc(_alias)/ ref_gene_hpo / ref_orpha_disorder|name|gene|hpo(计划 §16.3)
 mirobody/collect/files/handlers/factory.py  主包唯一改动:`mirobody.file_handlers` entry point(插件 (probe, Handler) 序对先于自带处理器;未装插件时为空)
 mirobody/collect/files/services/file_uploader.py · utils/file_types.py  接受 .vcf / .gz / .ped(.dcm 随 .zip)
 mirobody/res/EXTERNAL.tsv              两个 bundle 的登记行(不进 git / wheel)
@@ -74,7 +76,22 @@ prediction_context.attachments(路径 + sha256)          ← haenv 出题侧只�
   重跑只补缺失分片(`written_chroms`),`uq_th_variant_call` 兜底。GRCh37 / 超 500 MB 直接拒收,不猜、不截断。
 * **未做**:gnomAD 频率(计划 §4.4 ④,需外网)、VEP 后果、EDF;`PgRepo` 只做了 SQL 与命名绑定,本机无 Postgres,未对真库回放。
 
-## 「拒绝猜测」在编码层的三个形态
+## 编码参考库进 Postgres(2026-09-21,计划 §16)
+
+* 库:`mirobody_test`,schema **`mirobody_rare`**;连接串 `MIROBODY_RARE_PG_DSN`,连接池以启动参数设 `search_path`(`SET` 会被 asyncpg 归还时的 `RESET ALL` 抹掉)。
+* 表:`36_rare_reference.sql` 的 `ref_clinvar`(md5 生成列主键 `vkey` + `(chrom,pos)` 索引)、`ref_hgnc(_alias)`、`ref_gene_hpo`、`ref_orpha_disorder/name/gene/hpo`;
+  装载命令 `mirobody-rare-load-reference`,按 `source_version` 跳过已装版本,ClinVar 走暂存表 `COPY` + 一次合并。
+* 切换:`config.reference.backend: memory | pg`(env `MIROBODY_RARE_REFERENCE_BACKEND`)。`pg` 只切换了 ClinVar 客户端:
+  远端库往返 ≈500 ms,逐元组/分批 `unnest` 点查一例要 30–70 s,所以做成**键在本地(349k 个 16 B 摘要,≈35 MB,按版本落盘)、载荷在库**,每例一次 `WHERE vkey = ANY(...)`。
+* `PgRepo` 改为 asyncpg(`$n` 绑定),对真库回放:VCF 摄取 → `th_variant`/`th_variant_annotation`;重跑 0 分片、行数不变;`query_variant` 从库读回 TP53 行;PED 导入后 `analysis_only` 成员经 `permit` 被拒(`tests/test_pg.py`,无 DSN 时跳过)。
+
+| 读数 | 内存后端 | pg 后端 |
+| --- | --- | --- |
+| 薄壳常驻(60 例跑完) | 606 MB | 352 MB(ClinVar 351 → 67 MB;其余四张词表仍在内存 ≈190 MB,**未达 §16.6 的 ≤150 MB**,要再切 HGNC / 基因→HPO / Orphanet 名称表) |
+| 60 例答案(7 个字段逐位比较) | — | **60/60 逐位相同** |
+| 单例延迟中位 / 最大 | 4.72 s / 8.58 s | 6.64 s / 11.47 s(**1.41×**,在 ≤2× 线内) |
+
+
 
 1. 词表没命中 → `abstained[]`(不是阴性,是没编上);`kind=lab_value` 转交现有指标链路。
 2. 同一标签对应多个 HP:(babelon 里「肌无力」「面具样面容」各两条)→ 按 hpoa 使用频次取排序第一,`review=true`,进人工队列。

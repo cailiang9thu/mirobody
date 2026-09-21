@@ -146,18 +146,37 @@ class MemoryRepo:
         return pid
 
 
-class PgRepo:
-    """The same interface over Postgres. `execute` is `mirobody.utils.execute_query`
-    (injected for tests). Every write is replay-safe (`ON CONFLICT DO NOTHING`)."""
+def _bind(sql: str, params: Mapping[str, Any]) -> tuple[str, list]:
+    """`:name` binds → asyncpg `$n` (names are ours, from literals; values are always bound)."""
+    import re
+    order: list[str] = []
 
-    def __init__(self, execute: Any = None) -> None:
-        self._execute = execute
+    def sub(m):
+        n = m.group(1)
+        if n not in order:
+            order.append(n)
+        return f"${order.index(n) + 1}"
+    q = re.sub(r"(?<![:\w]):([A-Za-z_][A-Za-z0-9_]*)", sub, sql)
+    return q, [params.get(n) for n in order]
+
+
+class PgRepo:
+    """The same interface over Postgres through the plugin's asyncpg pool (`reference.db`),
+    schema `mirobody_rare`. Every write is replay-safe (`ON CONFLICT DO NOTHING`)."""
+
+    def __init__(self, pool=None) -> None:
+        self._pool = pool
+
+    async def _p(self):
+        if self._pool is None:
+            from .reference.db import get_pool
+            self._pool = await get_pool()
+        return self._pool
 
     async def _q(self, sql: str, params: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-        if self._execute is None:
-            from mirobody.utils import execute_query
-            self._execute = execute_query
-        return list(await self._execute(sql, dict(params)) or [])
+        q, args = _bind(sql, params)
+        pool = await self._p()
+        return [dict(r) for r in await pool.fetch(q, *args)]
 
     async def phenotypes(self, user_id, negated=None):
         sql = ("SELECT id, hpo_id, hpo_label, onset_hpo_id, severity_hpo_id, frequency_hpo_id, negated, subject,"
@@ -173,16 +192,12 @@ class PgRepo:
 
     async def variants(self, user_id, genes=(), chrom=None, start=None, end=None, limit=200):
         sql = ("SELECT v.id, v.sample_id, v.chrom, v.pos, v.ref, v.alt, v.genotype, v.zygosity, v.depth, v.gq, v.filter,"
-               " v.gene_symbol, v.hgvs_c, v.hgvs_p, v.consequence, v.is_de_novo, v.inheritance,"
-               " a.source, a.source_version, a.clinical_significance, a.review_status, a.condition_names,"
-               " a.af_global, a.af_popmax, a.acmg_class"
-               " FROM th_variant v LEFT JOIN th_variant_annotation a ON a.variant_id = v.id"
-               " WHERE v.user_id = :user_id")
+               " v.gene_symbol, v.hgvs_c, v.hgvs_p, v.consequence, v.is_de_novo, v.inheritance"
+               " FROM th_variant v WHERE v.user_id = :user_id")
         p: dict[str, Any] = {"user_id": user_id, "limit": limit}
         if genes:
-            binds = ", ".join(f":g{i}" for i in range(len(genes)))
-            sql += f" AND v.gene_symbol IN ({binds})"
-            p.update({f"g{i}": g for i, g in enumerate(genes)})
+            sql += " AND v.gene_symbol = ANY(:genes)"
+            p["genes"] = list(genes)
         if chrom:
             sql += " AND v.chrom = :chrom"
             p["chrom"] = chrom
@@ -193,13 +208,17 @@ class PgRepo:
             sql += " AND v.pos <= :end"
             p["end"] = end
         rows = await self._q(sql + " ORDER BY v.chrom, v.pos LIMIT :limit", p)
-        out: dict[int, dict] = {}
+        if not rows:
+            return []
+        ann = await self._q("SELECT variant_id, source, source_version, clinical_significance, review_status, condition_names,"
+                            " af_global, af_popmax, acmg_class FROM th_variant_annotation WHERE variant_id = ANY(:ids)",
+                            {"ids": [r["id"] for r in rows]})
+        by: dict[int, list] = {}
+        for a in ann:
+            by.setdefault(a.pop("variant_id"), []).append(a)
         for r in rows:
-            v = out.setdefault(r["id"], {k: r[k] for k in r.keys() if not k.startswith(("source", "clinical", "review", "condition", "af_", "acmg"))} | {"annotations": []})
-            if r.get("source"):
-                v["annotations"].append({k: r[k] for k in ("source", "source_version", "clinical_significance", "review_status",
-                                                            "condition_names", "af_global", "af_popmax", "acmg_class")})
-        return list(out.values())
+            r["annotations"] = by.get(r["id"], [])
+        return rows
 
     async def signals(self, user_id, modality=None):
         sql = ("SELECT id, file_id, modality, format, body_part, study_date, series_desc, instance_count, duration_sec,"
@@ -215,13 +234,11 @@ class PgRepo:
             return None
         fam = dict(rows[0])
         fam["members"] = await self._q("SELECT id, pedigree_id, user_id, individual_id, paternal_id, maternal_id, sex, affected,"
-                                       " is_proband, analysis_only FROM th_pedigree_member WHERE pedigree_id = :pid ORDER BY id",
-                                       {"pid": fam["id"]})
+                                       " is_proband, analysis_only FROM th_pedigree_member WHERE pedigree_id = :pid ORDER BY id", {"pid": fam["id"]})
         return fam
 
     async def is_analysis_only(self, user_id):
-        rows = await self._q("SELECT 1 FROM th_pedigree_member WHERE user_id = :user_id AND analysis_only LIMIT 1", {"user_id": user_id})
-        return bool(rows)
+        return bool(await self._q("SELECT 1 FROM th_pedigree_member WHERE user_id = :user_id AND analysis_only LIMIT 1", {"user_id": user_id}))
 
     async def consents(self, user_id):
         return await self._q("SELECT id, scope, granted, layer, residency, cross_border_allowed, effective_at, revoked_at"
@@ -231,8 +248,9 @@ class PgRepo:
         n = 0
         for r in rows:
             await self._q("INSERT INTO th_phenotype (user_id, hpo_id, hpo_label, negated, subject, source, source_text, confidence, asserted_at, file_id)"
-                          " VALUES (:user_id, :hpo_id, :hpo_label, :negated, :subject, :source, :source_text, :confidence, :asserted_at, :file_id)",
-                          {k: r.get(k) for k in ("user_id", "hpo_id", "hpo_label", "negated", "subject", "source", "source_text", "confidence", "asserted_at", "file_id")})
+                          " VALUES (:user_id, :hpo_id, :hpo_label, :negated, :subject, :source, :source_text, :confidence, :asserted_at, :file_id) RETURNING id",
+                          {"negated": False, "subject": "proband", **{k: r.get(k) for k in ("user_id", "hpo_id", "hpo_label", "source", "source_text", "confidence", "asserted_at", "file_id")},
+                           **({"negated": r["negated"]} if "negated" in r else {}), **({"subject": r["subject"]} if r.get("subject") else {})})
             n += 1
         return n
 
@@ -244,11 +262,10 @@ class PgRepo:
 
     async def set_sample_status(self, sample_id, status, variant_count=None):
         await self._q("UPDATE th_sequencing_sample SET status = :status, variant_count = COALESCE(:n, variant_count), update_time = now()"
-                      " WHERE id = :id", {"status": status, "n": variant_count, "id": sample_id})
+                      " WHERE id = :id RETURNING id", {"status": status, "n": variant_count, "id": sample_id})
 
     async def written_chroms(self, sample_id):
-        rows = await self._q("SELECT DISTINCT chrom FROM th_variant WHERE sample_id = :id", {"id": sample_id})
-        return {r["chrom"] for r in rows}
+        return {r["chrom"] for r in await self._q("SELECT DISTINCT chrom FROM th_variant WHERE sample_id = :id", {"id": sample_id})}
 
     async def add_variants(self, rows):
         n = 0
@@ -279,10 +296,10 @@ class PgRepo:
 
     async def add_signal(self, row):
         rows = await self._q("INSERT INTO th_signal_object (user_id, file_id, modality, format, body_part, study_date, series_desc, instance_count,"
-                             " residency, exportable, deid_status) VALUES (:user_id, :file_id, :modality, :format, :body_part, :study_date,"
+                             " residency, exportable, deid_status) VALUES (:user_id, :file_id, :modality, :format, :body_part, :study_date::date,"
                              " :series_desc, :instance_count, :residency, :exportable, :deid_status) RETURNING id",
-                             {k: row.get(k) for k in ("user_id", "file_id", "modality", "format", "body_part", "study_date", "series_desc",
-                                                      "instance_count", "residency", "exportable", "deid_status")})
+                             {"residency": "CN", "exportable": False, **{k: row.get(k) for k in ("user_id", "file_id", "modality", "format", "body_part", "study_date",
+                                                                                                    "series_desc", "instance_count", "deid_status")}})
         return int(rows[0]["id"])
 
     async def upsert_pedigree(self, family, members):
@@ -292,6 +309,7 @@ class PgRepo:
         for m in members:
             await self._q("INSERT INTO th_pedigree_member (pedigree_id, user_id, individual_id, paternal_id, maternal_id, sex, affected, is_proband, analysis_only)"
                           " VALUES (:pid, :user_id, :individual_id, :paternal_id, :maternal_id, :sex, :affected, :is_proband, :analysis_only)"
-                          " ON CONFLICT (pedigree_id, individual_id) DO NOTHING",
-                          {"pid": pid, **{k: m.get(k) for k in ("user_id", "individual_id", "paternal_id", "maternal_id", "sex", "affected", "is_proband", "analysis_only")}})
+                          " ON CONFLICT (pedigree_id, individual_id) DO NOTHING RETURNING id",
+                          {"pid": pid, "is_proband": False, "analysis_only": False, **{k: m.get(k) for k in ("user_id", "individual_id", "paternal_id", "maternal_id", "sex", "affected")},
+                           **{k: m[k] for k in ("is_proband", "analysis_only") if k in m}})
         return pid

@@ -15,6 +15,9 @@ class _CV:
         return {"vid": "1", "clnsig": "Pathogenic", "rev": "criteria_provided,_multiple_submitters,_no_conflicts",
                 "stars": 2, "gene": "GENEX", "dn": [], "mc": "missense_variant"} if k in self.keys else None
 
+    def lookup_many(self, keys):
+        return {k: r for k in keys if (r := self.lookup(*k))}
+
 
 def _vcf(tmp_path, rows, name="p.vcf.gz"):
     p = tmp_path / name

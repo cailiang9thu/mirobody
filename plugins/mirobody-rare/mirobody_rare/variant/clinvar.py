@@ -84,7 +84,101 @@ class ClinVarIndex:
     def lookup(self, chrom: str, pos: int, ref: str, alt: str) -> dict | None:
         return self.records.get(f"{str(chrom).replace('chr', '')}:{pos}:{ref}:{alt}")
 
+    def lookup_many(self, keys: list[tuple[str, int, str, str]]) -> dict[tuple, dict]:
+        out = {}
+        for k in keys:
+            r = self.records.get(f"{str(k[0]).replace('chr', '')}:{k[1]}:{k[2]}:{k[3]}")
+            if r:
+                out[k] = r
+        return out
+
+
+class ClinVarPg:
+    """Same surface over `ref_clinvar` (plan §16), shaped by the measured network:
+
+    The test database is remote (≈500 ms round trip). Sending every VCF five-tuple to the
+    server, even 150k per `unnest` batch, costs 8 s per batch and a trio case 30–70 s. So the
+    key set stays local and the payload stays in the database: at start the process fetches
+    the 349k `vkey` md5 digests (16 bytes each, ≈35 MB, cached on disk per `source_version`),
+    `lookup_many` hashes the query tuples locally and asks the server only for the hits —
+    one `WHERE vkey = ANY($1)` per call, a few hundred rows at most. Residency drops from
+    351 MB (full records) to ≈35 MB; a lookup costs one round trip instead of dozens.
+    """
+
+    _COLS = ("r.chrom, r.pos, r.ref, r.alt, r.variation_id, r.clnsig, r.review_status, r.stars, r.gene_symbol, r.consequence,"
+             " r.condition_names, r.disease_db")
+
+    def __init__(self) -> None:
+        from ..reference.sync import run
+        from ..reference.db import get_pool
+        self._run, self._pool = run, get_pool
+        self.version = self._run(self._version())
+        self.keys: set[bytes] = self._load_keys()
+        log.info("[clinvar] pg backend, %s, %d local keys", self.version, len(self.keys))
+
+    async def _version(self) -> str:
+        pool = await self._pool()
+        v = await pool.fetchval("SELECT source_version FROM ref_clinvar LIMIT 1")
+        return v or "clinvar_grch38_plp:unloaded"
+
+    async def _fetch_keys(self) -> bytes:
+        pool = await self._pool()
+        rows = await pool.fetch("SELECT vkey FROM ref_clinvar")
+        return b"".join(bytes.fromhex(r["vkey"]) for r in rows)
+
+    def _load_keys(self) -> set[bytes]:
+        safe = "".join(ch if ch.isalnum() else "_" for ch in self.version)
+        cache = cache_dir() / f"clinvar_keys_{safe}.bin"
+        if cache.exists():
+            blob = cache.read_bytes()
+        else:
+            t0 = time.time()
+            blob = self._run(self._fetch_keys())
+            cache.write_bytes(blob)
+            log.info("[clinvar] fetched %d keys from pg in %.1fs -> %s", len(blob) // 16, time.time() - t0, cache)
+        return {blob[i:i + 16] for i in range(0, len(blob), 16)}
+
+    @staticmethod
+    def _digest(chrom, pos, ref, alt) -> bytes:
+        import hashlib
+        return hashlib.md5(f"{str(chrom).replace('chr', '')}:{int(pos)}:{ref}:{alt}".encode()).digest()
+
+    @staticmethod
+    def _rec(r) -> dict:
+        return {"vid": r["variation_id"], "clnsig": r["clnsig"], "rev": r["review_status"] or "", "stars": r["stars"],
+                "gene": r["gene_symbol"] or "", "dn": list(r["condition_names"] or []), "disdb": r["disease_db"] or "",
+                "mc": r["consequence"] or ""}
+
+    async def _fetch(self, digests: list[bytes]):
+        pool = await self._pool()
+        rows = await pool.fetch(f"SELECT {self._COLS} FROM ref_clinvar r WHERE r.vkey = ANY($1::text[])", [d.hex() for d in digests])
+        return {(r["chrom"], r["pos"], r["ref"], r["alt"]): self._rec(r) for r in rows}
+
+    def lookup_many(self, keys: list[tuple[str, int, str, str]]) -> dict[tuple, dict]:
+        want = {}
+        for k in keys:
+            d = self._digest(*k)
+            if d in self.keys:
+                want.setdefault(d, k)
+        if not want:
+            return {}
+        got: dict = {}
+        ds = list(want)
+        for i in range(0, len(ds), 2000):
+            got.update(self._run(self._fetch(ds[i:i + 2000])))
+        out = {}
+        for d, k in want.items():
+            norm = (str(k[0]).replace("chr", ""), int(k[1]), k[2], k[3])
+            if norm in got:
+                out[k] = got[norm]
+        return out
+
+    def lookup(self, chrom, pos, ref, alt) -> dict | None:
+        return self.lookup_many([(chrom, int(pos), ref, alt)]).get((chrom, int(pos), ref, alt))
+
 
 @lru_cache(maxsize=1)
-def get_clinvar() -> ClinVarIndex:
+def get_clinvar():
+    if str(load_cfg().get("reference", {}).get("backend", "memory")) == "pg":
+        return ClinVarPg()
     return ClinVarIndex()

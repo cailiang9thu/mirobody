@@ -20,6 +20,8 @@ def load() -> dict:
         cfg["ontology_dir"] = os.environ["MIROBODY_RARE_ONTOLOGY_DIR"]
     if os.environ.get("MIROBODY_RARE_CACHE_DIR"):
         cfg["cache_dir"] = os.environ["MIROBODY_RARE_CACHE_DIR"]
+    if os.environ.get("MIROBODY_RARE_REFERENCE_BACKEND"):
+        cfg.setdefault("reference", {})["backend"] = os.environ["MIROBODY_RARE_REFERENCE_BACKEND"]
     cfg["ontology_dir"] = str(Path(cfg["ontology_dir"]).expanduser())
     cfg["cache_dir"] = str(Path(cfg.get("cache_dir", "~/.cache/mirobody_rare")).expanduser())
     return cfg
