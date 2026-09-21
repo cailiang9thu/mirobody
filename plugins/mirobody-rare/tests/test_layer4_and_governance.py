@@ -122,6 +122,8 @@ async def test_ingest_vcf_idempotent_and_ped():
     n1 = len(repo.t["th_variant"])
     res2 = await ingest_vcf(repo, "u1", VCF, sex="F", sample_id=res["sample_id"])
     assert res2["shards"] == 0 and res2["skipped_shards"] >= 1 and len(repo.t["th_variant"]) == n1
+    res3 = await ingest_vcf(repo, "u1", VCF, sex="F")                       # same bytes uploaded again
+    assert res3.get("duplicate") and res3["sample_id"] == res["sample_id"] and len(repo.t["th_variant"]) == n1
     pid = await ingest_ped(repo, PED)
     fam = await repo.pedigree_of(None)
     members = [m for m in repo.t["th_pedigree_member"] if m["pedigree_id"] == pid]

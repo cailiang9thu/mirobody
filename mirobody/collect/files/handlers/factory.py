@@ -56,6 +56,15 @@ class FileHandlerFactory:
         content_type = file.content_type or ""
         filename = file.filename or ""
 
+        # Plugin handlers first (`mirobody.file_handlers` entry points: a module whose
+        # `HANDLERS` is a sequence of (async probe(file) -> bool, handler class)). The
+        # rare-disease package hangs VCF / PED / DICOM here; with nothing installed this
+        # loop is empty and the shipped order below is untouched.
+        for probe, cls in _plugin_handlers():
+            if await probe(file):
+                return cls(self.uploader, self.temp_manager, self.content_extractor,
+                           self.indicator_extractor, self.abstract_extractor)
+
         # 1. Check for Genetic File (Async check required)
         if await GeneticHandler.is_genetic_file(file):
             return GeneticHandler(

@@ -93,6 +93,12 @@ class MemoryRepo:
     async def add_sample(self, row):
         return self._ins("th_sequencing_sample", row)
 
+    async def sample_by_hash(self, user_id, sha256):
+        for r in self.t["th_sequencing_sample"]:
+            if r["user_id"] == user_id and r.get("content_sha256") == sha256 and r.get("status") == "ready":
+                return r
+        return None
+
     async def set_sample_status(self, sample_id, status, variant_count=None):
         for r in self.t["th_sequencing_sample"]:
             if r["id"] == sample_id:
@@ -255,10 +261,15 @@ class PgRepo:
         return n
 
     async def add_sample(self, row):
-        rows = await self._q("INSERT INTO th_sequencing_sample (user_id, file_id, assay, reference, sample_label, caller, status)"
-                             " VALUES (:user_id, :file_id, :assay, :reference, :sample_label, :caller, 'pending') RETURNING id",
-                             {k: row.get(k) for k in ("user_id", "file_id", "assay", "reference", "sample_label", "caller")})
+        rows = await self._q("INSERT INTO th_sequencing_sample (user_id, file_id, assay, reference, sample_label, caller, status, content_sha256)"
+                             " VALUES (:user_id, :file_id, :assay, :reference, :sample_label, :caller, 'pending', :content_sha256) RETURNING id",
+                             {k: row.get(k) for k in ("user_id", "file_id", "assay", "reference", "sample_label", "caller", "content_sha256")})
         return int(rows[0]["id"])
+
+    async def sample_by_hash(self, user_id, sha256):
+        rows = await self._q("SELECT id, status, variant_count FROM th_sequencing_sample WHERE user_id = :u AND content_sha256 = :h AND status = 'ready' LIMIT 1",
+                             {"u": user_id, "h": sha256})
+        return dict(rows[0]) if rows else None
 
     async def set_sample_status(self, sample_id, status, variant_count=None):
         await self._q("UPDATE th_sequencing_sample SET status = :status, variant_count = COALESCE(:n, variant_count), update_time = now()"

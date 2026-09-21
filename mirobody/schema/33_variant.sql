@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS th_sequencing_sample (
     update_time   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 2026-09-21: the websocket upload manager starts processing once per received file, so the
+-- same VCF can reach the handler twice; the ingest skips a hash it has already made ready.
+ALTER TABLE th_sequencing_sample ADD COLUMN IF NOT EXISTS content_sha256 VARCHAR(64);
+CREATE INDEX IF NOT EXISTS idx_th_sequencing_sample_hash ON th_sequencing_sample (user_id, content_sha256);
+
 CREATE TABLE IF NOT EXISTS th_variant (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     sample_id   INTEGER NOT NULL REFERENCES th_sequencing_sample(id),

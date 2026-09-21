@@ -86,8 +86,18 @@ async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None =
     cfg = load_cfg().get("variant", {})
     clinvar = get_clinvar()
     if sample_id is None:
+        import hashlib
+        h = hashlib.sha256()
+        with p.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                h.update(chunk)
+        sha = h.hexdigest()
+        prior = await repo.sample_by_hash(user_id, sha)
+        if prior:
+            log.info("[ingest] %s already ingested for %s as sample %s; skip", p.name, user_id, prior["id"])
+            return {"sample_id": prior["id"], "shards": 0, "skipped_shards": 0, "raw_calls": 0, "kept": 0, "status": "ready", "duplicate": True}
         sample_id = await repo.add_sample({"user_id": user_id, "file_id": file_id, "assay": assay, "reference": "GRCh38",
-                                          "sample_label": (hdr["samples"] or [None])[0], "caller": None})
+                                          "sample_label": (hdr["samples"] or [None])[0], "caller": None, "content_sha256": sha})
     await repo.set_sample_status(sample_id, "parsing")
     done = await repo.written_chroms(sample_id)
     todo = [c for c in _chroms_in(p) if c not in done]

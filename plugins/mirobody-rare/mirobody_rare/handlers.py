@@ -83,7 +83,12 @@ class PedHandler(_RareHandler):
     kind = "ped"
 
     async def _process_content(self, ctx, temp_file_path, unique_filename, full_url, language) -> dict[str, Any]:
-        pid = await ingest.ingest_ped(self._repo(), temp_file_path)
+        # the uploader IS the proband unless the PED says otherwise; relatives stay unmapped
+        # (analysis_only) until they have accounts of their own
+        from .pedigree import parse_ped
+        pb = parse_ped(temp_file_path).proband()
+        user_ids = {pb.individual_id: str(ctx.target_user_id)} if pb else {}
+        pid = await ingest.ingest_ped(self._repo(), temp_file_path, user_ids=user_ids)
         return {"original_text": "", "file_abstract": f"PED pedigree imported (th_pedigree #{pid})", "file_name": ctx.filename}
 
 

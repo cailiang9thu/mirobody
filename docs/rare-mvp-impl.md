@@ -121,3 +121,23 @@ uv run haenv run inputs/rare_coding-p1.job.yaml --models mirobody-coding --overr
 **别读高**:层2 的诱饵是隐性携带(0/1),骨架是 GIAB 健康基因组、背景无其它 P/LP 命中,没有 gnomAD 频率与 VEP 后果;真实 WES 的候选集要难得多。
 题面是 HPO 中文标签经模板渲染的句子,词表匹配在这种题面上按构造接近天花板。这轮证明的是链路、对齐、否定/主体、不猜策略;
 真实病历上的抽取质量要靠 D9 金标(`rareDieaseCollect` 30 份人工标注)——那是换 prompt / 换模型的唯一裁判,尚未做。
+
+## 部署:前端 + 后端(2026-09-21)
+
+| 项 | 值 |
+| --- | --- |
+| 后端 | `systemctl --user` 单元 `mirobody-rare-api.service`:`mirobody dev --host 0.0.0.0 --port 28085 ~/caill/mirobody-rare.deploy.yaml`,工作目录本仓,环境文件 `~/caill/.mirobody_rare_env`(PG_URL / PG_SCHEMA=mirobody_rare / JWT_KEY / LLM keys / MIROBODY_RARE_*) |
+| 前端 | `mirobody-rare-web.service`:`mirobody-web`(GitLab `<internal-gitlab>/mirobody-web`,`dev` 分支 3de4a57)`next build` 后 `npm run start -p 28086`;`.env.local` 把 `NEXT_PUBLIC_BASE_URL_DATA/MCP` 指向 `http://<private-ip>:28085`(构建期烙入,换地址要重建) |
+| 库 | `mirobody_test` · schema `mirobody_rare`:主包 00–90 号 DDL 与 32–36 号全在这一个 schema,与 `mirobody_ai` 隔离 |
+| 登录 | `PRODUCTION: false` 的演示账号 `you@mirobody.ai` / 验证码 `111111`(`EMAIL_PREDEFINE_CODES`);JWT_KEY 固定在环境文件里,重启不失效 |
+| CORS | 覆盖文件 `mirobody-rare.deploy.yaml` 的 `HTTP_HEADERS.Access-Control-Allow-Origin` = 前端源 |
+| 主包改动 | `factory.py` 的 `mirobody.file_handlers` 入口(首次落地时替换文本未命中,只加了辅助函数;已补上循环并经真实上传验证) |
+
+**数据入库后对话能否读出**:能,已实测。
+
+1. 经前端同一条 websocket 路由 `/ws/upload-health-report` 上传 JD-55 的 `proband.vcf.gz` + `JD-55.ped`
+   → `VcfHandler` / `PedHandler` 接手(不走文本抽取与摘要模型)→ `th_sequencing_sample`(`status=ready`)、`th_variant` 3 行(ATP7B / TP53 / SMN1,均带 ClinVar 注释)、`th_pedigree(_member)`。
+2. `POST /api/chat`「我上传的基因检测里有哪些致病变异…」→ agent 自行调用 `query_variant` 与 `query_pedigree`,按基因列出并说明 `inheritance='unknown'` 是因为没有父母数据;
+   「我的家系结构是什么?有没有新发变异?」→ `query_pedigree`,答"单人记录、无 trio,新发变异不能判定也不能排除"——这正是 §8.2 要求随答案发出的声明起了作用。
+3. 已知坑:上传管理器在**每个**文件收齐时就启动一次处理(`all_files_received` 只看已开始的文件),两个文件的上传会把第一个处理两遍;插件侧按内容 sha256 去重(`th_sequencing_sample.content_sha256`,同哈希已 ready 则跳过),主包行为未动。
+   PED 里的个体 ID 不是账号 ID:`PedHandler` 把先证者映射到上传者,亲属留空(analysis_only)直到有账号。
