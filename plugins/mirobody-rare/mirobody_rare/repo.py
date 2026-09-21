@@ -23,6 +23,10 @@ class RareRepo(Protocol):
     async def pedigree_of(self, user_id: str) -> dict | None: ...
     async def is_analysis_only(self, user_id: str) -> bool: ...
     async def consents(self, user_id: str) -> list[dict]: ...
+    async def circle_access(self, caller_id: str, subject_id: str) -> int | None: ...   # None = no shared circle
+    async def circle_members(self, user_id: str) -> list[dict]: ...
+    async def samples_of(self, user_id: str) -> list[dict]: ...
+    async def set_inheritance(self, variant_id: int, inheritance: str, is_de_novo: bool | None, parent_gt: dict) -> None: ...
     # writers (ingest)
     async def add_phenotypes(self, rows: Sequence[Mapping[str, Any]]) -> int: ...
     async def add_sample(self, row: Mapping[str, Any]) -> int: ...
@@ -38,7 +42,8 @@ class MemoryRepo:
     def __init__(self) -> None:
         self.t: dict[str, list[dict]] = {k: [] for k in ("th_phenotype", "th_disease_code", "th_sequencing_sample",
                                                          "th_variant", "th_variant_annotation", "th_signal_object",
-                                                         "th_pedigree", "th_pedigree_member", "th_consent")}
+                                                         "th_pedigree", "th_pedigree_member", "th_consent",
+                                                         "care_circle")}   # care_circle: {operator, subject, access}
 
     def _ins(self, table: str, row: Mapping[str, Any]) -> int:
         r = dict(row)
@@ -89,6 +94,24 @@ class MemoryRepo:
 
     async def add_consent(self, row):
         return self._ins("th_consent", {"revoked_at": None, "cross_border_allowed": False, **row})
+
+    async def circle_access(self, caller_id, subject_id):
+        acc = [r["access"] for r in self.t["care_circle"] if r["operator"] == caller_id and r["subject"] == subject_id]
+        return max(acc) if acc else None
+
+    async def circle_members(self, user_id):
+        return [{"user_id": r["subject"], "nickname": r.get("nickname"), "name": r.get("name"), "email": r.get("email")}
+                for r in self.t["care_circle"] if r["operator"] == user_id]
+
+    async def samples_of(self, user_id):
+        return [r for r in self.t["th_sequencing_sample"] if r["user_id"] == user_id]
+
+    async def set_inheritance(self, variant_id, inheritance, is_de_novo, parent_gt):
+        for v in self.t["th_variant"]:
+            if v["id"] == variant_id:
+                v["inheritance"] = inheritance
+                v["is_de_novo"] = is_de_novo
+                v["parent_gt"] = parent_gt
 
     async def add_phenotypes(self, rows):
         return sum(1 for r in rows if self._ins("th_phenotype", r))
@@ -253,6 +276,33 @@ class PgRepo:
         return await self._q("SELECT id, scope, granted, layer, residency, cross_border_allowed, effective_at, revoked_at"
                              " FROM th_consent WHERE user_id = :user_id ORDER BY effective_at DESC", {"user_id": user_id})
 
+    async def circle_access(self, caller_id, subject_id):
+        """The subject's `health_access` toward the caller in any shared, accepted circle —
+        `care_circle.accepted_membership`, the same chokepoint every main-package tool uses."""
+        from mirobody.user.care_circle import accepted_membership
+        try:
+            m = await accepted_membership(int(caller_id), int(subject_id))
+        except (TypeError, ValueError):
+            return None
+        return None if m is None else int(m.health_access)
+
+    async def circle_members(self, user_id):
+        from mirobody.user.care_circle import circle_members
+        try:
+            rows = await circle_members(int(user_id))
+        except (TypeError, ValueError):
+            return []
+        return [{"user_id": r["user_id"], "nickname": r.get("nickname"), "name": r.get("name"), "email": r.get("email")}
+                for r in rows if str(r.get("status", "accepted")) in ("accepted", "1", "True", "true")]
+
+    async def samples_of(self, user_id):
+        return await self._q("SELECT id, user_id, file_id, file_key, assay, reference, sample_label, status, variant_count, content_sha256"
+                             " FROM th_sequencing_sample WHERE user_id = :u ORDER BY id DESC", {"u": user_id})
+
+    async def set_inheritance(self, variant_id, inheritance, is_de_novo, parent_gt):
+        await self._q("UPDATE th_variant SET inheritance = :i, is_de_novo = :d WHERE id = :v RETURNING id",
+                      {"i": inheritance, "d": is_de_novo, "v": variant_id})
+
     async def add_consent(self, row):
         rows = await self._q("INSERT INTO th_consent (user_id, scope, granted, signed_by_user_id, relationship, layer, residency, cross_border_allowed, document_file_id)"
                              " VALUES (:user_id, :scope, :granted, :signed_by_user_id, :relationship, :layer, :residency, :cross_border_allowed, :document_file_id) RETURNING id",
@@ -271,9 +321,9 @@ class PgRepo:
         return n
 
     async def add_sample(self, row):
-        rows = await self._q("INSERT INTO th_sequencing_sample (user_id, file_id, assay, reference, sample_label, caller, status, content_sha256)"
-                             " VALUES (:user_id, :file_id, :assay, :reference, :sample_label, :caller, 'pending', :content_sha256) RETURNING id",
-                             {k: row.get(k) for k in ("user_id", "file_id", "assay", "reference", "sample_label", "caller", "content_sha256")})
+        rows = await self._q("INSERT INTO th_sequencing_sample (user_id, file_id, file_key, assay, reference, sample_label, caller, status, content_sha256)"
+                             " VALUES (:user_id, :file_id, :file_key, :assay, :reference, :sample_label, :caller, 'pending', :content_sha256) RETURNING id",
+                             {k: row.get(k) for k in ("user_id", "file_id", "file_key", "assay", "reference", "sample_label", "caller", "content_sha256")})
         return int(rows[0]["id"])
 
     async def sample_by_hash(self, user_id, sha256):

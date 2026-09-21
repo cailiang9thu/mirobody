@@ -2,12 +2,15 @@
 
 `permit(repo, caller_id, subject_id, layer, purpose)`. Modelled on
 `user/care_circle.py::accepted_membership`: one function, one answer, no side path.
-Rules, in order:
+Rules, in order (2026-09-21 ruling: 亲属数据走关爱圈):
   1. purpose `individual_return` for a subject who is an `analysis_only` pedigree member is
-     refused — their data computes, their conclusion is never returned (plan §6.1);
-  2. reading yourself for individual return needs no consent row;
-  3. anything else needs a live `th_consent` row: scope == purpose, granted, not revoked,
-     layer NULL or equal;
+     refused — their data computes, their conclusion is never returned;
+  2. yourself: individual return needs no consent row;
+  3. someone else: they must share with the caller through a care circle
+     (`repo.circle_access(caller, subject)` = their `health_access`), otherwise denied whatever
+     `th_consent` says — the circle IS the person's consent to be read by this caller;
+     individual return then needs access ≥ view; research / commercial additionally need a
+     live `th_consent` row (scope == purpose, granted, not revoked, layer NULL or equal);
   4. `cross_border` only when that row says so.
 Never raises; the tools turn a refusal into an error envelope."""
 
@@ -36,6 +39,15 @@ async def permit(repo, caller_id: str, subject_id: str, layer: str, purpose: str
         return Decision(False, "analysis_only: this pedigree member's data takes part in computation and yields no individual conclusion")
     if purpose == "individual_return" and caller_id == subject_id and not cross_border:
         return Decision(True, "self")
+    if caller_id != subject_id:
+        access = await repo.circle_access(caller_id, subject_id)
+        if access is None:
+            return Decision(False, "subject is not in a care circle shared with the caller")
+        if purpose == "individual_return":
+            if int(access) >= 1 and not cross_border:
+                return Decision(True, f"care_circle:access={access}")
+            if int(access) < 1:
+                return Decision(False, f"care_circle: subject grants no health access (access={access})")
     rows = await repo.consents(subject_id)
     for r in rows:
         if r.get("scope") != purpose or not r.get("granted") or r.get("revoked_at"):

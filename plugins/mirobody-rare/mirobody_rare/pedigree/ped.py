@@ -46,6 +46,31 @@ class Pedigree:
         return {"family_id": self.family_id}, rows
 
 
+def map_ped_to_circle(pg: Pedigree, members: list[dict], uploader_id: str) -> dict[str, str]:
+    """PED individual ids → account ids. The proband is the uploader; every other member
+    is matched against the uploader's care-circle members by nickname, name, email or id.
+    Unmatched relatives stay unmapped (no account yet), never guessed."""
+    out: dict[str, str] = {}
+    pb = pg.proband()
+    if pb:
+        out[pb.individual_id] = str(uploader_id)
+    idx: dict[str, str] = {}
+    for m in members:
+        uid = str(m.get("user_id") or "")
+        if not uid or uid == str(uploader_id):
+            continue
+        for key in (m.get("nickname"), m.get("name"), m.get("email"), uid):
+            if key:
+                idx.setdefault(str(key).strip().lower(), uid)
+    for m in pg.members:
+        if m.individual_id in out:
+            continue
+        uid = idx.get(m.individual_id.strip().lower())
+        if uid:
+            out[m.individual_id] = uid
+    return out
+
+
 def parse_ped(path: str | Path) -> Pedigree:
     members: list[PedMember] = []
     fam = ""

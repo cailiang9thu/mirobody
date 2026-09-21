@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS th_sequencing_sample (
 -- 2026-09-21: the websocket upload manager starts processing once per received file, so the
 -- same VCF can reach the handler twice; the ingest skips a hash it has already made ready.
 ALTER TABLE th_sequencing_sample ADD COLUMN IF NOT EXISTS content_sha256 VARCHAR(64);
+-- storage key of the raw VCF (th_files.file_key): the trio backfill re-reads a relative's file by it
+ALTER TABLE th_sequencing_sample ADD COLUMN IF NOT EXISTS file_key VARCHAR(255);
 CREATE INDEX IF NOT EXISTS idx_th_sequencing_sample_hash ON th_sequencing_sample (user_id, content_sha256);
 
 CREATE TABLE IF NOT EXISTS th_variant (

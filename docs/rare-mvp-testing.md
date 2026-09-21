@@ -67,6 +67,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3.3 | `deid_status='pending'/'failed'` 对工具不可见 | `test_tools_over_memory_repo`(failed 对象不在 `query_signal_index`) | ✅ |
 | 3.4 | 未授权 `research_use` 无法经研究路径读出 | `test_consent_gate_rules` | ✅ |
 | 3.5 | `analysis_only` 成员的个体结论不返回 | `test_consent_gate_rules`(含本人也拒)· `test_pg.py`(真库,`error_kind=denied`) | ✅ |
+| 3.8 | 亲属数据走关爱圈(§18):不在圈内拒;圈内 view 可读;PED → 账号映射;trio 从父母账号回填 | `test_care_circle.py` 三例 | ✅ |
 | 3.6 | 跨境需同意行允许 | `test_consent_gate_rules` | ✅ |
 | 3.7 | 未成年人由监护人签署被记录 | MCP 工具 `record_consent`(scope/layer/relationship=self|guardian/document_file_id,一 scope 一行);`test_record_consent_then_permit`:记录后 `permit(research_use, variant)` 放行、其他层仍拒 | ✅ |
 

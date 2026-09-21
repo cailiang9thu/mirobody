@@ -81,10 +81,9 @@ def test_dicom_index_phi_fails_without_leaking(tmp_path):
 async def test_consent_gate_rules():
     repo = MemoryRepo()
     assert (await permit(repo, "u1", "u1", "variant")).allowed                       # self, individual return
-    assert not (await permit(repo, "u1", "u2", "variant")).allowed                   # other, no consent
-    repo.t["th_consent"].append({"id": 1, "user_id": "u2", "scope": "individual_return", "granted": True, "layer": None,
-                                 "revoked_at": None, "cross_border_allowed": False})
-    assert (await permit(repo, "u1", "u2", "variant")).allowed
+    assert not (await permit(repo, "u1", "u2", "variant")).allowed                   # other, no shared circle
+    repo.t["care_circle"].append({"operator": "u1", "subject": "u2", "access": 1})   # u2 shares (view) with u1
+    assert (await permit(repo, "u1", "u2", "variant")).allowed                       # the circle is the consent
     assert not (await permit(repo, "u1", "u2", "variant", "research_use")).allowed  # scope not granted
     assert not (await permit(repo, "u1", "u2", "variant", cross_border=True)).allowed
     repo.t["th_pedigree"].append({"id": 1, "family_id": "F"})
@@ -178,6 +177,7 @@ async def test_record_consent_then_permit():
     from mirobody_rare.consent import permit
     repo = MemoryRepo()
     svc = RareQueryService(repo)
+    repo.t["care_circle"].append({"operator": "u1", "subject": "u2", "access": 1})
     assert not (await permit(repo, "u1", "u2", "variant", "research_use")).allowed
     r = await svc.record_consent({"user_id": "u2"}, scope="research_use", granted=True, layer="variant", relationship="self")
     assert r["status"] == "ok" and r["data"][0]["id"]

@@ -209,3 +209,62 @@ def choose_gene(genome: GenomeResult, present_hpo: list[str], dx_genes: list[str
                 "method": "variant+gene_phenotype", "evidence": [v.key for v in genome.variants if hgnc.canonical(v.gene) == chosen]}
     return {"symbol": None, "candidates": genes, "ranked": scored or scored2, "method": "variant",
             "reason": "several_candidate_genes_no_clear_leader"}
+
+
+async def trio_backfill(repo, proband_user_id: str, storage=None) -> dict:
+    """Fill `inheritance` / `is_de_novo` on the proband's variants from the parents' OWN samples.
+
+    亲属数据走关爱圈: a parent's VCF lives under the parent's account; it is read here only
+    when the parent is in a care circle with the proband (membership with any access: the
+    computation is allowed, the parent's individual rows are still not returned — that is
+    `analysis_only`). A parent without an account, without a sample or outside the circle
+    leaves the loci `unknown`, never `de_novo`."""
+    import os, tempfile
+    from .variant import read_genotypes_at
+    fam = await repo.pedigree_of(proband_user_id)
+    out = {"updated": 0, "skipped": [], "loci": 0}
+    if not fam:
+        out["skipped"].append("no_pedigree")
+        return out
+    me = next((m for m in fam["members"] if str(m.get("user_id")) == str(proband_user_id)), None)
+    if not me:
+        out["skipped"].append("proband_not_in_pedigree")
+        return out
+    by_id = {m["individual_id"]: m for m in fam["members"]}
+    parents = {"father": by_id.get(me.get("paternal_id") or ""), "mother": by_id.get(me.get("maternal_id") or "")}
+    variants = await repo.variants(proband_user_id, limit=10 ** 6)
+    keys = {f"{v['chrom']}:{v['pos']}:{v['ref']}:{v['alt']}" for v in variants}
+    out["loci"] = len(keys)
+    gts: dict[str, dict[str, str]] = {}
+    for role, m in parents.items():
+        uid = str(m.get("user_id") or "") if m else ""
+        if not uid:
+            out["skipped"].append(role); continue
+        if await repo.circle_access(proband_user_id, uid) is None:
+            out["skipped"].append(role); continue
+        sample = next((s for s in await repo.samples_of(uid) if s.get("status") == "ready" and s.get("file_key")), None)
+        if not sample:
+            out["skipped"].append(role); continue
+        if storage is None:
+            from mirobody.utils.config.storage.factory import get_storage_client
+            storage = get_storage_client()
+        data, err = await storage.get(sample["file_key"])
+        if not data:
+            log.warning("[trio] %s sample %s unreadable: %s", role, sample["id"], err)
+            out["skipped"].append(role); continue
+        with tempfile.NamedTemporaryFile(suffix=".vcf.gz", delete=False) as fh:
+            fh.write(data); tmp = fh.name
+        try:
+            gts[role] = read_genotypes_at(tmp, keys)
+        finally:
+            os.unlink(tmp)
+    if len(gts) < 2:
+        return out
+    from .pedigree import trio_inheritance
+    for v in variants:
+        k = f"{v['chrom']}:{v['pos']}:{v['ref']}:{v['alt']}"
+        f, m = gts["father"].get(k), gts["mother"].get(k)
+        inh = trio_inheritance(f, m)
+        await repo.set_inheritance(v["id"], inh, (inh == "de_novo") if inh != "unknown" else None, {"father": f, "mother": m})
+        out["updated"] += 1
+    return out

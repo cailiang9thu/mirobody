@@ -81,7 +81,7 @@ def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, 
 
 
 async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None = None, sex: str | None = None,
-                     assay: str = "WES", sample_id: int | None = None, concurrency: int = 8) -> dict:
+                     assay: str = "WES", sample_id: int | None = None, concurrency: int = 8, file_key: str | None = None) -> dict:
     p = Path(path)
     if p.stat().st_size > MAX_VCF_BYTES:
         raise ValueError(f"{p.name}: {p.stat().st_size >> 20} MB exceeds the MVP limit (WES/panel only; WGS is phase 2)")
@@ -102,7 +102,8 @@ async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None =
             log.info("[ingest] %s already ingested for %s as sample %s; skip", p.name, user_id, prior["id"])
             return {"sample_id": prior["id"], "shards": 0, "skipped_shards": 0, "raw_calls": 0, "kept": 0, "status": "ready", "duplicate": True}
         sample_id = await repo.add_sample({"user_id": user_id, "file_id": file_id, "assay": assay, "reference": "GRCh38",
-                                          "sample_label": (hdr["samples"] or [None])[0], "caller": None, "content_sha256": sha})
+                                          "sample_label": (hdr["samples"] or [None])[0], "caller": None, "content_sha256": sha,
+                                          "file_key": file_key})
     await repo.set_sample_status(sample_id, "parsing")
     done = await repo.written_chroms(sample_id)
     todo = [c for c in _chroms_in(p) if c not in done]

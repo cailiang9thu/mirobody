@@ -930,3 +930,22 @@ CREATE INDEX IF NOT EXISTS idx_ref_orpha_hpo_term ON ref_orpha_hpo (hpo_id);
 - [ ] 同一 WES 连传两次:字节只落盘一次,`th_sequencing_sample` 只一条
 - [ ] 带 `.tbi` 的 WES:解析 ≤ 5 s;不带:与现在持平
 - [ ] 处理期间 `/api/chat` 的 p95 延迟不劣化(处理已不在 server 进程)
+
+---
+
+## 18. 亲属数据走关爱圈(2026-09-21 拍板,修订 §6.1)
+
+**拍板**:来自亲人的健康数据,存储与访问一律走主包已有的关爱圈(`care_circles` / `care_circle_members`)逻辑;
+§6.1 说"不直接复用 care_circles"只对了一半——它不表达生物学关系,但**它就是这个人对"谁能读我的记录"的授权**,罕见病层不另造一套。
+家系表(`th_pedigree_member`)只补生物学关系与 `analysis_only` 语义,不承载数据。
+
+| 事 | 做法 |
+| --- | --- |
+| 亲属的 VCF / DICOM / 表型落在哪 | **亲属自己的账号**下(`th_sequencing_sample.user_id` 等 = 亲属 id)。先证者代传时用上传协议的 `query_user_id`,上传管理器先过 `resolve_subject(..., require_write=True)`(关爱圈写权限),处理器一律以 `ctx.target_user_id` 为数据主人 |
+| PED 里的个体 ID → 账号 | `pedigree.map_ped_to_circle`:先证者 = 上传者;其余按上传者关爱圈成员的昵称 / 姓名 / 邮箱 / id 匹配;匹配不到的留空(尚无账号),回执里列出 |
+| 读亲属的数据(四个查询工具) | `consent/gate.py::permit`:目标 ≠ 本人时先查 `repo.circle_access(caller, subject)`(= `care_circle.accepted_membership` 的 `health_access`),不在共享圈内一律拒,**不看 `th_consent`**;个体返回要求 access ≥ view;research / commercial 在此之上再要 `th_consent` 行 |
+| 用亲属的数据算(trio 共分离) | `genome.trio_backfill`:父母的样本从**父母账号**取(`th_sequencing_sample.file_key` → 对象存储 `get`),前提是父母与先证者在同一关爱圈(任意 access,含 0):这就是 `analysis_only` ——参与计算、不返回个体行。父母无账号 / 无样本 / 不在圈内 ⇒ 位点保持 `unknown`,不判 de novo |
+| 何时回填 | 任何一个家系成员的 VCF 入库后,对该成员本人以及以他为父/母的先证者各跑一次回填 |
+
+验收(`tests/test_care_circle.py`):不在圈内有同意书也拒;圈内 view 免同意书可读、research 仍要同意书;PED 四人映射三人、无账号者留空;
+trio 回填在父母不在圈内时 0 更新、加入圈后 L2HGDH 判 `biparental`、父母行仍不可读。

@@ -103,7 +103,29 @@ class VcfHandler(_RareHandler):
     kind = "vcf"
 
     async def _process_content(self, ctx: FileProcessingContext, temp_file_path: str, unique_filename: str, full_url: str, language: str) -> dict[str, Any]:
-        spawn(ingest.ingest_vcf(self._repo(), str(ctx.target_user_id), temp_file_path, file_id=None), name=f"ingest_vcf:{unique_filename}")
+        # `ctx.target_user_id` is the account the file belongs to: the uploader, or — for a proxy
+        # upload (`query_user_id`) — a relative whose care circle granted the uploader write access
+        # (the upload manager already ran `resolve_subject(..., require_write=True)`).
+        async def _job():
+            repo = self._repo()
+            await ingest.ingest_vcf(repo, str(ctx.target_user_id), temp_file_path, file_id=None, file_key=unique_filename)
+            # the new sample may complete a trio: for the target as proband, and for any proband
+            # whose pedigree names the target as a parent
+            from .genome import trio_backfill
+            targets = {str(ctx.target_user_id)}
+            fam = await repo.pedigree_of(str(ctx.target_user_id))
+            if fam:
+                me = next((m for m in fam["members"] if str(m.get("user_id")) == str(ctx.target_user_id)), None)
+                if me:
+                    for m in fam["members"]:
+                        if m.get("user_id") and me["individual_id"] in (m.get("paternal_id"), m.get("maternal_id")):
+                            targets.add(str(m["user_id"]))
+            for t in targets:
+                try:
+                    log.info("[trio] backfill for %s: %s", t, await trio_backfill(repo, t))
+                except Exception:                                   # noqa: BLE001
+                    log.exception("[trio] backfill failed for %s", t)
+        spawn(_job(), name=f"ingest_vcf:{unique_filename}")
         return {"original_text": "", "file_abstract": "VCF (GRCh38) — variants are being parsed in the background; "
                                                        "query_variant lists the filtered calls once the sample is ready", "file_name": ctx.filename}
 
@@ -114,11 +136,16 @@ class PedHandler(_RareHandler):
     async def _process_content(self, ctx, temp_file_path, unique_filename, full_url, language) -> dict[str, Any]:
         # the uploader IS the proband unless the PED says otherwise; relatives stay unmapped
         # (analysis_only) until they have accounts of their own
-        from .pedigree import parse_ped
-        pb = parse_ped(temp_file_path).proband()
-        user_ids = {pb.individual_id: str(ctx.target_user_id)} if pb else {}
-        pid = await ingest.ingest_ped(self._repo(), temp_file_path, user_ids=user_ids)
-        return {"original_text": "", "file_abstract": f"PED pedigree imported (th_pedigree #{pid})", "file_name": ctx.filename}
+        from .pedigree import map_ped_to_circle, parse_ped
+        repo = self._repo()
+        pg = parse_ped(temp_file_path)
+        members = await repo.circle_members(str(ctx.user_id))
+        user_ids = map_ped_to_circle(pg, members, uploader_id=str(ctx.target_user_id))
+        pid = await ingest.ingest_ped(repo, temp_file_path, user_ids=user_ids)
+        unmapped = [m.individual_id for m in pg.members if m.individual_id not in user_ids]
+        return {"original_text": "", "file_name": ctx.filename,
+                "file_abstract": f"PED pedigree imported (th_pedigree #{pid}); {len(user_ids)} members linked to care-circle accounts"
+                                 + (f", unlinked: {', '.join(unmapped)} (no account in your care circle yet)" if unmapped else "")}
 
 
 class DicomHandler(_RareHandler):
