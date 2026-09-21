@@ -201,8 +201,8 @@ MODELS:
         type: disabled
 
   # Embedding entries — one per vector-column family. Vectors from different
-  # models are not comparable, so changing a model here means re-embedding
-  # (`python -m mirobody.indicator embed`).
+  # models are not comparable, so changing a model here invalidates every
+  # vector already stored under the old one.
   openrouter-embed:
     llm_type: openai
     api_key: OPENROUTER_API_KEY

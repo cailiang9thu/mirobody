@@ -200,7 +200,7 @@ jobs:
         )
         import mirobody.utils, mirobody.utils.llm
         import mirobody.collect, mirobody.collect.files
-        import mirobody.indicator
+        import mirobody.translate
         print('[parse] imports clean on a FastAPI-free install')
         "
         # ③ The engine/agent boundary, which needs the server stores but must

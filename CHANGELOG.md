@@ -1,15 +1,16 @@
-## Unreleased — 1.5.0
+## 1.5.0
 
 ② Translate is rebuilt, vocabulary and data layer together. The bundle is cut
 fresh from LOINC 2.83 by one rule in one pass; every reading, whatever brought
 it in, is one row of an append-only observation table with its coding beside
 it, written by one module and read through one view.
 
-Measured on 7,354 real report spellings: coverage holds at 0.963 and
-wrong-rate falls from 0.035 to 0.025, on the 6,780 whose expected code is
-inside the cut. The other 362 expect a narrative, document or exam-finding
-code, or one 2.83 retired — the resolver abstains there now, which is what the
-cut is for.
+Measured on 7,354 real report spellings. Over all of them coverage goes 0.963
+to 0.916 and wrong-rate 0.032 to 0.030: coverage falls by construction, since
+the resolver cannot answer a term whose code the cut does not carry. On the
+6,992 whose expected code is inside the cut, coverage is 0.950 and wrong-rate
+0.025. The other 362 expect a narrative, document or exam-finding code, or one
+2.83 retired; the resolver abstains on 273 of them.
 
 Alongside it, four things this repository said about itself that its code did
 not do. Each was load-bearing: two clients were believed to depend on fields
