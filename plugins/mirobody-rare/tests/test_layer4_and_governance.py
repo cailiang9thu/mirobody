@@ -137,3 +137,38 @@ async def test_ingest_vcf_refuses_wrong_build(tmp_path):
         fh.write("##fileformat=VCFv4.2\n##reference=GRCh37\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS\n")
     with pytest.raises(ValueError, match="GRCh38"):
         await ingest_vcf(MemoryRepo(), "u1", p)
+
+
+class _CountingFile:
+    """UploadFile look-alike that counts bytes handed out: a probe must not read the body."""
+
+    def __init__(self, path):
+        self.filename = path.name
+        self.content_type = "application/zip"
+        self._f = open(path, "rb")
+        self.size = path.stat().st_size
+        self.bytes_read = 0
+
+    async def seek(self, pos, whence=0):
+        self._f.seek(pos, whence)
+
+    async def read(self, n=-1):
+        b = self._f.read(n)
+        self.bytes_read += len(b)
+        return b
+
+    def tell(self):
+        return self._f.tell()
+
+
+@pytest.mark.skipif(not STS, reason="TCIA sample not on disk")
+async def test_dicom_probe_reads_header_only(tmp_path):
+    from mirobody_rare.handlers import is_dicom_zip
+    big = tmp_path / "big.zip"
+    with zipfile.ZipFile(STS[0]) as src, zipfile.ZipFile(big, "w") as dst:
+        for n in src.namelist():
+            dst.writestr(n, src.read(n))
+        dst.writestr("padding.bin", b"\0" * (24 * 1024 * 1024))       # 24 MB body the probe must skip
+    f = _CountingFile(big)
+    assert await is_dicom_zip(f) is True
+    assert f.bytes_read < 256 * 1024, f.bytes_read

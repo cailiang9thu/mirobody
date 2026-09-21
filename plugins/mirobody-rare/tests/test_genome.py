@@ -59,3 +59,17 @@ def test_ped_roundtrip(tmp_path):
     fam, rows = pg.to_rows()
     assert fam["family_id"] == "F1" and sum(r["is_proband"] for r in rows) == 1
     assert all(r["analysis_only"] for r in rows if not r["is_proband"])
+
+
+def test_choose_gene_abstains_without_leader():
+    from mirobody_rare.disease import get_adapter as gd
+    from mirobody_rare.gene import get_hgnc
+    from mirobody_rare.gene.phenotype import get_gene_phenotypes
+    from mirobody_rare.genome import GenomeResult, choose_gene
+    from mirobody_rare.variant.vcf import VariantCall
+    cv = {"vid": "1", "clnsig": "Pathogenic", "rev": "", "stars": 1, "gene": "", "dn": [], "disdb": "", "mc": ""}
+    g = GenomeResult(available=True, variants=[
+        VariantCall("9", 1, "A", "G", "0/1", "het", clinvar={**cv, "gene": "TSC1"}),
+        VariantCall("16", 1, "A", "G", "0/1", "het", clinvar={**cv, "gene": "TSC2"})])
+    out = choose_gene(g, present_hpo=[], dx_genes=["TSC1", "TSC2"], gene_pheno=get_gene_phenotypes(), disease=gd(), hgnc=get_hgnc())
+    assert out["symbol"] is None and sorted(out["candidates"]) == ["TSC1", "TSC2"] and out["reason"]

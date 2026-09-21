@@ -45,18 +45,47 @@ async def is_ped(file) -> bool:
 
 
 async def is_dicom_zip(file) -> bool:
+    """A zip holding .dcm files, decided from the END of the archive: the zip central
+    directory sits in the last ~64 kB (+ its own size), so a 2 GB series costs the same
+    read as a 2 MB one. The old probe read the whole body into memory (§17.2)."""
     name = (file.filename or "").lower()
     if not name.endswith(".zip"):
         return False
-    import io, zipfile
+    import io, struct, zipfile
+    size = getattr(file, "size", None)
+    if not isinstance(size, int) or size <= 0:
+        try:
+            await file.seek(0, 2)
+            size = file.tell()
+        except Exception:                                   # noqa: BLE001
+            return False
+    tail_len = min(size, 64 * 1024 + 22 + 4096)
     try:
+        await file.seek(size - tail_len)
+        tail = await file.read(tail_len)
         await file.seek(0)
-        data = await file.read()
-        await file.seek(0)
-        names = zipfile.ZipFile(io.BytesIO(data)).namelist()
-    except Exception:          # noqa: BLE001
+        eocd = tail.rfind(b"PK\x05\x06")
+        if eocd < 0:
+            return False
+        cd_size, cd_off = struct.unpack("<II", tail[eocd + 12:eocd + 20])
+        if cd_off + cd_size > size:
+            return False
+        if cd_off >= size - tail_len:
+            cd = tail[cd_off - (size - tail_len):cd_off - (size - tail_len) + cd_size]
+        else:
+            await file.seek(cd_off)
+            cd = await file.read(cd_size)
+            await file.seek(0)
+        i = 0
+        while i + 46 <= len(cd) and cd[i:i + 4] == b"PK\x01\x02":
+            n_len, e_len, c_len = struct.unpack("<HHH", cd[i + 28:i + 34])
+            fname = cd[i + 46:i + 46 + n_len].decode("utf-8", "ignore").lower()
+            if fname.endswith(".dcm"):
+                return True
+            i += 46 + n_len + e_len + c_len
         return False
-    return any(n.lower().endswith(".dcm") for n in names)
+    except Exception:                                       # noqa: BLE001
+        return False
 
 
 class _RareHandler(BaseFileHandler):

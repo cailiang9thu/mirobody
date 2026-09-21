@@ -31,7 +31,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 | # | 验收项 | 测试 | 状态 |
 | --- | --- | --- | --- |
-| 1.1 | 中文自由文本 → HPO,歧义进人工队列而非自动落库 | `test_coding.py::test_hpo_exact_and_contains`;歧义 ⇒ `review=true`(`test_ledger_roundtrip` 未断言此项) | 🟡 补:同标签双 term 用例断言 `review` |
+| 1.1 | 中文自由文本 → HPO,歧义进人工队列而非自动落库 | `test_coding.py::test_hpo_exact_and_contains` · `test_ambiguous_label_is_coded_but_flagged`(「肌无力」双 term ⇒ `review=true`) | ✅ |
 | 1.2 | 打包否定展开:"A、B、C 均正常" ⇒ 3 条 `absent` | `test_rules.py::test_packed_negation_expands` | ✅ |
 | 1.3 | 主体归属:亲属表型不记到先证者 | `test_rules.py::test_relative_subject`;基准 `rc_subject_ok` 1.000 | ✅ |
 | 1.4 | 断言召回 ≥ 0.85 · polarity ≥ 0.95 · subject ≥ 0.95(§14.4) | 基准:`rc_coverage` 1.000 / `rc_polarity_ok` 1.000 / `rc_subject_ok` 1.000 —— **合成题面,按构造接近天花板** | 🟡 真实语料 D9 金标(30 份人工标注)**未做**,这一行在真实文档上没有读数 |
@@ -45,14 +45,14 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 | # | 验收项 | 测试 | 状态 |
 | --- | --- | --- | --- |
-| 2.1 | GRCh38 VCF 上传 → 异步解析 → `th_variant` | `test_pg.py::test_pg_repo_roundtrip`(直调 ingest);经 websocket 真实上传已验(impl 部署段) | ✅ / 🟡 端到端待固化 |
-| 2.2 | `th_variant` 行数与 `bcftools stats` 一致 | — | ❌ **口径已变**:库里只存过滤后候选(§4.4 ①–③),应改为"候选数 = 本地过滤器输出数",用 `read_candidates` 对拍 |
+| 2.1 | GRCh38 VCF 上传 → 异步解析 → `th_variant` | `test_pg.py::test_pg_repo_roundtrip`(直调 ingest)· `test_e2e.py::test_upload_then_chat_reads_variants`(websocket 上传 → 处理器 → `/api/chat` 调 `query_variant` 答出 TP53;需 `MIROBODY_RARE_E2E_BASE`) | ✅ |
+| 2.2 | `th_variant` 行数 = 本地过滤器输出数(口径已由 `bcftools stats` 改为候选集,§4.4 ①–③) | `test_coding.py::test_kept_variants_equal_local_filter_output` | ✅ |
 | 2.3 | 解析中途 kill → 重跑只补缺失分片,总行数不变无重复 | `test_layer4_and_governance.py::test_ingest_vcf_idempotent_and_ped`(模拟:第二次 0 分片)· `test_pg.py`(真库) | ✅ 分片跳过;🟡 真 kill 未测 |
 | 2.4 | 3–5 万 raw call 四级过滤后 < 1000 且已知致病未被误滤 | 基准 `rc_variant_hit` 56/56(spike 变异全部保留);候选数每例 3.18 | ✅ 保留性;🟡 真实 WES 的收窄率无读数 |
 | 2.5 | gnomAD 注释,`af_popmax > 0.01` 被标记 | — | ❌ 未实现(§4.4 ④,外网) |
 | 2.6 | GRCh37 / 未知版本拒收不猜 | `test_layer4_and_governance.py::test_ingest_vcf_refuses_wrong_build` | ✅ |
 | 2.7 | trio 遗传来源;父母未覆盖 ⇒ unknown,不判 de novo | `test_genome.py::test_parent_lookup_and_trio`;基准 `rc_variant_inh_ok` 40/40 | ✅ |
-| 2.8 | 多致病基因无明显领先者 ⇒ `gene.symbol=null` | 基准逐例响应(P5b:13 例弃权 → 附件可见后全部由变异定) | 🟡 补单元用例 |
+| 2.8 | 多致病基因无明显领先者 ⇒ `gene.symbol=null` | `test_genome.py::test_choose_gene_abstains_without_leader`(TSC1/TSC2 平票)· 基准 P5b | ✅ |
 | 2.9 | 同一 VCF 重复上传只处理一次 | `test_ingest_vcf_idempotent_and_ped`(`duplicate=True`) | ✅ |
 | 2.10 | 内存 vs pg 后端答案逐位相同、延迟 ≤ 2×、常驻 ≤ 150 MB | 60 例对拍 60/60、1.41×、352 MB | ✅ ✅ ❌(352 > 150,§16.8) |
 | 2.11 | 32–36 号 DDL 对干净 schema 连跑三次零错误 | `reference.run_schema()` ×3 已验;`test_pg.py` 每次先 `run_schema()` | ✅ |
@@ -74,7 +74,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 | # | 验收项 | 测试 | 状态 |
 | --- | --- | --- | --- |
-| 4.1 | 四个工具经 `/mcp` 可调,每个答案带 §8.2 声明 | `assumptions` 非空:`test_tools_over_memory_repo`;服务日志 `Loaded tool: query_*` ×4;对话实测 agent 自行调用 `query_variant` / `query_pedigree` | ✅ / 🟡 MCP 面(TRACES)未直接调用过 |
+| 4.1 | 四个工具经 `/mcp` 可调,每个答案带 §8.2 声明 | `assumptions` 非空:`test_tools_over_memory_repo`;`test_e2e.py` 断言对话响应里出现 `query_variant` 调用 | ✅ / 🟡 MCP 面(TRACES)未直接调用过 |
 | 4.2 | 工具参数 schema 由类型注解生成、`user_info` 注入 | 服务启动日志;无测试 | 🟡 |
 
 ## 5. 工程门(§10)
@@ -91,18 +91,18 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 | # | 验收项 | 状态 |
 | --- | --- | --- |
-| 6.1 | 452 MB DICOM 上传,server RSS 增量 < 50 MB | ❌ 现在 ≈ 600 MB |
-| 6.2 | 3 GB 文件在第一片前被拒并说明 | ❌ |
+| 6.1 | 452 MB DICOM 上传,server RSS 增量 < 50 MB | ❌ 现在 ≈ 600 MB(探测已改只读 zip 中央目录:`test_dicom_probe_reads_header_only`,24 MB 包读 < 256 kB;攒内存的是主包上传管理器,§17.3 #2 未做) |
+| 6.2 | 3 GB 文件在第一片前被拒并说明 | ✅ `test_admission.py`(纯函数 4 例)+ 实机:`upload_start` 报 3 GB fastq ⇒ `upload_error/refused`,零 chunk;主包 `collect/files/admission.py` + `handle_upload_start` 接线 |
 | 6.3 | 同一 WES 连传两次只落盘一次 | ❌(字节仍落盘两次;库行已去重) |
 | 6.4 | 带 `.tbi` 的 WES 解析 ≤ 5 s | ❌ |
 | 6.5 | 处理期间 `/api/chat` p95 不劣化 | ❌ |
 
 ## 7. 汇总与下一步
 
-26 条验收:**✅ 15 · 🟡 8 · ❌ 9**(部分条目双计)。缺口按代价排:
+26 条验收(2026-09-21 第二轮 TDD 后):**✅ 20 · 🟡 5 · ❌ 7**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
 
 1. **D9 真实语料金标**(1.4 / 1.5)—— 没有它,层1 在真实病历上的读数为零,这是唯一一条"合成题证明不了"的验收;需临床顾问。
-2. **端到端固化**(2.1 / 4.1)—— 把 impl 文档里的 websocket 上传 + `/api/chat` 脚本做成 `tests/test_e2e.py`(需服务在跑,标 `-m e2e`)。
+2. ~~端到端固化~~ —— 已做 `tests/test_e2e.py`(`-m e2e`,需 `MIROBODY_RARE_E2E_BASE`;实测 70 s 通过)。
 3. **§17 大文件**五条 —— 与 17.3 的改造同步落地。
 4. gnomAD(2.5)、图表分流(1.6 / 1.8)、同意书写入(3.7)—— 各是一块独立功能。
-5. 小补:1.1 歧义 `review` 断言、2.8 多基因弃权用例、5.4 卸载插件回归、5.2 wheel 门。
+5. 小补:5.4 卸载插件回归、5.2 wheel 门(1.1 / 2.8 已补)。

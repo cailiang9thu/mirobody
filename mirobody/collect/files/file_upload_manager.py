@@ -202,6 +202,16 @@ class WebSocketFileUploadManager:
             query = message_data.get("query", "")
             is_first_message = message_data.get("isFirstMessage", False)
             files_info = message_data.get("files", [])
+            # Admission before any byte arrives (collect/files/admission.py): size and type
+            # from the client's own metadata; a refusal here buffers nothing.
+            from mirobody.collect.files.admission import admit_files
+            from mirobody.utils.config import global_config
+            _gc = global_config()
+            _ok, _why = admit_files(files_info, _gc.get_dict("UPLOAD_MAX_BYTES", {}) if _gc else None)
+            if not _ok:
+                await self.send_message(connection_id, {"type": "upload_error", "messageId": message_id,
+                                                        "status": "refused", "message": _why})
+                return
             query_user_id = message_data.get("query_user_id", "")  # User ID for proxy upload
             
             # Get real user_id from message_data (set by router) or extract from connection_id
