@@ -23,14 +23,22 @@ CREATE TABLE IF NOT EXISTS th_pedigree_member (
     CONSTRAINT uq_pedigree_individual UNIQUE (pedigree_id, individual_id)
 );
 
+-- Three-level consent (plan §7.1): each scope is a separate row, never bundled; a minor's
+-- row records the guardian who signed. `permit()` in mirobody_rare/consent/gate.py is the
+-- only reader.
 CREATE TABLE IF NOT EXISTS th_consent (
-    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id     VARCHAR(200) NOT NULL,
-    scope       VARCHAR(32)  NOT NULL,             -- own_care | family_analysis | research
-    purpose     TEXT,
-    granted_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    revoked_at  TIMESTAMPTZ,
-    granted_by  VARCHAR(200),
-    create_time TIMESTAMPTZ NOT NULL DEFAULT now()
+    id                   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id              VARCHAR(200) NOT NULL,
+    scope                VARCHAR(24)  NOT NULL,   -- individual_return | research_use | commercial_use
+    granted              BOOLEAN      NOT NULL,
+    signed_by_user_id    VARCHAR(200) NOT NULL,
+    relationship         VARCHAR(24),             -- self | guardian
+    layer                VARCHAR(16),             -- phenotype | variant | signal | pedigree; NULL = all
+    residency            VARCHAR(8),              -- CN | US | EU
+    cross_border_allowed BOOLEAN NOT NULL DEFAULT false,
+    effective_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    revoked_at           TIMESTAMPTZ,
+    document_file_id     BIGINT,
+    CONSTRAINT uq_th_consent_live UNIQUE (user_id, scope, layer, effective_at)
 );
 CREATE INDEX IF NOT EXISTS idx_th_consent_user ON th_consent (user_id) WHERE revoked_at IS NULL;

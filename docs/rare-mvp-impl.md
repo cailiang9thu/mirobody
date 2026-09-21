@@ -18,14 +18,23 @@ plugins/mirobody-rare/                 独立发行包(不进主包 wheel)
 │   ├── variant/clinvar.py, vcf.py     D2/D3 ClinVar GRCh38 P/LP 本地表(34.9 万条,含星级);VCF 读取、PASS/DP/GQ 过滤、合子性
 │   ├── pedigree/ped.py                D7   PED 导入(th_pedigree 行形)、trio 遗传来源判定(父母未覆盖 ⇒ unknown,不判 de novo)
 │   ├── genome.py                      层2 管线:指针 → sha256 校验 → 候选变异 → 由变异证据定基因/提升诊断
+│   ├── signal/dicom.py                D4   DICOM 系列 zip → 去标识化索引记录(白名单 tag;PHI tag 只用于判 deid_status,值不外泄)
+│   ├── consent/gate.py                D6   permit(repo, caller, subject, layer, purpose):四个查询工具的唯一执行喉咙
+│   ├── repo.py                        四张表的仓储接口:PgRepo(execute_query,命名绑定)+ MemoryRepo(测试)
+│   ├── ingest.py                      VCF(按染色体分片 ≤8 并发、重跑只补缺失分片)/ PED / DICOM 入库作业
+│   ├── handlers.py                    上传处理器 VcfHandler / PedHandler / DicomHandler(entry point mirobody.file_handlers)
 │   ├── coding.py                      管线;solver 合约 JSON
 │   ├── serve_coding.py                OpenAI 兼容薄壳(haenv 拍板 #5)
-│   ├── tools.py                       MCP 工具 resolve_hpo / code_phenotypes / rank_rare_diseases
+│   ├── tools.py                       MCP 工具:层1 三个(resolve_hpo / code_phenotypes / rank_rare_diseases)
+│   │                                  + D5 四个(query_phenotype / query_variant / query_signal_index / query_pedigree,先过 permit,答案带 §8.2 声明)
 │   └── res/zh_curated_hpo.tsv         口语同义词种子(剪刀样步态、霍夫曼征阳性、K-F环…)
 └── tests/                             9 条
 mirobody/schema/32_phenotype.sql       th_phenotype / th_disease_code(主包只追加;计划里的 a6_ 按 1.5.0 两位前缀改名)
 mirobody/schema/33_variant.sql         th_sequencing_sample / th_variant / th_variant_annotation(计划 a7_)
-mirobody/schema/34_pedigree_consent.sql th_pedigree / th_pedigree_member / th_consent(计划 a9_)
+mirobody/schema/34_pedigree_consent.sql th_pedigree / th_pedigree_member / th_consent(计划 a9_,§7.1 三级同意列)
+mirobody/schema/35_signal_index.sql    th_signal_object(计划 a8_)
+mirobody/collect/files/handlers/factory.py  主包唯一改动:`mirobody.file_handlers` entry point(插件 (probe, Handler) 序对先于自带处理器;未装插件时为空)
+mirobody/collect/files/services/file_uploader.py · utils/file_types.py  接受 .vcf / .gz / .ped(.dcm 随 .zip)
 mirobody/res/EXTERNAL.tsv              两个 bundle 的登记行(不进 git / wheel)
 ```
 
@@ -52,6 +61,18 @@ prediction_context.attachments(路径 + sha256)          ← haenv 出题侧只�
 
 输出 `variants[]` 与 `th_variant` / `th_variant_annotation` 同形(chrom/pos/ref/alt/gt/zygosity/depth/gq/filter + clnsig/review_status/stars/conditions),
 `genome.pedigree` 与 `th_pedigree_member` 同形。不猜的三处:sha256 不符不读;父母未覆盖不判 de novo;多候选无明显领先者 `gene.symbol=null`。
+
+## 层4 · 原始信号索引与治理(2026-09-21)
+
+* **DICOM 索引是白名单**:只有 Modality / BodyPartExamined / StudyDate / SeriesDescription / SeriesInstanceUID / 实例数 / 厂商 / 性别进记录;
+  PatientName / PatientID / BirthDate / 机构 / 操作者 / 设备序列号只被读来判 `deid_status`,值不进记录、不进日志、不进错误信息(失败只报 tag 名)。
+  `deid_status != done` 的对象 `query_signal_index` 不列出(计划 §5.3 闸门)。索引记录不带路径:TCIA 目录名就是假名 ID。
+* **同意闸门**:`consent/gate.py::permit` 是四个查询工具在 `_run` 前的唯一入口。规则序:analysis_only 成员的个体结论一律拒(连本人也拒)→
+  本人个体返回免同意 → 其余须有 scope 相符、已授、未撤销、层匹配的 `th_consent` 行 → 跨境须该行允许。拒绝返回 `error_kind=denied` 的 Envelope。
+* **上传路径**:主包 `factory.py` 加一个通用扩展点 `mirobody.file_handlers`(与计划 §2 指出的"插件无 schema 注入点"同类缺口),
+  插件挂 VCF / PED / DICOM 三个处理器;它们不产 `original_text`、自带 `file_abstract`,因此不触发指标抽取与摘要模型;VCF 解析在后台按染色体分片,
+  重跑只补缺失分片(`written_chroms`),`uq_th_variant_call` 兜底。GRCh37 / 超 500 MB 直接拒收,不猜、不截断。
+* **未做**:gnomAD 频率(计划 §4.4 ④,需外网)、VEP 后果、EDF;`PgRepo` 只做了 SQL 与命名绑定,本机无 Postgres,未对真库回放。
 
 ## 「拒绝猜测」在编码层的三个形态
 

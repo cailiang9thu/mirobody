@@ -51,6 +51,7 @@ class CodingResult:
     diagnosis: dict = field(default_factory=dict)
     gene: dict = field(default_factory=dict)
     genome: dict | None = None
+    signals: list[dict] = field(default_factory=list)
     present_hpo: list[str] = field(default_factory=list)
 
     def to_solver(self) -> dict:
@@ -58,6 +59,7 @@ class CodingResult:
                 "abstained": self.abstained,
                 "diagnosis": self.diagnosis, "gene": self.gene,
                 "variants": (self.genome or {}).get("variants", []),
+                "signals": self.signals,
                 "genome": {k: v for k, v in (self.genome or {}).items() if k != "variants"},
                 "differential_codes": [{"orpha": h.orpha, "name": h.name, "score": h.score,
                                         "matched": list(h.matched), "against": list(h.against),
@@ -177,6 +179,27 @@ def apply_genome(res: CodingResult, attachments: dict | None, sex_hint: str | No
         code = res.diagnosis["codes"]["orpha"].split(":", 1)[-1]
         dx_genes = get_gene_phenotypes().genes_for_omim(dis.b.omim.get(code, []))
     res.gene = choose_gene(g, res.present_hpo, list(dict.fromkeys(dx_linked + list(dx_genes))), get_gene_phenotypes(), dis, hgnc)
+    return res
+
+
+def apply_signals(res: CodingResult, attachments: dict | None) -> CodingResult:
+    """Layer 4 on a coded case: each imaging pointer → de-identified index record (sha256
+    verified against the pointer; a mismatch or failed de-identification is reported as such,
+    never indexed)."""
+    from pathlib import Path
+    from .signal import index_dicom_zip
+    out = []
+    for s in ((attachments or {}).get("imaging") or {}).get("series") or []:
+        p = Path(s.get("path", ""))
+        if not p.exists():
+            out.append({"path": str(p), "deid_status": "missing"})
+            continue
+        idx = index_dicom_zip(p)
+        d = idx.to_dict()
+        if s.get("sha256") and idx.sha256 != s["sha256"]:
+            d = {"path": str(p), "deid_status": "sha_mismatch"}
+        out.append(d)
+    res.signals = out
     return res
 
 

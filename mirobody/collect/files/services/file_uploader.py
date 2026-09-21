@@ -50,6 +50,9 @@ SUPPORTED_EXTENSIONS = {
     ".txt", ".md", ".markdown", ".csv", ".json", ".xml",
     # Archives: accepted for their contents, not parsed as themselves
     ".zip", ".rar",
+    # Rare-disease layer (plugins/mirobody-rare): VCF (plain or gzip) and PED pedigree files.
+    # `.dcm` series arrive zipped, which `.zip` already admits.
+    ".vcf", ".gz", ".ped",
 }
 
 

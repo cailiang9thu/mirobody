@@ -16,7 +16,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from ._config import load as load_cfg, setup_logging
-from .coding import apply_genome, code_ledger
+from .coding import apply_genome, apply_signals, code_ledger
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ def answer_for_payload(payload: dict) -> dict:
     res = code_ledger(ledger)
     att = (payload.get("prediction_context") or {}).get("attachments")
     res = apply_genome(res, att, sex_hint=(payload.get("user_profile") or {}).get("sex"))
+    res = apply_signals(res, att)
     sol = res.to_solver()
     coded_ids = [c.evidence_id for c in res.coded]
     by_hpo: dict[str, list[str]] = {}

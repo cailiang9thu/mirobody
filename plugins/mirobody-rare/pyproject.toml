@@ -14,7 +14,7 @@ name = "mirobody-rare"
 version = "0.1.0"
 description = "Rare-disease phenotype (HPO) / disease (ORPHA) / gene (HGNC) coding for mirobody"
 requires-python = ">=3.12"
-dependencies = ["mirobody", "pyyaml", "numpy"]
+dependencies = ["mirobody", "pyyaml", "numpy", "pydicom"]
 
 [project.optional-dependencies]
 llm = ["google-genai", "tenacity", "tqdm"]
@@ -22,6 +22,9 @@ test = ["pytest"]
 
 [project.entry-points."mirobody.tools"]
 rare = "mirobody_rare.tools"
+
+[project.entry-points."mirobody.file_handlers"]
+rare = "mirobody_rare.handlers"
 
 [project.scripts]
 mirobody-rare-serve = "mirobody_rare.serve_coding:main"

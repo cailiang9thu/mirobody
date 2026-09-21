@@ -77,6 +77,8 @@ MIME_BY_EXT: dict[str, str] = {
     ".zip": "application/zip", ".rar": "application/x-rar-compressed",
     ".7z": "application/x-7z-compressed", ".gz": "application/gzip",
     ".tar": "application/x-tar",
+    # rare-disease layer uploads (plugins/mirobody-rare)
+    ".vcf": "text/plain", ".ped": "text/plain", ".dcm": "application/dicom",
     # types that only the files package's own table used to carry
     ".ico": "image/x-icon", ".tif": "image/tiff", ".mkv": "video/x-matroska",
 }

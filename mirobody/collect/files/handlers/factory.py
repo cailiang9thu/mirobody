@@ -17,6 +17,21 @@ from mirobody.collect.files.handlers.image import ImageHandler
 from mirobody.collect.files.handlers.pdf import PDFHandler
 from mirobody.collect.files.handlers.text import TextHandler
 from mirobody.collect.files.handlers.genetic import GeneticHandler
+
+_PLUGIN_HANDLERS: list | None = None
+
+
+def _plugin_handlers() -> list:
+    """(probe, class) pairs from every distribution declaring `mirobody.file_handlers`.
+    Loaded once; a broken plugin raises here rather than being skipped silently."""
+    global _PLUGIN_HANDLERS
+    if _PLUGIN_HANDLERS is None:
+        from importlib.metadata import entry_points
+        found: list = []
+        for ep in entry_points(group="mirobody.file_handlers"):
+            found.extend(tuple(ep.load().HANDLERS))
+        _PLUGIN_HANDLERS = found
+    return _PLUGIN_HANDLERS
 from mirobody.collect.files.handlers.excel import ExcelHandler
 
 class FileHandlerFactory:
