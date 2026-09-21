@@ -909,7 +909,7 @@ CREATE INDEX IF NOT EXISTS idx_ref_orpha_hpo_term ON ref_orpha_hpo (hpo_id);
 | 3 | **二进制类型不走文本路径**:factory 命中插件处理器后,`base.process` 不再调 `_extract_original_text` / `_extract_abstract`(现在靠处理器返回空文本绕开,但 `file.read()` 仍会发生一次) | 主包 `handlers/base.py` 加 `binary = True` 类属性短路 | 省一次整读 |
 | 4 | **插件探测只读头部**:`is_dicom_zip` 改读 zip 中央目录(`zipfile` 只需 seek 到文件尾);`is_vcf` 已经只读 256 B | 插件 `handlers.py` | 探测成本与文件大小无关 |
 | 5 | **VCF 要求 bgzip + tabix,按区间取**:有 `.tbi` 时用 pysam 按染色体取,没有则整扫但并发 ≤8;多样本 VCF 按样本列拆成多个 `th_sequencing_sample`,PED 对齐样本列名 | 插件 `variant/vcf.py`、`ingest.py` | WES 分片解析从 20–60 s 降到秒级;家系联合 call 可用 |
-| 6 | **处理挪出 server 进程**:`spawn` → `mirobody worker` 队列,任务键 (user, content_sha256),同键去重(顺手解决 17.2-6) | 插件 `handlers.py` + 主包 worker | server 不被解析占死;重复上传只处理一次 |
+| 6 | **处理挪出 server 进程**:`spawn` → `mirobody worker` 队列,任务键 (user, content_sha256),同键去重(顺手解决 17.2-6) | 插件 `handlers.py` + 主包 worker | server 不被解析占死;重复上传只处理一次。**阻塞**:worker 队列以 Redis 为任务源与执行锁(`task/base.py`),部署环境无 Redis;先以内容哈希去重(已做)顶住重复处理 |
 | 7 | **原始 call 不进库**:WGS/WES 全量 call 转 Parquet 进对象存储,库里只留候选与版本化注释(§16 与 1 TB 讨论的结论) | 插件 `ingest.py` | 库体量与文件体量解耦,月更重注释可增量 |
 | 8 | **大对象直传**:前端对 >100 MB 的文件走对象存储预签名分片上传,server 只收 `file_key`;DICOM/WSI/EDF 都走这条 | 前端 + 主包 `/files/upload` 预签名接口 | websocket 只承担进度,不承担字节 |
 

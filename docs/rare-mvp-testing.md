@@ -49,7 +49,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 2.2 | `th_variant` 行数 = 本地过滤器输出数(口径已由 `bcftools stats` 改为候选集,§4.4 ①–③) | `test_coding.py::test_kept_variants_equal_local_filter_output` | ✅ |
 | 2.3 | 解析中途 kill → 重跑只补缺失分片,总行数不变无重复 | `test_layer4_and_governance.py::test_ingest_vcf_idempotent_and_ped`(模拟:第二次 0 分片)· `test_pg.py`(真库) | ✅ 分片跳过;🟡 真 kill 未测 |
 | 2.4 | 3–5 万 raw call 四级过滤后 < 1000 且已知致病未被误滤 | 基准 `rc_variant_hit` 56/56(spike 变异全部保留);候选数每例 3.18 | ✅ 保留性;🟡 真实 WES 的收窄率无读数 |
-| 2.5 | gnomAD 注释,`af_popmax > 0.01` 被标记 | — | ❌ 未实现(§4.4 ④,外网) |
+| 2.5 | gnomAD 注释,`af_popmax > 0.01` 被标记 | `test_gnomad.py`(合并 exome+genome、popmax、缓存、批量别名查询、common 过滤);实机:gnomad_r4 可达,JD-55 三条 P/LP 均 `not_found`(按"未查到 ≠ 0"保留),`th_variant_annotation` 写 `source=gnomad` 行 | ✅ |
 | 2.6 | GRCh37 / 未知版本拒收不猜 | `test_layer4_and_governance.py::test_ingest_vcf_refuses_wrong_build` | ✅ |
 | 2.7 | trio 遗传来源;父母未覆盖 ⇒ unknown,不判 de novo | `test_genome.py::test_parent_lookup_and_trio`;基准 `rc_variant_inh_ok` 40/40 | ✅ |
 | 2.8 | 多致病基因无明显领先者 ⇒ `gene.symbol=null` | `test_genome.py::test_choose_gene_abstains_without_leader`(TSC1/TSC2 平票)· 基准 P5b | ✅ |
@@ -91,15 +91,15 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 | # | 验收项 | 状态 |
 | --- | --- | --- |
-| 6.1 | 452 MB DICOM 上传,server RSS 增量 < 50 MB | ❌ 现在 ≈ 600 MB(探测已改只读 zip 中央目录:`test_dicom_probe_reads_header_only`,24 MB 包读 < 256 kB;攒内存的是主包上传管理器,§17.3 #2 未做) |
+| 6.1 | 452 MB DICOM 上传,server RSS 增量 < 50 MB | ✅ 实测增量 **46 MB**(峰 431 / 基线 386):分片落盘 `SpooledUploadFile`(`test_spool.py`),探测只读中央目录;处理完成、`query_signal_index` 经对话读出 |
 | 6.2 | 3 GB 文件在第一片前被拒并说明 | ✅ `test_admission.py`(纯函数 4 例)+ 实机:`upload_start` 报 3 GB fastq ⇒ `upload_error/refused`,零 chunk;主包 `collect/files/admission.py` + `handle_upload_start` 接线 |
 | 6.3 | 同一 WES 连传两次只落盘一次 | ❌(字节仍落盘两次;库行已去重) |
-| 6.4 | 带 `.tbi` 的 WES 解析 ≤ 5 s | ❌ |
-| 6.5 | 处理期间 `/api/chat` p95 不劣化 | ❌ |
+| 6.4 | 带 `.tbi` 的 WES 解析 ≤ 5 s | 🟡 pysam 按 contig 路径已接(`test_tabix.py`,与文本路径逐位一致);在 3-contig 切片上 5.9 s vs 文本 3.6 s —— 收益在全基因组文件只取需要的 contig,单切片没有;WES 全文件读数待真实 WES |
+| 6.5 | 处理期间 `/api/chat` p95 不劣化 | ❌ 阻塞:`mirobody worker` 队列以 Redis 为锁与任务源,本机无 Redis;处理仍在 server 进程内 `spawn` |
 
 ## 7. 汇总与下一步
 
-26 条验收(2026-09-21 第二轮 TDD 后):**✅ 20 · 🟡 5 · ❌ 7**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
+26 条验收(2026-09-21 第三轮 TDD 后):**✅ 23 · 🟡 5 · ❌ 4**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
 
 1. **D9 真实语料金标**(1.4 / 1.5)—— 没有它,层1 在真实病历上的读数为零,这是唯一一条"合成题证明不了"的验收;需临床顾问。
 2. ~~端到端固化~~ —— 已做 `tests/test_e2e.py`(`-m e2e`,需 `MIROBODY_RARE_E2E_BASE`;实测 70 s 通过)。
