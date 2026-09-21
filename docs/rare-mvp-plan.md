@@ -870,3 +870,63 @@ CREATE INDEX IF NOT EXISTS idx_ref_orpha_hpo_term ON ref_orpha_hpo (hpo_id);
 常驻**未达 ≤150 MB**:ClinVar 这一项 351 → 67 MB 已兑现,剩下 HPO 48 + Orphanet 闭包 77 + HGNC 31 + 基因→HPO 35 仍在内存 —— 后两者已装进库,切客户端即可再降 ≈60 MB;HPO 与闭包按 §16.2 留内存,150 MB 这条线要靠它们瘦身(HPO 索引只留 zh/en 标签键、闭包改 int 编码)才够得着。
 
 **还留在内存里的**:HPO 索引 48 MB、Orphanet 闭包 + IC 77 MB、HGNC 31 MB、基因→HPO 35 MB。HGNC 与基因→HPO 已装进库但客户端未切换(阶段二,同"键本地/载荷在库"模式或直接点查,它们每例只查几十次)。
+
+---
+
+## 17. 大文件:哪些会大、现在会怎么坏、怎么改(2026-09-21 补充)
+
+> 触发:部署后经前端同一条 websocket 路由实测上传,链路能通,但整条路是**按小文件设计的**。
+> 下面的量级来自盘上真实文件(`glodata/rare/`),不是估计。
+
+### 17.1 哪些文件会大
+
+| 类别 | 典型大小 | 盘上实测 | 备注 |
+| --- | --- | --- | --- |
+| VCF · panel | 1–20 MB | — | 现有路径没问题 |
+| VCF · WES | 50–500 MB(bgzip) | GIAB 高置信集 chr1–22 **126 MB** | 单样本 3–5 万 call;§0.2 的 MVP 上限 |
+| VCF · WGS | 5–100 GB | — | 400–500 万 call;明确阶段二 |
+| **gVCF / 多样本 VCF** | 1–10 GB | — | 家系联合 call 常是一个多样本文件,不是三个单样本 |
+| DICOM 系列 zip | 50 MB–2 GB | UPENN-GBM 单患者 **1.8 GB**,单系列最大 **452 MB** | MRI 多序列、CT 薄层;病理 WSI 单张 1–5 GB |
+| EEG(EDF) | 100 MB–5 GB | — | 长程视频脑电 24 h 可达数 GB;阶段二 |
+| FASTQ / BAM / CRAM | 5–200 GB | — | 不在任何阶段范围内,但用户会传:必须**明确拒收并说明**,不能静默失败 |
+| 参考库 | ClinVar VCF **185 MB**、Orphanet XML 54 MB | — | 不走上传;§16 已进库 |
+
+### 17.2 现在的路径在哪里会坏(实测代码路径)
+
+1. **websocket 上传把整个文件攒在内存里**:`file_upload_manager` 每片 base64 解码后 `bytearray.extend`,直到收齐;两个 400 MB 的 DICOM 系列同时传就是近 1 GB 常驻,再加 base64 膨胀 33%。
+2. **处理阶段再整读一遍**:`handlers/base.py` 的 `_extract_original_text` / `_extract_abstract`、`file_uploader.upload_file_and_get_url` 都是 `await file.read()`;插件的 `is_dicom_zip` 也把整个 zip 读进内存只为看中央目录。
+3. **只有一道尺寸门**:`ingest.MAX_VCF_BYTES = 500 MB`,在文件已经完整落到临时目录之后才判;DICOM、PED、FASTQ 没有任何门。
+4. **处理在 server 进程内 `spawn`**:一个 WES 解析 20–60 s 占着事件循环所在进程的 CPU;两个并发就影响所有请求。
+5. **一次处理即一次全量扫描**:VCF 用 gzip 顺序读,没有 tabix;DICOM 对每个 zip 完整算 sha256(452 MB 约 2 s,可接受,但 WSI 5 GB 就是 20 s)。
+6. **上传管理器每收齐一个文件就启动一次处理**(§impl 记录的双处理问题),文件越大重复代价越大;插件侧已按内容哈希去重,但重复的字节已经上传并落盘了。
+
+### 17.3 改造(按收益/代价排序)
+
+| 序 | 改什么 | 落点 | 效果 |
+| --- | --- | --- | --- |
+| 1 | **入口就判尺寸与类型**:`upload_start` 的 `files[].size` 与扩展名先过门 —— 超过阈值或属 FASTQ/BAM/CRAM 直接 `upload_error` 并说明("MVP 支持 panel/WES,WGS 与测序原始数据请联系…"),不接收任何 chunk | 主包 `file_upload_manager.handle_upload_start`;阈值进 config(`UPLOAD_MAX_BYTES_BY_KIND`) | 拒收发生在传输之前,不在落盘之后 |
+| 2 | **分片直落磁盘 / 对象存储,不攒内存**:每片写 `SpooledTemporaryFile`(超 16 MB 转磁盘)或直接用对象存储的分片上传(S3 multipart);处理阶段只拿路径 | 主包 `file_upload_manager`、`temp_manager` | 常驻内存与文件大小解耦 |
+| 3 | **二进制类型不走文本路径**:factory 命中插件处理器后,`base.process` 不再调 `_extract_original_text` / `_extract_abstract`(现在靠处理器返回空文本绕开,但 `file.read()` 仍会发生一次) | 主包 `handlers/base.py` 加 `binary = True` 类属性短路 | 省一次整读 |
+| 4 | **插件探测只读头部**:`is_dicom_zip` 改读 zip 中央目录(`zipfile` 只需 seek 到文件尾);`is_vcf` 已经只读 256 B | 插件 `handlers.py` | 探测成本与文件大小无关 |
+| 5 | **VCF 要求 bgzip + tabix,按区间取**:有 `.tbi` 时用 pysam 按染色体取,没有则整扫但并发 ≤8;多样本 VCF 按样本列拆成多个 `th_sequencing_sample`,PED 对齐样本列名 | 插件 `variant/vcf.py`、`ingest.py` | WES 分片解析从 20–60 s 降到秒级;家系联合 call 可用 |
+| 6 | **处理挪出 server 进程**:`spawn` → `mirobody worker` 队列,任务键 (user, content_sha256),同键去重(顺手解决 17.2-6) | 插件 `handlers.py` + 主包 worker | server 不被解析占死;重复上传只处理一次 |
+| 7 | **原始 call 不进库**:WGS/WES 全量 call 转 Parquet 进对象存储,库里只留候选与版本化注释(§16 与 1 TB 讨论的结论) | 插件 `ingest.py` | 库体量与文件体量解耦,月更重注释可增量 |
+| 8 | **大对象直传**:前端对 >100 MB 的文件走对象存储预签名分片上传,server 只收 `file_key`;DICOM/WSI/EDF 都走这条 | 前端 + 主包 `/files/upload` 预签名接口 | websocket 只承担进度,不承担字节 |
+
+### 17.4 阈值(进 config,不写死)
+
+| 类别 | 拒收线 | 走异步/直传线 |
+| --- | --- | --- |
+| VCF | 2 GB(gVCF/多样本上限;>2 GB 视为 WGS,阶段二) | > 50 MB |
+| DICOM zip | 5 GB | > 100 MB |
+| EDF | 阶段二前一律拒收并说明 | — |
+| FASTQ/BAM/CRAM | 一律拒收并说明 | — |
+| 文档/图片 | 现有 | 现有 |
+
+### 17.5 验收
+
+- [ ] 传一个 452 MB 的 DICOM 系列:server 进程 RSS 增量 < 50 MB(现在 ≈ 600 MB)
+- [ ] 传一个 3 GB 的文件:在第一片之前被拒,响应里写明原因与支持范围
+- [ ] 同一 WES 连传两次:字节只落盘一次,`th_sequencing_sample` 只一条
+- [ ] 带 `.tbi` 的 WES:解析 ≤ 5 s;不带:与现在持平
+- [ ] 处理期间 `/api/chat` 的 p95 延迟不劣化(处理已不在 server 进程)
