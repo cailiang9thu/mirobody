@@ -50,11 +50,15 @@ class CodingResult:
     differential: list[DiseaseHit] = field(default_factory=list)
     diagnosis: dict = field(default_factory=dict)
     gene: dict = field(default_factory=dict)
+    genome: dict | None = None
+    present_hpo: list[str] = field(default_factory=list)
 
     def to_solver(self) -> dict:
         return {"assertions": [c.to_solver() for c in self.coded],
                 "abstained": self.abstained,
                 "diagnosis": self.diagnosis, "gene": self.gene,
+                "variants": (self.genome or {}).get("variants", []),
+                "genome": {k: v for k, v in (self.genome or {}).items() if k != "variants"},
                 "differential_codes": [{"orpha": h.orpha, "name": h.name, "score": h.score,
                                         "matched": list(h.matched), "against": list(h.against),
                                         "genes": list(h.genes)} for h in self.differential],
@@ -130,6 +134,49 @@ def code_assertions(pairs: list[tuple[str, Assertion]]) -> CodingResult:
                     **({} if chosen else {"reason": "multiple_causal_genes_no_clear_leader"})}
     else:
         res.gene = {"symbol": None, "candidates": [], "method": "", "reason": "no_gene_association"}
+    res.present_hpo = present
+    return res
+
+
+def apply_genome(res: CodingResult, attachments: dict | None, sex_hint: str | None = None) -> CodingResult:
+    """Layer 2 on top of a coded case: candidate variants, then the gene by variant evidence,
+    then — if the variant gene names a disorder in the differential — promote that disorder."""
+    from .gene.phenotype import get_gene_phenotypes
+    from .genome import analyze, choose_gene
+    dis, hgnc = get_disease(), get_hgnc()
+    g = analyze(attachments, sex_hint=sex_hint)
+    res.genome = g.to_dict()
+    if not g.available or not g.variants:
+        return res
+    # diagnosis promotion: a differential entry whose causal genes carry a P/LP variant beats
+    # a higher phenotype score without one (the variant is evidence the score never saw)
+    from .genome import variant_diseases
+    vgenes = {hgnc.canonical(v.gene) for v in g.variants if v.gene}
+    vgenes.discard(None)
+    vdis: dict[str, set[str]] = {}          # ORPHA code -> genes whose variant ClinVar links there
+    for v in g.variants:
+        for code in variant_diseases(v, dis):
+            vdis.setdefault(code, set()).add(hgnc.canonical(v.gene) or v.gene)
+    if res.diagnosis.get("method") == "phenotype":
+        # walk the differential in phenotype order; the first disorder that a candidate variant
+        # is reported for (ClinVar disease link) or whose causal gene carries one wins
+        for h in res.differential:
+            code = h.orpha.split(":", 1)[-1]
+            causal = {hgnc.canonical(x) for x in _causal_first(dis.genes_of(h.orpha))}
+            linked = vdis.get(code, set()) | (causal & vgenes)
+            if linked:
+                if h.orpha != res.diagnosis["codes"].get("orpha"):
+                    res.diagnosis = {"codes": {"orpha": h.orpha}, "name": h.name, "method": "phenotype+variant",
+                                     "confidence": h.score, "supporting_hpo": list(h.matched),
+                                     "promoted_by": sorted(linked)}
+                break
+    dx_code = (res.diagnosis.get("codes") or {}).get("orpha", "")
+    dx_linked = sorted(vdis.get(dx_code.split(":", 1)[-1], set())) if dx_code else []
+    dx_genes = _causal_first(dis.genes_of(res.diagnosis["codes"]["orpha"])) if res.diagnosis.get("codes", {}).get("orpha") else []
+    if not dx_genes and res.diagnosis.get("codes", {}).get("orpha"):
+        code = res.diagnosis["codes"]["orpha"].split(":", 1)[-1]
+        dx_genes = get_gene_phenotypes().genes_for_omim(dis.b.omim.get(code, []))
+    res.gene = choose_gene(g, res.present_hpo, list(dict.fromkeys(dx_linked + list(dx_genes))), get_gene_phenotypes(), dis, hgnc)
     return res
 
 

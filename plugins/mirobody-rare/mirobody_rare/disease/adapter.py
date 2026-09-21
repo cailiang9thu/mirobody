@@ -92,6 +92,10 @@ class DiseaseAdapter:
             for s in self.b.synonyms.get(code, ()):
                 self._names.setdefault(normalize(s), []).append(code)
         self._name_keys = sorted((k for k in self._names if len(k) >= 4), key=len, reverse=True)
+        self.omim_to_orpha: dict[str, set[str]] = {}
+        for code, ids in self.b.omim.items():
+            for o in ids:
+                self.omim_to_orpha.setdefault(o, set()).add(code)
         log.info("[orpha] adapter: %d disorders, %d annotated, %d IC terms",
                  len(self.b.name), len(self.closure), len(self.ic))
 

@@ -16,7 +16,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from ._config import load as load_cfg, setup_logging
-from .coding import code_ledger
+from .coding import apply_genome, code_ledger
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +40,8 @@ def extract_payload(prompt: str) -> dict:
 def answer_for_payload(payload: dict) -> dict:
     ledger = payload.get("evidence_ledger") or []
     res = code_ledger(ledger)
+    att = (payload.get("prediction_context") or {}).get("attachments")
+    res = apply_genome(res, att, sex_hint=(payload.get("user_profile") or {}).get("sex"))
     sol = res.to_solver()
     coded_ids = [c.evidence_id for c in res.coded]
     by_hpo: dict[str, list[str]] = {}
@@ -61,9 +63,14 @@ def answer_for_payload(payload: dict) -> dict:
                              "supporting_evidence": [], "ruled_out_by": None})
     top = res.differential[0] if res.differential else None
     gene = sol["gene"].get("symbol")
-    tests = ([f"基因检测({gene})"] if gene else
+    if sol["gene"].get("method", "").startswith("variant"):
+        tests = ([f"Sanger 验证 {gene} 变异 {', '.join(sol['gene'].get('evidence') or [])}"] if gene
+                 else [f"对候选基因 {', '.join(sol['gene'].get('candidates') or [])} 的变异做家系验证"])
+    else:
+        tests = ([f"基因检测({gene})"] if gene else
              [f"多基因 panel / WES(候选:{', '.join(sol['gene'].get('candidates') or [])})"] if sol["gene"].get("candidates")
              else ["罕见病遗传咨询"])
+    n_var = len(sol.get("variants") or [])
     n_present = sum(1 for c in res.coded if c.assertion.polarity == "present" and c.assertion.subject == "proband")
     join = "unified" if top and len(top.matched) >= 2 else ("independent" if n_present <= 1 else "comorbidity")
     doc = {
@@ -81,7 +88,8 @@ def answer_for_payload(payload: dict) -> dict:
                    "what_not_to_do": ["不据表型编码直接下诊断", "不自行调整用药"],
                    "clinician_review_required": True, "followup_interval": "14d"},
         "data_quality": {"data_sufficiency": "sufficient" if n_present >= 2 else "insufficient_data",
-                         "signal_quality": {"coded_assertions": len(res.coded), "abstained": len(res.abstained)}},
+                         "signal_quality": {"coded_assertions": len(res.coded), "abstained": len(res.abstained),
+                                            "clinvar_plp_variants": n_var, "genome": (sol.get("genome") or {}).get("counts")}},
         "cited_evidence": coded_ids,
         **sol,
     }
@@ -123,9 +131,10 @@ class Handler(BaseHTTPRequestHandler):
             payload = extract_payload(prompt)
             doc = answer_for_payload(payload)
             text = json.dumps(doc, ensure_ascii=False)
-            log.info("[shim] case=%s coded=%d abstained=%d dx=%s in %.2fs",
+            log.info("[shim] case=%s coded=%d abstained=%d dx=%s gene=%s/%s variants=%d in %.2fs",
                      payload.get("case_id"), len(doc["assertions"]), len(doc["abstained"]),
-                     doc["diagnosis"].get("codes", {}).get("orpha"), time.time() - t0)
+                     doc["diagnosis"].get("codes", {}).get("orpha"), doc["gene"].get("symbol"),
+                     doc["gene"].get("method"), len(doc.get("variants") or []), time.time() - t0)
         except Exception as e:  # noqa: BLE001
             log.exception("[shim] request failed")
             return self._send(400, {"error": {"message": f"{type(e).__name__}: {e}"}})

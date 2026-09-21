@@ -27,3 +27,10 @@ llm:
   api_key_env: GEMINI_API_KEY
   max_concurrency: 8
   max_retries: 3
+
+variant:
+  clinvar_vcf: /data/xfs_recovery/caill/haenv-rare/data/ontology/clinvar_GRCh38/clinvar.vcf.gz
+  min_dp: 10
+  min_gq: 20
+  min_stars: 1            # ClinVar review status floor for a candidate (0 = accept no-assertion rows)
+  gene_margin: 0.1        # phenotype-score lead a variant gene needs over the runner-up to be chosen

@@ -15,12 +15,17 @@ plugins/mirobody-rare/                 独立发行包(不进主包 wheel)
 │   ├── hpo/bundle.py, hpo/adapter.py  D1b  hpo_bundle.tar.gz + HpoAdapter.resolve / resolve_many
 │   ├── disease/                       D8   Orphanet product1/6 + phenotype.hpoa;病名解析 + IC 表型相似度排序
 │   ├── gene/                          D8   HGNC 表;genes_to_phenotype 给多基因病排候选
+│   ├── variant/clinvar.py, vcf.py     D2/D3 ClinVar GRCh38 P/LP 本地表(34.9 万条,含星级);VCF 读取、PASS/DP/GQ 过滤、合子性
+│   ├── pedigree/ped.py                D7   PED 导入(th_pedigree 行形)、trio 遗传来源判定(父母未覆盖 ⇒ unknown,不判 de novo)
+│   ├── genome.py                      层2 管线:指针 → sha256 校验 → 候选变异 → 由变异证据定基因/提升诊断
 │   ├── coding.py                      管线;solver 合约 JSON
 │   ├── serve_coding.py                OpenAI 兼容薄壳(haenv 拍板 #5)
 │   ├── tools.py                       MCP 工具 resolve_hpo / code_phenotypes / rank_rare_diseases
 │   └── res/zh_curated_hpo.tsv         口语同义词种子(剪刀样步态、霍夫曼征阳性、K-F环…)
 └── tests/                             9 条
 mirobody/schema/32_phenotype.sql       th_phenotype / th_disease_code(主包只追加;计划里的 a6_ 按 1.5.0 两位前缀改名)
+mirobody/schema/33_variant.sql         th_sequencing_sample / th_variant / th_variant_annotation(计划 a7_)
+mirobody/schema/34_pedigree_consent.sql th_pedigree / th_pedigree_member / th_consent(计划 a9_)
 mirobody/res/EXTERNAL.tsv              两个 bundle 的登记行(不进 git / wheel)
 ```
 
@@ -33,6 +38,20 @@ mirobody/res/EXTERNAL.tsv              两个 bundle 的登记行(不进 git / w
 | `subject` 取 `proband|father|mother|sibling|other_relative|unknown` | `subject` = `proband|relative` + `subject_role` 取计划的细粒度 | 评测合约要粗粒度,家系分析要细粒度,两者都保留 |
 
 主干 `engine.py` / `units/` / `lexical.py` / `kernel/` 未改;插件只 import 库层的 `lexical.normalize` 与 `zh_fold.fold_to_hans`(numpy-only 契约内)。
+
+## 层2 · 变异 → 基因(2026-09-21)
+
+```
+prediction_context.attachments(路径 + sha256)          ← haenv 出题侧只给指针,不给坐标
+   → genome.analyze:sha256 校验(不符即拒读)→ PED(性别、家系角色)
+   → variant.read_candidates:PASS · DP≥10 · GQ≥20 · 非参考 GT → ClinVar P/LP 本地表命中(≥1 星)
+   → 父母 VCF 在候选位点取 GT → trio_inheritance(de_novo | maternal | paternal | biparental | unknown)
+   → choose_gene:① 变异基因 ∈ 首诊致病基因  ② 变异 ClinVar 疾病链接对先证者表型的 IC 相似度  ③ 基因级 HPO 注释
+   → 变异的疾病链接可把鉴别诊断中的病种提升为首诊(diagnosis.method = phenotype+variant)
+```
+
+输出 `variants[]` 与 `th_variant` / `th_variant_annotation` 同形(chrom/pos/ref/alt/gt/zygosity/depth/gq/filter + clnsig/review_status/stars/conditions),
+`genome.pedigree` 与 `th_pedigree_member` 同形。不猜的三处:sha256 不符不读;父母未覆盖不判 de novo;多候选无明显领先者 `gene.symbol=null`。
 
 ## 「拒绝猜测」在编码层的三个形态
 
@@ -57,8 +76,10 @@ uv run haenv run inputs/rare_coding-p1.job.yaml --models mirobody-coding --overr
 | `rc_coverage` | 1.000 |
 | `rc_hpo_strict` / `rc_hpo_hier` | 0.9957 / 0.9990 |
 | `rc_polarity_ok` / `rc_subject_ok` / `rc_negation_trap` | 1.000 / 1.000 / 0 |
-| `rc_orpha_top1` | 0.9833(59/60) |
-| `rc_hgnc_ok` | 0.7679(43/56,13 例按规则弃权) |
+| `rc_orpha_top1` | 0.9833(59/60)→ **1.000**(附件可见后,SMN1 纯合变异把 SMA 提升为首诊) |
+| `rc_hgnc_ok` | 0.7679(43/56,13 例按规则弃权)→ **1.000**(56/56,由变异证据定) |
+| `rc_variant_hit` / `rc_variant_gt_ok` / `rc_variant_inh_ok` / `rc_gene_from_variant` | **1.000 / 1.000 / 1.000(40 trio) / 1.000**(每例 1 真值 + 2 隐性携带诱饵) |
 
-**别读高**:题面是 HPO 中文标签经模板渲染的句子,词表匹配在这种题面上按构造接近天花板。这轮证明的是链路、对齐、否定/主体、不猜策略;
+**别读高**:层2 的诱饵是隐性携带(0/1),骨架是 GIAB 健康基因组、背景无其它 P/LP 命中,没有 gnomAD 频率与 VEP 后果;真实 WES 的候选集要难得多。
+题面是 HPO 中文标签经模板渲染的句子,词表匹配在这种题面上按构造接近天花板。这轮证明的是链路、对齐、否定/主体、不猜策略;
 真实病历上的抽取质量要靠 D9 金标(`rareDieaseCollect` 30 份人工标注)——那是换 prompt / 换模型的唯一裁判,尚未做。
