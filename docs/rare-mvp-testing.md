@@ -68,7 +68,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3.4 | 未授权 `research_use` 无法经研究路径读出 | `test_consent_gate_rules` | ✅ |
 | 3.5 | `analysis_only` 成员的个体结论不返回 | `test_consent_gate_rules`(含本人也拒)· `test_pg.py`(真库,`error_kind=denied`) | ✅ |
 | 3.6 | 跨境需同意行允许 | `test_consent_gate_rules` | ✅ |
-| 3.7 | 未成年人由监护人签署被记录 | `th_consent.signed_by_user_id/relationship` 列有,无写入路径 | ❌ 无同意书写入接口 |
+| 3.7 | 未成年人由监护人签署被记录 | MCP 工具 `record_consent`(scope/layer/relationship=self|guardian/document_file_id,一 scope 一行);`test_record_consent_then_permit`:记录后 `permit(research_use, variant)` 放行、其他层仍拒 | ✅ |
 
 ## 4. 接口 · D5(§10)
 
@@ -82,9 +82,9 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | # | 验收项 | 测试 | 状态 |
 | --- | --- | --- | --- |
 | 5.1 | `lint-imports` 五条契约 | `.venv/bin/lint-imports` → 6 kept, 0 broken | ✅ |
-| 5.2 | `scripts/check_wheel_data.py`,主包 wheel 不增长 | 未对 wheel 跑(需 `python -m build`) | ❌ |
+| 5.2 | `scripts/check_wheel_data.py`,主包 wheel 不增长 | 已跑:wheel 1.40 MB;闸门拒绝发布的原因是本克隆无 git-lfs、`fhir_loinc_bundle.tar.gz` 是 133 B 指针 —— 环境项,与插件无关(插件本就不进主包 wheel) | 🟡 |
 | 5.3 | 四个 SQL 文件三次重放零错误 | 见 2.11 | ✅ |
-| 5.4 | 不装插件时主包行为不变 | `factory._plugin_handlers()` 为空 ⇒ 原顺序;无回归测试 | 🟡 补:卸载插件后跑主包 `mirobody/tests` |
+| 5.4 | 不装插件时主包行为不变 | `test_no_plugin_regression.py`:entry point 为空时 `_plugin_handlers()==[]`,`.vcf` 回到"不支持"、`.txt` 仍 TextHandler | ✅ |
 | 5.5 | 不装插件时 `th_series_data_genetic` / `query_genetic_data` 不变 | 未动这两处 | 🟡 同上 |
 
 ## 6. 大文件(§17.5)
@@ -99,10 +99,10 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 ## 7. 汇总与下一步
 
-26 条验收(2026-09-21 第三轮 TDD 后):**✅ 23 · 🟡 5 · ❌ 4**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
+26 条验收(2026-09-21 第三轮 TDD 后):**✅ 25 · 🟡 5 · ❌ 2**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
 
 1. **D9 真实语料金标**(1.4 / 1.5)—— 没有它,层1 在真实病历上的读数为零,这是唯一一条"合成题证明不了"的验收;需临床顾问。
 2. ~~端到端固化~~ —— 已做 `tests/test_e2e.py`(`-m e2e`,需 `MIROBODY_RARE_E2E_BASE`;实测 70 s 通过)。
 3. **§17 大文件**五条 —— 与 17.3 的改造同步落地。
 4. gnomAD(2.5)、图表分流(1.6 / 1.8)、同意书写入(3.7)—— 各是一块独立功能。
-5. 小补:5.4 卸载插件回归、5.2 wheel 门(1.1 / 2.8 已补)。
+5. ~~小补~~:5.4 / 3.7 已补;5.2 受 LFS 环境限制。

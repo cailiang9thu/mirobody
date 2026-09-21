@@ -87,6 +87,9 @@ class MemoryRepo:
     async def consents(self, user_id):
         return [r for r in self.t["th_consent"] if r["user_id"] == user_id]
 
+    async def add_consent(self, row):
+        return self._ins("th_consent", {"revoked_at": None, "cross_border_allowed": False, **row})
+
     async def add_phenotypes(self, rows):
         return sum(1 for r in rows if self._ins("th_phenotype", r))
 
@@ -249,6 +252,13 @@ class PgRepo:
     async def consents(self, user_id):
         return await self._q("SELECT id, scope, granted, layer, residency, cross_border_allowed, effective_at, revoked_at"
                              " FROM th_consent WHERE user_id = :user_id ORDER BY effective_at DESC", {"user_id": user_id})
+
+    async def add_consent(self, row):
+        rows = await self._q("INSERT INTO th_consent (user_id, scope, granted, signed_by_user_id, relationship, layer, residency, cross_border_allowed, document_file_id)"
+                             " VALUES (:user_id, :scope, :granted, :signed_by_user_id, :relationship, :layer, :residency, :cross_border_allowed, :document_file_id) RETURNING id",
+                             {"relationship": "self", "layer": None, "residency": None, "cross_border_allowed": False, "document_file_id": None,
+                              **{k: v for k, v in row.items() if k in ("user_id", "scope", "granted", "signed_by_user_id", "relationship", "layer", "residency", "cross_border_allowed", "document_file_id")}})
+        return int(rows[0]["id"])
 
     async def add_phenotypes(self, rows):
         n = 0

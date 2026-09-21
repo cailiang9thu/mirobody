@@ -84,7 +84,7 @@ class RareQueryService:
     """`query_phenotype` / `query_variant` / `query_signal_index` / `query_pedigree` (plan §8.1).
     `repo` is injected for tests; the default speaks Postgres through `mirobody.utils.execute_query`."""
 
-    __tools__ = ("query_phenotype", "query_variant", "query_signal_index", "query_pedigree")
+    __tools__ = ("query_phenotype", "query_variant", "query_signal_index", "query_pedigree", "record_consent")
 
     def __init__(self, repo=None) -> None:
         self._repo = repo
@@ -149,6 +149,26 @@ class RareQueryService:
             return _denied(d.reason)
         rows = [r for r in await self._r().signals(subject, modality or None) if r.get("deid_status") == "done"]
         return _env_dict(_kt.STATUS_OK, rows, [_SIGNAL_NOTE])
+
+    async def record_consent(self, user_info: dict, scope: str, granted: bool = True, layer: str = "",
+                             relationship: str = "self", residency: str = "", cross_border_allowed: bool = False,
+                             document_file_id: int | None = None) -> dict:
+        """Record one consent decision for the caller (plan §7.1): scope is individual_return |
+        research_use | commercial_use, layer optionally narrows it to phenotype | variant |
+        signal | pedigree. A guardian signing for a minor sets relationship='guardian'; the
+        signed document's th_files id goes in document_file_id. Consents are never bundled:
+        one call per scope.
+        """
+        from .consent.gate import LAYERS, PURPOSES
+        caller = self._caller(user_info)
+        if scope not in PURPOSES or (layer and layer not in LAYERS) or relationship not in ("self", "guardian"):
+            return _asdict(_kt.Envelope(_kt.STATUS_ERROR, data=[], error_class="recoverable", error_kind="invalid_arguments",
+                                        assumptions=(f"scope ∈ {PURPOSES}, layer ∈ {LAYERS} or empty, relationship self|guardian",)))
+        cid = await self._r().add_consent({"user_id": caller, "scope": scope, "granted": bool(granted), "signed_by_user_id": caller,
+                                           "relationship": relationship, "layer": layer or None, "residency": residency or None,
+                                           "cross_border_allowed": bool(cross_border_allowed), "document_file_id": document_file_id})
+        return _env_dict(_kt.STATUS_OK, [{"id": cid, "user_id": caller, "scope": scope, "granted": bool(granted), "layer": layer or None}],
+                         ["a consent row is per scope and per layer; revoke by recording granted=false"])
 
     async def query_pedigree(self, user_info: dict, subject_id: str = "", purpose: str = "individual_return") -> dict:
         """Family structure this person belongs to, and which of their variants are de novo.

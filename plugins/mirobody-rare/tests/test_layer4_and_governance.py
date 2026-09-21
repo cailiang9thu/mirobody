@@ -172,3 +172,16 @@ async def test_dicom_probe_reads_header_only(tmp_path):
     f = _CountingFile(big)
     assert await is_dicom_zip(f) is True
     assert f.bytes_read < 256 * 1024, f.bytes_read
+
+
+async def test_record_consent_then_permit():
+    from mirobody_rare.consent import permit
+    repo = MemoryRepo()
+    svc = RareQueryService(repo)
+    assert not (await permit(repo, "u1", "u2", "variant", "research_use")).allowed
+    r = await svc.record_consent({"user_id": "u2"}, scope="research_use", granted=True, layer="variant", relationship="self")
+    assert r["status"] == "ok" and r["data"][0]["id"]
+    assert (await permit(repo, "u1", "u2", "variant", "research_use")).allowed
+    assert not (await permit(repo, "u1", "u2", "phenotype", "research_use")).allowed      # layer-scoped
+    r = await svc.record_consent({"user_id": "u2"}, scope="bogus", granted=True)
+    assert r["status"] == "error"
