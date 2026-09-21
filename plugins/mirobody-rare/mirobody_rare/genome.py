@@ -40,12 +40,41 @@ class GenomeResult:
     counts: dict = field(default_factory=dict)
     integrity: dict = field(default_factory=dict)   # role -> ok | sha_mismatch | missing
     pedigree: dict | None = None
+    common: list[VariantCall] = field(default_factory=list)   # dropped by gnomAD popmax
     notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {"available": self.available, "reference": self.reference, "sex": self.sex, "trio": self.trio,
                 "counts": self.counts, "integrity": self.integrity, "pedigree": self.pedigree,
-                "variants": [v.to_dict() for v in self.variants], "notes": self.notes}
+                "variants": [v.to_dict() for v in self.variants],
+                "common_variants": [v.to_dict() for v in self.common], "notes": self.notes}
+
+
+def filter_common(variants: list[VariantCall], max_af_popmax: float) -> tuple[list[VariantCall], list[VariantCall]]:
+    """Split by gnomAD popmax: a P/LP call common in some population is not a rare-disease
+    candidate. Unqueried / not-found variants are KEPT (absence of evidence)."""
+    kept, common = [], []
+    for v in variants:
+        af = (v.gnomad or {}).get("af_popmax")
+        (common if isinstance(af, (int, float)) and af > max_af_popmax else kept).append(v)
+    return kept, common
+
+
+def annotate_gnomad(variants: list[VariantCall]) -> None:
+    """Fill `v.gnomad` for every candidate in one batched call; failures leave None."""
+    from .variant.gnomad import get_client
+    from .reference.sync import run
+    client = get_client()
+    if client is None or not variants:
+        return
+    keys = [(v.chrom, v.pos, v.ref, v.alt) for v in variants]
+    try:
+        got = run(client.lookup_many(keys))
+    except Exception as e:                              # noqa: BLE001
+        log.warning("[gnomad] unavailable: %s", e)
+        return
+    for v in variants:
+        v.gnomad = got.get((v.chrom, v.pos, v.ref, v.alt))
 
 
 def analyze(att: dict | None, sex_hint: str | None = None) -> GenomeResult:
@@ -102,7 +131,11 @@ def analyze(att: dict | None, sex_hint: str | None = None) -> GenomeResult:
             c.parent_gt = {r: pgt[r].get(c.key) for r in parents}
             if res.trio:
                 c.inheritance = trio_inheritance(c.parent_gt.get("father"), c.parent_gt.get("mother"))
+    annotate_gnomad(cands)
+    cands, common = filter_common(cands, float(cfg.get("max_af_popmax", 0.01)))
+    counts["n_common_dropped"] = len(common)
     res.variants = cands
+    res.common = common
     res.counts = counts
     res.available = True
     return res

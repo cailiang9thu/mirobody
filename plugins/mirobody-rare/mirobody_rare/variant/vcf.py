@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import gzip
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -29,6 +30,7 @@ class VariantCall:
     clinvar: dict | None = None   # ClinVarIndex.lookup() record
     inheritance: str = "unknown"  # de_novo | maternal | paternal | biparental | unknown
     parent_gt: dict = field(default_factory=dict)
+    gnomad: dict | None = None    # GnomadClient record; None = not queried
 
     @property
     def gene(self) -> str:
@@ -44,7 +46,10 @@ class VariantCall:
                 "zygosity": self.zygosity, "filter": self.filter, "gene": self.gene,
                 "clnsig": cv.get("clnsig"), "review_status": cv.get("rev"), "stars": cv.get("stars"),
                 "clinvar_vid": cv.get("vid"), "conditions": cv.get("dn", []), "consequence": cv.get("mc"),
-                "inheritance": self.inheritance, "parent_gt": self.parent_gt}
+                "inheritance": self.inheritance, "parent_gt": self.parent_gt,
+                "af_global": (self.gnomad or {}).get("af_global"), "af_popmax": (self.gnomad or {}).get("af_popmax"),
+                "popmax_pop": (self.gnomad or {}).get("popmax_pop"),
+                "gnomad": ("not_found" if (self.gnomad or {}).get("not_found") else "found") if self.gnomad else "not_queried"}
 
 
 def _open(path: str | Path):
@@ -70,6 +75,52 @@ def _fmt_int(fmt: list[str], vals: list[str], key: str) -> int | None:
     return None
 
 
+def has_index(path: str | Path) -> bool:
+    """bgzip + tabix (`.tbi`) or CSI beside the file: the per-contig fast path applies."""
+    p = str(path)
+    return os.path.exists(p + ".tbi") or os.path.exists(p + ".csi")
+
+
+def _pysam():
+    try:
+        import pysam
+        return pysam
+    except ImportError:
+        return None
+
+
+def iter_records(path: str | Path, chrom: str | None = None):
+    """Yield VCF data lines as split columns. With an index and pysam, a contig is fetched
+    directly (no scan of the rest of the file); otherwise a text scan, optionally filtered
+    to `chrom`. Column shapes are identical on both paths."""
+    ps = _pysam() if has_index(path) else None
+    if ps is not None:
+        vf = ps.VariantFile(str(path))
+        contigs = list(vf.header.contigs)
+        want = None
+        if chrom is not None:
+            bare = chrom.replace("chr", "")
+            want = [c for c in contigs if c.replace("chr", "") == bare]
+            if not want:
+                vf.close()
+                return
+        try:
+            its = [vf.fetch(c) for c in want] if want else [vf.fetch()]
+            for it in its:
+                for rec in it:
+                    yield str(rec).rstrip("\n").split("\t")
+        finally:
+            vf.close()
+        return
+    with _open(path) as fh:
+        for line in fh:
+            if line.startswith("#"):
+                continue
+            if chrom is not None and line.split("\t", 1)[0].replace("chr", "") != chrom.replace("chr", ""):
+                continue
+            yield line.rstrip("\n").split("\t")
+
+
 def read_header(path: str | Path) -> dict:
     """Reference build (from ##reference / ##contig assembly) and sample names."""
     ref, samples = "", []
@@ -93,12 +144,9 @@ def read_candidates(path: str | Path, clinvar, sex: str | None = None, sample_ix
     n = n_pass = n_nonref = 0
     out: list[VariantCall] = []
     pend: list[tuple[tuple, dict]] = []          # (five-tuple, call fields) — resolved in one lookup_many
-    with _open(path) as fh:
-        for line in fh:
-            if line.startswith("#"):
-                continue
+    if True:
+        for c in iter_records(path):
             n += 1
-            c = line.rstrip("\n").split("\t")
             if len(c) < 10 + sample_ix:
                 continue
             if c[6] not in ("PASS", "."):
@@ -129,6 +177,23 @@ def read_genotypes_at(path: str | Path, keys: set[str], sample_ix: int = 0) -> d
     is NOT assumed — absent keys stay absent so the caller can say 'not covered'."""
     out: dict[str, str] = {}
     if not keys:
+        return out
+    ps = _pysam() if has_index(path) else None
+    if ps is not None:
+        vf = ps.VariantFile(str(path))
+        contigs = {c.replace("chr", ""): c for c in vf.header.contigs}
+        try:
+            for k in keys:
+                chrom, pos, ref, alt = k.split(":", 3)
+                c = contigs.get(chrom)
+                if not c:
+                    continue
+                for rec in vf.fetch(c, int(pos) - 1, int(pos)):
+                    col = str(rec).rstrip("\n").split("\t")
+                    if col[1] == pos and col[3] == ref and col[4] == alt and len(col) >= 10 + sample_ix:
+                        out[k] = col[9 + sample_ix].split(":")[0]
+        finally:
+            vf.close()
         return out
     with _open(path) as fh:
         for line in fh:

@@ -18,7 +18,7 @@ from ._config import load as load_cfg
 from .pedigree import parse_ped
 from .signal import index_dicom_zip
 from .variant import get_clinvar
-from .variant.vcf import _NONREF, _fmt_int, _open, _zygosity, read_header
+from .variant.vcf import _NONREF, _fmt_int, _open, _zygosity, iter_records, read_header
 
 log = logging.getLogger(__name__)
 
@@ -42,13 +42,8 @@ def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, 
                     clinvar, min_dp: int, min_gq: int, min_stars: int) -> tuple[list[dict], list[dict], int]:
     vrows, arows, n_raw = [], [], 0
     pend: list[tuple[tuple, dict]] = []
-    with _open(path) as fh:
-        for line in fh:
-            if line.startswith("#"):
-                continue
-            c = line.rstrip("\n").split("\t")
-            if c[0].replace("chr", "") != chrom:
-                continue
+    if True:
+        for c in iter_records(path, chrom):
             n_raw += 1
             if c[6] not in ("PASS", ".") or len(c) < 10:
                 continue
@@ -62,6 +57,11 @@ def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, 
             for alt in c[4].split(","):
                 pend.append(((chrom, int(c[1]), c[3], alt), dict(genotype=gt, zygosity=_zygosity(gt, c[0], sex), depth=dp, gq=gq, filter=c[6])))
     hits = clinvar.lookup_many([k for k, _ in pend])          # one round-trip per shard, never per call
+    from .genome import annotate_gnomad
+    from .variant.vcf import VariantCall
+    calls = {k: VariantCall(chrom=k[0], pos=k[1], ref=k[2], alt=k[3], gt=f["genotype"], zygosity=f["zygosity"], clinvar=hits[k])
+             for k, f in pend if hits.get(k) and hits[k].get("stars", 0) >= min_stars}
+    annotate_gnomad(list(calls.values()))
     for k, f in pend:
         cv = hits.get(k)
         if not cv or cv.get("stars", 0) < min_stars:
@@ -72,6 +72,11 @@ def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, 
         arows.append({"_key": k, "source": "clinvar", "source_version": clinvar.version,
                       "clinical_significance": cv.get("clnsig"), "review_status": cv.get("rev"),
                       "condition_names": list(cv.get("dn") or [])})
+        g = calls[k].gnomad
+        if g and not g.get("not_found"):
+            arows.append({"_key": k, "source": "gnomad", "source_version": g.get("source_version", "gnomad_r4"),
+                          "af_global": g.get("af_global"), "af_popmax": g.get("af_popmax"), "popmax_pop": g.get("popmax_pop"),
+                          "allele_count": g.get("allele_count")})
     return vrows, arows, n_raw
 
 

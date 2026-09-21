@@ -298,16 +298,23 @@ class PgRepo:
     async def add_annotations(self, rows):
         n = 0
         for r in rows:
-            got = await self._q("INSERT INTO th_variant_annotation (variant_id, source, source_version, clinical_significance, review_status, condition_names)"
-                                " VALUES (:variant_id, :source, :source_version, :clinical_significance, :review_status, :condition_names)"
+            got = await self._q("INSERT INTO th_variant_annotation (variant_id, source, source_version, clinical_significance, review_status, condition_names,"
+                                " af_global, af_popmax, popmax_pop, allele_count)"
+                                " VALUES (:variant_id, :source, :source_version, :clinical_significance, :review_status, :condition_names,"
+                                " :af_global, :af_popmax, :popmax_pop, :allele_count)"
                                 " ON CONFLICT DO NOTHING RETURNING id",
-                                {k: r.get(k) for k in ("variant_id", "source", "source_version", "clinical_significance", "review_status", "condition_names")})
+                                {k: r.get(k) for k in ("variant_id", "source", "source_version", "clinical_significance", "review_status", "condition_names",
+                                                       "af_global", "af_popmax", "popmax_pop", "allele_count")})
             n += len(got)
         return n
 
     async def add_signal(self, row):
+        from datetime import date
+        row = dict(row)
+        if isinstance(row.get("study_date"), str):                # asyncpg wants a date object for a DATE column
+            row["study_date"] = date.fromisoformat(row["study_date"])
         rows = await self._q("INSERT INTO th_signal_object (user_id, file_id, modality, format, body_part, study_date, series_desc, instance_count,"
-                             " residency, exportable, deid_status) VALUES (:user_id, :file_id, :modality, :format, :body_part, :study_date::date,"
+                             " residency, exportable, deid_status) VALUES (:user_id, :file_id, :modality, :format, :body_part, :study_date,"
                              " :series_desc, :instance_count, :residency, :exportable, :deid_status) RETURNING id",
                              {"residency": "CN", "exportable": False, **{k: row.get(k) for k in ("user_id", "file_id", "modality", "format", "body_part", "study_date",
                                                                                                     "series_desc", "instance_count", "deid_status")}})

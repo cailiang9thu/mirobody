@@ -49,3 +49,19 @@ async def test_pg_clinvar_lookup_many():
     got = cv.lookup_many([("17", 7674220, "C", "G"), ("1", 1, "A", "T")])
     assert ("17", 7674220, "C", "G") in got and got[("17", 7674220, "C", "G")]["gene"] == "TP53"
     assert ("1", 1, "A", "T") not in got
+
+
+async def test_pg_signal_index_roundtrip():
+    import glob
+    from mirobody_rare.ingest import ingest_dicom
+    from mirobody_rare.repo import PgRepo
+    from mirobody_rare.tools import RareQueryService
+    sts = sorted(glob.glob("/data/xfs_recovery/data/rare/03_dicom/Soft-tissue-Sarcoma/STS_027/*.zip"))
+    if not sts:
+        pytest.skip("TCIA sample not on disk")
+    repo = PgRepo()
+    uid = "pytest-rare-u1"
+    row = await ingest_dicom(repo, uid, sts[0], file_id=1)
+    assert row["deid_status"] == "done" and row["id"]
+    r = await RareQueryService(repo).query_signal_index({"user_id": uid})
+    assert any(x["id"] == row["id"] and x["study_date"] for x in r["data"])

@@ -394,6 +394,7 @@ class WebSocketFileUploadManager:
                 content_type = message_data.get("contentType", "application/octet-stream")
                 file_size = message_data.get("fileSize", 0)
 
+                from mirobody.collect.files.spooled_upload_file import SpooledUploadFile
                 file_record = {
                     "filename": filename,
                     "content_type": content_type,
@@ -401,14 +402,17 @@ class WebSocketFileUploadManager:
                     "chunks": {},
                     "total_chunks": total_chunks,
                     "received_chunks": 0,
-                    "content": bytearray(),
+                    # §17: chunks go to disk as they arrive; nothing is held in a bytearray
+                    "spool": SpooledUploadFile(filename, content_type, total_chunks),
+                    "content": None,
                 }
                 session["uploaded_files"].append(file_record)
                 existing_file = file_record
 
             # Add data chunk
             if chunk_index not in existing_file["chunks"]:
-                existing_file["chunks"][chunk_index] = file_content
+                existing_file["chunks"][chunk_index] = True          # index bookkeeping only
+                existing_file["spool"].write_chunk(chunk_index, file_content)
                 existing_file["received_chunks"] += 1
 
             # Calculate file upload progress
@@ -429,14 +433,9 @@ class WebSocketFileUploadManager:
 
             # Check if file is complete
             if existing_file["received_chunks"] == existing_file["total_chunks"]:
-                # Reassemble file content
-                existing_file["content"] = bytearray()
-                for i in range(existing_file["total_chunks"]):
-                    if i in existing_file["chunks"]:
-                        existing_file["content"].extend(existing_file["chunks"][i])
-
-                # Update actual file size in record
-                actual_file_size = len(existing_file["content"])
+                # §17: assemble on disk (SpooledUploadFile), never into a bytearray
+                existing_file["spool"].finalize()
+                actual_file_size = existing_file["spool"].size
                 existing_file["size"] = actual_file_size
 
                 # Complete file received
@@ -491,7 +490,7 @@ class WebSocketFileUploadManager:
             has_genetic_files = False
             for f in uploaded_files:
                 # Create adapter for checking
-                temp_file = MemoryUploadFile(f["content"], f["filename"], f["content_type"])
+                temp_file = f["spool"]; await temp_file.seek(0)
                 if await GeneticHandler.is_genetic_file(temp_file):
                     has_genetic_files = True
                     break
@@ -563,11 +562,8 @@ class WebSocketFileUploadManager:
                     )
 
                     # Wrap in MemoryUploadFile adapter
-                    temp_file = MemoryUploadFile(
-                        file_data["content"], 
-                        file_data["filename"], 
-                        file_data["content_type"]
-                    )
+                    temp_file = file_data["spool"]
+                    await temp_file.seek(0)
 
                     # UNIFIED PROCESSING ENTRY POINT (use real user_id for business logic)
                     result = await self.file_processor.process_single_file(
@@ -595,7 +591,7 @@ class WebSocketFileUploadManager:
                             "index": i,
                             "filename": file_data["filename"],
                             "content_type": file_data["content_type"],
-                            "size": file_data.get("size", len(file_data.get("content", b""))),
+                            "size": file_data.get("size", (file_data.get("spool").size if file_data.get("spool") else 0)),
                             "error": error_message,
                             "file_key": result.get("file_key", "") if result else "",
                             "type": result.get("type", "file") if result else "file",
@@ -609,7 +605,7 @@ class WebSocketFileUploadManager:
                         "index": i,
                         "filename": file_data["filename"],
                         "content_type": file_data["content_type"],
-                        "size": file_data.get("size", len(file_data.get("content", b""))),
+                        "size": file_data.get("size", (file_data.get("spool").size if file_data.get("spool") else 0)),
                         "error": str(e),
                         "file_key": "",
                         "type": "file",
@@ -1006,6 +1002,9 @@ class WebSocketFileUploadManager:
         # evicts sessions that are NOT completed.
         for f in session.get("uploaded_files", []):
             f["content"] = None
+            sp = f.pop("spool", None)
+            if sp is not None:
+                sp.close_sync()
 
     async def _start_embedding_update_task(
         self,
@@ -1078,7 +1077,7 @@ class WebSocketFileUploadManager:
             file_entry = {
                 "filename": file_data["filename"],
                 "contentType": file_data["content_type"],
-                "size": file_data.get("size", len(file_data.get("content", b""))),
+                "size": file_data.get("size", (file_data.get("spool").size if file_data.get("spool") else 0)),
                 "type": failed_info.get("type", "file") if failed_info else "file",
                 "url_thumb": "",
                 "url_full": "",
@@ -1093,7 +1092,7 @@ class WebSocketFileUploadManager:
         
         # Build file_sizes array
         file_sizes_array = [
-            f.get("size", len(f.get("content", b""))) for f in uploaded_files
+            f.get("size", (f.get("spool").size if f.get("spool") else 0)) for f in uploaded_files
         ]
         
         # Handle proxy upload user information
@@ -1221,8 +1220,15 @@ class WebSocketFileUploadManager:
                             
                             logger.info(f"[WebSocket] Generating file abstract for file {i + 1} of {message_id}, type: {file_type}")
                             
+                            _sp = uploaded_files[i].get("spool")
+                            if _sp is not None:
+                                await _sp.seek(0)
+                                _bytes = await _sp.read()          # abstract fallback only runs for pdf/image
+                                await _sp.seek(0)
+                            else:
+                                _bytes = uploaded_files[i].get("content")
                             result_data = await extractor.extract_file_abstract(
-                                file_content=uploaded_files[i]["content"],
+                                file_content=_bytes,
                                 file_type=file_type,
                                 filename=uploaded_files[i]["filename"],
                                 content_type=uploaded_files[i]["content_type"]
