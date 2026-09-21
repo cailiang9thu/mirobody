@@ -27,7 +27,8 @@ plugins/mirobody-rare/                 独立发行包(不进主包 wheel)
 │   ├── coding.py                      管线;solver 合约 JSON
 │   ├── serve_coding.py                OpenAI 兼容薄壳(haenv 拍板 #5)
 │   ├── tools.py                       MCP 工具:层1 三个(resolve_hpo / code_phenotypes / rank_rare_diseases)
-│   │                                  + D5 四个(query_phenotype / query_variant / query_signal_index / query_pedigree,先过 permit,答案带 §8.2 声明)
+│   │                                  + D5 六个(query_phenotype[subject 过滤] / query_variant / query_signal_index / query_pedigree /
+│   │                                    query_family_history[三来源合一表 + gaps] / record_consent,先过 permit,答案带 §8.2 声明)
 │   └── res/zh_curated_hpo.tsv         口语同义词种子(剪刀样步态、霍夫曼征阳性、K-F环…)
 └── tests/                             9 条
 mirobody/schema/32_phenotype.sql       th_phenotype / th_disease_code(主包只追加;计划里的 a6_ 按 1.5.0 两位前缀改名)

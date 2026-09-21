@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 class RareRepo(Protocol):
-    async def phenotypes(self, user_id: str, negated: bool | None = None) -> list[dict]: ...
+    async def phenotypes(self, user_id: str, negated: bool | None = None, subject: str | None = None) -> list[dict]: ...
     async def disease_codes(self, user_id: str) -> list[dict]: ...
     async def variants(self, user_id: str, genes: Sequence[str] = (), chrom: str | None = None,
                        start: int | None = None, end: int | None = None, limit: int = 200) -> list[dict]: ...
@@ -51,9 +51,10 @@ class MemoryRepo:
         self.t[table].append(r)
         return r["id"]
 
-    async def phenotypes(self, user_id, negated=None):
+    async def phenotypes(self, user_id, negated=None, subject=None):
         return [r for r in self.t["th_phenotype"] if r["user_id"] == user_id and not r.get("deleted")
-                and (negated is None or bool(r.get("negated")) == negated)]
+                and (negated is None or bool(r.get("negated")) == negated)
+                and (subject is None or (r.get("subject") or "proband") == subject)]
 
     async def disease_codes(self, user_id):
         return [r for r in self.t["th_disease_code"] if r["user_id"] == user_id and not r.get("deleted")]
@@ -210,13 +211,15 @@ class PgRepo:
         pool = await self._p()
         return [dict(r) for r in await pool.fetch(q, *args)]
 
-    async def phenotypes(self, user_id, negated=None):
-        sql = ("SELECT id, hpo_id, hpo_label, onset_hpo_id, severity_hpo_id, frequency_hpo_id, negated, subject,"
+    async def phenotypes(self, user_id, negated=None, subject=None):
+        sql = ("SELECT id, hpo_id, hpo_label, onset_hpo_id, severity_hpo_id, frequency_hpo_id, negated, subject, subject_role,"
                " source, source_text, confidence, asserted_at, file_id FROM th_phenotype"
                " WHERE user_id = :user_id AND NOT deleted")
         if negated is not None:
             sql += " AND negated = :negated"
-        return await self._q(sql + " ORDER BY asserted_at NULLS LAST, id", {"user_id": user_id, "negated": negated})
+        if subject is not None:
+            sql += " AND subject = :subject"
+        return await self._q(sql + " ORDER BY asserted_at NULLS LAST, id", {"user_id": user_id, "negated": negated, "subject": subject})
 
     async def disease_codes(self, user_id):
         return await self._q("SELECT id, system, code, label, status, source, confidence FROM th_disease_code"
@@ -313,10 +316,12 @@ class PgRepo:
     async def add_phenotypes(self, rows):
         n = 0
         for r in rows:
-            await self._q("INSERT INTO th_phenotype (user_id, hpo_id, hpo_label, negated, subject, source, source_text, confidence, asserted_at, file_id)"
-                          " VALUES (:user_id, :hpo_id, :hpo_label, :negated, :subject, :source, :source_text, :confidence, :asserted_at, :file_id) RETURNING id",
-                          {"negated": False, "subject": "proband", **{k: r.get(k) for k in ("user_id", "hpo_id", "hpo_label", "source", "source_text", "confidence", "asserted_at", "file_id")},
-                           **({"negated": r["negated"]} if "negated" in r else {}), **({"subject": r["subject"]} if r.get("subject") else {})})
+            await self._q("INSERT INTO th_phenotype (user_id, hpo_id, hpo_label, negated, subject, subject_role, source, source_text, confidence, asserted_at, file_id)"
+                          " VALUES (:user_id, :hpo_id, :hpo_label, :negated, :subject, :subject_role, :source, :source_text, :confidence, :asserted_at, :file_id) RETURNING id",
+                          {"negated": False, "subject": "proband", "subject_role": None,
+                           **{k: r.get(k) for k in ("user_id", "hpo_id", "hpo_label", "source", "source_text", "confidence", "asserted_at", "file_id")},
+                           **({"negated": r["negated"]} if "negated" in r else {}), **({"subject": r["subject"]} if r.get("subject") else {}),
+                           **({"subject_role": r["subject_role"]} if r.get("subject_role") else {})})
             n += 1
         return n
 

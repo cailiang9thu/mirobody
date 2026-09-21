@@ -84,7 +84,7 @@ class RareQueryService:
     """`query_phenotype` / `query_variant` / `query_signal_index` / `query_pedigree` (plan §8.1).
     `repo` is injected for tests; the default speaks Postgres through `mirobody.utils.execute_query`."""
 
-    __tools__ = ("query_phenotype", "query_variant", "query_signal_index", "query_pedigree", "record_consent")
+    __tools__ = ("query_phenotype", "query_variant", "query_signal_index", "query_pedigree", "query_family_history", "record_consent")
 
     def __init__(self, repo=None) -> None:
         self._repo = repo
@@ -106,17 +106,19 @@ class RareQueryService:
         return caller, subject, d
 
     async def query_phenotype(self, user_info: dict, subject_id: str = "", negated: bool | None = None,
-                              purpose: str = "individual_return") -> dict:
+                              subject: str = "", purpose: str = "individual_return") -> dict:
         """Which HPO terms are recorded for this person, and which are explicitly excluded.
 
-        `negated=false` lists present terms, `true` the excluded ones, omitted both. Absence
-        from the table means not assessed. Disease codes (ORPHA/OMIM) ride along under `codes`.
+        `negated=false` lists present terms, `true` the excluded ones, omitted both. `subject`
+        = "proband" keeps the person's own findings, "relative" the family-history sentences
+        recorded in their file (with `subject_role`), omitted both. Absence from the table
+        means not assessed. Disease codes (ORPHA/OMIM) ride along under `codes`.
         """
-        _, subject, d = await self._gate(user_info, subject_id, "phenotype", purpose)
+        _, subject_uid, d = await self._gate(user_info, subject_id, "phenotype", purpose)
         if not d.allowed:
             return _denied(d.reason)
-        rows = await self._r().phenotypes(subject, negated)
-        codes = await self._r().disease_codes(subject)
+        rows = await self._r().phenotypes(subject_uid, negated, subject=subject or None)
+        codes = await self._r().disease_codes(subject_uid)
         out = _env_dict(_kt.STATUS_OK, rows, [_PHENOTYPE_NOTE])
         out["codes"] = codes
         return out
@@ -149,6 +151,73 @@ class RareQueryService:
             return _denied(d.reason)
         rows = [r for r in await self._r().signals(subject, modality or None) if r.get("deid_status") == "done"]
         return _env_dict(_kt.STATUS_OK, rows, [_SIGNAL_NOTE])
+
+    async def query_family_history(self, user_info: dict, subject_id: str = "", purpose: str = "individual_return") -> dict:
+        """Family history of this person as ONE table from three sources, each row labelled:
+        `relative_account` (a relative's own record, read through the care circle),
+        `narrative_in_proband_record` (sentences in the person's own file attributed to a
+        relative), and the pedigree's affected flag. Relatives outside the caller's care circle
+        or without an account are listed under `gaps`, not silently absent: not evaluated ≠
+        unaffected.
+        """
+        _, subject, d = await self._gate(user_info, subject_id, "pedigree", purpose)
+        if not d.allowed:
+            return _denied(d.reason)
+        repo = self._r()
+        fam = await repo.pedigree_of(subject)
+        rows: list[dict] = []
+        gaps: list[str] = []
+        members = list((fam or {}).get("members") or [])
+        me = next((m for m in members if str(m.get("user_id")) == str(subject)), None)
+        role_of: dict[str, str] = {}
+        if me:
+            for m in members:
+                iid = m["individual_id"]
+                if iid == me.get("paternal_id"):
+                    role_of[iid] = "father"
+                elif iid == me.get("maternal_id"):
+                    role_of[iid] = "mother"
+                elif iid != me["individual_id"] and (m.get("paternal_id"), m.get("maternal_id")) == (me.get("paternal_id"), me.get("maternal_id")) and (m.get("paternal_id") or m.get("maternal_id")):
+                    role_of[iid] = "sibling"
+                elif iid != me["individual_id"]:
+                    role_of[iid] = "other_relative"
+        for m in members:
+            iid = m["individual_id"]
+            if me and iid == me["individual_id"]:
+                continue
+            role = role_of.get(iid, "other_relative")
+            if m.get("affected") == 2:
+                rows.append({"member": iid, "role": role, "source": "pedigree", "finding": "affected", "hpo_id": None, "code": None})
+            uid = str(m.get("user_id") or "")
+            if not uid:
+                gaps.append(f"{iid} ({role}): no account; only what this person's own file says about them is known")
+                continue
+            acc = await repo.circle_access(subject, uid)
+            if acc is None or int(acc) < 1:
+                gaps.append(f"{iid} ({role}): has an account but is not in a care circle sharing with you (access={acc}); their record was not read")
+                continue
+            for ph in await repo.phenotypes(uid, subject="proband"):
+                rows.append({"member": iid, "role": role, "source": "relative_account", "hpo_id": ph.get("hpo_id"), "label": ph.get("hpo_label"),
+                             "negated": bool(ph.get("negated")), "code": None})
+            for dc in await repo.disease_codes(uid):
+                rows.append({"member": iid, "role": role, "source": "relative_account", "hpo_id": None, "code": dc.get("code"), "label": dc.get("label"),
+                             "status": dc.get("status")})
+        by_role: dict[str, list[str]] = {}
+        for iid, role in role_of.items():
+            by_role.setdefault(role, []).append(iid)
+        for ph in await repo.phenotypes(subject, subject="relative"):
+            role = ph.get("subject_role") or "other_relative"
+            cands = by_role.get(role, [])
+            member = cands[0] if len(cands) == 1 else f"{role} (unresolved)"
+            rows.append({"member": member, "role": role, "source": "narrative_in_proband_record", "hpo_id": ph.get("hpo_id"),
+                         "label": ph.get("hpo_label"), "negated": bool(ph.get("negated")), "source_text": ph.get("source_text"), "code": None})
+        notes = ["a relative absent from this table was NOT evaluated; only an explicit negated finding means excluded",
+                 "narrative_in_proband_record rows are what this person's file says about a relative, unconfirmed by that relative",
+                 "relative_account rows come from the relative's own record, read only through care-circle access"]
+        out = _env_dict(_kt.STATUS_OK, rows, notes)
+        out["family_id"] = (fam or {}).get("family_id")
+        out["gaps"] = gaps
+        return out
 
     async def record_consent(self, user_info: dict, scope: str, granted: bool = True, layer: str = "",
                              relationship: str = "self", residency: str = "", cross_border_allowed: bool = False,

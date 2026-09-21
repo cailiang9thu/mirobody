@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS th_phenotype (
     create_time      TIMESTAMPTZ NOT NULL DEFAULT now(),
     update_time      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- 2026-09-21: the finer subject axis of plan §14.2 (father | mother | sibling | other_relative), so a
+-- family-history query can hang a narrative assertion on the right pedigree member
+ALTER TABLE th_phenotype ADD COLUMN IF NOT EXISTS subject_role VARCHAR(16);
 CREATE INDEX IF NOT EXISTS idx_th_phenotype_user ON th_phenotype (user_id) WHERE NOT deleted;
 CREATE INDEX IF NOT EXISTS idx_th_phenotype_hpo  ON th_phenotype (hpo_id)  WHERE NOT deleted;
 

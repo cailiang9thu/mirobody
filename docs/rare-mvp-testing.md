@@ -77,6 +77,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | --- | --- | --- | --- |
 | 4.1 | 四个工具经 `/mcp` 可调,每个答案带 §8.2 声明 | `assumptions` 非空:`test_tools_over_memory_repo`;`test_e2e.py` 断言对话响应里出现 `query_variant` 调用 | ✅ / 🟡 MCP 面(TRACES)未直接调用过 |
 | 4.2 | 工具参数 schema 由类型注解生成、`user_info` 注入 | 服务启动日志;无测试 | 🟡 |
+| 4.3 | 家族史问题有工具可答:三来源(亲属账号 / 本人档案叙述 / 家系患病标记)合一表,缺口列出而非静默 | `test_family_history.py` 两例;实机对话「家族里有乳腺癌吗」→ agent 调 `query_family_history`,答"母亲(来自本人档案叙述,未经本人核实)" | ✅ |
 
 ## 5. 工程门(§10)
 

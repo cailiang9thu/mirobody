@@ -949,3 +949,5 @@ CREATE INDEX IF NOT EXISTS idx_ref_orpha_hpo_term ON ref_orpha_hpo (hpo_id);
 
 验收(`tests/test_care_circle.py`):不在圈内有同意书也拒;圈内 view 免同意书可读、research 仍要同意书;PED 四人映射三人、无账号者留空;
 trio 回填在父母不在圈内时 0 更新、加入圈后 L2HGDH 判 `biparental`、父母行仍不可读。
+
+**家族史查询**(同日补):`query_family_history` 把亲属账号记录(经关爱圈)、本人档案里 `subject=relative` 的叙述(按 `subject_role` 归到家系成员)、家系患病标记合成一张表,每行标来源;不在圈内 / 无账号的亲属列在 `gaps`。`th_phenotype` 加 `subject_role` 列,`query_phenotype` 加 `subject` 过滤。
