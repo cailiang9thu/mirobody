@@ -237,3 +237,7 @@ files were 133-byte Git LFS pointers. `import mirobody` succeeded; every
 `resolve()` failed. An import smoke test cannot catch that class of break, so
 the gate inspects the built artifacts directly — both the wheel and the sdist,
 since pip serves the sdist wherever the wheel doesn't match.
+
+## Rare-disease plugin
+
+The tests for `plugins/mirobody-rare/` and their mapping to the plan's acceptance items live in [rare-mvp-testing.md](rare-mvp-testing.md).

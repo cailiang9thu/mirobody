@@ -83,3 +83,4 @@ committed.
 - [rare-specs.md](rare-specs.md) — 需求
 - [rare-mvp-plan.md](rare-mvp-plan.md) — MVP 改造方案
 - [rare-mvp-impl.md](rare-mvp-impl.md) — 编码层实施记录与评测读数
+- [rare-mvp-testing.md](rare-mvp-testing.md) — 计划 26 条验收 ↔ 测试对照与状态
