@@ -134,6 +134,30 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 ### 3.5 差异分类(报告必须分栏)
 传输损坏(sha256 不符)/ 设计性过滤(§3.2 末列)/ 版本漂移(注释串)/ 顺序问题(回填缺失)/ 权限(工具拒读)/ 编码差异(表型层真正的错)。
 
+### 3.6 测试完成后的抽样展示(人读的报告,不只是通过/失败)
+
+比对脚本除了汇总表,还要产出一份**抽样对照报告**(`reports/roundtrip/<batch>/samples.md`),让人不用开库就能看到入库前后长什么样:
+
+- **抽样**:每层随机抽 3 个 case(固定种子,可复现),trio 与单样本各至少 1;每个 case 每层抽 2–3 条记录。
+- **分段并排**:按 §3.2 的九层分段,每段左栏"入库前"(原始文件/指针/金标里的内容),右栏"入库后"(库行或工具返回),第三栏"差异类型"(§3.5 六类之一,或"相同")。
+- **过长内容截取片段**,不整份贴:
+  - 文件:只列 sha256、大小、头部 3 行(VCF 的 `#CHROM` 行与首条记录;PED 全文本来就短);
+  - 叙述病历:原文取命中断言所在句的前后各 40 字作上下文,库侧取 `source_text` + 编码结果;
+  - 变异:每 case 最多 5 条(真值变异必含,诱饵 1 条,其余随机);
+  - 影像:每 series 只列 sha256 前 12 位、modality、`deid_status`、`scrubbed_tags`;
+  - 工具返回:JSON 截到 600 字符并标注 "…(+N chars)"。
+- **每段末尾**一行计数:该层该 case 共 N 条,抽样 k 条,相同 / 设计性差异 / 真差异各多少。
+- 密文字段(`th_files.file_name` 等)显示 "encrypted,未比对",不显示密文。
+
+示例(变异层,JD-50,trio):
+
+```
+| 入库前(VCF / 金标)                         | 入库后(th_variant + annotation)                     | 差异 |
+| chr14:50269318 G>A  GT 1/1  真值 L2HGDH      | 14:50269318:G:A  1/1 hom  L2HGDH  P  ★2  biparental  | 相同 |
+| chr13:51958477 … GT 0/1  诱饵 ATP7B          | 13:51958477 … 0/1 het  ATP7B  P/LP ★2  paternal     | 相同 |
+| (原始 131,549 条 PASS 记录)                  | 3 行                                                | 设计性:只存 P/LP 候选 |
+```
+
 ## 4. 验收(进 rare-mvp-testing.md)
 
 - [ ] 传一份 `rareDieaseCollect` 病例 md:`th_phenotype` 有行,`subject=relative` 的句子归对角色,歧义项进 `th_phenotype_review`,化验值仍进 `th_observation`
@@ -142,6 +166,7 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 - [ ] 6 个 haenv case(2 trio + 4 单样本)按 §3.1 顺序入库 → §3.2 九层全部"相等或设计性差异",无传输损坏、无版本漂移
 - [ ] PED 后于 VCF 到达时 trio 仍被回填
 - [ ] `rc_*` 由回读数据算出,与薄壳直答逐位一致
+- [ ] 抽样对照报告生成:九层分段、左右并排、长内容按 §3.6 截片段、每段有计数行、密文不显示
 
 ## 5. 工作量
-主包钩子 + 插件 `text_hook.py` + review 表与工具:1 天;往返比对脚本 `tools/roundtrip_check.py`(账号/圈/顺序/清理/九层比对/分类报告):1 天;PED 后到回填:2 小时。
+主包钩子 + 插件 `text_hook.py` + review 表与工具:1 天;往返比对脚本 `tools/roundtrip_check.py`(账号/圈/顺序/清理/九层比对/分类报告/抽样对照报告):1.5 天;PED 后到回填:2 小时。
