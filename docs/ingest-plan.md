@@ -178,6 +178,49 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 - **自包含**:CSS 内联,不引外链字体或样式;图片不用(数字用文字),整页 < 200 kB。
 - 生成器:`tools/roundtrip_check.py --html`,模板是 Python 字符串拼接(不引模板库),样本数据与 `samples.md` 同源。
 
+### 3.8 清理口径:每例入库前先清掉上一次注入的东西(2026-09-22 核对)
+
+`tools/roundtrip_check.py::cleanup(uids)` 在每例登录拿到账号 id 后、任何上传前执行,**按该例的账号**删:
+`th_variant_annotation → th_variant / th_sequencing_sample / th_phenotype / th_phenotype_review / th_disease_code / th_signal_object / th_consent / th_files`,
+再删该账号 owner 的 `th_pedigree(_member)` 与 `care_circles(_members)`;账号本身保留复用(邮箱 `haenv-<case>-<role>@rare.test`)。
+核对时发现的两个漏项已补:
+- **对象存储字节没删**:`th_files` 行删了,`.theta/mcp/upload/` 里的 VCF 还在(积到 2.0 GB / 127 个对象)。现在 cleanup 先按 `th_files.file_key` 调 `storage.delete(key)` 再删行;
+  历史孤儿用 `--purge-orphans .theta/mcp/upload` 一次性清(只删**没有任何 th_files 行引用**的 key,清掉 82 个,剩 45 个全部有引用)。
+- 不归本脚本清的:demo 账号(user 1)、`test_pg` 的 `pytest-rare-*` 账号与 `pytest-rare-u1` 行、`th_pedigree` 里两条 `owner_user_id IS NULL` 的旧行(按 owner 唯一之前的烟测残留)。它们不影响比对(全部按账号隔离),但会让全表计数不等于 6 例之和。
+- 聊天消息表(`th_messages`)在往返里为 0 行:WebSocket 上传不产生消息;Playwright 走对话读取后会有,§3.9 的 cleanup 要加上。
+
+### 3.9 Web 端验证:Playwright 走"上传 → 读回"(与 §3 的 API 往返互补)
+
+§3 走的是 28085 的 WebSocket 协议直传,证明的是入库链路;它绕过了页面上的三件事——文件选择器的 `accept` 白名单、上传状态 UI、对话里工具调用的呈现。这三件事只有浏览器能证明。
+
+**前置(mirobody-web 侧,必须先改)**:`app/components/chat/ChatInput.tsx:723` 与 `app/upload/page.tsx:1604` 的 `accept` 只有 `image/*,.pdf,.txt,.xlsx…`,
+**没有 `.vcf .gz .ped .zip`** ——真人从页面根本选不到 VCF。Playwright 的 `setInputFiles` 会绕过 `accept`,所以测试会"假绿";第一条用例就是断言 `accept` 含这四个后缀(改前红)。
+
+**工具选型**:`pytest-playwright`(Python,与插件测试同一套 pytest;`uv pip install pytest-playwright && playwright install chromium`),headless Chromium,
+基址 `MIROBODY_RARE_WEB_BASE=http://<host>:28086`、API `MIROBODY_RARE_E2E_BASE=http://<host>:28085`(缺任一即 skip,与 `test_e2e.py` 同规矩),文件 `plugins/mirobody-rare/tests/test_web_playwright.py`,标记 `-m web`。
+
+**页面锚点(现有 DOM,无 data-testid,用可见文案/type 定位;若后续加 testid 以 testid 为准)**:
+| 步骤 | 定位 | 备注 |
+|---|---|---|
+| 登录 | `input[type=email]`(placeholder "Enter your email address")→ 密码分支 `input[type=password]` + `button[type=submit]` | demo 账号用密码 `Rare2026demo` 免验证码;测试账号先经 `/password/register` 建好 |
+| 进对话页 | `/chat` | 等 `ChatInput` 的 `input[type=file]`(class hidden)挂载 |
+| 上传 | `page.set_input_files("input[type=file]", [ped, father.vcf.gz, mother.vcf.gz, proband.vcf.gz, JD-xx.md])` | 走 `useWebSocketFileUpload`;等 UI 状态从 uploading → completed(hook 的 `upload_completed` 事件),超时 600 s |
+| 读回 | 在输入框(placeholder 来自 i18n `chat.placeholder`)发 "查询我的变异 / 家族史 / 表型" 三问 | 断言回复文本含真值基因符号、PED 家系成员数、金标 HPO 标签之一;并断言页面上出现工具调用块(`query_variant` / `query_family_history` / `query_phenotype` 字样) |
+| 权限 | 用父亲账号登录再问 "查询 <先证者> 的变异" | 断言回复是拒绝(`denied` / "未授权"),且 DB 无新增行 |
+| 留证 | `--screenshot only-on-failure --video retain-on-failure --tracing retain-on-failure` | 产物进 `reports/roundtrip/<ts>/web/` |
+
+**与 API 往返的对齐**:上传完成后直接复用 `compare_case()` 的九层比对(同一个 `report.json` 加一栏 `via=web`),不重写断言;
+UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的工具调用。清理复用 `cleanup(uids)`,并追加 `th_messages` 按 user_id 删。
+
+**验收(进 rare-mvp-testing.md 3d)**:
+- [ ] 3d.1 `accept` 含 `.vcf .gz .ped .zip`(改前红)
+- [ ] 3d.2 五个文件经页面上传全部到 completed,`th_files` 五行、`content_hash` 与本地 sha256 相等
+- [ ] 3d.3 三问回复各含对应真值,页面出现工具调用块
+- [ ] 3d.4 父亲账号问先证者被拒,库无新增
+- [ ] 3d.5 失败时有截图 + trace 产物
+
+**不做**:不测 `/upload` 页(它是通用上传页,与对话页共用同一个 hook);不做视觉回归;不在 CI 跑(需要真库与 28085/28086 在线)。工作量:web accept 改动 0.5 h,用例 0.5 天。
+
 ## 4. 验收(进 rare-mvp-testing.md;2026-09-22 全部打勾,读数见 rare-mvp-impl.md「往返」段)
 
 - [x] 传一份 `rareDieaseCollect` 病例 md:`th_phenotype` 有行,`subject=relative` 的句子归对角色,歧义项进 `th_phenotype_review`,化验值仍进 `th_observation`
@@ -188,6 +231,38 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 - [x] `rc_*` 由回读数据算出,与薄壳直答逐位一致
 - [x] 抽样对照报告生成:九层分段、左右并排、长内容按 §3.6 截片段、每段有计数行、密文不显示
 - [x] `summary.html`:米黄底蓝字、有 viewport、无 `<script>`、无外链、并排对照在窄屏堆叠、含结论/计数/分层表/抽样/版本/缺口六段
+
+## 6. 未实施 / 未测试清单(2026-09-22 盘点,按"缺什么"分组)
+
+**A. 没实现的功能**
+1. Web 页面选不到 VCF/PED(`accept` 白名单,§3.9 前置)。
+2. Playwright 页面级验证(§3.9)。
+3. 三级同意书写入(plan §7 D6):往返里 `th_consent` 为 0 行,`permit` 只靠关爱圈 `health_access` 放行;同意书从未被写入或校验。
+4. 图表/位图分流(plan §14.3 ③;testing 1.6 / 1.8):阶段一只在 review 表记 `document_has_images`,没有检出与 md5 去重。
+5. 后台处理队列(plan §17.3;testing 6.5):`mirobody worker` 依赖 Redis 做锁与任务源,本机无 Redis,VCF 解析仍在 server 进程内 `spawn`;`/api/chat` 处理期 p95 未测。
+6. 同一 WES 连传两次字节仍落盘两次(testing 6.3;库行已按 sha256 去重)。
+7. `th_signal_object.file_id` 为 0(DICOM 处理器拿不到 `th_files.id`),影像层靠 `content_hash` 对账。
+8. review 表只有工具 `resolve_phenotype_review`,没有前端队列页。
+9. gnomAD 大陆人群白名单写死在代码;人群划分随 gnomAD 版本变化时无告警(只在注释行记 `source_version`)。
+
+**B. 实现了、没有可失败的测试**
+10. `Assertion.char_span` 对位(testing 1.7,🟡)。
+11. 装载器中途 kill 后重跑行数不变(testing 2.12,🟡;只验了同版本 skipped)。
+12. 工具参数 schema 自动生成与 `user_info` 注入(testing 4.2,🟡)。
+13. 不装插件时 `th_series_data_genetic` / `query_genetic_data` 不变(testing 5.5,🟡)。
+14. tabix 路径在全基因组上的收益(testing 6.4,🟡;3-contig 切片反而慢)。
+15. 主包 wheel 不增长闸门(testing 5.2;本克隆缺 git-lfs)。
+
+**C. 有测试、口径不够**
+16. 层 1 在**真实病历**上的读数为零:合成句按构造接近天花板,D9 金标(30 份人工标注)未做——这是唯一一条合成题证明不了的验收。
+17. `asserted_by` ≥ 0.90 无金标无法量化(testing 1.5)。
+18. 常驻内存 352 MB > 150 MB 目标(testing 2.10;其余四张词表仍在内存)。
+19. 样本层未比 bcftools stats(只比候选集)。
+20. 往返只跑了 6 例、单实例部署、并发 2;多实例(不同 28085 进程)同库并发写与 §3.1 的顺序竞争未测。
+
+**D. 工程收尾**
+21. mirobody-rare 只有本地提交(origin 指向上游 mirobody 仓),未推送。
+22. `th_disease_code` 保留历史行,读者按 `source` 取最新,没有"当前诊断"视图。
 
 ## 5. 工作量
 主包钩子 + 插件 `text_hook.py` + review 表与工具:1 天;往返比对脚本 `tools/roundtrip_check.py`(账号/圈/顺序/清理/九层比对/分类报告/抽样对照报告):1.5 天;PED 后到回填:2 小时。

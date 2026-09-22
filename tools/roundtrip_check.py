@@ -91,9 +91,20 @@ async def pool():
 
 
 async def cleanup(uids: list[str]) -> None:
+    """Everything the case's accounts produced: DB rows AND the stored bytes (th_files.file_key ->
+    storage object); accounts themselves are kept and reused."""
     p = await pool()
     ids = [int(u) for u in uids]
     async with p.acquire() as c:
+        keys = [r["file_key"] for r in await c.fetch("SELECT file_key FROM th_files WHERE user_id = ANY($1::text[])", uids)]
+        if keys:
+            from mirobody.utils.config.storage.factory import get_storage_client
+            st = get_storage_client()
+            for k in keys:
+                try:
+                    await st.delete(k)
+                except Exception as e:                       # noqa: BLE001
+                    log.warning("[cleanup] storage delete %s: %s", k, e)
         await c.execute("DELETE FROM th_variant_annotation WHERE variant_id IN (SELECT id FROM th_variant WHERE user_id = ANY($1::text[]))", uids)
         for t in ("th_variant", "th_sequencing_sample", "th_phenotype", "th_phenotype_review", "th_disease_code", "th_signal_object", "th_consent", "th_files"):
             await c.execute(f"DELETE FROM {t} WHERE user_id = ANY($1::text[])", uids)
@@ -101,6 +112,20 @@ async def cleanup(uids: list[str]) -> None:
         await c.execute("DELETE FROM th_pedigree WHERE owner_user_id = ANY($1::text[])", uids)
         await c.execute("DELETE FROM care_circle_members WHERE user_id = ANY($1::int[]) OR care_circle_id IN (SELECT id FROM care_circles WHERE owner_user_id = ANY($1::int[]))", ids)
         await c.execute("DELETE FROM care_circles WHERE owner_user_id = ANY($1::int[])", ids)
+
+
+async def purge_orphans(base_dir: str) -> int:
+    """Local-storage objects no th_files row references any more (residue of runs before cleanup
+    deleted bytes). Never touches a key that is still referenced."""
+    p = await pool()
+    live = {r["file_key"] for r in await p.fetch("SELECT file_key FROM th_files")}
+    n = 0
+    base = Path(base_dir)
+    for f in base.rglob("*"):                      # keys are paths relative to the base: web_uploads/<uuid>.gz
+        if f.is_file() and str(f.relative_to(base)) not in live:
+            f.unlink()
+            n += 1
+    return n
 
 
 async def make_circle(owner: str, members: dict[str, str]) -> int:
@@ -354,12 +379,16 @@ async def build_report(batch: Path, runs: list[dict], items: list[dict], seed: i
 
 async def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cases", required=True)
-    ap.add_argument("--batch", required=True)
+    ap.add_argument("--cases", default="")
+    ap.add_argument("--batch", default="")
     ap.add_argument("--base", default="http://127.0.0.1:28085")
     ap.add_argument("--out", default="")
     ap.add_argument("--concurrency", type=int, default=2)
+    ap.add_argument("--purge-orphans", default=None, metavar="DIR", help="delete local storage objects in DIR that no th_files row references, then exit")
     a = ap.parse_args()
+    if a.purge_orphans:
+        print(json.dumps({"purged": await purge_orphans(a.purge_orphans)}))
+        return
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     batch = (HAENV / a.batch) if not Path(a.batch).is_absolute() else Path(a.batch)
     out = Path(a.out or f"reports/roundtrip/{time.strftime('%Y%m%d-%H%M%S')}")
