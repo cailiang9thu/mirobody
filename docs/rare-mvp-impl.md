@@ -152,6 +152,21 @@ uv run haenv run inputs/rare_coding-p1.job.yaml --models mirobody-coding --overr
 
 **读法**:这证明的是同一份文件经 web 同款入口入库后能原样回读、多实例不串账号、亲属数据按关爱圈隔离;表型层的"原始"仍是 haenv 合成句,真实病历质量待 D9 金标。
 
+## 读数(haenv `rare_coding-p2`,20 例全附件:病历 + VCF/PED + DICOM,2026-09-22)
+
+批次 `20260922-053351`(haenv-rare),被测方 pg 后端薄壳。20 例全部带 VCF+PED(15 trio)与 3 个 TCIA 序列(四个集合轮配)。
+
+| 判据 | 读数 |
+| --- | --- |
+| 层 1:`rc_coverage` / `rc_polarity_ok` / `rc_subject_ok` / `rc_wrong_rate` | 1.000 / 1.000 / 1.000 / 0 |
+| `rc_hpo_strict` / `rc_hpo_hier` | 0.991 / 0.997(2 例各 1 条层级邻近项) |
+| 层 2:`rc_orpha_top1` / `rc_hgnc_ok` / `rc_variant_hit` / `rc_variant_inh_ok` / `rc_gene_from_variant` | 1.000 / 1.000 / 1.000 / 1.000(15 trio) / 1.000 |
+| 层 4:`rc_signal_index_ok` / `rc_signal_phi_free` | **1.000 / 1.000(20/20)**——p1 只有 2 例在算 |
+| 单例延迟中位 | 8.3 s |
+
+HTML 报告:`haenv-rare/reports/rare_coding-p2/20260922-053351/eval-rare_coding-p2.html`(`tools/eval_html.py`)。
+出题侧发现:TCIA `STS_032` 的 `PatientName` 与 ID 不等,被发射门当 PHI 拦下,出题改为跳过该患者(haenv-rare 决策文档 P6 段)。
+
 ## 部署:前端 + 后端(2026-09-21)
 
 | 项 | 值 |
