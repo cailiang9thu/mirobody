@@ -8,6 +8,11 @@ CREATE TABLE IF NOT EXISTS th_pedigree (
     create_time TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 2026-09-22: a PED family id is lab-local ("FAM1"); uniqueness is per owner, not global
+ALTER TABLE th_pedigree ADD COLUMN IF NOT EXISTS owner_user_id VARCHAR(200);
+ALTER TABLE th_pedigree DROP CONSTRAINT IF EXISTS th_pedigree_family_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_th_pedigree_owner_family ON th_pedigree (COALESCE(owner_user_id, ''), family_id);
+
 CREATE TABLE IF NOT EXISTS th_pedigree_member (
     id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     pedigree_id   INTEGER NOT NULL REFERENCES th_pedigree(id),

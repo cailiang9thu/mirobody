@@ -96,6 +96,15 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 - 不在钩子里调 LLM 做视觉表格抽取(§0.2);
 - 不把 `original_text` 再存一份(`th_files.original_text` 已有,`source_text` 只存句子)。
 
+### 2.6 VCF 与病历谁先到都要一致:`dx_refresh.py`(2026-09-22 往返比对逼出来的)
+
+第一轮往返 JD-77(SMA)诊断层不等:薄壳答 ORPHA:70,库里 `th_disease_code` 只有表型排序的 ORPHA:45448(Miyoshi)。
+原因是文本钩子只按表型排,薄壳里 `coding.apply_genome` 的"鉴别诊断里第一个其致病基因带 P/LP 变异的病种优先"没有落库版本。
+修法:`mirobody_rare/dx_refresh.py::refresh_diagnosis(repo, user_id)`——读该用户 `th_variant`(+ClinVar/gnomAD 注释)与 `th_phenotype`,
+用同一条促升规则(gnomAD 常见变异按 `filter_common` 同口径不算证据;组病种如 ORPHA:70 无 Orphanet 基因时经其 OMIM 号取基因),
+命中则追加一行 `source='nlp+variant'` 的 candidate(`source_text=promoted_by=<基因>`),幂等。
+**两个入口都调**:病历钩子写完表型后(VCF 可能已在)、VCF 入库 + trio 回填后(病历可能已在)。测试 `test_dx_refresh.py`。
+
 ## 3. 多 haenv 实例走入库再回读比对
 
 ### 3.1 前置:身份与顺序(不做就全错)
@@ -158,15 +167,27 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 | (原始 131,549 条 PASS 记录)                  | 3 行                                                | 设计性:只存 P/LP 候选 |
 ```
 
-## 4. 验收(进 rare-mvp-testing.md)
+### 3.7 `summary.html`:给人看的一页总结(与 `samples.md` 同目录)
 
-- [ ] 传一份 `rareDieaseCollect` 病例 md:`th_phenotype` 有行,`subject=relative` 的句子归对角色,歧义项进 `th_phenotype_review`,化验值仍进 `th_observation`
-- [ ] 同一 md 传两次:表型行不翻倍
-- [ ] 不装插件:`_text_hooks()==[]`,主包 `mirobody/tests` 不变
-- [ ] 6 个 haenv case(2 trio + 4 单样本)按 §3.1 顺序入库 → §3.2 九层全部"相等或设计性差异",无传输损坏、无版本漂移
-- [ ] PED 后于 VCF 到达时 trio 仍被回填
-- [ ] `rc_*` 由回读数据算出,与薄壳直答逐位一致
-- [ ] 抽样对照报告生成:九层分段、左右并排、长内容按 §3.6 截片段、每段有计数行、密文不显示
+`samples.md` 是给会读 markdown 的人;`summary.html` 是给任何人:打开即读,手机能看,没有 JavaScript 也一样。
+
+- **风格**:lovable 式单页——米黄背景(`#fbf7ec` 一类,不是纯白)、正文与标题用蓝色系(`#1d4ed8` / `#1e3a8a`),大标题 + 一句话结论 + 指标卡片 + 分层表格 + 抽样对照,留白多,字号从 16 px 起。
+- **窄屏自适应**:`<meta viewport>`;布局只用流式块与 CSS grid(`grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr))`),表格外套 `overflow-x: auto`,并排对照在 < 40 rem 宽时改为上下堆叠(`@media` 一条);没有固定像素宽度。
+- **无 JS**:页面**不含 `<script>`**;折叠用 `<details>/<summary>`,导航用页内锚点,状态色只用 CSS。测试断言"HTML 里没有 `<script`"。
+- **内容顺序**:① 一句话结论(N 例 / 九层 / 真差异 0 条)② 六类差异计数卡片 ③ 每层通过率表 ④ 抽样对照(§3.6 的三栏,长内容已截)⑤ 环境与版本(批次、`world_sha`、ClinVar/HPO 版本、schema、时间)⑥ 缺口与下一步。
+- **自包含**:CSS 内联,不引外链字体或样式;图片不用(数字用文字),整页 < 200 kB。
+- 生成器:`tools/roundtrip_check.py --html`,模板是 Python 字符串拼接(不引模板库),样本数据与 `samples.md` 同源。
+
+## 4. 验收(进 rare-mvp-testing.md;2026-09-22 全部打勾,读数见 rare-mvp-impl.md「往返」段)
+
+- [x] 传一份 `rareDieaseCollect` 病例 md:`th_phenotype` 有行,`subject=relative` 的句子归对角色,歧义项进 `th_phenotype_review`,化验值仍进 `th_observation`
+- [x] 同一 md 传两次:表型行不翻倍
+- [x] 不装插件:`_text_hooks()==[]`,主包 `mirobody/tests` 不变
+- [x] 6 个 haenv case(2 trio + 4 单样本)按 §3.1 顺序入库 → §3.2 九层全部"相等或设计性差异",无传输损坏、无版本漂移
+- [x] PED 后于 VCF 到达时 trio 仍被回填
+- [x] `rc_*` 由回读数据算出,与薄壳直答逐位一致
+- [x] 抽样对照报告生成:九层分段、左右并排、长内容按 §3.6 截片段、每段有计数行、密文不显示
+- [x] `summary.html`:米黄底蓝字、有 viewport、无 `<script>`、无外链、并排对照在窄屏堆叠、含结论/计数/分层表/抽样/版本/缺口六段
 
 ## 5. 工作量
 主包钩子 + 插件 `text_hook.py` + review 表与工具:1 天;往返比对脚本 `tools/roundtrip_check.py`(账号/圈/顺序/清理/九层比对/分类报告/抽样对照报告):1.5 天;PED 后到回填:2 小时。

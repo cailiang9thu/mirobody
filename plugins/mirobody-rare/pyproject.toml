@@ -26,6 +26,9 @@ rare = "mirobody_rare.tools"
 [project.entry-points."mirobody.file_handlers"]
 rare = "mirobody_rare.handlers"
 
+[project.entry-points."mirobody.text_hooks"]
+rare = "mirobody_rare.text_hook"
+
 [project.scripts]
 mirobody-rare-serve = "mirobody_rare.serve_coding:main"
 mirobody-rare-load-reference = "mirobody_rare.reference.load:main"

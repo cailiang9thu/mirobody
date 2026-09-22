@@ -50,13 +50,16 @@ class GenomeResult:
                 "common_variants": [v.to_dict() for v in self.common], "notes": self.notes}
 
 
-def filter_common(variants: list[VariantCall], max_af_popmax: float) -> tuple[list[VariantCall], list[VariantCall]]:
-    """Split by gnomAD popmax: a P/LP call common in some population is not a rare-disease
-    candidate. Unqueried / not-found variants are KEPT (absence of evidence)."""
+def filter_common(variants: list[VariantCall], max_af_popmax: float, max_af_popmax_recessive: float = 0.05) -> tuple[list[VariantCall], list[VariantCall]]:
+    """Split by gnomAD popmax (continental populations only, see gnomad._BOTTLENECK): a P/LP call
+    common in a population is not a rare-disease candidate. A homozygous / hemizygous call gets the
+    recessive ceiling: carrier frequencies of recessive founder alleles legitimately exceed 1 %.
+    Unqueried / not-found variants are KEPT (absence of evidence)."""
     kept, common = [], []
     for v in variants:
         af = (v.gnomad or {}).get("af_popmax")
-        (common if isinstance(af, (int, float)) and af > max_af_popmax else kept).append(v)
+        cap = max_af_popmax_recessive if v.zygosity in ("hom", "hemi") else max_af_popmax
+        (common if isinstance(af, (int, float)) and af > cap else kept).append(v)
     return kept, common
 
 
@@ -132,7 +135,7 @@ def analyze(att: dict | None, sex_hint: str | None = None) -> GenomeResult:
             if res.trio:
                 c.inheritance = trio_inheritance(c.parent_gt.get("father"), c.parent_gt.get("mother"))
     annotate_gnomad(cands)
-    cands, common = filter_common(cands, float(cfg.get("max_af_popmax", 0.01)))
+    cands, common = filter_common(cands, float(cfg.get("max_af_popmax", 0.01)), float(cfg.get("max_af_popmax_recessive", 0.05)))
     counts["n_common_dropped"] = len(common)
     res.variants = cands
     res.common = common

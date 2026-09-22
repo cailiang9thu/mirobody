@@ -36,7 +36,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 1.3 | 主体归属:亲属表型不记到先证者 | `test_rules.py::test_relative_subject`;基准 `rc_subject_ok` 1.000 | ✅ |
 | 1.4 | 断言召回 ≥ 0.85 · polarity ≥ 0.95 · subject ≥ 0.95(§14.4) | 基准:`rc_coverage` 1.000 / `rc_polarity_ok` 1.000 / `rc_subject_ok` 1.000 —— **合成题面,按构造接近天花板** | 🟡 真实语料 D9 金标(30 份人工标注)**未做**,这一行在真实文档上没有读数 |
 | 1.5 | `asserted_by` ≥ 0.90 | `test_rules.py::test_onset_and_prior`(单例) | ❌ 无金标无法量化 |
-| 1.6 | 图表检出 ≥ 0.90(`unparsed_figures`) | — | ❌ 未实现(D1a ③ 图片分流) |
+| 1.6 | 图表检出 ≥ 0.90(`unparsed_figures`) | — | ❌ 未实现(D1a ③ 图片分流);ingest-plan §2.2 定为阶段一只在 review 表记 document_has_images |
 | 1.7 | 每条断言可回溯 `char_span` | `Assertion.char_span` 生成,无测试 | 🟡 补:20 条抽查对位 |
 | 1.8 | 图片 md5 去重 ≥ 20% | — | ❌ 未实现 |
 | 1.9 | 判据能失败 | haenv 负对照:翻转极性 → `rc_wrong_rate` 1;错基因 → 0;删断言 → 覆盖 0.55 | ✅(记录在 haenv 决策文档 P0/P5) |
@@ -49,7 +49,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 2.2 | `th_variant` 行数 = 本地过滤器输出数(口径已由 `bcftools stats` 改为候选集,§4.4 ①–③) | `test_coding.py::test_kept_variants_equal_local_filter_output` | ✅ |
 | 2.3 | 解析中途 kill → 重跑只补缺失分片,总行数不变无重复 | `test_layer4_and_governance.py::test_ingest_vcf_idempotent_and_ped`(模拟:第二次 0 分片)· `test_pg.py`(真库) | ✅ 分片跳过;🟡 真 kill 未测 |
 | 2.4 | 3–5 万 raw call 四级过滤后 < 1000 且已知致病未被误滤 | 基准 `rc_variant_hit` 56/56(spike 变异全部保留);候选数每例 3.18 | ✅ 保留性;🟡 真实 WES 的收窄率无读数 |
-| 2.5 | gnomAD 注释,`af_popmax > 0.01` 被标记 | `test_gnomad.py`(合并 exome+genome、popmax、缓存、批量别名查询、common 过滤);实机:gnomad_r4 可达,JD-55 三条 P/LP 均 `not_found`(按"未查到 ≠ 0"保留),`th_variant_annotation` 写 `source=gnomad` 行 | ✅ |
+| 2.5 | gnomAD 注释,`af_popmax > 0.01` 被标记 | `test_gnomad.py`(合并 exome+genome、popmax、缓存、批量别名查询、common 过滤);**P5e 抓到一刀切删掉两条奠基者突变(HMBS fin 0.026、MEFV mid 0.019)** ⇒ popmax 只算大陆人群、纯合/半合阈值 0.05(`test_popmax_ignores_bottleneck_populations_and_relaxes_for_homozygous`) | ✅ |
 | 2.6 | GRCh37 / 未知版本拒收不猜 | `test_layer4_and_governance.py::test_ingest_vcf_refuses_wrong_build` | ✅ |
 | 2.7 | trio 遗传来源;父母未覆盖 ⇒ unknown,不判 de novo | `test_genome.py::test_parent_lookup_and_trio`;基准 `rc_variant_inh_ok` 40/40 | ✅ |
 | 2.8 | 多致病基因无明显领先者 ⇒ `gene.symbol=null` | `test_genome.py::test_choose_gene_abstains_without_leader`(TSC1/TSC2 平票)· 基准 P5b | ✅ |
@@ -70,6 +70,25 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3.8 | 亲属数据走关爱圈(§18):不在圈内拒;圈内 view 可读;PED → 账号映射;trio 从父母账号回填 | `test_care_circle.py` 三例 | ✅ |
 | 3.6 | 跨境需同意行允许 | `test_consent_gate_rules` | ✅ |
 | 3.7 | 未成年人由监护人签署被记录 | MCP 工具 `record_consent`(scope/layer/relationship=self|guardian/document_file_id,一 scope 一行);`test_record_consent_then_permit`:记录后 `permit(research_use, variant)` 放行、其他层仍拒 | ✅ |
+
+## 3b. 叙述病历入库(ingest-plan §2)
+
+| # | 验收项 | 测试 | 状态 |
+| --- | --- | --- | --- |
+| 3b.1 | 上传病历 md → `th_phenotype` 有行、亲属句归对角色、否定句 negated、化验值不进表型表 | `test_text_hook.py::test_hook_writes_phenotypes_disease_and_review`(主包 `mirobody.text_hooks` 入口 + 插件 `text_hook.py`) | ✅ |
+| 3b.2 | 同一 md 传两次表型行不翻倍 | `test_hook_dedups_by_content_hash` | ✅ |
+| 3b.3 | 歧义 / 未命中进 `th_phenotype_review`;`resolve_phenotype_review` 转 clinician 行 | `test_resolve_review_tool_writes_clinician_row`;DDL `37_phenotype_review.sql` 真库回放 | ✅ |
+| 3b.4 | 不装插件:`_text_hooks()==[]` | `test_main_package_loader_is_empty_without_plugins` | ✅ |
+| 3b.5 | PED 后于 VCF 到达仍回填 trio | `test_care_circle.py::test_ped_after_vcf_still_backfills`(`handlers.backfill_family`,PED/VCF 入库后都触发) | ✅ |
+
+## 3c. 多实例入库往返比对(ingest-plan §3)
+
+| # | 验收项 | 测试 | 状态 |
+| --- | --- | --- | --- |
+| 3c.1 | 归一化 / 设计性过滤不算缺失 / 六类分类 / 截片段 | `test_roundtrip.py` 四例(纯函数) | ✅ |
+| 3c.2 | `summary.html`:米黄底蓝字、viewport、无 `<script>`、无外链、窄屏堆叠、`<details>`、< 200 kB;`samples.md` 三栏 + 计数行 | `test_html_is_nojs_responsive_cream_blue` · `test_samples_md_has_three_columns_and_count_line` | ✅ |
+| 3c.4 | 往返逼出的三处代码缺陷各有红测试:圈成员状态是整数 2 而非字符串(`test_pg.py::test_pg_circle_members_are_accepted_integer_status`)、VCF 与病历谁先到诊断都要用变异重排(`test_dx_refresh.py` 三例)、gnomAD 旧缓存 / HGDP 小队列 popmax(`test_gnomad.py` 两例) | 见左 | ✅ |
+| 3c.3 | 真实部署上 N 例走完:账号 → 圈 → PED → 父母 VCF → 先证者 VCF → 病历 → DICOM → 回读九层 | `tools/roundtrip_check.py`;读数见 impl 文档「往返」段 | ✅(2026-09-22 三轮:6 例 / 十层全部相同或设计性差异,真差异 0;`reports/roundtrip/20260922/{samples.md,summary.html}`) |
 
 ## 4. 接口 · D5(§10)
 
@@ -101,7 +120,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 ## 7. 汇总与下一步
 
-26 条验收(2026-09-21 第三轮 TDD 后):**✅ 25 · 🟡 5 · ❌ 2**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
+26 条验收(2026-09-21 第三轮 TDD 后):**✅ 25 · 🟡 5 · ❌ 2**;3b/3c 另 10 条(2026-09-22 往返轮):**✅ 10**(部分条目双计)。本轮红→绿:admission 模块不存在、DICOM 探测整读 ⇒ 实现后通过;歧义 review / 过滤器等式 / 多基因弃权三条写出即绿,留作回归。缺口按代价排:
 
 1. **D9 真实语料金标**(1.4 / 1.5)—— 没有它,层1 在真实病历上的读数为零,这是唯一一条"合成题证明不了"的验收;需临床顾问。
 2. ~~端到端固化~~ —— 已做 `tests/test_e2e.py`(`-m e2e`,需 `MIROBODY_RARE_E2E_BASE`;实测 70 s 通过)。

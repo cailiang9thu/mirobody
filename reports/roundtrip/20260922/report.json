@@ -1,0 +1,2578 @@
+{
+ "batch": "20260921-112815",
+ "cases": [
+  "JD-50",
+  "JD-52",
+  "JD-55",
+  "JD-58",
+  "JD-72",
+  "JD-77"
+ ],
+ "env": {
+  "batch": "20260921-112815",
+  "world_sha": "40420cc74f93cd5b",
+  "kernel_sha256": "fbd9d588049cd2f0",
+  "clinvar": "clinvar_grch38_plp:2026-09-20",
+  "hpo_bundle": "2026-09-20T14:54:30",
+  "schema": "mirobody_rare",
+  "reference_backend": "pg",
+  "time": "2026-09-22 03:41:57"
+ },
+ "counts": {
+  "same": 201,
+  "design": 33,
+  "transport": 0,
+  "version": 0,
+  "order": 0,
+  "permission": 5,
+  "coding": 0
+ },
+ "layers": [
+  {
+   "layer": "文件",
+   "n": 31,
+   "same": 31,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "样本",
+   "n": 16,
+   "same": 16,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "变异",
+   "n": 72,
+   "same": 40,
+   "design": 32,
+   "real": 0
+  },
+  {
+   "layer": "注释",
+   "n": 40,
+   "same": 40,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "遗传来源",
+   "n": 5,
+   "same": 5,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "家系",
+   "n": 6,
+   "same": 6,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "影像",
+   "n": 1,
+   "same": 1,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "表型",
+   "n": 51,
+   "same": 50,
+   "design": 1,
+   "real": 0
+  },
+  {
+   "layer": "诊断",
+   "n": 6,
+   "same": 6,
+   "design": 0,
+   "real": 0
+  },
+  {
+   "layer": "权限",
+   "n": 11,
+   "same": 6,
+   "design": 5,
+   "real": 0
+  }
+ ],
+ "samples": [
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "rows": [
+    {
+     "before": "narrative: JD-55.md sha256 ac075da253f6… 448 B",
+     "after": "th_files#211 content_hash ac075da253f6… bytes verified",
+     "diff": "相同"
+    },
+    {
+     "before": "proband: proband.vcf.gz sha256 1e0969ae6ff7… 13263876 B",
+     "after": "th_files#210 content_hash 1e0969ae6ff7… bytes verified",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 6,
+    "k": 2,
+    "same": 6,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "文件",
+   "case": "JD-52",
+   "rows": [
+    {
+     "before": "proband: proband.vcf.gz sha256 854b9f9d430f… 14374024 B",
+     "after": "th_files#206 content_hash 854b9f9d430f… bytes verified",
+     "diff": "相同"
+    },
+    {
+     "before": "narrative: JD-52.md sha256 552e1716f3f5… 996 B",
+     "after": "th_files#208 content_hash 552e1716f3f5… bytes verified",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 5,
+    "k": 2,
+    "same": 5,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "文件",
+   "case": "JD-58",
+   "rows": [
+    {
+     "before": "mother: mother.vcf.gz sha256 de89b565cc9e… 20683963 B",
+     "after": "th_files#217 content_hash de89b565cc9e… bytes verified",
+     "diff": "相同"
+    },
+    {
+     "before": "proband: proband.vcf.gz sha256 fdd47bc9ec10… 21483585 B",
+     "after": "th_files#218 content_hash fdd47bc9ec10… bytes verified",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 5,
+    "k": 2,
+    "same": 5,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "样本",
+   "case": "JD-72",
+   "rows": [
+    {
+     "before": "proband: HG005 GRCh38",
+     "after": "sample#200 HG005 GRCh38 ready",
+     "diff": "相同"
+    },
+    {
+     "before": "father: HG006 GRCh38",
+     "after": "sample#198 HG006 GRCh38 ready",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 3,
+    "k": 2,
+    "same": 3,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "样本",
+   "case": "JD-52",
+   "rows": [
+    {
+     "before": "father: HG006 GRCh38",
+     "after": "sample#190 HG006 GRCh38 ready",
+     "diff": "相同"
+    },
+    {
+     "before": "proband: HG005 GRCh38",
+     "after": "sample#193 HG005 GRCh38 ready",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 3,
+    "k": 2,
+    "same": 3,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "样本",
+   "case": "JD-50",
+   "rows": [
+    {
+     "before": "proband: HG002 GRCh38",
+     "after": "sample#191 HG002 GRCh38 ready",
+     "diff": "相同"
+    },
+    {
+     "before": "mother: HG004 GRCh38",
+     "after": "sample#189 HG004 GRCh38 ready",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 3,
+    "k": 2,
+    "same": 3,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "rows": [
+    {
+     "before": "16:3243407:T:C GT 1/1 MEFV (真值)",
+     "after": "th_variant#339 1/1 hom MEFV",
+     "diff": "相同"
+    },
+    {
+     "before": "1:155235195:C:T GT 0/1 GBA1",
+     "after": "th_variant#338 0/1 het GBA1",
+     "diff": "相同"
+    },
+    {
+     "before": "18:23556268:G:A GT 0/1 NPC1",
+     "after": "th_variant#340 0/1 het NPC1",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 14,
+    "k": 3,
+    "same": 5,
+    "design": 9,
+    "real": 0
+   }
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "rows": [
+    {
+     "before": "X:32348466:T:TG GT 1 DMD (真值)",
+     "after": "th_variant#330 1 hemi DMD",
+     "diff": "相同"
+    },
+    {
+     "before": "1:94008251:C:T ABCA4 gnomAD popmax 0.07894736842105263",
+     "after": "dropped by popmax rule (design)",
+     "diff": "设计性差异"
+    },
+    {
+     "before": "1:94008251:C:T ABCA4 gnomAD common",
+     "after": "stored WITH frequency (af_popmax=0.07894736842105263); the shim drops it, the DB keeps it annotated (design)",
+     "diff": "设计性差异"
+    }
+   ],
+   "count": {
+    "n": 18,
+    "k": 3,
+    "same": 5,
+    "design": 13,
+    "real": 0
+   }
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "rows": [
+    {
+     "before": "14:50269318:G:A GT 1/1 L2HGDH (真值)",
+     "after": "th_variant#313 1/1 hom L2HGDH",
+     "diff": "相同"
+    },
+    {
+     "before": "10:70598447:C:T GT 0/1 PRF1",
+     "after": "th_variant#312 0/1 het PRF1",
+     "diff": "相同"
+    },
+    {
+     "before": "10:70598447:C:T GT 0/1 PRF1",
+     "after": "th_variant#306 0/1 het PRF1",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 11,
+    "k": 3,
+    "same": 8,
+    "design": 3,
+    "real": 0
+   }
+  },
+  {
+   "layer": "注释",
+   "case": "JD-72",
+   "rows": [
+    {
+     "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+     "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=2.239340738086707e-05",
+     "diff": "相同"
+    },
+    {
+     "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+     "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.018518518518518517",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 5,
+    "k": 2,
+    "same": 5,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "注释",
+   "case": "JD-58",
+   "rows": [
+    {
+     "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+     "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried",
+     "diff": "相同"
+    },
+    {
+     "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+     "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 5,
+    "k": 2,
+    "same": 5,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "rows": [
+    {
+     "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+     "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.294096978215038e-05",
+     "diff": "相同"
+    },
+    {
+     "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+     "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.294096978215038e-05",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 8,
+    "k": 2,
+    "same": 8,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-52",
+   "rows": [
+    {
+     "before": "期望 de_novo(PED+父母 GT)",
+     "after": "de_novo is_de_novo=True",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-50",
+   "rows": [
+    {
+     "before": "期望 biparental(PED+父母 GT)",
+     "after": "biparental is_de_novo=False",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-58",
+   "rows": [
+    {
+     "before": "期望 maternal(PED+父母 GT)",
+     "after": "maternal is_de_novo=False",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "家系",
+   "case": "JD-72",
+   "rows": [
+    {
+     "before": "PED 3 members; accounts for 3",
+     "after": "th_pedigree JD-72: 3 members, 3 linked to accounts, analysis_only=['JD-72-F', 'JD-72-M']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "家系",
+   "case": "JD-77",
+   "rows": [
+    {
+     "before": "PED 3 members; accounts for 3",
+     "after": "th_pedigree JD-77: 3 members, 3 linked to accounts, analysis_only=['JD-77-F', 'JD-77-M']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "家系",
+   "case": "JD-52",
+   "rows": [
+    {
+     "before": "PED 3 members; accounts for 3",
+     "after": "th_pedigree JD-52: 3 members, 3 linked to accounts, analysis_only=['JD-52-F', 'JD-52-M']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "影像",
+   "case": "JD-55",
+   "rows": [
+    {
+     "before": "3 series (TCIA Soft-tissue-Sarcoma)",
+     "after": "3 th_signal_object rows, deid=['done', 'done', 'done'], modality=['RTSTRUCT', 'RTSTRUCT', 'RTSTRUCT']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "rows": [
+    {
+     "before": "「出现全面发育迟缓」→ HP:0001263 全面发育迟缓 present/proband",
+     "after": "th_phenotype#349 HP:0001263 全面发育迟缓 negated=False proband/ src=nlp §病史描述",
+     "diff": "相同"
+    },
+    {
+     "before": "「近期语言发育迟缓」→ HP:0000750 语言发育迟缓 present/proband",
+     "after": "th_phenotype#345 HP:0000750 语言发育迟缓 negated=False proband/ src=nlp §病史描述",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 7,
+    "k": 2,
+    "same": 7,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "rows": [
+    {
+     "before": "「恶心和呕吐较明显」→ HP:0002017 恶心和呕吐 present/proband",
+     "after": "th_phenotype#357 HP:0002017 恶心和呕吐 negated=False proband/ src=nlp §病史描述",
+     "diff": "相同"
+    },
+    {
+     "before": "「未见皮肤的异常起疱」→ HP:0008066 皮肤的异常起疱 absent/proband",
+     "after": "th_phenotype#358 HP:0008066 皮肤的异常起疱 negated=True proband/ src=nlp §病史描述",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 10,
+    "k": 2,
+    "same": 9,
+    "design": 1,
+    "real": 0
+   }
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "rows": [
+    {
+     "before": "「自述肱三头肌无力」→ HP:0031108 肱三头肌无力 present/proband",
+     "after": "th_phenotype#362 HP:0031108 肱三头肌无力 negated=False proband/ src=nlp §病史描述",
+     "diff": "相同"
+    },
+    {
+     "before": "「未见进行性肌无力」→ HP:0003323 进行性肌无力 absent/proband",
+     "after": "th_phenotype#365 HP:0003323 进行性肌无力 negated=True proband/ src=nlp §病史描述",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 6,
+    "k": 2,
+    "same": 6,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-52",
+   "rows": [
+    {
+     "before": "金标 ORPHA:805",
+     "after": "th_disease_code ['ORPHA:805']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-77",
+   "rows": [
+    {
+     "before": "金标 ORPHA:70",
+     "after": "th_disease_code ['ORPHA:45448', 'ORPHA:70']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-72",
+   "rows": [
+    {
+     "before": "金标 ORPHA:342",
+     "after": "th_disease_code ['ORPHA:342']",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "权限",
+   "case": "JD-55",
+   "rows": [
+    {
+     "before": "本人行经工具读",
+     "after": "ok 4 rows of 4",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 1,
+    "k": 1,
+    "same": 1,
+    "design": 0,
+    "real": 0
+   }
+  },
+  {
+   "layer": "权限",
+   "case": "JD-58",
+   "rows": [
+    {
+     "before": "父亲行经工具读(access=0)",
+     "after": "error denied(预期拒)",
+     "diff": "权限"
+    },
+    {
+     "before": "本人行经工具读",
+     "after": "ok 4 rows of 4",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 2,
+    "k": 2,
+    "same": 1,
+    "design": 1,
+    "real": 0
+   }
+  },
+  {
+   "layer": "权限",
+   "case": "JD-77",
+   "rows": [
+    {
+     "before": "父亲行经工具读(access=0)",
+     "after": "error denied(预期拒)",
+     "diff": "权限"
+    },
+    {
+     "before": "本人行经工具读",
+     "after": "ok 4 rows of 4",
+     "diff": "相同"
+    }
+   ],
+   "count": {
+    "n": 2,
+    "k": 2,
+    "same": 1,
+    "design": 1,
+    "real": 0
+   }
+  }
+ ],
+ "gaps": [
+  "th_disease_code 保留历史:表型排序的候选行不删,变异促升另加一行 source=nlp+variant(JD-77 因而并列 ORPHA:45448 与 ORPHA:70);读者按 source 取最新",
+  "th_signal_object.file_id 现为 0(DICOM 处理器拿不到 th_files.id),影像层按 th_files.content_hash 校验字节、按行数与 deid 状态比对",
+  "表型层的\"原始\"是 haenv 合成句子,不是真实病历;真实语料读数待 D9 金标",
+  "样本层未比 bcftools stats(口径改为候选集,见 rare-mvp-testing 2.2)"
+ ],
+ "items": [
+  {
+   "layer": "文件",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "proband: proband.vcf.gz sha256 85fc13d17abf… 15273861 B",
+   "after": "th_files#204 content_hash 85fc13d17abf… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "father: father.vcf.gz sha256 468386375253… 14437684 B",
+   "after": "th_files#200 content_hash 468386375253… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "mother: mother.vcf.gz sha256 53a567cbe779… 14455130 B",
+   "after": "th_files#202 content_hash 53a567cbe779… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ped: JD-50.ped sha256 d8a492f6b59c… 189 B",
+   "after": "th_files#199 content_hash d8a492f6b59c… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "narrative: JD-50.md sha256 fce9f3af90dd… 514 B",
+   "after": "th_files#207 content_hash fce9f3af90dd… bytes verified"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "proband: HG002 GRCh38",
+   "after": "sample#191 HG002 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "14:50269318:G:A GT 1/1 L2HGDH (真值)",
+   "after": "th_variant#313 1/1 hom L2HGDH"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.294096978215038e-05"
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "期望 biparental(PED+父母 GT)",
+   "after": "biparental is_de_novo=False"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "10:70598447:C:T GT 0/1 PRF1",
+   "after": "th_variant#312 0/1 het PRF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=1.334258419170625e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "13:51950132:C:A GT 0/1 ATP7B",
+   "after": "th_variant#311 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.5970899542270303e-06"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "design",
+   "before": "proband: 502062 PASS records in file",
+   "after": "3 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "father: HG003 GRCh38",
+   "after": "sample#188 HG003 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "14:50269318:G:A GT 0/1 L2HGDH (真值)",
+   "after": "th_variant#305 0/1 het L2HGDH"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.294096978215038e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "design",
+   "before": "father: 493941 PASS records in file",
+   "after": "1 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "mother: HG004 GRCh38",
+   "after": "sample#189 HG004 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "14:50269318:G:A GT 0/1 L2HGDH (真值)",
+   "after": "th_variant#310 0/1 het L2HGDH"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.294096978215038e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "10:70598447:C:T GT 0/1 PRF1",
+   "after": "th_variant#306 0/1 het PRF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=1.334258419170625e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "13:20189414:CA:C GT 0/1 GJB2",
+   "after": "th_variant#307 0/1 het GJB2"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★3 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.0005468047636054632"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "13:51950132:C:A GT 0/1 ATP7B",
+   "after": "th_variant#309 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=3.5970899542270303e-06"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-50",
+   "kind": "design",
+   "before": "mother: 492144 PASS records in file",
+   "after": "4 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "家系",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "PED 3 members; accounts for 3",
+   "after": "th_pedigree JD-50: 3 members, 3 linked to accounts, analysis_only=['JD-50-F', 'JD-50-M']"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「癫痫发作较明显」→ HP:0001250 癫痫发作 present/proband",
+   "after": "th_phenotype#311 HP:0001250 癫痫发作 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「近期传染性脑炎」→ HP:0002383 传染性脑炎 present/proband",
+   "after": "th_phenotype#312 HP:0002383 传染性脑炎 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「未见听力受损」→ HP:0000365 听力受损 absent/proband",
+   "after": "th_phenotype#314 HP:0000365 听力受损 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「否认全面发育迟缓」→ HP:0001263 全面发育迟缓 absent/proband",
+   "after": "th_phenotype#317 HP:0001263 全面发育迟缓 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「近期失语症」→ HP:0002381 失语症 present/proband",
+   "after": "th_phenotype#318 HP:0002381 失语症 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「出现重度智力障碍」→ HP:0010864 重度智力障碍 present/proband",
+   "after": "th_phenotype#320 HP:0010864 重度智力障碍 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「自述非典型行为」→ HP:0000708 非典型行为 present/proband",
+   "after": "th_phenotype#322 HP:0000708 非典型行为 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「近期肌张力减退」→ HP:0001252 肌张力减退 present/proband",
+   "after": "th_phenotype#324 HP:0001252 肌张力减退 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「智力障碍较明显」→ HP:0001249 智力障碍 present/proband",
+   "after": "th_phenotype#326 HP:0001249 智力障碍 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「神经系统的肿瘤较明显」→ HP:0004375 神经系统的肿瘤 present/proband",
+   "after": "th_phenotype#328 HP:0004375 神经系统的肿瘤 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "「小脑发育缺陷/发育不全较明显」→ HP:0007360 小脑发育缺陷/发育不全 present/proband",
+   "after": "th_phenotype#330 HP:0007360 小脑发育缺陷/发育不全 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "金标 ORPHA:79314",
+   "after": "th_disease_code ['ORPHA:79314']"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-50",
+   "kind": "permission",
+   "before": "父亲行经工具读(access=0)",
+   "after": "error denied(预期拒)"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-50",
+   "kind": "same",
+   "before": "本人行经工具读",
+   "after": "ok 3 rows of 3"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "proband: proband.vcf.gz sha256 854b9f9d430f… 14374024 B",
+   "after": "th_files#206 content_hash 854b9f9d430f… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "father: father.vcf.gz sha256 642cc1ffbc20… 12175258 B",
+   "after": "th_files#203 content_hash 642cc1ffbc20… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "mother: mother.vcf.gz sha256 eb4cef89f326… 12112410 B",
+   "after": "th_files#205 content_hash eb4cef89f326… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ped: JD-52.ped sha256 2a54eab9f880… 187 B",
+   "after": "th_files#201 content_hash 2a54eab9f880… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "narrative: JD-52.md sha256 552e1716f3f5… 996 B",
+   "after": "th_files#208 content_hash 552e1716f3f5… bytes verified"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "proband: HG005 GRCh38",
+   "after": "sample#193 HG005 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "16:2065580:C:A GT 0/1 TSC2 (真值)",
+   "after": "th_variant#319 0/1 het TSC2"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "期望 de_novo(PED+父母 GT)",
+   "after": "de_novo is_de_novo=True"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "13:51958477:T:TC GT 0/1 ATP7B",
+   "after": "th_variant#318 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=2.4125452352231604e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "14:50267752:C:T GT 0/1 L2HGDH",
+   "after": "th_variant#317 0/1 het L2HGDH"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.0001009845998485231"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "17:31229061:CG:C GT 0/1 NF1",
+   "after": "th_variant#316 0/1 het NF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "design",
+   "before": "proband: 490729 PASS records in file",
+   "after": "4 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "father: HG006 GRCh38",
+   "after": "sample#190 HG006 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "13:51958477:T:TC GT 0/1 ATP7B",
+   "after": "th_variant#308 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=2.4125452352231604e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "design",
+   "before": "father: 492897 PASS records in file",
+   "after": "1 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "mother: HG007 GRCh38",
+   "after": "sample#192 HG007 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "14:50267752:C:T GT 0/1 L2HGDH",
+   "after": "th_variant#315 0/1 het L2HGDH"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.0001009845998485231"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "17:31229061:CG:C GT 0/1 NF1",
+   "after": "th_variant#314 0/1 het NF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-52",
+   "kind": "design",
+   "before": "mother: 490707 PASS records in file",
+   "after": "2 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "家系",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "PED 3 members; accounts for 3",
+   "after": "th_pedigree JD-52: 3 members, 3 linked to accounts, analysis_only=['JD-52-F', 'JD-52-M']"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「皮质发育不良」→ HP:0002539 皮质发育不良 present/proband",
+   "after": "th_phenotype#315 HP:0002539 皮质发育不良 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「未见高身材」→ HP:0000098 高身材 absent/proband",
+   "after": "th_phenotype#316 HP:0000098 高身材 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「自述皮质结节」→ HP:0009717 皮质结节 present/proband",
+   "after": "th_phenotype#319 HP:0009717 皮质结节 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「近期自伤行为」→ HP:0100716 自伤行为 present/proband",
+   "after": "th_phenotype#321 HP:0100716 自伤行为 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「肾脏异常较明显」→ HP:0000077 肾脏异常 present/proband",
+   "after": "th_phenotype#323 HP:0000077 肾脏异常 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「癫痫发作较明显」→ HP:0001250 癫痫发作 present/proband",
+   "after": "th_phenotype#325 HP:0001250 癫痫发作 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「出现非典型行为」→ HP:0000708 非典型行为 present/proband",
+   "after": "th_phenotype#327 HP:0000708 非典型行为 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「出现视网膜错构瘤」→ HP:0009594 视网膜错构瘤 present/proband",
+   "after": "th_phenotype#329 HP:0009594 视网膜错构瘤 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「否认全身性色素沉着」→ HP:0007440 全身性色素沉着 absent/proband",
+   "after": "th_phenotype#332 HP:0007440 全身性色素沉着 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「自述室管膜下结节」→ HP:0009716 室管膜下结节 present/proband",
+   "after": "th_phenotype#333 HP:0009716 室管膜下结节 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "「心脏横纹肌瘤」→ HP:0009729 心脏横纹肌瘤 present/proband",
+   "after": "th_phenotype#335 HP:0009729 心脏横纹肌瘤 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "金标 ORPHA:805",
+   "after": "th_disease_code ['ORPHA:805']"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-52",
+   "kind": "permission",
+   "before": "父亲行经工具读(access=0)",
+   "after": "error denied(预期拒)"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-52",
+   "kind": "same",
+   "before": "本人行经工具读",
+   "after": "ok 4 rows of 4"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "proband: proband.vcf.gz sha256 1e0969ae6ff7… 13263876 B",
+   "after": "th_files#210 content_hash 1e0969ae6ff7… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "ped: JD-55.ped sha256 c20614bdfcd1… 128 B",
+   "after": "th_files#209 content_hash c20614bdfcd1… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "dicom0: 1.3.6.1.4.1.14519.5.2.1.5168.1900.186587320634029928033681888257.zip sha256 d466a8a2f440… 279993 B",
+   "after": "th_files#212 content_hash d466a8a2f440… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "dicom1: 1.3.6.1.4.1.14519.5.2.1.5168.1900.205417524041278773034568442517.zip sha256 5486cb372b30… 560154 B",
+   "after": "th_files#213 content_hash 5486cb372b30… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "dicom2: 1.3.6.1.4.1.14519.5.2.1.5168.1900.210741399955387598591043023369.zip sha256 700a2a95b712… 280379 B",
+   "after": "th_files#214 content_hash 700a2a95b712… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "narrative: JD-55.md sha256 ac075da253f6… 448 B",
+   "after": "th_files#211 content_hash ac075da253f6… bytes verified"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "proband: HG001 GRCh38",
+   "after": "sample#194 HG001 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "17:7674220:C:G GT 0/1 TP53 (真值)",
+   "after": "th_variant#322 0/1 het TP53"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "17:31163184:A:G GT 0/1 NF1",
+   "after": "th_variant#323 0/1 het NF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=8.994261661060243e-07"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "5:70946127:G:T GT 0/1 SMN1",
+   "after": "th_variant#320 0/1 het SMN1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "13:51958353:AAAGAGCATGGGGGGCGTGTCG:A GT 0/1 ATP7B",
+   "after": "th_variant#321 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-55",
+   "kind": "design",
+   "before": "proband: 507744 PASS records in file",
+   "after": "4 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "家系",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "PED 1 members; accounts for 1",
+   "after": "th_pedigree JD-55: 1 members, 1 linked to accounts, analysis_only=[]"
+  },
+  {
+   "layer": "影像",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "3 series (TCIA Soft-tissue-Sarcoma)",
+   "after": "3 th_signal_object rows, deid=['done', 'done', 'done'], modality=['RTSTRUCT', 'RTSTRUCT', 'RTSTRUCT']"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "「母亲也出现过乳腺癌」→ HP:0003002 乳腺癌 present/relative",
+   "after": "th_phenotype#337 HP:0003002 乳腺癌 negated=False relative/mother src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "「肿瘤」→ HP:0002664 肿瘤 present/proband",
+   "after": "th_phenotype#338 HP:0002664 肿瘤 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "「横纹肌肉瘤较明显」→ HP:0002859 横纹肌肉瘤 present/proband",
+   "after": "th_phenotype#339 HP:0002859 横纹肌肉瘤 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "「出现胃肠道新生物」→ HP:0007378 胃肠道新生物 present/proband",
+   "after": "th_phenotype#340 HP:0007378 胃肠道新生物 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "「乳腺癌较明显」→ HP:0003002 乳腺癌 present/proband",
+   "after": "th_phenotype#341 HP:0003002 乳腺癌 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "「未见视力异常」→ HP:0000504 视力异常 absent/proband",
+   "after": "th_phenotype#342 HP:0000504 视力异常 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "金标 ORPHA:524",
+   "after": "th_disease_code ['ORPHA:524']"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-55",
+   "kind": "same",
+   "before": "本人行经工具读",
+   "after": "ok 4 rows of 4"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "proband: proband.vcf.gz sha256 fdd47bc9ec10… 21483585 B",
+   "after": "th_files#218 content_hash fdd47bc9ec10… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "father: father.vcf.gz sha256 04edb920805c… 20121699 B",
+   "after": "th_files#216 content_hash 04edb920805c… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "mother: mother.vcf.gz sha256 de89b565cc9e… 20683963 B",
+   "after": "th_files#217 content_hash de89b565cc9e… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "ped: JD-58.ped sha256 bf36ed39d733… 186 B",
+   "after": "th_files#215 content_hash bf36ed39d733… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "narrative: JD-58.md sha256 e9e89a0803eb… 367 B",
+   "after": "th_files#219 content_hash e9e89a0803eb… bytes verified"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "proband: HG002 GRCh38",
+   "after": "sample#197 HG002 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "16:3243447:C:T GT 0/1 MEFV",
+   "after": "th_variant#333 0/1 het MEFV"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=1.846222014351299e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "X:32348466:T:TG GT 1 DMD (真值)",
+   "after": "th_variant#330 1 hemi DMD"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "期望 maternal(PED+父母 GT)",
+   "after": "maternal is_de_novo=False"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "1:155235843:T:C GBA1 gnomAD popmax 0.020833333333333332",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "5:70925108:C:G SMN1 gnomAD popmax 0.03571428571428571",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "proband: 702796 PASS records in file",
+   "after": "4 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "1:155235843:T:C GBA1 gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.020833333333333332); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "5:70925108:C:G SMN1 gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.03571428571428571); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "father: HG003 GRCh38",
+   "after": "sample#195 HG003 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "16:3243447:C:T GT 0/1 MEFV",
+   "after": "th_variant#324 0/1 het MEFV"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=1.846222014351299e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "1:94008251:C:T ABCA4 gnomAD popmax 0.07894736842105263",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "5:70925108:C:G SMN1 gnomAD popmax 0.03571428571428571",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "father: 684565 PASS records in file",
+   "after": "3 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "1:94008251:C:T ABCA4 gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.07894736842105263); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "5:70925108:C:G SMN1 gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.03571428571428571); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "mother: HG004 GRCh38",
+   "after": "sample#196 HG004 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "5:148120311:G:GA GT 0/1 SPINK5",
+   "after": "th_variant#328 0/1 het SPINK5"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.00423728813559322"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "X:32348466:T:TG GT 0/1 DMD (真值)",
+   "after": "th_variant#327 0/1 het DMD"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "1:155235843:T:C GBA1 gnomAD popmax 0.020833333333333332",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "mother: 700280 PASS records in file",
+   "after": "3 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-58",
+   "kind": "design",
+   "before": "1:155235843:T:C GBA1 gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.020833333333333332); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "家系",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "PED 3 members; accounts for 3",
+   "after": "th_pedigree JD-58: 3 members, 3 linked to accounts, analysis_only=['JD-58-F', 'JD-58-M']"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「近期特定的学习障碍」→ HP:0001328 特定的学习障碍 present/proband",
+   "after": "th_phenotype#343 HP:0001328 特定的学习障碍 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「自述心肌病」→ HP:0001638 心肌病 present/proband",
+   "after": "th_phenotype#344 HP:0001638 心肌病 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「近期语言发育迟缓」→ HP:0000750 语言发育迟缓 present/proband",
+   "after": "th_phenotype#345 HP:0000750 语言发育迟缓 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「近期运动发育迟缓」→ HP:0001270 运动发育迟缓 present/proband",
+   "after": "th_phenotype#346 HP:0001270 运动发育迟缓 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「否认吸吮无力」→ HP:0002033 吸吮无力 absent/proband",
+   "after": "th_phenotype#347 HP:0002033 吸吮无力 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「自述屈曲挛缩」→ HP:0001371 屈曲挛缩 present/proband",
+   "after": "th_phenotype#348 HP:0001371 屈曲挛缩 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "「出现全面发育迟缓」→ HP:0001263 全面发育迟缓 present/proband",
+   "after": "th_phenotype#349 HP:0001263 全面发育迟缓 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "金标 ORPHA:98896",
+   "after": "th_disease_code ['ORPHA:98896']"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-58",
+   "kind": "permission",
+   "before": "父亲行经工具读(access=0)",
+   "after": "error denied(预期拒)"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-58",
+   "kind": "same",
+   "before": "本人行经工具读",
+   "after": "ok 4 rows of 4"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "proband: proband.vcf.gz sha256 78e1e630c1ec… 15859805 B",
+   "after": "th_files#223 content_hash 78e1e630c1ec… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "father: father.vcf.gz sha256 6e750737c741… 13313143 B",
+   "after": "th_files#221 content_hash 6e750737c741… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "mother: mother.vcf.gz sha256 dd2ba8dc6cd3… 13352209 B",
+   "after": "th_files#222 content_hash dd2ba8dc6cd3… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "ped: JD-72.ped sha256 cfd0b9eaa14d… 185 B",
+   "after": "th_files#220 content_hash cfd0b9eaa14d… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "narrative: JD-72.md sha256 806c33c1f6ba… 409 B",
+   "after": "th_files#224 content_hash 806c33c1f6ba… bytes verified"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "proband: HG005 GRCh38",
+   "after": "sample#200 HG005 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "16:3243407:T:C GT 1/1 MEFV (真值)",
+   "after": "th_variant#339 1/1 hom MEFV"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.018518518518518517"
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "期望 biparental(PED+父母 GT)",
+   "after": "biparental is_de_novo=False"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "1:155235195:C:T GT 0/1 GBA1",
+   "after": "th_variant#341 0/1 het GBA1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=2.239340738086707e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "18:23556268:G:A GT 0/1 NPC1",
+   "after": "th_variant#340 0/1 het NPC1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=4.0055543687246315e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "proband: 542509 PASS records in file",
+   "after": "3 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "father: HG006 GRCh38",
+   "after": "sample#198 HG006 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "18:23556268:G:A GT 0/1 NPC1",
+   "after": "th_variant#335 0/1 het NPC1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=4.0055543687246315e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "16:3243407:T:C MEFV gnomAD popmax 0.018518518518518517",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "18:63804288:C:T SERPINB7 gnomAD popmax 0.0625",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "father: 540077 PASS records in file",
+   "after": "3 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "16:3243407:T:C MEFV gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.018518518518518517); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "18:63804288:C:T SERPINB7 gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.0625); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "mother: HG007 GRCh38",
+   "after": "sample#199 HG007 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "1:155235195:C:T GT 0/1 GBA1",
+   "after": "th_variant#338 0/1 het GBA1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=2.239340738086707e-05"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "16:3243407:T:C MEFV gnomAD popmax 0.018518518518518517",
+   "after": "dropped by popmax rule (design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "mother: 541470 PASS records in file",
+   "after": "2 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "16:3243407:T:C MEFV gnomAD common",
+   "after": "stored WITH frequency (af_popmax=0.018518518518518517); the shim drops it, the DB keeps it annotated (design)"
+  },
+  {
+   "layer": "家系",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "PED 3 members; accounts for 3",
+   "after": "th_pedigree JD-72: 3 members, 3 linked to accounts, analysis_only=['JD-72-F', 'JD-72-M']"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「高纤维蛋白原血症较明显」→ HP:0011899 高纤维蛋白原血症 present/proband",
+   "after": "th_phenotype#350 HP:0011899 高纤维蛋白原血症 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「自述关节炎」→ HP:0001369 关节炎 present/proband",
+   "after": "th_phenotype#351 HP:0001369 关节炎 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「近期腹泻」→ HP:0002014 腹泻 present/proband",
+   "after": "th_phenotype#352 HP:0002014 腹泻 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "design",
+   "before": "「便秘较明显」→ HP:0002019 便秘",
+   "after": "queued for human review (ambiguous, candidates ['HP:0002019', 'HP:0034782']) — by design, not auto-written"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「关节疼痛较明显」→ HP:0002829 关节疼痛 present/proband",
+   "after": "th_phenotype#353 HP:0002829 关节疼痛 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「腹痛较明显」→ HP:0002027 腹痛 present/proband",
+   "after": "th_phenotype#354 HP:0002027 腹痛 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「近期胸膜炎」→ HP:0002102 胸膜炎 present/proband",
+   "after": "th_phenotype#355 HP:0002102 胸膜炎 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「恶心和呕吐较明显」→ HP:0002017 恶心和呕吐 present/proband",
+   "after": "th_phenotype#357 HP:0002017 恶心和呕吐 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「自述肌痛」→ HP:0003326 肌痛 present/proband",
+   "after": "th_phenotype#359 HP:0003326 肌痛 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "「未见皮肤的异常起疱」→ HP:0008066 皮肤的异常起疱 absent/proband",
+   "after": "th_phenotype#358 HP:0008066 皮肤的异常起疱 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "金标 ORPHA:342",
+   "after": "th_disease_code ['ORPHA:342']"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-72",
+   "kind": "permission",
+   "before": "父亲行经工具读(access=0)",
+   "after": "error denied(预期拒)"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-72",
+   "kind": "same",
+   "before": "本人行经工具读",
+   "after": "ok 3 rows of 3"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "proband: proband.vcf.gz sha256 44abddb4b2bf… 22540705 B",
+   "after": "th_files#228 content_hash 44abddb4b2bf… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "father: father.vcf.gz sha256 b913baf3d74d… 21231154 B",
+   "after": "th_files#226 content_hash b913baf3d74d… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "mother: mother.vcf.gz sha256 6d9ce2dd9553… 21465549 B",
+   "after": "th_files#227 content_hash 6d9ce2dd9553… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ped: JD-77.ped sha256 e6878c766dca… 185 B",
+   "after": "th_files#225 content_hash e6878c766dca… bytes verified"
+  },
+  {
+   "layer": "文件",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "narrative: JD-77.md sha256 336dcf4d7a8f… 541 B",
+   "after": "th_files#229 content_hash 336dcf4d7a8f… bytes verified"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "proband: HG002 GRCh38",
+   "after": "sample#203 HG002 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "5:70942553:C:T GT 1/1 SMN1 (真值)",
+   "after": "th_variant#352 1/1 hom SMN1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "遗传来源",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "期望 biparental(PED+父母 GT)",
+   "after": "biparental is_de_novo=False"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "10:70600787:G:T GT 0/1 PRF1",
+   "after": "th_variant#349 0/1 het PRF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=5.4058437170581396e-06"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "13:51937570:T:A GT 0/1 ATP7B",
+   "after": "th_variant#351 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=1.694846311336488e-06"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "17:80110987:G:A GT 0/1 GAA",
+   "after": "th_variant#350 0/1 het GAA"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "design",
+   "before": "proband: 738929 PASS records in file",
+   "after": "4 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "father: HG003 GRCh38",
+   "after": "sample#201 HG003 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "5:70942553:C:T GT 0/1 SMN1 (真值)",
+   "after": "th_variant#344 0/1 het SMN1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "10:70600787:G:T GT 0/1 PRF1",
+   "after": "th_variant#342 0/1 het PRF1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic/Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic/Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=5.4058437170581396e-06"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "17:80110987:G:A GT 0/1 GAA",
+   "after": "th_variant#343 0/1 het GAA"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "design",
+   "before": "father: 724005 PASS records in file",
+   "after": "3 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "样本",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "mother: HG004 GRCh38",
+   "after": "sample#202 HG004 GRCh38 ready"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "5:70942553:C:T GT 0/1 SMN1 (真值)",
+   "after": "th_variant#347 0/1 het SMN1"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD not_found/not queried"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "5:148120311:G:GA GT 0/1 SPINK5",
+   "after": "th_variant#348 0/1 het SPINK5"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.00423728813559322"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "13:20189414:CA:C GT 0/1 GJB2",
+   "after": "th_variant#345 0/1 het GJB2"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Pathogenic ★3 clinvar_grch38_plp:2026-09-20",
+   "after": "Pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=0.0005468047636054632"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "13:51937570:T:A GT 0/1 ATP7B",
+   "after": "th_variant#346 0/1 het ATP7B"
+  },
+  {
+   "layer": "注释",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "ClinVar Likely_pathogenic ★2 clinvar_grch38_plp:2026-09-20",
+   "after": "Likely_pathogenic clinvar_grch38_plp:2026-09-20; gnomAD af_popmax=1.694846311336488e-06"
+  },
+  {
+   "layer": "变异",
+   "case": "JD-77",
+   "kind": "design",
+   "before": "mother: 728068 PASS records in file",
+   "after": "4 rows stored (only ClinVar P/LP ≥1★ candidates, by design)"
+  },
+  {
+   "layer": "家系",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "PED 3 members; accounts for 3",
+   "after": "th_pedigree JD-77: 3 members, 3 linked to accounts, analysis_only=['JD-77-F', 'JD-77-M']"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "「近端肌肉无力较明显」→ HP:0003701 近端肌肉无力 present/proband",
+   "after": "th_phenotype#360 HP:0003701 近端肌肉无力 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "「爬楼梯困难」→ HP:0003551 爬楼梯困难 present/proband",
+   "after": "th_phenotype#361 HP:0003551 爬楼梯困难 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "「自述肱三头肌无力」→ HP:0031108 肱三头肌无力 present/proband",
+   "after": "th_phenotype#362 HP:0031108 肱三头肌无力 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "「出现股四头肌无力」→ HP:0003731 股四头肌无力 present/proband",
+   "after": "th_phenotype#363 HP:0003731 股四头肌无力 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "「骨骼肌萎缩」→ HP:0003202 骨骼肌萎缩 present/proband",
+   "after": "th_phenotype#364 HP:0003202 骨骼肌萎缩 negated=False proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "表型",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "「未见进行性肌无力」→ HP:0003323 进行性肌无力 absent/proband",
+   "after": "th_phenotype#365 HP:0003323 进行性肌无力 negated=True proband/ src=nlp §病史描述"
+  },
+  {
+   "layer": "诊断",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "金标 ORPHA:70",
+   "after": "th_disease_code ['ORPHA:45448', 'ORPHA:70']"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-77",
+   "kind": "permission",
+   "before": "父亲行经工具读(access=0)",
+   "after": "error denied(预期拒)"
+  },
+  {
+   "layer": "权限",
+   "case": "JD-77",
+   "kind": "same",
+   "before": "本人行经工具读",
+   "after": "ok 4 rows of 4"
+  }
+ ],
+ "events": [
+  {
+   "case": "JD-50",
+   "uids": {
+    "proband": "68",
+    "father": "70",
+    "mother": "73"
+   },
+   "steps": [
+    "circle",
+    [
+     "ped",
+     "completed"
+    ],
+    [
+     "vcf:father",
+     "completed"
+    ],
+    [
+     "vcf:mother",
+     "completed"
+    ],
+    [
+     "vcf:proband",
+     "completed"
+    ],
+    [
+     "narrative",
+     "completed"
+    ]
+   ]
+  },
+  {
+   "case": "JD-52",
+   "uids": {
+    "proband": "69",
+    "father": "71",
+    "mother": "72"
+   },
+   "steps": [
+    "circle",
+    [
+     "ped",
+     "completed"
+    ],
+    [
+     "vcf:father",
+     "completed"
+    ],
+    [
+     "vcf:mother",
+     "completed"
+    ],
+    [
+     "vcf:proband",
+     "completed"
+    ],
+    [
+     "narrative",
+     "completed"
+    ]
+   ]
+  },
+  {
+   "case": "JD-55",
+   "uids": {
+    "proband": "67"
+   },
+   "steps": [
+    [
+     "ped",
+     "completed"
+    ],
+    [
+     "vcf:proband",
+     "completed"
+    ],
+    [
+     "narrative",
+     "completed"
+    ],
+    [
+     "dicom:0",
+     "completed"
+    ],
+    [
+     "dicom:1",
+     "completed"
+    ],
+    [
+     "dicom:2",
+     "completed"
+    ]
+   ]
+  },
+  {
+   "case": "JD-58",
+   "uids": {
+    "proband": "75",
+    "father": "76",
+    "mother": "77"
+   },
+   "steps": [
+    "circle",
+    [
+     "ped",
+     "completed"
+    ],
+    [
+     "vcf:father",
+     "completed"
+    ],
+    [
+     "vcf:mother",
+     "completed"
+    ],
+    [
+     "vcf:proband",
+     "completed"
+    ],
+    [
+     "narrative",
+     "completed"
+    ]
+   ]
+  },
+  {
+   "case": "JD-72",
+   "uids": {
+    "proband": "78",
+    "father": "79",
+    "mother": "80"
+   },
+   "steps": [
+    "circle",
+    [
+     "ped",
+     "completed"
+    ],
+    [
+     "vcf:father",
+     "completed"
+    ],
+    [
+     "vcf:mother",
+     "completed"
+    ],
+    [
+     "vcf:proband",
+     "completed"
+    ],
+    [
+     "narrative",
+     "completed"
+    ]
+   ]
+  },
+  {
+   "case": "JD-77",
+   "uids": {
+    "proband": "81",
+    "father": "82",
+    "mother": "83"
+   },
+   "steps": [
+    "circle",
+    [
+     "ped",
+     "completed"
+    ],
+    [
+     "vcf:father",
+     "completed"
+    ],
+    [
+     "vcf:mother",
+     "completed"
+    ],
+    [
+     "vcf:proband",
+     "completed"
+    ],
+    [
+     "narrative",
+     "completed"
+    ]
+   ]
+  }
+ ]
+}

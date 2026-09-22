@@ -35,7 +35,7 @@ class RareRepo(Protocol):
     async def add_variants(self, rows: Sequence[Mapping[str, Any]]) -> int: ...
     async def add_annotations(self, rows: Sequence[Mapping[str, Any]]) -> int: ...
     async def add_signal(self, row: Mapping[str, Any]) -> int: ...
-    async def upsert_pedigree(self, family: Mapping[str, Any], members: Sequence[Mapping[str, Any]]) -> int: ...
+    async def upsert_pedigree(self, family: Mapping[str, Any], members: Sequence[Mapping[str, Any]], owner_id: str | None = None) -> int: ...
 
 
 class MemoryRepo:
@@ -43,6 +43,7 @@ class MemoryRepo:
         self.t: dict[str, list[dict]] = {k: [] for k in ("th_phenotype", "th_disease_code", "th_sequencing_sample",
                                                          "th_variant", "th_variant_annotation", "th_signal_object",
                                                          "th_pedigree", "th_pedigree_member", "th_consent",
+                                                         "th_phenotype_review", "th_files",
                                                          "care_circle")}   # care_circle: {operator, subject, access}
 
     def _ins(self, table: str, row: Mapping[str, Any]) -> int:
@@ -99,6 +100,28 @@ class MemoryRepo:
     async def circle_access(self, caller_id, subject_id):
         acc = [r["access"] for r in self.t["care_circle"] if r["operator"] == caller_id and r["subject"] == subject_id]
         return max(acc) if acc else None
+
+    async def add_review(self, row):
+        return self._ins("th_phenotype_review", {"resolved_hpo": None, "resolved_at": None, **row})
+
+    async def resolve_review(self, review_id, hpo_id, by):
+        for r in self.t["th_phenotype_review"]:
+            if r["id"] == review_id:
+                r["resolved_hpo"], r["resolved_by"], r["resolved_at"] = hpo_id, by, "now"
+                return r
+        return None
+
+    async def add_disease_code(self, row):
+        return self._ins("th_disease_code", row)
+
+    async def file_id_by_key(self, user_id, file_key):
+        for r in self.t["th_files"]:
+            if r["user_id"] == user_id and r["file_key"] == file_key:
+                return r["id"]
+        return None
+
+    async def phenotypes_exist_for_hash(self, user_id, content_hash):
+        return any(r["user_id"] == user_id and r.get("content_hash") == content_hash for r in self.t["th_phenotype"])
 
     async def circle_members(self, user_id):
         return [{"user_id": r["subject"], "nickname": r.get("nickname"), "name": r.get("name"), "email": r.get("email")}
@@ -169,13 +192,15 @@ class MemoryRepo:
     async def add_signal(self, row):
         return self._ins("th_signal_object", row)
 
-    async def upsert_pedigree(self, family, members):
-        fam = next((f for f in self.t["th_pedigree"] if f["family_id"] == family["family_id"]), None)
-        pid = fam["id"] if fam else self._ins("th_pedigree", family)
-        have = {m["individual_id"] for m in self.t["th_pedigree_member"] if m["pedigree_id"] == pid}
+    async def upsert_pedigree(self, family, members, owner_id=None):
+        fam = next((f for f in self.t["th_pedigree"] if f["family_id"] == family["family_id"] and f.get("owner_user_id") == owner_id), None)
+        pid = fam["id"] if fam else self._ins("th_pedigree", {**family, "owner_user_id": owner_id})
+        have = {m["individual_id"]: m for m in self.t["th_pedigree_member"] if m["pedigree_id"] == pid}
         for m in members:
             if m["individual_id"] not in have:
                 self._ins("th_pedigree_member", {**m, "pedigree_id": pid})
+            elif m.get("user_id") and not have[m["individual_id"]].get("user_id"):
+                have[m["individual_id"]]["user_id"] = m["user_id"]          # a newly linked account
         return pid
 
 
@@ -213,7 +238,7 @@ class PgRepo:
 
     async def phenotypes(self, user_id, negated=None, subject=None):
         sql = ("SELECT id, hpo_id, hpo_label, onset_hpo_id, severity_hpo_id, frequency_hpo_id, negated, subject, subject_role,"
-               " source, source_text, confidence, asserted_at, file_id FROM th_phenotype"
+               " source, source_text, confidence, asserted_at, file_id, section FROM th_phenotype"
                " WHERE user_id = :user_id AND NOT deleted")
         if negated is not None:
             sql += " AND negated = :negated"
@@ -279,24 +304,70 @@ class PgRepo:
         return await self._q("SELECT id, scope, granted, layer, residency, cross_border_allowed, effective_at, revoked_at"
                              " FROM th_consent WHERE user_id = :user_id ORDER BY effective_at DESC", {"user_id": user_id})
 
+    async def add_review(self, row):
+        rows = await self._q("INSERT INTO th_phenotype_review (user_id, file_id, kind, source_text, candidates, section, subject, negated)"
+                             " VALUES (:user_id, :file_id, :kind, :source_text, :candidates, :section, :subject, :negated) RETURNING id",
+                             {"file_id": None, "candidates": [], "section": None, "subject": None, "negated": None, **row})
+        return int(rows[0]["id"])
+
+    async def resolve_review(self, review_id, hpo_id, by):
+        rows = await self._q("UPDATE th_phenotype_review SET resolved_hpo = :h, resolved_by = :b, resolved_at = now()"
+                             " WHERE id = :id RETURNING id, user_id, file_id, source_text, section, subject, negated", {"h": hpo_id, "b": by, "id": review_id})
+        return dict(rows[0]) if rows else None
+
+    async def add_disease_code(self, row):
+        rows = await self._q("INSERT INTO th_disease_code (user_id, system, code, label, status, source, source_text, confidence, file_id)"
+                             " VALUES (:user_id, :system, :code, :label, :status, :source, :source_text, :confidence, :file_id) RETURNING id",
+                             {"source_text": None, "confidence": None, "file_id": None, **row})
+        return int(rows[0]["id"])
+
+    async def file_id_by_key(self, user_id, file_key):
+        rows = await self._q("SELECT id FROM th_files WHERE user_id = :u AND file_key = :k AND is_del = false ORDER BY id DESC LIMIT 1",
+                             {"u": user_id, "k": file_key})
+        return int(rows[0]["id"]) if rows else None
+
+    async def phenotypes_exist_for_hash(self, user_id, content_hash):
+        rows = await self._q("SELECT 1 FROM th_phenotype p JOIN th_files f ON f.id = p.file_id"
+                             " WHERE p.user_id = :u AND f.content_hash = :h AND NOT p.deleted LIMIT 1", {"u": user_id, "h": content_hash})
+        return bool(rows)
+
     async def circle_access(self, caller_id, subject_id):
         """The subject's `health_access` toward the caller in any shared, accepted circle —
-        `care_circle.accepted_membership`, the same chokepoint every main-package tool uses."""
-        from mirobody.user.care_circle import accepted_membership
+        the same MAX/GROUP BY rule as `care_circle.accepted_membership`, run on this
+        repo's own pool (the host app's global config is not required)."""
+        from mirobody.user.care_circle import STATUS_ACCEPTED
         try:
-            m = await accepted_membership(int(caller_id), int(subject_id))
+            op, sub = int(caller_id), int(subject_id)
         except (TypeError, ValueError):
             return None
-        return None if m is None else int(m.health_access)
+        rows = await self._q(
+            "SELECT MAX(subject.health_access) AS health_access"
+            "  FROM care_circle_members me"
+            "  JOIN care_circle_members subject ON subject.care_circle_id = me.care_circle_id"
+            " WHERE me.user_id = :op AND subject.user_id = :sub"
+            "   AND me.status = :acc AND subject.status = :acc"
+            "   AND me.deleted_at IS NULL AND subject.deleted_at IS NULL"
+            " GROUP BY subject.user_id", {"op": op, "sub": sub, "acc": STATUS_ACCEPTED})
+        return None if not rows else int(rows[0]["health_access"] or 0)
 
     async def circle_members(self, user_id):
-        from mirobody.user.care_circle import circle_members
+        """Accepted members of every circle the user belongs to (same SQL as
+        mirobody.user.care_circle.circle_members, on this repo's own pool so it
+        does not depend on the host app's global config)."""
+        from mirobody.user.care_circle import STATUS_ACCEPTED
         try:
-            rows = await circle_members(int(user_id))
+            uid = int(user_id)
         except (TypeError, ValueError):
             return []
-        return [{"user_id": r["user_id"], "nickname": r.get("nickname"), "name": r.get("name"), "email": r.get("email")}
-                for r in rows if str(r.get("status", "accepted")) in ("accepted", "1", "True", "true")]
+        rows = await self._q(
+            "SELECT m.user_id AS user_id, m.status AS status, m.nickname AS nickname, u.name AS name, u.email AS email"
+            "  FROM care_circle_members mine"
+            "  JOIN care_circles c ON c.id = mine.care_circle_id AND c.deleted_at IS NULL"
+            "  JOIN care_circle_members m ON m.care_circle_id = c.id AND m.deleted_at IS NULL"
+            "  LEFT JOIN health_app_user u ON u.id = m.user_id"
+            " WHERE mine.user_id = :u AND mine.deleted_at IS NULL AND mine.status = :acc AND m.status = :acc",
+            {"u": uid, "acc": STATUS_ACCEPTED})
+        return [{"user_id": r["user_id"], "nickname": r["nickname"], "name": r["name"], "email": r["email"]} for r in rows]
 
     async def samples_of(self, user_id):
         return await self._q("SELECT id, user_id, file_id, file_key, assay, reference, sample_label, status, variant_count, content_sha256"
@@ -316,9 +387,9 @@ class PgRepo:
     async def add_phenotypes(self, rows):
         n = 0
         for r in rows:
-            await self._q("INSERT INTO th_phenotype (user_id, hpo_id, hpo_label, negated, subject, subject_role, source, source_text, confidence, asserted_at, file_id)"
-                          " VALUES (:user_id, :hpo_id, :hpo_label, :negated, :subject, :subject_role, :source, :source_text, :confidence, :asserted_at, :file_id) RETURNING id",
-                          {"negated": False, "subject": "proband", "subject_role": None,
+            await self._q("INSERT INTO th_phenotype (user_id, hpo_id, hpo_label, negated, subject, subject_role, source, source_text, confidence, asserted_at, file_id, section)"
+                          " VALUES (:user_id, :hpo_id, :hpo_label, :negated, :subject, :subject_role, :source, :source_text, :confidence, :asserted_at, :file_id, :section) RETURNING id",
+                          {"negated": False, "subject": "proband", "subject_role": None, "section": r.get("section"),
                            **{k: r.get(k) for k in ("user_id", "hpo_id", "hpo_label", "source", "source_text", "confidence", "asserted_at", "file_id")},
                            **({"negated": r["negated"]} if "negated" in r else {}), **({"subject": r["subject"]} if r.get("subject") else {}),
                            **({"subject_role": r["subject_role"]} if r.get("subject_role") else {})})
@@ -385,14 +456,15 @@ class PgRepo:
                                                                                                     "series_desc", "instance_count", "deid_status")}})
         return int(rows[0]["id"])
 
-    async def upsert_pedigree(self, family, members):
-        rows = await self._q("INSERT INTO th_pedigree (family_id, label) VALUES (:family_id, :label) ON CONFLICT (family_id) DO UPDATE SET label = EXCLUDED.label RETURNING id",
-                             {"family_id": family["family_id"], "label": family.get("label")})
+    async def upsert_pedigree(self, family, members, owner_id=None):
+        rows = await self._q("INSERT INTO th_pedigree (family_id, label, owner_user_id) VALUES (:family_id, :label, :owner)"
+                             " ON CONFLICT (COALESCE(owner_user_id, ''), family_id) DO UPDATE SET label = EXCLUDED.label RETURNING id",
+                             {"family_id": family["family_id"], "label": family.get("label"), "owner": owner_id})
         pid = int(rows[0]["id"])
         for m in members:
             await self._q("INSERT INTO th_pedigree_member (pedigree_id, user_id, individual_id, paternal_id, maternal_id, sex, affected, is_proband, analysis_only)"
                           " VALUES (:pid, :user_id, :individual_id, :paternal_id, :maternal_id, :sex, :affected, :is_proband, :analysis_only)"
-                          " ON CONFLICT (pedigree_id, individual_id) DO NOTHING RETURNING id",
+                          " ON CONFLICT (pedigree_id, individual_id) DO UPDATE SET user_id = COALESCE(th_pedigree_member.user_id, EXCLUDED.user_id) RETURNING id",
                           {"pid": pid, "is_proband": False, "analysis_only": False, **{k: m.get(k) for k in ("user_id", "individual_id", "paternal_id", "maternal_id", "sex", "affected")},
                            **{k: m[k] for k in ("is_proband", "analysis_only") if k in m}})
         return pid

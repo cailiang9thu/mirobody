@@ -57,3 +57,30 @@ async def test_trio_backfill_reads_parents_from_their_own_accounts():
     assert l2["inheritance"] == "biparental" and l2["is_de_novo"] is False and res["updated"] >= 1
     # membership with access 0 lets the computation run, but the parent's own rows are still not readable
     assert not (await permit(repo, "u1", "u7", "variant")).allowed
+
+
+async def test_ped_after_vcf_still_backfills():
+    """ingest-plan §3.1: the PED may arrive after the parents' VCFs; the import must trigger the backfill."""
+    from mirobody_rare.handlers import backfill_family
+    repo = MemoryRepo()
+    await ingest_vcf(repo, "u1", f"{ROOT}/proband.vcf.gz", sex="M", file_key=f"{ROOT}/proband.vcf.gz")
+    await ingest_vcf(repo, "u7", f"{ROOT}/father.vcf.gz", sex="M", file_key=f"{ROOT}/father.vcf.gz")
+    await ingest_vcf(repo, "u8", f"{ROOT}/mother.vcf.gz", sex="F", file_key=f"{ROOT}/mother.vcf.gz")
+    repo.t["care_circle"] += [{"operator": "u1", "subject": "u7", "access": 0}, {"operator": "u1", "subject": "u8", "access": 0}]
+    await ingest_ped(repo, f"{ROOT}/JD-50.ped", user_ids={"JD-50-P": "u1", "JD-50-F": "u7", "JD-50-M": "u8"})
+    res = await backfill_family(repo, "u1", storage=_LocalStorage())
+    assert res["u1"]["updated"] >= 1
+    assert [v for v in await repo.variants("u1") if v["gene_symbol"] == "L2HGDH"][0]["inheritance"] == "biparental"
+
+
+async def test_same_family_id_from_two_users_are_separate_pedigrees():
+    """PED family ids are lab-local ("FAM1"); two accounts importing the same id must not share a row."""
+    repo = MemoryRepo()
+    p1 = await ingest_ped(repo, f"{ROOT}/JD-50.ped", user_ids={"JD-50-P": "u1"}, owner_id="u1")
+    p2 = await ingest_ped(repo, f"{ROOT}/JD-50.ped", user_ids={"JD-50-P": "u9"}, owner_id="u9")
+    assert p1 != p2
+    assert (await repo.pedigree_of("u1"))["id"] == p1 and (await repo.pedigree_of("u9"))["id"] == p2
+    # re-import by the same owner with a newly linked member updates the link instead of ignoring it
+    await ingest_ped(repo, f"{ROOT}/JD-50.ped", user_ids={"JD-50-P": "u1", "JD-50-F": "u7"}, owner_id="u1")
+    fam = await repo.pedigree_of("u1")
+    assert fam["id"] == p1 and any(m["individual_id"] == "JD-50-F" and m["user_id"] == "u7" for m in fam["members"])

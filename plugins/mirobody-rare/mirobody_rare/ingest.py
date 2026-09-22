@@ -138,13 +138,14 @@ async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None =
         raise
 
 
-async def ingest_ped(repo, path: str | Path, user_ids: dict[str, str] | None = None) -> int:
-    """PED → th_pedigree / th_pedigree_member. `user_ids` maps individual_id → account when known."""
+async def ingest_ped(repo, path: str | Path, user_ids: dict[str, str] | None = None, owner_id: str | None = None) -> int:
+    """PED → th_pedigree / th_pedigree_member, owned by `owner_id` (the uploader): family ids are
+    lab-local, so two owners may import the same id. `user_ids` maps individual_id → account."""
     pg = parse_ped(path)
     fam, rows = pg.to_rows()
     for r in rows:
         r["user_id"] = (user_ids or {}).get(r["individual_id"])
-    return await repo.upsert_pedigree(fam, rows)
+    return await repo.upsert_pedigree(fam, rows, owner_id=owner_id)
 
 
 async def ingest_dicom(repo, user_id: str, path: str | Path, file_id: int, residency: str = "CN") -> dict:

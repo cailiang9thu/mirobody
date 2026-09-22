@@ -88,11 +88,52 @@ async def is_dicom_zip(file) -> bool:
         return False
 
 
+async def backfill_family(repo, user_id: str, storage=None) -> dict:
+    """Trio backfill for `user_id` and for every proband whose pedigree names `user_id` as a
+    parent — run after a VCF lands AND after a PED is imported (ingest-plan §3.1: order-free)."""
+    from .genome import trio_backfill
+    targets = {str(user_id)}
+    fam = await repo.pedigree_of(str(user_id))
+    if fam:
+        me = next((m for m in fam["members"] if str(m.get("user_id")) == str(user_id)), None)
+        if me:
+            for m in fam["members"]:
+                if m.get("user_id") and me["individual_id"] in (m.get("paternal_id"), m.get("maternal_id")):
+                    targets.add(str(m["user_id"]))
+        for m in fam["members"]:                       # PED just arrived: every member with an account is a candidate proband
+            if m.get("user_id"):
+                targets.add(str(m["user_id"]))
+    out = {}
+    for t in sorted(targets):
+        try:
+            out[t] = await trio_backfill(repo, t, storage=storage)
+        except Exception:                                   # noqa: BLE001
+            log.exception("[trio] backfill failed for %s", t)
+            out[t] = {"updated": 0, "skipped": ["error"]}
+    return out
+
+
+def content_hash_of(path: str) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 class _RareHandler(BaseFileHandler):
     kind = "rare"
 
     def get_type_name(self) -> str:
         return self.kind
+
+    @staticmethod
+    def _result(temp_file_path: str, **fields) -> dict[str, Any]:
+        """Every rare handler answers with `content_hash` so th_files carries the bytes' identity
+        (the shipped text path computes it; a binary path that does not leaves the dedup key and
+        the roundtrip file check empty)."""
+        return {"original_text": "", "content_hash": content_hash_of(temp_file_path), **fields}
 
     def _repo(self):
         from .repo import PgRepo
@@ -109,25 +150,12 @@ class VcfHandler(_RareHandler):
         async def _job():
             repo = self._repo()
             await ingest.ingest_vcf(repo, str(ctx.target_user_id), temp_file_path, file_id=None, file_key=unique_filename)
-            # the new sample may complete a trio: for the target as proband, and for any proband
-            # whose pedigree names the target as a parent
-            from .genome import trio_backfill
-            targets = {str(ctx.target_user_id)}
-            fam = await repo.pedigree_of(str(ctx.target_user_id))
-            if fam:
-                me = next((m for m in fam["members"] if str(m.get("user_id")) == str(ctx.target_user_id)), None)
-                if me:
-                    for m in fam["members"]:
-                        if m.get("user_id") and me["individual_id"] in (m.get("paternal_id"), m.get("maternal_id")):
-                            targets.add(str(m["user_id"]))
-            for t in targets:
-                try:
-                    log.info("[trio] backfill for %s: %s", t, await trio_backfill(repo, t))
-                except Exception:                                   # noqa: BLE001
-                    log.exception("[trio] backfill failed for %s", t)
+            log.info("[trio] backfill after VCF: %s", await backfill_family(repo, str(ctx.target_user_id)))
+            from .dx_refresh import refresh_diagnosis
+            log.info("[dx_refresh] after VCF: %s", await refresh_diagnosis(repo, str(ctx.target_user_id)))
         spawn(_job(), name=f"ingest_vcf:{unique_filename}")
-        return {"original_text": "", "file_abstract": "VCF (GRCh38) — variants are being parsed in the background; "
-                                                       "query_variant lists the filtered calls once the sample is ready", "file_name": ctx.filename}
+        return self._result(temp_file_path, file_name=ctx.filename,
+                            file_abstract="VCF (GRCh38) — variants are being parsed in the background; query_variant lists the filtered calls once the sample is ready")
 
 
 class PedHandler(_RareHandler):
@@ -141,11 +169,12 @@ class PedHandler(_RareHandler):
         pg = parse_ped(temp_file_path)
         members = await repo.circle_members(str(ctx.user_id))
         user_ids = map_ped_to_circle(pg, members, uploader_id=str(ctx.target_user_id))
-        pid = await ingest.ingest_ped(repo, temp_file_path, user_ids=user_ids)
+        pid = await ingest.ingest_ped(repo, temp_file_path, user_ids=user_ids, owner_id=str(ctx.target_user_id))
+        spawn(backfill_family(repo, str(ctx.target_user_id)), name=f"trio_backfill:{unique_filename}")
         unmapped = [m.individual_id for m in pg.members if m.individual_id not in user_ids]
-        return {"original_text": "", "file_name": ctx.filename,
-                "file_abstract": f"PED pedigree imported (th_pedigree #{pid}); {len(user_ids)} members linked to care-circle accounts"
-                                 + (f", unlinked: {', '.join(unmapped)} (no account in your care circle yet)" if unmapped else "")}
+        return self._result(temp_file_path, file_name=ctx.filename,
+                            file_abstract=f"PED pedigree imported (th_pedigree #{pid}); {len(user_ids)} members linked to care-circle accounts"
+                                          + (f", unlinked: {', '.join(unmapped)} (no account in your care circle yet)" if unmapped else ""))
 
 
 class DicomHandler(_RareHandler):
@@ -154,9 +183,9 @@ class DicomHandler(_RareHandler):
     async def _process_content(self, ctx, temp_file_path, unique_filename, full_url, language) -> dict[str, Any]:
         row = await ingest.ingest_dicom(self._repo(), str(ctx.target_user_id), temp_file_path, file_id=0)
         status = row.get("deid_status")
-        return {"original_text": "", "file_name": ctx.filename,
-                "file_abstract": (f"DICOM series indexed ({row.get('modality')}, de-identified)" if status == "done"
-                                  else f"DICOM series stored but hidden: de-identification failed on {row.get('phi_tags')}")}
+        return self._result(temp_file_path, file_name=ctx.filename,
+                            file_abstract=(f"DICOM series indexed ({row.get('modality')}, de-identified)" if status == "done"
+                                           else f"DICOM series stored but hidden: de-identification failed on {row.get('phi_tags')}"))
 
 
 #: The entry-point surface: (probe, handler class), tried in order before the shipped handlers.

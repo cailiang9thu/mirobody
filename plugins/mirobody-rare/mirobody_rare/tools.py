@@ -84,7 +84,7 @@ class RareQueryService:
     """`query_phenotype` / `query_variant` / `query_signal_index` / `query_pedigree` (plan §8.1).
     `repo` is injected for tests; the default speaks Postgres through `mirobody.utils.execute_query`."""
 
-    __tools__ = ("query_phenotype", "query_variant", "query_signal_index", "query_pedigree", "query_family_history", "record_consent")
+    __tools__ = ("query_phenotype", "query_variant", "query_signal_index", "query_pedigree", "query_family_history", "record_consent", "resolve_phenotype_review")
 
     def __init__(self, repo=None) -> None:
         self._repo = repo
@@ -218,6 +218,29 @@ class RareQueryService:
         out["family_id"] = (fam or {}).get("family_id")
         out["gaps"] = gaps
         return out
+
+    async def resolve_phenotype_review(self, user_info: dict, review_id: int, hpo_id: str = "", reject: bool = False) -> dict:
+        """Close one item of the phenotype review queue: `hpo_id` writes a clinician-confirmed
+        th_phenotype row; `reject=true` closes it without a row. Only the record owner (or a
+        care-circle member with edit access) may resolve.
+        """
+        caller = self._caller(user_info)
+        repo = self._r()
+        row = await repo.resolve_review(int(review_id), hpo_id or None, caller)
+        if not row:
+            return _asdict(_kt.Envelope(_kt.STATUS_ERROR, data=[], error_class="recoverable", error_kind="no_data", assumptions=("no such review item",)))
+        if str(row.get("user_id")) != caller:
+            d = await _permit(repo, caller, str(row["user_id"]), "phenotype", "individual_return")
+            if not d.allowed or (await repo.circle_access(caller, str(row["user_id"])) or 0) < 2:
+                return _denied("resolving another person's review needs care-circle edit access")
+        if reject or not hpo_id:
+            return _env_dict(_kt.STATUS_OK, [{"id": row["id"], "resolved": "rejected"}], ["closed without a phenotype row"])
+        from .hpo import get_adapter
+        label = get_adapter().label(hpo_id)
+        await repo.add_phenotypes([{"user_id": row["user_id"], "hpo_id": hpo_id, "hpo_label": label, "negated": bool(row.get("negated")),
+                                    "subject": row.get("subject") or "proband", "source": "clinician", "source_text": row.get("source_text"),
+                                    "confidence": None, "file_id": row.get("file_id"), "section": row.get("section")}])
+        return _env_dict(_kt.STATUS_OK, [{"id": row["id"], "resolved": hpo_id, "label": label}], ["written to th_phenotype as source=clinician"])
 
     async def record_consent(self, user_info: dict, scope: str, granted: bool = True, layer: str = "",
                              relationship: str = "self", residency: str = "", cross_border_allowed: bool = False,

@@ -107,6 +107,16 @@ class BaseFileHandler(abc.ABC):
                     file_key=unique_filename,
                     message_id=ctx.message_id,
                 )
+            # 4.6. Plugin text hooks (`mirobody.text_hooks`), beside the indicator extraction:
+            # the rare-disease coder reads the narrative the extractor above discards.
+            if original_text and original_text.strip():
+                from mirobody.collect.files.text_hooks import TextHookContext, _text_hooks
+                from mirobody.utils.tasks import spawn as _spawn
+                for _hook in _text_hooks():
+                    _spawn(_hook(TextHookContext(text=original_text, user_id=str(ctx.target_user_id), operator_id=str(ctx.user_id),
+                                                 file_key=unique_filename, file_name=ctx.filename, message_id=ctx.message_id,
+                                                 content_hash=result_data.get("content_hash"), language=language)),
+                           name=f"text_hook:{unique_filename}")
 
             # 5. Abstract extraction (Common step, but check if already extracted)
             if "file_abstract" in result_data and result_data["file_abstract"]:

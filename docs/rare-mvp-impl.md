@@ -118,10 +118,39 @@ uv run haenv run inputs/rare_coding-p1.job.yaml --models mirobody-coding --overr
 | `rc_orpha_top1` | 0.9833(59/60)→ **1.000**(附件可见后,SMN1 纯合变异把 SMA 提升为首诊) |
 | `rc_hgnc_ok` | 0.7679(43/56,13 例按规则弃权)→ **1.000**(56/56,由变异证据定) |
 | `rc_variant_hit` / `rc_variant_gt_ok` / `rc_variant_inh_ok` / `rc_gene_from_variant` | **1.000 / 1.000 / 1.000(40 trio) / 1.000**(每例 1 真值 + 2 隐性携带诱饵) |
+| 同上,P5e 竞争病诱饵 + gnomAD 过滤(09-21) | 0.964 / 1.000 / 1.000 / 0.964 —— 掉的是奠基者突变(HMBS fin、MEFV mid)被 popmax 一刀切删掉 |
+| 同上,P5f popmax 改大陆人群白名单(09-22) | **1.000 / 1.000 / 1.000 / 1.000**(56/56);第二个坑是 gnomAD v4 的 HGDP/1KG 小队列(`hgdp:maya` n≈38),黑名单排不到,改白名单 `afr/amr/eas/nfe/sas` |
 
 **别读高**:层2 的诱饵是隐性携带(0/1),骨架是 GIAB 健康基因组、背景无其它 P/LP 命中,没有 gnomAD 频率与 VEP 后果;真实 WES 的候选集要难得多。
 题面是 HPO 中文标签经模板渲染的句子,词表匹配在这种题面上按构造接近天花板。这轮证明的是链路、对齐、否定/主体、不猜策略;
 真实病历上的抽取质量要靠 D9 金标(`rareDieaseCollect` 30 份人工标注)——那是换 prompt / 换模型的唯一裁判,尚未做。
+
+## 往返比对:多实例入库 → 回读 → 与原始目录对照(2026-09-22,ingest-plan §3)
+
+`tools/roundtrip_check.py --cases JD-50,JD-52,JD-55,JD-58,JD-72,JD-77 --batch results/joint_dx/rare_coding-p1/20260921-112815 --out reports/roundtrip/20260922 --concurrency 2`
+——每例一个账号 + 亲属账号进关爱圈(access=0),顺序 圈 → PED → 父母 VCF → 先证者 VCF → 病历 md → DICOM,走 28085 的 WebSocket 上传(与 web 同入口),回读走原始 SQL + 七个查询工具两条路。
+产出 `report.json` / `samples.md`(每层每例抽 ≤3 行左右并排,长内容截片段,末行计数)/ `summary.html`(米黄底蓝字、无 JS、窄屏堆叠)。
+
+| 层 | 条数 | 相同 | 设计性差异 | 真差异 |
+| --- | --- | --- | --- | --- |
+| 文件(sha256 逐字节) | 31 | 31 | 0 | 0 |
+| 样本 | 16 | 16 | 0 | 0 |
+| 变异(真值 + 诱饵 + 家长) | 72 | 40 | 32(gnomAD 常见变异:薄壳丢、库里留且带频率) | 0 |
+| 注释(ClinVar 版本 / gnomAD) | 40 | 40 | 0 | 0 |
+| 遗传来源(trio) | 5 | 5 | 0 | 0 |
+| 家系(PED ↔ 圈成员) | 6 | 6 | 0 | 0 |
+| 影像(DICOM deid 索引) | 1 | 1 | 0 | 0 |
+| 表型(金标句 ↔ th_phenotype) | 51 | 50 | 1(「便秘较明显」歧义进 review 表) | 0 |
+| 诊断 | 6 | 6 | 0 | 0 |
+| 权限(本人可读 / 父亲 access=0 拒) | 11 | 6 | 5(预期拒) | 0 |
+
+合计 250 条:相同 201 · 设计性 33 · 传输 0 · 版本 0 · 顺序 0 · 权限 5 · 编码 0。三轮才归零,前两轮逼出的都是**代码缺陷**,各留了红测试:
+
+1. `PgRepo.circle_members` 按字符串 `"accepted"` 过滤,而 `care_circle_members.status` 是 SMALLINT 2 ⇒ 圈成员永远为空,PED 三人只挂上先证者,trio 回填读不到家长样本,遗传来源全部 `unknown`。同时把 `circle_access` / `circle_members` 改到插件自己的 asyncpg 池上(不再依赖主包全局配置,测试进程也能跑真库)。
+2. 病历钩子只按表型排诊断,VCF 先到/后到都不重排 ⇒ JD-77 停在 Miyoshi 肌病。加 `dx_refresh.py`(与薄壳同一条促升规则,两个入口都调)。
+3. 比对脚本本身两处:权限层拿了循环末尾角色的 `got` 当本人行数;gnomAD 常见变异 EXTRA 行是"库里保留带频率"的设计,不是编码错。
+
+**读法**:这证明的是同一份文件经 web 同款入口入库后能原样回读、多实例不串账号、亲属数据按关爱圈隔离;表型层的"原始"仍是 haenv 合成句,真实病历质量待 D9 金标。
 
 ## 部署:前端 + 后端(2026-09-21)
 

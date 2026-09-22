@@ -65,3 +65,23 @@ async def test_pg_signal_index_roundtrip():
     assert row["deid_status"] == "done" and row["id"]
     r = await RareQueryService(repo).query_signal_index({"user_id": uid})
     assert any(x["id"] == row["id"] and x["study_date"] for x in r["data"])
+
+
+async def test_pg_circle_members_are_accepted_integer_status():
+    """care_circle_members.status is SMALLINT (2 = accepted); a string filter drops everyone."""
+    from mirobody_rare.repo import PgRepo
+    repo = PgRepo()
+    pool = await repo._p()
+    uids = await pool.fetch("SELECT id FROM health_app_user WHERE email IN ('pytest-rare-a@rare.test','pytest-rare-b@rare.test') ORDER BY email")
+    if len(uids) < 2:
+        await pool.execute("INSERT INTO health_app_user (email, name, is_del) VALUES ('pytest-rare-a@rare.test','a',false), ('pytest-rare-b@rare.test','b',false) ON CONFLICT DO NOTHING")
+        uids = await pool.fetch("SELECT id FROM health_app_user WHERE email IN ('pytest-rare-a@rare.test','pytest-rare-b@rare.test') ORDER BY email")
+    a, b = int(uids[0]["id"]), int(uids[1]["id"])
+    await pool.execute("DELETE FROM care_circle_members WHERE care_circle_id IN (SELECT id FROM care_circles WHERE owner_user_id=$1)", a)
+    await pool.execute("DELETE FROM care_circles WHERE owner_user_id=$1", a)
+    cid = await pool.fetchval("INSERT INTO care_circles (owner_user_id, name) VALUES ($1,'t') RETURNING id", a)
+    await pool.execute("INSERT INTO care_circle_members (care_circle_id,user_id,role,status,health_access) VALUES ($1,$2,2,2,2)", cid, a)
+    await pool.execute("INSERT INTO care_circle_members (care_circle_id,user_id,role,status,health_access,nickname) VALUES ($1,$2,0,2,0,'F1-F')", cid, b)
+    members = await repo.circle_members(str(a))
+    assert any(m["user_id"] == b and m["nickname"] == "F1-F" for m in members)
+    assert await repo.circle_access(str(a), str(b)) == 0

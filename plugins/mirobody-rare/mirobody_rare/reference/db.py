@@ -54,7 +54,7 @@ async def close_pool() -> None:
         await pool.close()
 
 
-SCHEMA_FILES = ("32_phenotype.sql", "33_variant.sql", "34_pedigree_consent.sql", "35_signal_index.sql", "36_rare_reference.sql")
+SCHEMA_FILES = ("32_phenotype.sql", "33_variant.sql", "34_pedigree_consent.sql", "35_signal_index.sql", "36_rare_reference.sql", "37_phenotype_review.sql")
 
 
 def schema_dir() -> Path:
