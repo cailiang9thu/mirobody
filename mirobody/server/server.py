@@ -430,12 +430,13 @@ class Server:
         config.print_predefined_codes()
 
         import uvicorn
+        from mirobody.server.middleware_stack import static_response_headers
         asgi_server = uvicorn.Server(
             uvicorn.Config(
                 app         = app,
                 host        = config.http.host,
                 port        = config.http.port,
-                headers     = config.http.headers,
+                headers     = static_response_headers(config.http.headers),
                 log_level   = config.log.level if config.log.level <= logging.DEBUG else logging.WARNING
             )
         )

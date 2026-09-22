@@ -162,6 +162,9 @@ uv run haenv run inputs/rare_coding-p1.job.yaml --models mirobody-coding --overr
 | 登录 | `PRODUCTION: false` 的演示账号 `you@mirobody.ai` / 验证码 `111111`(`EMAIL_PREDEFINE_CODES`);JWT_KEY 固定在环境文件里,重启不失效 |
 | CORS | 覆盖文件 `mirobody-rare.deploy.yaml` 的 `HTTP_HEADERS.Access-Control-Allow-Origin` = 前端源 |
 | 主包改动 | `factory.py` 的 `mirobody.file_handlers` 入口(首次落地时替换文本未命中,只加了辅助函数;已补上循环并经真实上传验证) |
+| 模型(2026-09-22) | 聊天默认 `gpt-5.4-mini`(`config.llm.yaml` 第一条 + 覆盖文件 `DEFAULT_MODEL`;直连 api.openai.com,工具调用与 temperature 0.1 已验);`gemini-flash` = `google/gemini-3.8-flash` 走 OpenRouter——Google 直连在本机地区答 400 "User location is not supported",直连条目改名 `gemini-flash-direct` 留给可用地区;OpenRouter 路径的多工具二轮实测可用(4 次 tool_call 后成文)。网页模型选择器的 id 改成与后端 `MODELS` 别名一致(`gpt-5.4-mini / gemini-flash / claude-sonnet / qwen / gpt`),默认选 `gpt-5.4-mini` |
+| Web 端修复(2026-09-22,见 ingest-plan §3.9) | 三处 `accept` + JS 类型门放行 `.vcf .gz .ped .zip .md`;`chatSSE` 适配后端 `/api/chat` 字段白名单与 `type: text/tool_call/tool_result` 事件;主包 `static_response_headers` 去掉 uvicorn 静态头里的 `Access-Control-*`(预检曾因 `*, *` 被拒);`Allow-Headers: '*'` 覆盖前端 `X-Language` |
+| Web 端已知缺口 | 对话页 `ChatInput` 上传走 REST `/api/v1/data/upload-health-report`(本后端无路由,405),基因组文件要从 `/upload` 页传;`/api/ws/file-progress` 进度路由后端没有,只影响进度条 |
 
 **数据入库后对话能否读出**:能,已实测。
 

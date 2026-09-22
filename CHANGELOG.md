@@ -1,5 +1,17 @@
 ## Unreleased — 1.5.0
 
+- **`gemini-flash` chat entry now rides OpenRouter.** Google's own endpoint answers 400
+  FAILED_PRECONDITION ("User location is not supported for the API use.") from some regions,
+  which surfaced as `GoogleInvalidRequestError` on every Gemini chat turn. The native-client
+  entry is kept as `gemini-flash-direct`. `gpt-5.4-mini` is the first `MODELS` entry (chat
+  default when `DEFAULT_MODEL` is unset). Tell: `mirobody doctor` lists chat=gpt-5.4-mini.
+- **CORS preflight rejected by browsers when `HTTP_HEADERS` sets `Access-Control-*`.** The same
+  header list fed uvicorn's static response headers AND `CORSMiddleware`, so every response carried
+  `access-control-allow-origin` twice and Chrome refused the preflight ("multiple values '*, *'").
+  Now `middleware_stack.static_response_headers` keeps only the non-CORS entries for uvicorn.
+  Tell: `curl -i -X OPTIONS … -H Origin:…` shows one `access-control-allow-origin` line
+  (`mirobody/tests/test_static_headers.py`).
+
 ② Translate is rebuilt, vocabulary and data layer together. The bundle is cut
 fresh from LOINC 2.83 by one rule in one pass; every reading, whatever brought
 it in, is one row of an append-only observation table with its coding beside

@@ -94,11 +94,13 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 
 | # | 验收项 | 测试 | 状态 |
 | --- | --- | --- | --- |
-| 3d.1 | `ChatInput` / `upload` 页 `accept` 含 `.vcf .gz .ped .zip` | `test_web_playwright.py`(待写;改前红) | ❌ |
-| 3d.2 | 五个文件经页面上传到 completed,`th_files` 五行、`content_hash` = 本地 sha256 | 同上 | ❌ |
-| 3d.3 | 三问(变异 / 家族史 / 表型)回复含真值,页面出现工具调用块 | 同上 | ❌ |
-| 3d.4 | 父亲账号问先证者被拒,库无新增 | 同上 | ❌ |
-| 3d.5 | 失败留截图 + trace | 同上 | ❌ |
+| 3d.1 | `/upload` 与 `/chat` 的 `accept` 含 `.vcf .gz .ped .zip .md`(改前红:三处只认图片/PDF/txt/Excel,txt 还要 WeGene 头) | `test_web_playwright.py::test_3d1_accept_lists_genomic_extensions` | ✅ |
+| 3d.2 | PED + VCF + 病历 md 经 `/upload` 页(选本人为 share member)上传,`th_files.content_hash` = 本地 sha256、样本 ready、表型有行 | `test_3d2_page_upload_lands_files_with_matching_hashes` | ✅ |
+| 3d.3 | 对话页三问(变异 / 表型 / 家族史)各出现 Query Variant / Query Phenotype / Query Family History 工具卡,回复含真值基因与金标 HPO 标签 | `test_3d3_chat_reads_back_through_tools` | ✅ |
+| 3d.4 | "Query For" 选择器跟随 health_access:先证者看不到 access=0 的父亲;父亲看得到 access=2 的先证者(owner 共享,读到先证者数据是设计而非泄漏;工具侧 permit 同规则,API 往返「权限」层已验) | `test_3d4_query_for_selector_follows_health_access` | ✅ |
+| 3d.5 | 失败留截图(`reports/roundtrip/web/<test>/test-failed-1.png`;本轮四次失败排障全靠它) | pytest-playwright `--screenshot only-on-failure` | ✅ |
+| 3d.7 | 浏览器预检:`Access-Control-Allow-Origin` 不重复(改前 `*, *` 被 Chrome 拒);前端 `X-Language` 头被 `Allow-Headers` 覆盖 | `mirobody/tests/test_static_headers.py`(主包) | ✅ |
+| 3d.8 | 对话页 `/api/chat` 只发白名单字段、SSE `text/tool_call/tool_result` 映射到卡片(改前 `code -4`,页面 "No content available") | `test_3d3`(同一条链路) | ✅ |
 | 3d.6 | 每例入库前按账号清库行 **与存储字节**;`--purge-orphans` 只删无引用 key | `tools/roundtrip_check.py::cleanup / purge_orphans`(2026-09-22 实跑:82 孤儿清除,45 引用保留) | 🟡 未固化成测试 |
 
 ## 4. 接口 · D5(§10)

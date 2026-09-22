@@ -41,4 +41,4 @@ mirobody_rare = ["config.yaml"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-markers = ["e2e: needs a running deployment (MIROBODY_RARE_E2E_BASE)"]
+markers = ["e2e: needs a running deployment (MIROBODY_RARE_E2E_BASE)", "web: Playwright against a running web + API deployment (MIROBODY_RARE_WEB_BASE)"]

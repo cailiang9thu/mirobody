@@ -22,6 +22,15 @@ from .middlewares import (
 logger = logging.getLogger(__name__)
 
 
+def static_response_headers(http_headers) -> list[tuple[str, str]]:
+    """The HTTP_HEADERS entries uvicorn may stamp on every response: everything EXCEPT the
+    Access-Control-* ones, which CORSMiddleware already emits per request. Sending those
+    through both paths duplicates them ("access-control-allow-origin: *, *") and browsers
+    reject the preflight."""
+    items = list(http_headers.items()) if isinstance(http_headers, dict) else list(http_headers or [])
+    return [(k, v) for k, v in items if not str(k).lower().startswith("access-control-")]
+
+
 def build_middlewares(
     *,
     http_headers=None,

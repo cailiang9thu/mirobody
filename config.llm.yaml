@@ -58,6 +58,15 @@
 # The chat picker shows the entries whose key is present, in this order; the
 # FIRST is the default (or set DEFAULT_MODEL).
 MODELS:
+  gpt-5.4-mini:
+    # Default chat model for the rare-disease test deployment (2026-09-22): tool calls
+    # and temperature 0.1 verified on /v1/chat/completions; no reasoning_effort needed.
+    llm_type: openai
+    api_key: OPENAI_API_KEY
+    base_url: https://api.openai.com/v1
+    model: gpt-5.4-mini
+    temperature: 0.1
+    supports_image: true
   claude-sonnet:
     llm_type: openai
     api_key: OPENROUTER_API_KEY
@@ -74,23 +83,26 @@ MODELS:
     temperature: 0.1
     supports_image: true
   gemini-flash:
-    # The ONE chat entry that is not an OpenAI-compatible endpoint, and the
-    # reason is the tool loop. Gemini 3.x attaches a `thought_signature` to
-    # every functionCall part and REQUIRES it back verbatim on the next turn;
-    # the OpenAI-compatible endpoint has nowhere to carry it, so the signature
-    # is lost in LangChain's round trip and the second turn is:
-    #     400 Function call is missing a thought_signature in functionCall
-    #         parts. … function call `default_api:ls`, position 2
-    # Measured 2026-09-10: bare HTTP non-streaming (echoing the vendor's own
-    # assistant message back) works; every streaming shape 400s, and no config
-    # switch on the compat path recovers it — `disable_streaming` included.
-    # `langchain-google-genai` carries the signature explicitly (its
-    # `__gemini_function_call_thought_signatures__`), which is why the floor
-    # below it in pyproject.toml is pinned.
-    #
-    # Extraction is NOT affected and stays on the compat endpoint
-    # (`gemini-utils`): it is a single call with no second turn, so there is no
-    # signature to return. One vendor, two transports, for that one reason.
+    # Google's own endpoint answers 400 FAILED_PRECONDITION "User location is not
+    # supported for the API use." from this deployment's region (measured 2026-09-22),
+    # so the chat entry rides OpenRouter. The thought_signature caveat below applied to
+    # Google's OpenAI-compatible endpoint; OpenRouter returns the signature inside
+    # `reasoning_details` and replays it, and the two-turn tool loop was verified here
+    # (query_variant -> answer) before this switch was kept.
+    llm_type: openai
+    api_key: OPENROUTER_API_KEY
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.8-flash
+    temperature: 1.0
+    supports_image: true
+  gemini-flash-direct:
+    # The vendor's native client (langchain-google-genai) — the ONE chat entry that is not
+    # an OpenAI-compatible endpoint, kept for regions Google serves. Gemini 3.x attaches a
+    # `thought_signature` to every functionCall part and REQUIRES it back verbatim on the
+    # next turn; Google's OpenAI-compatible endpoint has nowhere to carry it, so on that
+    # path the second turn is 400 "Function call is missing a thought_signature"
+    # (measured 2026-09-10; no config switch recovers it, `disable_streaming` included).
+    # Extraction (`gemini-utils`) stays on the compat endpoint: single call, no second turn.
     llm_type: google-genai
     api_key: GOOGLE_API_KEY
     model: gemini-3.8-flash

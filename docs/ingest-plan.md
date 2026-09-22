@@ -209,6 +209,21 @@ CREATE INDEX IF NOT EXISTS idx_th_phenotype_review_open ON th_phenotype_review (
 | 权限 | 用父亲账号登录再问 "查询 <先证者> 的变异" | 断言回复是拒绝(`denied` / "未授权"),且 DB 无新增行 |
 | 留证 | `--screenshot only-on-failure --video retain-on-failure --tracing retain-on-failure` | 产物进 `reports/roundtrip/<ts>/web/` |
 
+**实跑后修正的三个前置(2026-09-22)**:
+1. 对话页 `ChatInput` 的上传走 REST `POST /api/v1/data/upload-health-report`(`dataRequestInstance`),这个后端**没有该路由(405)**;只有 `/upload` 页接的是 `/ws/upload-health-report`。
+   所以页面上传用例走 `/upload`,读回走 `/chat`。对话页要能传基因组文件,得把它改到 WebSocket hook 上(未做,记 §6)。
+2. `/upload` 页不选"share member"不会开始(`请选择受益人`);后端 `/api/beneficiary-users` 列表总含本人(`is_current_user`),用例按邮箱前缀点选本人。
+3. 浏览器预检被 `Access-Control-Allow-Origin: *, *` 拒掉:`HTTP_HEADERS` 同时喂给 uvicorn 静态头和 CORSMiddleware,每个响应带两份。
+   主包修法 `middleware_stack.static_response_headers`(uvicorn 只拿非 `Access-Control-*` 的头),红测试 `mirobody/tests/test_static_headers.py`;此前 curl / aiohttp 都不做预检,所以 API 往返没暴露。
+   另:前端自定义头 `X-Language` 不在 `Allow-Headers` 里,部署 yaml 改为 `'*'`(无凭据模式下浏览器接受)。
+4. 页面还连 `ws://…/api/ws/file-progress`(进度推送),后端没有该路由,只影响进度条,不影响上传。
+5. 对话页发 `/api/chat` 用的是 `{content, agent, history, …}`,后端按白名单校验(`code -4`,接受 `question/session_id/provider/query_user_id/user_name/question_id/language/file_list`),
+   且流式事件是 `{type: text|tool_call|tool_result}` 而页面 store 认 `{content, tool_use, tool_result}`。修在 `service/api.ts::chatSSE` 一处适配(发送裁字段、接收改名),store 与卡片不动。
+6. 权限用例改成确定性的:页面 "Query For" 由 `/api/beneficiary-users`(= `accepted_membership`,health_access ≥ 1)喂,先证者看不到 access=0 的父亲、父亲看得到 access=2 的先证者。
+   父亲切到先证者后读到先证者变异**是 owner 共享(access=2)的设计**,不是泄漏;工具侧 `permit` 同一规则(API 往返「权限」层验的是先证者读父亲 → 拒)。靠 LLM "拒绝"措辞断言的版本不稳定,弃。
+
+**结果(2026-09-22)**:`test_web_playwright.py` 4/4 通过(3d.1–3d.4),失败截图机制在排障中用了四次(3d.5)。清单进 rare-mvp-testing.md 3d。
+
 **与 API 往返的对齐**:上传完成后直接复用 `compare_case()` 的九层比对(同一个 `report.json` 加一栏 `via=web`),不重写断言;
 UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的工具调用。清理复用 `cleanup(uids)`,并追加 `th_messages` 按 user_id 删。
 
@@ -235,8 +250,8 @@ UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的�
 ## 6. 未实施 / 未测试清单(2026-09-22 盘点,按"缺什么"分组)
 
 **A. 没实现的功能**
-1. Web 页面选不到 VCF/PED(`accept` 白名单,§3.9 前置)。
-2. Playwright 页面级验证(§3.9)。
+1. ~~Web 页面选不到 VCF/PED~~(2026-09-22 修:三处 `accept` + JS 类型门 + 免 20 MB 上限,含 `.md`)。
+2. ~~Playwright 页面级验证~~(2026-09-22 做:4 条用例全绿,§3.9)。新缺口:对话页 `ChatInput` 的上传仍走 REST `/api/v1/data/upload-health-report`(本后端无路由),要改到 WebSocket hook;`/api/ws/file-progress` 进度路由后端没有。
 3. 三级同意书写入(plan §7 D6):往返里 `th_consent` 为 0 行,`permit` 只靠关爱圈 `health_access` 放行;同意书从未被写入或校验。
 4. 图表/位图分流(plan §14.3 ③;testing 1.6 / 1.8):阶段一只在 review 表记 `document_has_images`,没有检出与 md5 去重。
 5. 后台处理队列(plan §17.3;testing 6.5):`mirobody worker` 依赖 Redis 做锁与任务源,本机无 Redis,VCF 解析仍在 server 进程内 `spawn`;`/api/chat` 处理期 p95 未测。
