@@ -103,6 +103,14 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3d.8 | 对话页 `/api/chat` 只发白名单字段、SSE `text/tool_call/tool_result` 映射到卡片(改前 `code -4`,页面 "No content available") | `test_3d3`(同一条链路) | ✅ |
 | 3d.6 | 每例入库前按账号清库行 **与存储字节**;`--purge-orphans` 只删无引用 key | `tools/roundtrip_check.py::cleanup / purge_orphans`(2026-09-22 实跑:82 孤儿清除,45 引用保留) | 🟡 未固化成测试 |
 
+## 3e. 叙述病历编码(期刊体 Markdown,haenv `rare_coding-p3`)
+
+| # | 验收项 | 测试 | 状态 |
+| --- | --- | --- | --- |
+| 3e.1 | 整篇病历编码:每条断言带 `char_span` 可切回文件,亲属句归对角色,阴性句 polarity=absent,生活事件句不编码 | `test_narrative_coding.py` 四条(`coding.apply_narrative`) | ✅ |
+| 3e.2 | 章节标题判定:句子不得被当成标题(`查体无听力受损。`/`母亲有糖尿病史。`),Markdown 与裸章节名仍能切分 | `test_text_hook.py::test_a_sentence_is_not_a_heading…` / `…markdown_and_bare_section_names_still_split`(改前红:7 条发现丢失) | ✅ |
+| 3e.3 | haenv 侧读数:术语召回 / 位置对位 / 极性 / 噪声弃权 | `rc_narr_recall` 0.991 · `rc_narr_span_ok` 0.991 · `rc_narr_polarity_ok` 1.000 · `rc_narr_noise_abstain` 1.000(20 例 222 条金标句 + 55 条噪声句) | ✅ |
+
 ## 4. 接口 · D5(§10)
 
 | # | 验收项 | 测试 | 状态 |

@@ -22,16 +22,38 @@ _MCQ = re.compile(r"^\s*[A-EＡ-Ｅ][\.．、)）]\s*\S")
 _MAX_CHARS = 200_000
 
 
+_SENT_END = re.compile(r"[。．.！!？?；;、,，]\s*$")
+
+
+def _is_heading(line: str) -> str:
+    """The section name this line opens, or "" when it is body text.
+
+    A markdown heading always is one. A bare line only is one when it is the section NAME —
+    a known name, optionally with a few characters of qualifier — and does not end in sentence
+    punctuation. Matching `任一已知词 in name` instead cost real findings: `查体无听力受损。`
+    contains 查体 and `母亲有糖尿病史。` contains 病史, so both were filed as headings and their
+    findings were never coded (7 of 222 gold terms in haenv batch rare_coding-p3, 2026-09-22).
+    """
+    m = _HEADING.match(line)
+    if not m:
+        return ""
+    name = m.group(1).strip()
+    if not name:
+        return ""
+    if line.lstrip().startswith("#"):
+        return name
+    if _SENT_END.search(name):
+        return ""
+    return name if any(name == k or (name.startswith(k) and len(name) <= len(k) + 4) for k in _KNOWN) else ""
+
+
 def split_sections(text: str) -> list[tuple[str, str]]:
-    """[(section, body)] by markdown / numbered headings; a heading counts when it is short and
-    names a known clinical section or is a markdown heading."""
+    """[(section, body)] by markdown / numbered headings; see `_is_heading` for what counts."""
     out: list[tuple[str, str]] = []
     cur, buf = "", []
     for line in text.replace("\r", "").split("\n"):
-        m = _HEADING.match(line)
-        name = m.group(1).strip() if m else ""
-        is_head = bool(m) and (line.lstrip().startswith("#") or any(k in name for k in _KNOWN)) and len(name) <= 24
-        if is_head and name and not (line.lstrip().startswith("#") and name in ("出院小结", "病例报告") and not out):
+        name = _is_heading(line)
+        if name and not (line.lstrip().startswith("#") and name in ("出院小结", "病例报告") and not out):
             if cur or buf:
                 out.append((cur, "\n".join(buf)))
             cur, buf = name, []

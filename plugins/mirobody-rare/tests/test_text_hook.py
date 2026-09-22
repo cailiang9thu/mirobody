@@ -72,3 +72,29 @@ async def test_resolve_review_tool_writes_clinician_row():
     rows = await repo.phenotypes("u1")
     assert rows and rows[0]["hpo_id"] == "HP:0010547" and rows[0]["source"] == "clinician"
     assert repo.t["th_phenotype_review"][0]["resolved_hpo"] == "HP:0010547"
+
+
+def test_a_sentence_is_not_a_heading_even_when_it_starts_with_a_section_word():
+    """`查体无听力受损。` opens with 查体 and is short, so the old rule filed it as a SECTION
+    heading — and a heading is not coded, so the finding was silently lost (7 of 222 gold
+    terms in haenv batch rare_coding-p3). A line that ends in sentence punctuation is a
+    sentence; a section name is the name itself, not a name plus a clause."""
+    from mirobody_rare.text_hook import assertions_of, split_sections
+    doc = ("## 体格检查\n生命体征平稳，神志清楚。\n查体无听力受损。\n查体未见肝大。\n"
+           "既往史：无特殊。\n现病史\n起病初出现癫痫发作。\n")
+    names = [n for n, _ in split_sections(doc)]
+    assert "体格检查" in names and "现病史" in names
+    assert not any("听力受损" in n or "肝大" in n or "无特殊" in n for n in names), names
+    texts = [a.text for _, a in assertions_of(doc)]
+    assert any("听力受损" in t for t in texts), texts
+    assert any("肝大" in t for t in texts), texts
+    pol = {a.text: a.polarity for _, a in assertions_of(doc)}
+    assert all(v == "absent" for k, v in pol.items() if "听力受损" in k or "肝大" in k)
+
+
+def test_markdown_and_bare_section_names_still_split():
+    from mirobody_rare.text_hook import split_sections
+    doc = "# 病例 X\n\n## 主诉\n因头痛就诊。\n\n家族史\n母亲有糖尿病史。\n\n实验室检查：\n血常规正常。\n"
+    names = [n for n, _ in split_sections(doc)]
+    for want in ("主诉", "家族史", "实验室检查"):
+        assert want in names, (want, names)

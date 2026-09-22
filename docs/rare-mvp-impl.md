@@ -167,6 +167,28 @@ uv run haenv run inputs/rare_coding-p1.job.yaml --models mirobody-coding --overr
 HTML 报告:`haenv-rare/reports/rare_coding-p2/20260922-053351/eval-rare_coding-p2.html`(`tools/eval_html.py`)。
 出题侧发现:TCIA `STS_032` 的 `PatientName` 与 ID 不等,被发射门当 PHI 拦下,出题改为跳过该患者(haenv-rare 决策文档 P6 段)。
 
+## 读数(haenv `rare_coding-p3`,20 例期刊体病历 + VCF/PED + DICOM,2026-09-22)
+
+批次 `20260922-095441`。题包改了三处(haenv-rare 决策文档 P7 段):病例文本由模板短句换成**期刊体八节 Markdown**
+(章节骨架取自 84 篇开放获取病例报告的统计,内容全部由金标填充,均 1078 B);影像按病种如实配对并标 tier;
+序列只取 CT/MR 且 ≥20 实例、单例 ≤150 MB、患者不放回。
+
+| 判据 | 读数 |
+| --- | --- |
+| 叙述病历:`rc_narr_recall` / `rc_narr_span_ok` | **0.991 / 0.991**(222 条金标句) |
+| 叙述病历:`rc_narr_polarity_ok` / `rc_narr_noise_abstain` | 1.000 / 1.000(55 条生活事件噪声句全部弃权) |
+| 层 1:`rc_coverage` / `rc_hpo_strict` / `rc_polarity_ok` / `rc_subject_ok` / `rc_wrong_rate` | 1.000 / 0.991 / 1.000 / 1.000 / 0 |
+| 层 2:`rc_orpha_top1` / `rc_hgnc_ok` / `rc_variant_hit` / `rc_variant_inh_ok` / `rc_gene_from_variant` | 1.000 全线(15 例 trio) |
+| 层 4:`rc_signal_index_ok` / `rc_signal_phi_free` | 1.000 / 1.000 |
+
+**这一轮抓到的缺陷**:`text_hook.split_sections` 按「已知词 in 名字」判章节标题,`查体无听力受损。`(含"查体")与
+`母亲有糖尿病史。`(含"病史")被当成标题 ⇒ 标题不编码,7 条阴性发现整句丢失。改为标题须是章节**名本身**
+(已知词 ± 4 字)且不以句末标点结尾;`rc_narr_span_ok` 由 0.941 回到 0.991。
+逐句喂 ledger 时 `rc_coverage` 一直是 1.000,只有整篇文档才暴露它 —— 这是加叙述层的直接收益。
+另加 `coding.apply_narrative`:薄壳按上传文本钩子的同一条路径编码病历文件,每行带 `char_span`。
+
+HTML 报告:`haenv-rare/reports/rare_coding-p3/20260922-095441/eval-rare_coding-p3.html`。
+
 ## 部署:前端 + 后端(2026-09-21)
 
 | 项 | 值 |

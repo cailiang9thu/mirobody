@@ -52,6 +52,7 @@ class CodingResult:
     gene: dict = field(default_factory=dict)
     genome: dict | None = None
     signals: list[dict] = field(default_factory=list)
+    narrative: dict | None = None
     present_hpo: list[str] = field(default_factory=list)
 
     def to_solver(self) -> dict:
@@ -60,6 +61,7 @@ class CodingResult:
                 "diagnosis": self.diagnosis, "gene": self.gene,
                 "variants": (self.genome or {}).get("variants", []),
                 "signals": self.signals,
+                **({"narrative": self.narrative} if self.narrative is not None else {}),
                 "genome": {k: v for k, v in (self.genome or {}).items() if k != "variants"},
                 "differential_codes": [{"orpha": h.orpha, "name": h.name, "score": h.score,
                                         "matched": list(h.matched), "against": list(h.against),
@@ -200,6 +202,28 @@ def apply_signals(res: CodingResult, attachments: dict | None) -> CodingResult:
             d = {"path": str(p), "deid_status": "sha_mismatch"}
         out.append(d)
     res.signals = out
+    return res
+
+
+def apply_narrative(res: CodingResult, attachments: dict | None) -> CodingResult:
+    """The narrative Markdown attachment, coded as a document: every sentence through the same
+    rules the upload text hook uses, so what a reader would get from the file and what the
+    evaluation sees are one code path. Each assertion carries `char_span` into the file's own
+    text, which is what makes a coded row traceable back to the record."""
+    from pathlib import Path
+    nar = (attachments or {}).get("narrative") or {}
+    p = Path(nar.get("path") or "")
+    if not nar.get("path") or not p.is_file():
+        return res
+    from .text_hook import assertions_of
+    text = p.read_text(encoding="utf-8")
+    coded = code_assertions(assertions_of(text))
+    res.narrative = {
+        "path": str(p), "chars": len(text),
+        "assertions": [{**c.to_solver(), "char_span": list(c.assertion.char_span), "section": c.assertion.section}
+                       for c in coded.coded],
+        "abstained": coded.abstained,
+    }
     return res
 
 
