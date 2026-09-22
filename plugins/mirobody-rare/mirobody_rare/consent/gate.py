@@ -48,14 +48,17 @@ async def permit(repo, caller_id: str, subject_id: str, layer: str, purpose: str
                 return Decision(True, f"care_circle:access={access}")
             if int(access) < 1:
                 return Decision(False, f"care_circle: subject grants no health access (access={access})")
-    rows = await repo.consents(subject_id)
+    # The NEWEST row for this scope (layer-wide or this layer) decides: consents are
+    # append-only, so `granted=false` recorded later is the revocation (record_consent's
+    # contract), and an older `granted=true` must not outlive it.
+    rows = sorted(await repo.consents(subject_id), key=lambda r: int(r.get("id") or 0), reverse=True)
     for r in rows:
-        if r.get("scope") != purpose or not r.get("granted") or r.get("revoked_at"):
+        if r.get("scope") != purpose or r.get("layer") not in (None, "", layer):
             continue
-        if r.get("layer") not in (None, "", layer):
-            continue
+        if not r.get("granted") or r.get("revoked_at"):
+            return Decision(False, f"consent#{r.get('id', '?')} scope={purpose} revoked")
         if cross_border and not r.get("cross_border_allowed"):
-            continue
+            return Decision(False, f"consent#{r.get('id', '?')} scope={purpose} does not allow cross-border")
         return Decision(True, f"consent#{r.get('id', '?')} scope={purpose} layer={r.get('layer') or '*'}",
                         cross_border=bool(r.get("cross_border_allowed")))
     return Decision(False, f"no live consent for scope={purpose} layer={layer}" + (" cross_border" if cross_border else ""))

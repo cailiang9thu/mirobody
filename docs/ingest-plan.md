@@ -252,7 +252,7 @@ UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的�
 **A. 没实现的功能**
 1. ~~Web 页面选不到 VCF/PED~~(2026-09-22 修:三处 `accept` + JS 类型门 + 免 20 MB 上限,含 `.md`)。
 2. ~~Playwright 页面级验证~~(2026-09-22 做:4 条用例全绿,§3.9)。新缺口:对话页 `ChatInput` 的上传仍走 REST `/api/v1/data/upload-health-report`(本后端无路由),要改到 WebSocket hook;`/api/ws/file-progress` 进度路由后端没有。
-3. 三级同意书写入(plan §7 D6):往返里 `th_consent` 为 0 行,`permit` 只靠关爱圈 `health_access` 放行;同意书从未被写入或校验。
+3. ~~三级同意书写入~~(2026-09-22 `test_consent_path.py`:research_use 在圈内也必须有同意行;`record_consent` 写入后放行;**发现并修**:`granted=false` 撤销此前被忽略——gate 现按最新一行决定)。individual_return 仍只靠关爱圈放行,往返里 `th_consent` 为 0 行是设计。
 4. 图表/位图分流(plan §14.3 ③;testing 1.6 / 1.8):阶段一只在 review 表记 `document_has_images`,没有检出与 md5 去重。
 5. 后台处理队列(plan §17.3;testing 6.5):`mirobody worker` 依赖 Redis 做锁与任务源,本机无 Redis,VCF 解析仍在 server 进程内 `spawn`;`/api/chat` 处理期 p95 未测。
 6. 同一 WES 连传两次字节仍落盘两次(testing 6.3;库行已按 sha256 去重)。
@@ -261,10 +261,10 @@ UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的�
 9. gnomAD 大陆人群白名单写死在代码;人群划分随 gnomAD 版本变化时无告警(只在注释行记 `source_version`)。
 
 **B. 实现了、没有可失败的测试**
-10. `Assertion.char_span` 对位(testing 1.7,🟡)。
+10. ~~`Assertion.char_span` 对位~~(2026-09-22 做:发现 hook 不传 offset,span 只相对句子;`assertions_of` 传全文偏移,`test_char_span.py`)。
 11. 装载器中途 kill 后重跑行数不变(testing 2.12,🟡;只验了同版本 skipped)。
-12. 工具参数 schema 自动生成与 `user_info` 注入(testing 4.2,🟡)。
-13. 不装插件时 `th_series_data_genetic` / `query_genetic_data` 不变(testing 5.5,🟡)。
+12. ~~工具参数 schema 自动生成与 `user_info` 注入~~(2026-09-22 `test_tool_schema.py`)。
+13. ~~不装插件时工具集不变~~(2026-09-22 `test_no_plugin_regression.py` 第二条)。
 14. tabix 路径在全基因组上的收益(testing 6.4,🟡;3-contig 切片反而慢)。
 15. 主包 wheel 不增长闸门(testing 5.2;本克隆缺 git-lfs)。
 

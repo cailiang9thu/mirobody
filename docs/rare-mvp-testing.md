@@ -37,7 +37,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 1.4 | 断言召回 ≥ 0.85 · polarity ≥ 0.95 · subject ≥ 0.95(§14.4) | 基准:`rc_coverage` 1.000 / `rc_polarity_ok` 1.000 / `rc_subject_ok` 1.000 —— **合成题面,按构造接近天花板** | 🟡 真实语料 D9 金标(30 份人工标注)**未做**,这一行在真实文档上没有读数 |
 | 1.5 | `asserted_by` ≥ 0.90 | `test_rules.py::test_onset_and_prior`(单例) | ❌ 无金标无法量化 |
 | 1.6 | 图表检出 ≥ 0.90(`unparsed_figures`) | — | ❌ 未实现(D1a ③ 图片分流);ingest-plan §2.2 定为阶段一只在 review 表记 document_has_images |
-| 1.7 | 每条断言可回溯 `char_span` | `Assertion.char_span` 生成,无测试 | 🟡 补:20 条抽查对位 |
+| 1.7 | 每条断言可回溯 `char_span` | `test_char_span.py`:经 `text_hook.assertions_of` 的跨节/跨行/跨句断言,`DOC[s:e] == text` 逐条成立(改前 hook 不传 offset,span 只相对句子) | ✅ |
 | 1.8 | 图片 md5 去重 ≥ 20% | — | ❌ 未实现 |
 | 1.9 | 判据能失败 | haenv 负对照:翻转极性 → `rc_wrong_rate` 1;错基因 → 0;删断言 → 覆盖 0.55 | ✅(记录在 haenv 决策文档 P0/P5) |
 
@@ -108,7 +108,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | # | 验收项 | 测试 | 状态 |
 | --- | --- | --- | --- |
 | 4.1 | 四个工具经 `/mcp` 可调,每个答案带 §8.2 声明 | `assumptions` 非空:`test_tools_over_memory_repo`;`test_e2e.py` 断言对话响应里出现 `query_variant` 调用 | ✅ / 🟡 MCP 面(TRACES)未直接调用过 |
-| 4.2 | 工具参数 schema 由类型注解生成、`user_info` 注入 | 服务启动日志;无测试 | 🟡 |
+| 4.2 | 工具参数 schema 由类型注解生成、`user_info` 注入 | `test_tool_schema.py`:主包 `load_tools_from_class` 出的 `inputSchema` 七个工具齐全、`auth=True`、`user_info` 不在模型可见参数里 | ✅ |
 | 4.3 | 家族史问题有工具可答:三来源(亲属账号 / 本人档案叙述 / 家系患病标记)合一表,缺口列出而非静默 | `test_family_history.py` 两例;实机对话「家族里有乳腺癌吗」→ agent 调 `query_family_history`,答"母亲(来自本人档案叙述,未经本人核实)" | ✅ |
 
 ## 5. 工程门(§10)
@@ -119,7 +119,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 5.2 | `scripts/check_wheel_data.py`,主包 wheel 不增长 | 已跑:wheel 1.40 MB;闸门拒绝发布的原因是本克隆无 git-lfs、`fhir_loinc_bundle.tar.gz` 是 133 B 指针 —— 环境项,与插件无关(插件本就不进主包 wheel) | 🟡 |
 | 5.3 | 四个 SQL 文件三次重放零错误 | 见 2.11 | ✅ |
 | 5.4 | 不装插件时主包行为不变 | `test_no_plugin_regression.py`:entry point 为空时 `_plugin_handlers()==[]`,`.vcf` 回到"不支持"、`.txt` 仍 TextHandler | ✅ |
-| 5.5 | 不装插件时 `th_series_data_genetic` / `query_genetic_data` 不变 | 未动这两处 | 🟡 同上 |
+| 5.5 | 不装插件时 `th_series_data_genetic` / `query_genetic_data` 不变 | `test_no_plugin_regression.py::test_mcp_tool_set_is_the_shipped_six…`:入口点清空 = 原六个工具,装上只多罕见病工具,`query_genetic_data` 的 schema 逐字节相同 | ✅ |
 
 ## 6. 大文件(§17.5)
 

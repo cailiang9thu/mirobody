@@ -16,3 +16,17 @@ def test_factory_without_plugins(monkeypatch):
     assert asyncio.run(fac.get_handler(vcf)) is None          # shipped behaviour: unknown binary → not supported
     txt = MemoryUploadFile(b"hello", "n.txt", "text/plain")
     assert type(asyncio.run(fac.get_handler(txt))).__name__ == "TextHandler"
+
+
+def test_mcp_tool_set_is_the_shipped_six_without_the_plugin_and_grows_only_by_rare_tools(monkeypatch):
+    """5.5: the engine's own tool surface (`query_genetic_data` included) is untouched by the
+    plugin; the plugin only ADDS its `mirobody.tools` entry point."""
+    import mirobody.mcp.tool as T
+    six = {"resolve_indicator", "convert_unit", "normalize_unit", "query_health_indicators", "query_medications", "query_genetic_data"}
+    monkeypatch.setattr(T, "entry_point_modules", lambda group: [])
+    tools, _ = T.load_tools_from_directories(["mirobody/agent/tools"])
+    assert set(tools) == six, set(tools) ^ six
+    monkeypatch.undo()
+    tools, _ = T.load_tools_from_directories(["mirobody/agent/tools"])
+    assert six <= set(tools) and {"query_variant", "query_family_history", "record_consent"} <= set(tools)
+    assert tools["query_genetic_data"]["description"]["inputSchema"] == T.load_tools_from_directories(["mirobody/agent/tools"])[0]["query_genetic_data"]["description"]["inputSchema"]

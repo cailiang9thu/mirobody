@@ -10,6 +10,7 @@ import re
 
 from ._config import load as load_cfg
 from .assertion import extract
+from .assertion.rules import Assertion
 from .coding import code_assertions
 
 log = logging.getLogger(__name__)
@@ -69,6 +70,31 @@ async def _wait_file_id(repo, user_id: str, file_key: str, timeout: float = 10.0
     return None
 
 
+_SKIP_SECTIONS = ("治疗", "讨论", "团队", "专家")
+
+
+def assertions_of(text: str) -> list[tuple[str, "Assertion"]]:
+    """(evidence_id, assertion) for every sentence of the document, evidence_id =
+    `<section>#<line>.<sentence>`. Each assertion's `char_span` is an offset into `text`
+    itself (not into the sentence), so a reviewer can jump from a row back to the document:
+    the sentence is located by searching forward from where the previous one ended."""
+    pairs: list[tuple[str, Assertion]] = []
+    cursor = 0
+    for section, body in split_sections(text) or [("", text)]:
+        skip = any(k in section for k in _SKIP_SECTIONS)
+        for li, line in enumerate(clean_lines(body)):
+            for si, sent in enumerate(s for s in _SENT.split(line) if s.strip()):
+                sent = sent.strip()
+                at = text.find(sent, cursor)
+                if at >= 0:
+                    cursor = at + len(sent)
+                if skip:
+                    continue
+                for a in extract(sent, section=section, offset=max(at, 0)):
+                    pairs.append((f"{section}#{li}.{si}", a))
+    return pairs
+
+
 async def run_rare_coding(ctx, repo=None, file_id: int | None = None) -> dict:
     cfg = load_cfg()
     if repo is None:
@@ -85,14 +111,7 @@ async def run_rare_coding(ctx, repo=None, file_id: int | None = None) -> dict:
     truncated = len(text) > _MAX_CHARS
     if truncated:
         text = text[:_MAX_CHARS]
-    pairs = []          # (ev_id, assertion) with section carried on the assertion
-    for section, body in split_sections(text) or [("", text)]:
-        if any(k in section for k in ("治疗", "讨论", "团队", "专家")):
-            continue
-        for li, line in enumerate(clean_lines(body)):
-            for si, sent in enumerate(s for s in _SENT.split(line) if s.strip()):
-                for a in extract(sent.strip(), section=section):
-                    pairs.append((f"{section}#{li}.{si}", a))
+    pairs = assertions_of(text)
     res = code_assertions(pairs)
     ph_rows, rv_rows = [], []
     for c in res.coded:
