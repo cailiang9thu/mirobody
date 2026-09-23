@@ -10,8 +10,10 @@ plugins/mirobody-rare/                 独立发行包(不进主包 wheel)
 ├── pyproject.toml                     entry point  rare = "mirobody_rare.tools"
 ├── mirobody_rare/
 │   ├── config.yaml                    本体目录 / 缓存目录 / 阈值 / 薄壳端口 / 可选 LLM
-│   ├── assertion/rules.py             D1a  文本 → 断言(§14.2 schema:subject / polarity / asserted_by / onset_text / char_span)
-│   ├── assertion/llm.py               D1a  可选 Gemini 抽取,同 schema,默认关
+│   ├── assertion/rules.py             D1a  文本 → 断言(§14.2 schema:subject / polarity / asserted_by / onset_text / char_span);不含线索词
+│   ├── assertion/context.py           D1a  ConText 引擎:读 res/cues/<lang>.yaml(英文 scope 模式 / 中文 anchored 模式)
+│   ├── res/cues/                      线索数据:en.medspacy.json(原样 vendor,MIT)· en.yaml · zh.yaml · README.md
+│   ├── assertion/llm.py               D1a  可选 LLM 抽取(整篇一问,同 schema,OpenRouter / genai),默认关;对照臂
 │   ├── hpo/bundle.py, hpo/adapter.py  D1b  hpo_bundle.tar.gz + HpoAdapter.resolve / resolve_many
 │   ├── disease/                       D8   Orphanet product1/6 + phenotype.hpoa;病名解析 + IC 表型相似度排序
 │   ├── gene/                          D8   HGNC 表;genes_to_phenotype 给多基因病排候选
@@ -273,6 +275,68 @@ ClinVar `clinvar_20260913.vcf.gz` 与 HPO / Orphadata / HGNC 八个文件远端�
 
 **两处远端限制**:gnomAD API 从那台返回 403(机房段封锁,换 UA 无效),频率过滤只能吃推过去的磁盘缓存;
 28085/28086 在主机侧是放开的(ufw 未启用、iptables ACCEPT),但**阿里云安全组**未放行,外网访问要在控制台开端口。
+
+## 英文病历:ConText 引擎 + 留出集(2026-09-23)
+
+**起因**。英文题包 `rare_coding-p4-en`(haenv 确定性模板出的英文病历)上,先前加进 `assertion/rules.py` 的英文正则分支
+读到 1.000,换 16 句没见过的英文句子只对 9 句 —— 规则是对着出题模板写的。于是两件事分开做:先造一个**留出集**,
+再把解析器改成**线索是数据、引擎是通用的**,改动只看留出集的开发半,测试半最后只测一次。
+
+**留出集 `rare_coding-p5-en-llm`**(haenv-rare `tools/paraphrase_narratives.py`)。同 p4-en 的 20 例、同一份金标,
+病历正文由另一个模型(openai/gpt-5.4 经 OpenRouter)按金标自由撰写;模型只给「每句承载哪条金标 / 是否噪声句」,
+span 由脚本算。校验:每条金标恰好出现一次、≥2 句噪声、不点名诊断 / 基因;否定措辞**刻意不校验**(按线索表校验会把
+文本拉回线索表)。228 条金标句 + 56 句噪声。协议:JD-50v2–59v2 为开发半,JD-60v2–69v2 为测试半。
+
+**引擎**(`assertion/context.py` + `res/cues/`,详见 `res/cues/README.md`):
+
+| | 英文 | 中文 |
+| --- | --- | --- |
+| 模式 | `scope`:ConText(触发词 + 方向 + 作用范围 + 终止词 + 伪触发) | `anchored`:触发词只在句首 / 句尾(原有做法,线索表原样搬进 `zh.yaml`) |
+| 触发词 | medspaCy 公开的英文 ConText 规则 102 条,**原样 vendor**(MIT,sha256 钉在测试里);`en.yaml` 只放它缺的,每条写明由哪句开发集句子促成、代价是什么 | 原 rules.py 里的词表 |
+| 目标 | 句中出现的 HPO 标签 / 同义词(`HpoAdapter.find_all`,只取 Phenotypic abnormality 子树),一个术语一条断言 | 去掉线索后的短语 |
+
+`en.yaml` 的本地条目共三类:后置否定「X was not observed / not present」(NegEx 有同类的 "not seen");报告动词作为
+亲属作用范围的终止词(「His wife has observed chorea」里妻子是报告人,不是患者;Chapman experiencer 表已有
+reports / states / noted,补的是同类的 observed / describe / noticed);被动「was reported to」作伪触发。
+另有两处是机制而非词:触发词**整个落在术语里**时不算触发(「Cognitive decline」里的 decline 不是拒绝;medspaCy
+`prune_on_target_overlap` 收窄到包含关系);触发词与术语**共享首词**时仍覆盖它(「No abnormal pyramidal sign」)。
+中文:p0–p3 共 2653 条断言(含编码结果)改前改后**逐字节相同**。中文没有留出集,所以不切 `scope` 模式 —— 切了也量不出来。
+
+**读数**(haenv `rc_narr_*`,逐例平均;批次 p3 `20260922-095441` · p4-en `20260923-152242` · p5 `20260923-163746`):
+
+| 题包 | 召回 | span 对位 | 极性 | 噪声弃权 |
+| --- | --- | --- | --- | --- |
+| p3 中文(基准) | 0.991 → 0.991 | 0.991 → 0.991 | 1.000 → 1.000 | 1.000 → 1.000 |
+| p4-en 英文模板(基准) | 1.000 → 1.000 | 1.000 → 1.000 | 1.000 → 1.000 | 1.000 → 1.000 |
+| p5 留出 · 开发半 | 0.828 → **0.908** | 0.806 → 0.886 | 0.900 → **1.000** | 1.000 → 1.000 |
+| p5 留出 · 测试半(只测一次) | 0.781 → **0.806** | 0.773 → 0.798 | 0.847 → **0.955** | 0.967 → 0.967 |
+
+p3 / p4-en 其余 18 项 `rc_*`(层 1 ledger、层 2 变异、层 4 影像)改前改后全同。
+
+**对照臂:LLM 抽取**(`assertion/llm.py`,整篇一问;模型只给最接近的 HPO 术语名,编码仍走同一个词典解析器,
+不接受模型直接给的 HPO id)。`tools/assertion_arms.py` 用与 haenv 同口径的镜像判据(按句汇总)比两臂:
+
+| p5 留出(按句汇总) | 召回 | 极性 | 主体 | 噪声弃权 |
+| --- | --- | --- | --- | --- |
+| 规则臂 · 开发半 / 测试半 | 0.913 / 0.806 | 1.000 / 0.960 | 1.000 / 1.000 | 1.000 / 0.966 |
+| LLM 臂(google/gemini-3.1-pro-preview)· 开发半 / 测试半 | 0.913 / **0.871** | 1.000 / 1.000 | 1.000 / 1.000 | 1.000 / 1.000 |
+
+**剩下的缺口是词汇,不是线索**:测试半规则臂的 24 句漏编几乎都是表述与 HPO 名不同(「unable to walk」↔ Inability to walk、
+「tendency to bruise」↔ easy bruising、「His stature was short」)—— 这正是 LLM 臂胜出的地方。测试半另有 3 句否定变体
+(「has not been observed」「is denied」)和 1 句词典误报(「arranging」),**只记录、不据此改**:改了测试半就不再是留出集,
+要改需先造下一份留出集。Gemini 直连在源机报 400「User location is not supported」,`config.llm.backend: openrouter`。
+
+**`mirobody-rare` 主机(<aliyun-host>,2026-09-24)**。代码按 git 快进到 `ff05477`(haenv-rare `229b20f`),重启
+`mirobody-rare-api.service`;远端 haenv-rare 首次 `uv sync` 建环境(之前那边只跑过 UI 往返,没跑过判分)。
+插件单测 117 passed;p3 / p4-en / p5 三包在远端薄壳上重评 mirobody-coding,**逐例 `rc_*` 与源机完全相同**
+(3 × 20 例);两臂对照在远端复算同一批模型输出,读数与上表相同,另起 1 例实时调用确认远端能走 OpenRouter。
+英文往返(自带 UI 的 Ask 页上传,p5 的 JD-50v2 trio + JD-55v2,病历为留出集文本):4 个回合全部作答,74 项**真差异 0**。
+
+**顺带查出的数据缺口**:p4-en / p5 引用的 57 个 DICOM 系列 zip 里有 39 个在远端**大小对、字节不对**
+(mtime 落在 09-23 那次 `--relative` 推送事故的合并窗口;当时只核了 p3 用到的那批)。表现是往返文件层
+「NOT FOUND / MISMATCH」、`rc_signal_*` 13 例为 0,而文本 / 变异判据全同。按目录 `rsync -c` 增量修复
+(每个文件只补 ~2 MB 字面数据)后 57/57 sha256 一致,重评即与源机相同。p4-en 的 VCF / PED / 病历(841 MB)
+此前不在远端,本轮推过去并按 md5 核对 90/90。
 
 ## 部署:前端 + 后端(2026-09-21)
 
