@@ -285,6 +285,11 @@ async def delete_files_from_message(
                 # Nothing to revoke any more. The agent's view of a file is a
                 # projection of THIS row (deep/files_backend.py selects
                 # `is_del = false`), so soft-deleting it here is the whole of it.
+                # Plugins erase what THEY derived from the file (delete_hooks.py).
+                from mirobody.collect.files.delete_hooks import FileDeleteContext, run_delete_hooks
+                hook_errors = await run_delete_hooks(FileDeleteContext(
+                    user_id=str(file_record.get("query_user_id") or user_id), operator_id=str(user_id),
+                    file_key=file_key, file_id=file_record.get("id")))
                 deleted_files.append({
                     "file_key": file_key,
                     "filename": filename,
@@ -292,6 +297,7 @@ async def delete_files_from_message(
                     "scene": scene,  # Pass scene for cascade delete logic
                     "status": "deleted",
                     "storage_deleted": storage_deleted,
+                    **({"cascade_errors": hook_errors} if hook_errors else {}),
                 })
                 logger.info(f"Successfully deleted file: {file_key}")
             else:

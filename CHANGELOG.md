@@ -1,5 +1,14 @@
 ## Unreleased — 1.5.0
 
+- **Plugins can erase what they derived from a deleted file: `mirobody.delete_hooks` entry-point group.**
+  `collect/files/delete_hooks.py`: a module's `HOOKS` are awaited inline in `delete_files_from_message`
+  after the soft delete, with the record's owner (the `query_user_id` of a proxy upload), the file key
+  and id. A failing hook is reported per file as `cascade_errors`; the delete stands. mirobody-rare
+  erases variants, phenotypes, review items, diagnoses, the DICOM index and pedigrees with it; before,
+  a deleted VCF still answered `query_variant`. Tell: `mirobody/tests/test_delete_hooks.py`.
+- **Large uploads no longer block the event loop while they are assembled.** The spool's part
+  concatenation (`SpooledUploadFile.finalize`), whole reads of a rolled-over spool and the temp-file write
+  run in worker threads.
 - **Plugins can mount HTTP routes: `mirobody.routers` entry-point group.** A plugin module
   exposes `ROUTERS = (APIRouter, …)`; `Server.start` includes them after the core routers
   (`utils/plugin_dirs.plugin_routers`, non-routers are logged and skipped). mirobody-rare uses it

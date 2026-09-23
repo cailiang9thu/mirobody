@@ -85,3 +85,32 @@ async def test_pg_circle_members_are_accepted_integer_status():
     members = await repo.circle_members(str(a))
     assert any(m["user_id"] == b and m["nickname"] == "F1-F" for m in members)
     assert await repo.circle_access(str(a), str(b)) == 0
+
+
+async def test_pg_erase_file_rows_and_repoint():
+    """erase.py's two SQL paths on the real schema: re-point to a live copy, then erase for good."""
+    from mirobody_rare.ingest import ingest_ped, ingest_vcf
+    from mirobody_rare.reference import run_schema
+    from mirobody_rare.repo import PgRepo
+    await run_schema()
+    repo = PgRepo()
+    uid = "pytest-rare-erase"
+    pool = await repo._p()
+    await pool.execute("DELETE FROM th_variant_annotation WHERE variant_id IN (SELECT id FROM th_variant WHERE user_id = $1)", uid)
+    for t in ("th_variant", "th_sequencing_sample", "th_phenotype", "th_phenotype_review", "th_disease_code", "th_signal_object"):
+        await pool.execute(f"DELETE FROM {t} WHERE user_id = $1", uid)
+    await pool.execute("DELETE FROM th_pedigree_member WHERE pedigree_id IN (SELECT id FROM th_pedigree WHERE owner_user_id = $1)", uid)
+    await pool.execute("DELETE FROM th_pedigree WHERE owner_user_id = $1", uid)
+    res = await ingest_vcf(repo, uid, VCF, sex="F", file_key="pytest/a.vcf.gz")
+    n = len(await repo.variants(uid, limit=10 ** 6))
+    await repo.add_phenotypes([{"user_id": uid, "hpo_id": "HP:0001250", "hpo_label": "x", "negated": False, "source": "nlp", "file_id": -7}])
+    await ingest_ped(repo, PED, user_ids={"JD-50-P": uid}, owner_id=uid, file_key="pytest/f.ped")
+    moved = await repo.repoint_file(uid, "pytest/a.vcf.gz", -7, "pytest/b.vcf.gz", -8)
+    assert (moved["samples"], moved["file_rows"]) == (1, 1)
+    assert (await repo.samples_of(uid))[0]["file_key"] == "pytest/b.vcf.gz"
+    gone = await repo.erase_file_rows(uid, "pytest/b.vcf.gz", -8)
+    assert (gone["samples"], gone["variants"], gone["phenotypes"]) == (1, n, 1) and gone["annotations"] >= 1
+    assert await repo.variants(uid) == [] and await repo.phenotypes(uid) == []
+    gone = await repo.erase_file_rows(uid, "pytest/f.ped", None)
+    assert gone["pedigrees"] == 1 and uid in gone["pedigree_users"] and await repo.pedigree_of(uid) is None
+    assert res["status"] == "ready"

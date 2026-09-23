@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS th_pedigree (
 ALTER TABLE th_pedigree ADD COLUMN IF NOT EXISTS owner_user_id VARCHAR(200);
 ALTER TABLE th_pedigree DROP CONSTRAINT IF EXISTS th_pedigree_family_id_key;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_th_pedigree_owner_family ON th_pedigree (COALESCE(owner_user_id, ''), family_id);
+-- 2026-09-23: the PED file the family came from (th_files.file_key); deleting the file erases the family
+ALTER TABLE th_pedigree ADD COLUMN IF NOT EXISTS file_key VARCHAR(255);
 
 CREATE TABLE IF NOT EXISTS th_pedigree_member (
     id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

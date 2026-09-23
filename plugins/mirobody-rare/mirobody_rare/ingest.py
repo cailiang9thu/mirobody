@@ -1,7 +1,7 @@
 """Ingest jobs (plan §4.3, §5, §6.3): file on disk → rows through a `RareRepo`.
 
-`ingest_vcf` is chromosome-sharded, ≤8 concurrent, and idempotent: a rerun first asks the
-repo which (sample, chrom) shards already exist and only parses the missing ones
+`ingest_vcf` reads the file once and writes it chromosome by chromosome, and is idempotent:
+a rerun first asks the repo which (sample, chrom) shards already exist and skips them
 (`uq_th_variant_call` is the second line of defence). The whole raw call set is NOT
 stored for a WES-scale file; what lands in `th_variant` is the local filter output
 (PASS · DP · GQ · ClinVar P/LP), which is what the MVP promises (plan §4.4 ①–③)."""
@@ -25,38 +25,72 @@ log = logging.getLogger(__name__)
 MAX_VCF_BYTES = 500 * 1024 * 1024        # plan §0.2: WES/panel only; WGS refused, not truncated
 
 
-def _chroms_in(path: str | Path) -> list[str]:
-    seen: list[str] = []
+def _candidates(c: list[str], chrom: str, sex: str | None, min_dp: int, min_gq: int) -> list[tuple[tuple, dict]]:
+    """One VCF record → the calls that pass the local filter (PASS · non-ref GT · DP · GQ), one per ALT."""
+    if c[6] not in ("PASS", ".") or len(c) < 10:
+        return []
+    fmt, vals = c[8].split(":"), c[9].split(":")
+    gt = vals[0] if fmt and fmt[0] == "GT" else "."
+    if gt in _NONREF:
+        return []
+    dp, gq = _fmt_int(fmt, vals, "DP"), _fmt_int(fmt, vals, "GQ")
+    if (dp is not None and dp < min_dp) or (gq is not None and gq < min_gq):
+        return []
+    return [((chrom, int(c[1]), c[3], alt), dict(genotype=gt, zygosity=_zygosity(gt, c[0], sex), depth=dp, gq=gq, filter=c[6]))
+            for alt in c[4].split(",")]
+
+
+def _scan(path: str | Path, skip: set[str], sex: str | None, min_dp: int, min_gq: int):
+    """Yield (chrom, candidates, raw_calls) per chromosome, reading the file ONCE.
+
+    The old per-shard scan decompressed the whole file for every chromosome (22 passes; 11.8 s
+    each on a 156 MB GIAB VCF, 407 s end to end). A VCF is sorted by contig, so one pass can hand
+    a chromosome over the moment the next one starts. With an index and pysam each contig is
+    fetched directly instead. Chromosomes in `skip` (already written: a resumed sample) are
+    passed over without parsing. A contig that comes back after another one started (an
+    unsorted file) is yielded again; the writes are replay-safe, but a crash between the two
+    blocks resumes past the second one, so the case is logged."""
+    from .variant.vcf import _pysam, has_index
+    if has_index(path) and _pysam() is not None:
+        ps = _pysam()
+        with ps.VariantFile(str(path)) as vf:
+            contigs = list(vf.header.contigs)
+        for contig in contigs:
+            chrom = contig.replace("chr", "")
+            if chrom in skip:
+                continue
+            pend, n = [], 0
+            for c in iter_records(path, chrom):
+                n += 1
+                pend += _candidates(c, chrom, sex, min_dp, min_gq)
+            if n:
+                yield chrom, pend, n
+        return
+    cur, pend, n, emitted = None, [], 0, set()
     with _open(path) as fh:
         for line in fh:
             if line.startswith("#"):
                 continue
-            c = line.split("\t", 1)[0].replace("chr", "")
-            if not seen or seen[-1] != c:
-                if c not in seen:
-                    seen.append(c)
-    return seen
+            chrom = line.split("\t", 1)[0].replace("chr", "")
+            if chrom != cur:
+                if cur is not None and cur not in skip:
+                    yield cur, pend, n
+                    emitted.add(cur)
+                if chrom in emitted:
+                    log.warning("[ingest] %s: chr%s appears again after other contigs (unsorted VCF)", Path(path).name, chrom)
+                cur, pend, n = chrom, [], 0
+            if chrom in skip:
+                continue
+            n += 1
+            pend += _candidates(line.rstrip("\n").split("\t"), chrom, sex, min_dp, min_gq)
+    if cur is not None and cur not in skip:
+        yield cur, pend, n
 
 
-def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, sex: str | None,
-                    clinvar, min_dp: int, min_gq: int, min_stars: int) -> tuple[list[dict], list[dict], int]:
-    vrows, arows, n_raw = [], [], 0
-    pend: list[tuple[tuple, dict]] = []
-    if True:
-        for c in iter_records(path, chrom):
-            n_raw += 1
-            if c[6] not in ("PASS", ".") or len(c) < 10:
-                continue
-            fmt, vals = c[8].split(":"), c[9].split(":")
-            gt = vals[0] if fmt and fmt[0] == "GT" else "."
-            if gt in _NONREF:
-                continue
-            dp, gq = _fmt_int(fmt, vals, "DP"), _fmt_int(fmt, vals, "GQ")
-            if (dp is not None and dp < min_dp) or (gq is not None and gq < min_gq):
-                continue
-            for alt in c[4].split(","):
-                pend.append(((chrom, int(c[1]), c[3], alt), dict(genotype=gt, zygosity=_zygosity(gt, c[0], sex), depth=dp, gq=gq, filter=c[6])))
-    hits = clinvar.lookup_many([k for k, _ in pend])          # one round-trip per shard, never per call
+def _annotate(pend: list[tuple[tuple, dict]], sample_id: int, user_id: str, clinvar, min_stars: int) -> tuple[list[dict], list[dict]]:
+    """Candidates of one chromosome → th_variant rows + their annotation rows (ClinVar P/LP ≥ min_stars, gnomAD)."""
+    vrows, arows = [], []
+    hits = clinvar.lookup_many([k for k, _ in pend])          # one round-trip per chromosome, never per call
     from .genome import annotate_gnomad
     from .variant.vcf import VariantCall
     calls = {k: VariantCall(chrom=k[0], pos=k[1], ref=k[2], alt=k[3], gt=f["genotype"], zygosity=f["zygosity"], clinvar=hits[k])
@@ -77,26 +111,37 @@ def _rows_for_chrom(path: str | Path, chrom: str, sample_id: int, user_id: str, 
             arows.append({"_key": k, "source": "gnomad", "source_version": g.get("source_version", "gnomad_r4"),
                           "af_global": g.get("af_global"), "af_popmax": g.get("af_popmax"), "popmax_pop": g.get("popmax_pop"),
                           "allele_count": g.get("allele_count")})
-    return vrows, arows, n_raw
+    return vrows, arows
+
+
+def _sha256(p: Path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with p.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+_DONE = object()
 
 
 async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None = None, sex: str | None = None,
                      assay: str = "WES", sample_id: int | None = None, concurrency: int = 8, file_key: str | None = None) -> dict:
+    """`concurrency` is kept for callers; parsing is one pass now (see `_scan`), and the database
+    writes of chromosome k overlap the parsing of chromosome k+1. Everything that touches the
+    whole file runs in a worker thread: the server's event loop never waits on it."""
     p = Path(path)
     if p.stat().st_size > MAX_VCF_BYTES:
         raise ValueError(f"{p.name}: {p.stat().st_size >> 20} MB exceeds the MVP limit (WES/panel only; WGS is phase 2)")
-    hdr = read_header(p)
+    hdr = await asyncio.to_thread(read_header, p)
     if hdr["reference"] != "GRCh38":
         raise ValueError(f"{p.name}: reference build {hdr['reference'] or 'unknown'}; only GRCh38 is accepted (no guessing)")
     cfg = load_cfg().get("variant", {})
-    clinvar = get_clinvar()
+    clinvar = await asyncio.to_thread(get_clinvar)          # first call builds / loads the index
+    sha = None
     if sample_id is None:
-        import hashlib
-        h = hashlib.sha256()
-        with p.open("rb") as fh:
-            for chunk in iter(lambda: fh.read(1 << 20), b""):
-                h.update(chunk)
-        sha = h.hexdigest()
+        sha = await asyncio.to_thread(_sha256, p)
         prior = await repo.sample_by_hash(user_id, sha)
         if prior:
             log.info("[ingest] %s already ingested for %s as sample %s; skip", p.name, user_id, prior["id"])
@@ -114,36 +159,49 @@ async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None =
                                           "file_key": file_key})
     await repo.set_sample_status(sample_id, "parsing")
     done = await repo.written_chroms(sample_id)
-    todo = [c for c in _chroms_in(p) if c not in done]
-    log.info("[ingest] sample %s: %d shards, %d already written, %d to parse", sample_id, len(todo) + len(done), len(done), len(todo))
-    sem = asyncio.Semaphore(concurrency)
-    n_var = n_raw = 0
+    min_dp, min_gq, min_stars = int(cfg.get("min_dp", 10)), int(cfg.get("min_gq", 20)), int(cfg.get("min_stars", 1))
+    loop = asyncio.get_running_loop()
+    q: asyncio.Queue = asyncio.Queue(maxsize=2)                # parsed-but-unwritten chromosomes held in memory
+    import threading
+    stop = threading.Event()                                   # the writer gave up: stop parsing
 
-    async def one(chrom: str) -> tuple[str, int, int]:
-        async with sem:
-            vrows, arows, raw = await asyncio.to_thread(_rows_for_chrom, p, chrom, sample_id, user_id, sex, clinvar,
-                                                        int(cfg.get("min_dp", 10)), int(cfg.get("min_gq", 20)), int(cfg.get("min_stars", 1)))
-            n = await repo.add_variants(vrows)
-            ann = []
-            for a in arows:
-                vid = await repo.variant_id(sample_id, *a["_key"])
-                if vid:
-                    ann.append({**{k: v for k, v in a.items() if k != "_key"}, "variant_id": vid})
-            await repo.add_annotations(ann)
-            return chrom, n, raw
+    def produce() -> None:
+        try:
+            for chrom, pend, raw in _scan(p, done, sex, min_dp, min_gq):
+                if stop.is_set():
+                    return
+                vrows, arows = _annotate(pend, sample_id, user_id, clinvar, min_stars)
+                asyncio.run_coroutine_threadsafe(q.put((chrom, vrows, arows, raw)), loop).result()
+        except BaseException as e:                             # noqa: BLE001 — handed to the writer, which raises it
+            asyncio.run_coroutine_threadsafe(q.put(e), loop).result()
+            return
+        asyncio.run_coroutine_threadsafe(q.put(_DONE), loop).result()
 
+    n_var = n_raw = shards = 0
+    worker = loop.run_in_executor(None, produce)
     try:
-        for fut in asyncio.as_completed([one(c) for c in todo]):
-            chrom, n, raw = await fut
-            n_var += n
-            n_raw += raw
+        while (item := await q.get()) is not _DONE:
+            if isinstance(item, BaseException):
+                raise item
+            chrom, vrows, arows, raw = item
+            n = await repo.add_variant_rows(sample_id, vrows, arows)
+            n_var, n_raw, shards = n_var + n, n_raw + raw, shards + 1
             log.debug("[ingest] sample %s chr%s: %d raw -> %d kept", sample_id, chrom, raw, n)
-        total = len(await repo.variants(user_id, limit=10 ** 9))
+        total = await repo.count_variants(sample_id)
         await repo.set_sample_status(sample_id, "ready", variant_count=total)
-        return {"sample_id": sample_id, "shards": len(todo), "skipped_shards": len(done), "raw_calls": n_raw, "kept": n_var, "status": "ready"}
-    except Exception:
+        log.info("[ingest] sample %s: %d shards parsed, %d already written; %d raw calls -> %d kept", sample_id, shards, len(done), n_raw, n_var)
+        return {"sample_id": sample_id, "shards": shards, "skipped_shards": len(done), "raw_calls": n_raw, "kept": n_var, "status": "ready"}
+    except BaseException:
         await repo.set_sample_status(sample_id, "failed")
         raise
+    finally:
+        stop.set()
+        while not worker.done():                               # never leave the producer blocked on a full queue
+            try:
+                q.get_nowait()
+            except asyncio.QueueEmpty:
+                await asyncio.sleep(0.05)
+        await asyncio.gather(worker, return_exceptions=True)
 
 
 #: What a retry may help with: the database or the network timing out or dropping. A wrong
@@ -175,19 +233,22 @@ async def ingest_vcf_retrying(repo, user_id: str, path: str | Path, attempts: in
     raise RuntimeError("unreachable")                     # pragma: no cover
 
 
-async def ingest_ped(repo, path: str | Path, user_ids: dict[str, str] | None = None, owner_id: str | None = None) -> int:
+async def ingest_ped(repo, path: str | Path, user_ids: dict[str, str] | None = None, owner_id: str | None = None,
+                     file_key: str | None = None) -> int:
     """PED → th_pedigree / th_pedigree_member, owned by `owner_id` (the uploader): family ids are
     lab-local, so two owners may import the same id. `user_ids` maps individual_id → account."""
     pg = parse_ped(path)
     fam, rows = pg.to_rows()
     for r in rows:
         r["user_id"] = (user_ids or {}).get(r["individual_id"])
-    return await repo.upsert_pedigree(fam, rows, owner_id=owner_id)
+    return await repo.upsert_pedigree(fam, rows, owner_id=owner_id, file_key=file_key)
 
 
-async def ingest_dicom(repo, user_id: str, path: str | Path, file_id: int, residency: str = "CN") -> dict:
+async def ingest_dicom(repo, user_id: str, path: str | Path, file_id: int, residency: str = "CN",
+                       file_key: str | None = None) -> dict:
     idx = await asyncio.to_thread(index_dicom_zip, path)
     row = idx.to_row(user_id, file_id=file_id, residency=residency)
+    row["file_key"] = file_key                      # what a file delete erases by (erase.py)
     row["id"] = await repo.add_signal(row)
     if idx.deid_status != "done":
         log.warning("[ingest] signal %s de-identification failed on tags %s; object hidden", file_id, idx.phi_tags)

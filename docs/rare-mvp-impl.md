@@ -223,6 +223,23 @@ HTML 报告:`haenv-rare/reports/rare_coding-p3/20260922-095441/eval-rare_coding-
 
 **读数**:p3 20 例全附件经页面上传(`reports/roundtrip/web-p3-20260923/`),十层 879 条真差异 0,与脚本路径逐层相同,控制台报错 0;Playwright 7a–7f 全过;haenv `rare_coding-p3` 复评各 `rc_*` 判据与改前相同(叙述 0.991 / 0.991 / 1.000 / 1.000,`rc_hpo_strict` 0.991,其余 1.000)。
 
+## 删除级联与入库提速(2026-09-23)
+
+**删除级联**。主包删文件只软删 `th_files`、删存储对象、抹观测值;罕见病表它不认识,于是删掉的 VCF 仍能被 `query_variant` 查到,删掉的病历表型仍在。主包加 `mirobody.delete_hooks` 入口组(`collect/files/delete_hooks.py`,与 `text_hooks` 同形;在删除路径里软删之后**内联 await**,失败写进结果的 `cascade_errors`,不回滚删除)。插件 `erase.py` 按「把行和文件连起来的那一列」删:样本按 `file_key`,表型 / 复核 / 诊断按 `file_id`,DICOM 索引与家系各新增一列 `file_key`(`34_` / `35_` 追加 `ALTER`)。删完重算两样东西而不是留旧值:受影响者的 trio 遗传来源(`trio_backfill` 凡是算不成 trio 的早退分支都先把非 unknown 清回 unknown)、由变异提升的诊断。同一内容还有一份活着的副本时不删、改指向它——上传管理器把重复上传存成第二个对象和第二行,入库却复用第一份的样本,删第一份就会让样本悬空。
+
+**入库提速与事件循环**(`tools/loop_latency_probe.py`,156 MB GIAB HG002):
+
+| | 改前 | 改后 |
+| --- | --- | --- |
+| 一个 VCF 从收齐到 ready | 407 s | 44 s |
+| 期间 `/api/health` 最长 | 10.0 s | 144 ms |
+| p95 / p99 | 7 / 30 ms | 42 / 85 ms |
+
+三处:① 解析改为**只读一遍文件**(`ingest._scan`),原来每条染色体各解压扫一遍整文件(22 遍 × 11.8 s,还争同一把 GIL);② 整文件的活(两次 sha256、表头、首次载入 ClinVar)都进线程,删掉在事件循环上整扫的 `_chroms_in`(10 s 卡顿的来源);③ 变异写库按染色体批量(`add_variant_rows`:两次流水线插入 + 一次取 id),原来每条变异约 3 次往返、每次 ≈500 ms。主包上传路径的分片合并、整读与临时文件写也挪进线程;它们的收益没有单独量出(探针第一版把客户端自己编码 150 MB 的 2 s 当成了服务端卡顿,修正后看不到残余卡顿),照实记为「无害、未单独计量」。
+回归:p3 20 例脚本往返(`reports/roundtrip/p3-20260923b/`)879 条真差异 0,与改前逐层相同;Playwright 7a–7f 全过;插件 + 真库 103 passed。
+
+**没做**:6.3 字节级去重。`th_files` 以 `file_key` 唯一,两次上传共用一个对象就得让两行共用一个 key(`ON CONFLICT (file_key) DO UPDATE` 会把第二行并进第一行、丢掉它和第二条消息的关联),这是主包文件模型的改动,不是插件能顺手做的;现在重复字节仍落两份,但删除已能正确处理重复。
+
 ## 第二套部署:阿里云主机 `mirobody-rare`(<aliyun-host>,2026-09-23)
 
 同一套代码在 `ssh mirobody-rare`(root@<aliyun-host>,Ubuntu 24.04,4C/14G)上再跑一份,与源机互不影响。

@@ -434,7 +434,8 @@ class WebSocketFileUploadManager:
             # Check if file is complete
             if existing_file["received_chunks"] == existing_file["total_chunks"]:
                 # §17: assemble on disk (SpooledUploadFile), never into a bytearray
-                existing_file["spool"].finalize()
+                # in a thread: concatenating the parts of a 150 MB file stalled every request ~1 s
+                await asyncio.to_thread(existing_file["spool"].finalize)
                 actual_file_size = existing_file["spool"].size
                 existing_file["size"] = actual_file_size
 

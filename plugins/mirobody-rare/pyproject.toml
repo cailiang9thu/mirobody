@@ -32,6 +32,9 @@ rare = "mirobody_rare.web"
 [project.entry-points."mirobody.text_hooks"]
 rare = "mirobody_rare.text_hook"
 
+[project.entry-points."mirobody.delete_hooks"]
+rare = "mirobody_rare.erase"
+
 [project.scripts]
 mirobody-rare-serve = "mirobody_rare.serve_coding:main"
 mirobody-rare-load-reference = "mirobody_rare.reference.load:main"

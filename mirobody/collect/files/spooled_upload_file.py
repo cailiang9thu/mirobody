@@ -65,6 +65,10 @@ class SpooledUploadFile:
 
     # ------------------------------------------------------------------ UploadFile surface
     async def read(self, size: int = -1) -> bytes:
+        if size == -1 and self.on_disk:
+            # a whole rolled-over spool is hundreds of MB of disk read: not on the event loop
+            import asyncio
+            return await asyncio.to_thread(self._spool.read)
         return self._spool.read() if size == -1 else self._spool.read(size)
 
     async def seek(self, position: int, whence: int = 0) -> None:

@@ -38,8 +38,18 @@ class RareRepo(Protocol):
     async def written_chroms(self, sample_id: int) -> set[str]: ...
     async def add_variants(self, rows: Sequence[Mapping[str, Any]]) -> int: ...
     async def add_annotations(self, rows: Sequence[Mapping[str, Any]]) -> int: ...
+    async def add_variant_rows(self, sample_id: int, vrows: Sequence[Mapping[str, Any]], arows: Sequence[Mapping[str, Any]]) -> int: ...
+    async def count_variants(self, sample_id: int) -> int: ...
     async def add_signal(self, row: Mapping[str, Any]) -> int: ...
-    async def upsert_pedigree(self, family: Mapping[str, Any], members: Sequence[Mapping[str, Any]], owner_id: str | None = None) -> int: ...
+    async def upsert_pedigree(self, family: Mapping[str, Any], members: Sequence[Mapping[str, Any]], owner_id: str | None = None,
+                              file_key: str | None = None) -> int: ...
+    # file delete (erase.py): the th_files row even when soft-deleted; a LIVE copy of the same bytes
+    async def file_by_key(self, file_key: str) -> dict | None: ...
+    async def live_duplicate(self, user_id: str, content_hash: str, exclude_key: str) -> dict | None: ...
+    async def repoint_file(self, user_id: str, old_key: str, old_id: int | None, new_key: str, new_id: int) -> dict: ...
+    async def erase_file_rows(self, user_id: str, file_key: str, file_id: int | None) -> dict: ...
+    async def drop_promoted(self, user_id: str) -> int: ...
+    async def clear_inheritance(self, user_id: str) -> int: ...
 
 
 class MemoryRepo:
@@ -52,7 +62,7 @@ class MemoryRepo:
 
     def _ins(self, table: str, row: Mapping[str, Any]) -> int:
         r = dict(row)
-        r.setdefault("id", len(self.t[table]) + 1)
+        r.setdefault("id", max((x["id"] for x in self.t[table]), default=0) + 1)   # not len+1: rows get erased
         self.t[table].append(r)
         return r["id"]
 
@@ -207,12 +217,90 @@ class MemoryRepo:
             n += 1
         return n
 
+    async def add_variant_rows(self, sample_id, vrows, arows):
+        n = await self.add_variants(vrows)
+        ann = []
+        for a in arows:
+            vid = await self.variant_id(sample_id, *a["_key"])
+            if vid:
+                ann.append({**{k: v for k, v in a.items() if k != "_key"}, "variant_id": vid})
+        await self.add_annotations(ann)
+        return n
+
+    async def count_variants(self, sample_id):
+        return sum(1 for v in self.t["th_variant"] if v["sample_id"] == sample_id)
+
     async def add_signal(self, row):
         return self._ins("th_signal_object", row)
 
-    async def upsert_pedigree(self, family, members, owner_id=None):
+    async def file_by_key(self, file_key):
+        return next((dict(r) for r in self.t["th_files"] if r["file_key"] == file_key), None)
+
+    async def live_duplicate(self, user_id, content_hash, exclude_key):
+        if not content_hash:
+            return None
+        return next((dict(r) for r in reversed(self.t["th_files"])
+                     if (r.get("query_user_id") or r["user_id"]) == user_id and r.get("content_hash") == content_hash
+                     and r["file_key"] != exclude_key and not r.get("is_del")), None)
+
+    async def repoint_file(self, user_id, old_key, old_id, new_key, new_id):
+        n = dict.fromkeys(("samples", "file_rows", "signals", "pedigrees"), 0)
+        for r in self.t["th_sequencing_sample"]:
+            if r["user_id"] == user_id and r.get("file_key") == old_key:
+                r["file_key"] = new_key; n["samples"] += 1
+        for t in ("th_phenotype", "th_phenotype_review", "th_disease_code"):
+            for r in self.t[t]:
+                if old_id is not None and r["user_id"] == user_id and r.get("file_id") == old_id:
+                    r["file_id"] = new_id; n["file_rows"] += 1
+        for r in self.t["th_signal_object"]:
+            if r["user_id"] == user_id and r.get("file_key") == old_key:
+                r["file_key"] = new_key; n["signals"] += 1
+        for r in self.t["th_pedigree"]:
+            if r.get("owner_user_id") == user_id and r.get("file_key") == old_key:
+                r["file_key"] = new_key; n["pedigrees"] += 1
+        return n
+
+    async def erase_file_rows(self, user_id, file_key, file_id):
+        t = self.t
+        sids = {r["id"] for r in t["th_sequencing_sample"] if r["user_id"] == user_id and r.get("file_key") == file_key}
+        vids = {v["id"] for v in t["th_variant"] if v["sample_id"] in sids}
+        pids = {r["id"] for r in t["th_pedigree"] if r.get("owner_user_id") == user_id and r.get("file_key") == file_key}
+        out = {"samples": len(sids), "variants": len(vids),
+               "annotations": sum(1 for a in t["th_variant_annotation"] if a["variant_id"] in vids),
+               "pedigrees": len(pids),
+               "pedigree_users": sorted({str(m["user_id"]) for m in t["th_pedigree_member"] if m["pedigree_id"] in pids and m.get("user_id")})}
+        t["th_variant_annotation"] = [a for a in t["th_variant_annotation"] if a["variant_id"] not in vids]
+        t["th_variant"] = [v for v in t["th_variant"] if v["id"] not in vids]
+        t["th_sequencing_sample"] = [r for r in t["th_sequencing_sample"] if r["id"] not in sids]
+        for name, tab in (("phenotypes", "th_phenotype"), ("reviews", "th_phenotype_review"), ("disease_codes", "th_disease_code")):
+            keep = [r for r in t[tab] if not (file_id is not None and r["user_id"] == user_id and r.get("file_id") == file_id)]
+            out[name] = len(t[tab]) - len(keep); t[tab] = keep
+        keep = [r for r in t["th_signal_object"] if not (r["user_id"] == user_id and r.get("file_key") == file_key)]
+        out["signals"] = len(t["th_signal_object"]) - len(keep); t["th_signal_object"] = keep
+        t["th_pedigree_member"] = [m for m in t["th_pedigree_member"] if m["pedigree_id"] not in pids]
+        t["th_pedigree"] = [r for r in t["th_pedigree"] if r["id"] not in pids]
+        return out
+
+    async def drop_promoted(self, user_id):
+        keep = [r for r in self.t["th_disease_code"] if not (r["user_id"] == user_id and r.get("source") == "nlp+variant")]
+        n = len(self.t["th_disease_code"]) - len(keep)
+        self.t["th_disease_code"] = keep
+        return n
+
+    async def clear_inheritance(self, user_id):
+        sids = {r["id"] for r in self.t["th_sequencing_sample"] if r["user_id"] == user_id}
+        n = 0
+        for v in self.t["th_variant"]:
+            if v["sample_id"] in sids and (v.get("inheritance") or "unknown") != "unknown":
+                v["inheritance"], v["is_de_novo"] = "unknown", None
+                n += 1
+        return n
+
+    async def upsert_pedigree(self, family, members, owner_id=None, file_key=None):
         fam = next((f for f in self.t["th_pedigree"] if f["family_id"] == family["family_id"] and f.get("owner_user_id") == owner_id), None)
-        pid = fam["id"] if fam else self._ins("th_pedigree", {**family, "owner_user_id": owner_id})
+        if fam and file_key:
+            fam["file_key"] = file_key                          # the latest PED upload of this family owns it
+        pid = fam["id"] if fam else self._ins("th_pedigree", {**family, "owner_user_id": owner_id, "file_key": file_key})
         have = {m["individual_id"]: m for m in self.t["th_pedigree_member"] if m["pedigree_id"] == pid}
         for m in members:
             if m["individual_id"] not in have:
@@ -469,6 +557,37 @@ class PgRepo:
                              {"s": sample_id, "c": chrom, "p": pos, "r": ref, "a": alt})
         return int(rows[0]["id"]) if rows else None
 
+    _VCOLS = ("sample_id", "user_id", "chrom", "pos", "ref", "alt", "genotype", "zygosity", "depth", "gq", "filter",
+              "gene_symbol", "consequence", "is_de_novo", "inheritance")
+    _ACOLS = ("variant_id", "source", "source_version", "clinical_significance", "review_status", "condition_names",
+              "af_global", "af_popmax", "popmax_pop", "allele_count")
+
+    async def add_variant_rows(self, sample_id, vrows, arows):
+        """One chromosome's calls and annotations in one transaction: two pipelined inserts and one
+        id lookup, instead of ~3 round trips per variant (≈500 ms each to a remote RDS: a trio case
+        spent most of its 70–80 s here)."""
+        if not vrows:
+            return 0
+        chroms = sorted({r["chrom"] for r in vrows})
+        vsql = (f"INSERT INTO th_variant ({', '.join(self._VCOLS)}) VALUES ({', '.join(f'${i + 1}' for i in range(len(self._VCOLS)))})"
+                " ON CONFLICT DO NOTHING")
+        asql = (f"INSERT INTO th_variant_annotation ({', '.join(self._ACOLS)}) VALUES ({', '.join(f'${i + 1}' for i in range(len(self._ACOLS)))})"
+                " ON CONFLICT DO NOTHING")
+        idq = "SELECT id, chrom, pos, ref, alt FROM th_variant WHERE sample_id = $1 AND chrom = ANY($2::varchar[])"
+        pool = await self._p()
+        async with pool.acquire() as con, con.transaction():
+            before = await con.fetchval("SELECT count(*) FROM th_variant WHERE sample_id = $1 AND chrom = ANY($2::varchar[])", sample_id, chroms)
+            await con.executemany(vsql, [tuple(r.get(c) for c in self._VCOLS) for r in vrows])
+            ids = {(r["chrom"], r["pos"], r["ref"], r["alt"]): r["id"] for r in await con.fetch(idq, sample_id, chroms)}
+            ann = [tuple(({**a, "variant_id": ids[tuple(a["_key"])]}).get(c) for c in self._ACOLS) for a in arows if tuple(a["_key"]) in ids]
+            if ann:
+                await con.executemany(asql, ann)
+        return len(ids) - int(before)
+
+    async def count_variants(self, sample_id):
+        rows = await self._q("SELECT count(*) AS n FROM th_variant WHERE sample_id = :s", {"s": sample_id})
+        return int(rows[0]["n"])
+
     async def add_annotations(self, rows):
         n = 0
         for r in rows:
@@ -487,17 +606,86 @@ class PgRepo:
         row = dict(row)
         if isinstance(row.get("study_date"), str):                # asyncpg wants a date object for a DATE column
             row["study_date"] = date.fromisoformat(row["study_date"])
-        rows = await self._q("INSERT INTO th_signal_object (user_id, file_id, modality, format, body_part, study_date, series_desc, instance_count,"
-                             " residency, exportable, deid_status) VALUES (:user_id, :file_id, :modality, :format, :body_part, :study_date,"
+        rows = await self._q("INSERT INTO th_signal_object (user_id, file_id, file_key, modality, format, body_part, study_date, series_desc, instance_count,"
+                             " residency, exportable, deid_status) VALUES (:user_id, :file_id, :file_key, :modality, :format, :body_part, :study_date,"
                              " :series_desc, :instance_count, :residency, :exportable, :deid_status) RETURNING id",
-                             {"residency": "CN", "exportable": False, **{k: row.get(k) for k in ("user_id", "file_id", "modality", "format", "body_part", "study_date",
-                                                                                                    "series_desc", "instance_count", "deid_status")}})
+                             {"residency": "CN", "exportable": False, **{k: row.get(k) for k in ("user_id", "file_id", "file_key", "modality", "format", "body_part",
+                                                                                                    "study_date", "series_desc", "instance_count", "deid_status")}})
         return int(rows[0]["id"])
 
-    async def upsert_pedigree(self, family, members, owner_id=None):
-        rows = await self._q("INSERT INTO th_pedigree (family_id, label, owner_user_id) VALUES (:family_id, :label, :owner)"
-                             " ON CONFLICT (COALESCE(owner_user_id, ''), family_id) DO UPDATE SET label = EXCLUDED.label RETURNING id",
-                             {"family_id": family["family_id"], "label": family.get("label"), "owner": owner_id})
+    async def file_by_key(self, file_key):
+        rows = await self._q("SELECT id, user_id, query_user_id, content_hash, is_del, file_key FROM th_files WHERE file_key = :k"
+                             " ORDER BY id DESC LIMIT 1", {"k": file_key})
+        return rows[0] if rows else None
+
+    async def live_duplicate(self, user_id, content_hash, exclude_key):
+        if not content_hash:
+            return None
+        rows = await self._q("SELECT id, file_key FROM th_files WHERE COALESCE(NULLIF(query_user_id, ''), user_id) = :u"
+                             " AND content_hash = :h AND file_key <> :k AND is_del = false ORDER BY id DESC LIMIT 1",
+                             {"u": user_id, "h": content_hash, "k": exclude_key})
+        return rows[0] if rows else None
+
+    async def _tx(self, steps: Sequence[tuple[str, Mapping[str, Any]]]) -> list[str]:
+        """Run `steps` in one transaction → each statement's status tag ("DELETE 3")."""
+        pool = await self._p()
+        out = []
+        async with pool.acquire() as con, con.transaction():
+            for sql, params in steps:
+                q, args = _bind(sql, params)
+                out.append(await con.execute(q, *args))
+        return out
+
+    async def repoint_file(self, user_id, old_key, old_id, new_key, new_id):
+        p = {"u": user_id, "ok": old_key, "nk": new_key, "oi": old_id, "ni": new_id}
+        steps = [("UPDATE th_sequencing_sample SET file_key = :nk WHERE user_id = :u AND file_key = :ok", p)]
+        if old_id is not None:
+            steps += [(f"UPDATE {t} SET file_id = :ni WHERE user_id = :u AND file_id = :oi", p)
+                      for t in ("th_phenotype", "th_phenotype_review", "th_disease_code")]
+        steps += [("UPDATE th_signal_object SET file_key = :nk WHERE user_id = :u AND file_key = :ok", p),
+                  ("UPDATE th_pedigree SET file_key = :nk WHERE owner_user_id = :u AND file_key = :ok", p)]
+        tags = [int(s.split()[-1]) for s in await self._tx(steps)]
+        return {"samples": tags[0], "file_rows": sum(tags[1:-2]), "signals": tags[-2], "pedigrees": tags[-1]}
+
+    async def erase_file_rows(self, user_id, file_key, file_id):
+        p = {"u": user_id, "k": file_key, "f": file_id}
+        peds = await self._q("SELECT DISTINCT m.user_id FROM th_pedigree f JOIN th_pedigree_member m ON m.pedigree_id = f.id"
+                             " WHERE f.owner_user_id = :u AND f.file_key = :k AND m.user_id IS NOT NULL", p)
+        smp = "(SELECT id FROM th_sequencing_sample WHERE user_id = :u AND file_key = :k)"
+        ped = "(SELECT id FROM th_pedigree WHERE owner_user_id = :u AND file_key = :k)"
+        names = ["annotations", "variants", "samples"]
+        steps = [(f"DELETE FROM th_variant_annotation WHERE variant_id IN (SELECT id FROM th_variant WHERE sample_id IN {smp})", p),
+                 (f"DELETE FROM th_variant WHERE sample_id IN {smp}", p),
+                 ("DELETE FROM th_sequencing_sample WHERE user_id = :u AND file_key = :k", p)]
+        if file_id is not None:
+            names += ["phenotypes", "reviews", "disease_codes"]
+            steps += [(f"DELETE FROM {t} WHERE user_id = :u AND file_id = :f", p)
+                      for t in ("th_phenotype", "th_phenotype_review", "th_disease_code")]
+        names += ["signals", "pedigree_members", "pedigrees"]
+        steps += [("DELETE FROM th_signal_object WHERE user_id = :u AND file_key = :k", p),
+                  (f"DELETE FROM th_pedigree_member WHERE pedigree_id IN {ped}", p),
+                  ("DELETE FROM th_pedigree WHERE owner_user_id = :u AND file_key = :k", p)]
+        tags = await self._tx(steps)
+        out = {n: int(s.split()[-1]) for n, s in zip(names, tags)}
+        out.setdefault("phenotypes", 0); out.setdefault("reviews", 0); out.setdefault("disease_codes", 0)
+        out["pedigree_users"] = sorted(str(r["user_id"]) for r in peds)
+        return out
+
+    async def drop_promoted(self, user_id):
+        [tag] = await self._tx([("DELETE FROM th_disease_code WHERE user_id = :u AND source = 'nlp+variant'", {"u": user_id})])
+        return int(tag.split()[-1])
+
+    async def clear_inheritance(self, user_id):
+        [tag] = await self._tx([("UPDATE th_variant SET inheritance = 'unknown', is_de_novo = NULL"
+                                 " WHERE sample_id IN (SELECT id FROM th_sequencing_sample WHERE user_id = :u)"
+                                 " AND COALESCE(inheritance, 'unknown') <> 'unknown'", {"u": user_id})])
+        return int(tag.split()[-1])
+
+    async def upsert_pedigree(self, family, members, owner_id=None, file_key=None):
+        rows = await self._q("INSERT INTO th_pedigree (family_id, label, owner_user_id, file_key) VALUES (:family_id, :label, :owner, :fk)"
+                             " ON CONFLICT (COALESCE(owner_user_id, ''), family_id) DO UPDATE SET label = EXCLUDED.label,"
+                             " file_key = COALESCE(EXCLUDED.file_key, th_pedigree.file_key) RETURNING id",
+                             {"family_id": family["family_id"], "label": family.get("label"), "owner": owner_id, "fk": file_key})
         pid = int(rows[0]["id"])
         for m in members:
             await self._q("INSERT INTO th_pedigree_member (pedigree_id, user_id, individual_id, paternal_id, maternal_id, sex, affected, is_proband, analysis_only)"

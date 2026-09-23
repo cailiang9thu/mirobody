@@ -125,6 +125,20 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 7g | p3 20 例全附件经**页面**走一遍,读数与脚本路径(879 条真差异 0)一致 | `tools/roundtrip_web.py` | ✅(879 条,真差异 0,控制台报错 0;`reports/roundtrip/web-p3-20260923/`) |
 | 7h | 后端单测:插件路由 7 条(权限 403 / 无样本 404 / 非 failed 409 / 存储缺失 410)、失败样本续用 + 瞬时错误重试 5 条、主包 `mirobody.routers` 2 条 | `test_web_api.py` · `test_upload_robustness.py` · `mirobody/tests/test_plugin_routers.py` | ✅ |
 
+## 3g. 删除文件 = 删除由它派生的一切(主包 `mirobody.delete_hooks`,插件 `erase.py`)
+
+| # | 验收项 | 测试 | 状态 |
+| --- | --- | --- | --- |
+| 3g.1 | 删 VCF:样本 / 变异 / 注释删除,别的文件与亲属自己的数据不动 | `test_erase.py::test_deleting_a_vcf_erases_its_sample_variants_and_annotations_only` | ✅ |
+| 3g.2 | 删父亲 VCF:先证者 trio 遗传来源回到 `unknown`(改前留着旧的 `biparental`) | `test_deleting_a_parents_vcf_resets_the_probands_trio_inheritance` | ✅ |
+| 3g.3 | 删 PED:家系删除,它支撑的遗传来源一并回退 | `test_deleting_the_ped_erases_the_family_and_the_inheritance_it_enabled` | ✅ |
+| 3g.4 | 删病历:其表型 / 复核项 / 诊断删除(含由其复核项确认的 clinician 行),别的病历的不动 | `test_deleting_a_narrative_erases_its_phenotypes_reviews_and_diagnosis` | ✅ |
+| 3g.5 | 同一内容传了两次、删第一份:不删,改指向仍在的那份(改前样本的 file_key 悬空,重试 / trio 回填读不到) | `test_a_live_copy_of_the_same_bytes_keeps_the_rows_and_takes_them_over` | ✅ |
+| 3g.6 | 删 DICOM zip:其索引行删除 | `test_deleting_a_dicom_zip_erases_its_index_row` | ✅(2026-09-23 前写入的行 `file_id=0`、无 key,追不到,留着) |
+| 3g.7 | 主包:删除路径内联 await 钩子、代传文件按被代传人归属、钩子失败写进 `cascade_errors` 且不回滚删除;不装插件无钩子 | `mirobody/tests/test_delete_hooks.py` 三例 | ✅ |
+| 3g.8 | 真库 SQL:改指向与删除两条路径 | `test_pg.py::test_pg_erase_file_rows_and_repoint` | ✅ |
+| 3g.9 | 实机:三人家系 + 病历 + DICOM 经 WebSocket 传上,再用 `POST /api/v1/data/delete-files` 逐个删,每删一个查一次库 | `tools/delete_cascade_check.py`:五步全过(父 VCF → 先证者 3 条遗传来源归 unknown;病历 → 11 表型 / 27 复核 / 1 诊断清空;…;最后先证者名下为 0,母亲的不动) | ✅ |
+
 ## 4. 接口 · D5(§10)
 
 | # | 验收项 | 测试 | 状态 |
@@ -151,7 +165,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 6.2 | 3 GB 文件在第一片前被拒并说明 | ✅ `test_admission.py`(纯函数 4 例)+ 实机:`upload_start` 报 3 GB fastq ⇒ `upload_error/refused`,零 chunk;主包 `collect/files/admission.py` + `handle_upload_start` 接线 |
 | 6.3 | 同一 WES 连传两次只落盘一次 | ❌(字节仍落盘两次;库行已去重) |
 | 6.4 | 带 `.tbi` 的 WES 解析 ≤ 5 s | 🟡 pysam 按 contig 路径已接(`test_tabix.py`,与文本路径逐位一致);在 3-contig 切片上 5.9 s vs 文本 3.6 s —— 收益在全基因组文件只取需要的 contig,单切片没有;WES 全文件读数待真实 WES |
-| 6.5 | 处理期间 `/api/chat` p95 不劣化 | ❌ 阻塞:`mirobody worker` 队列以 Redis 为锁与任务源,本机无 Redis;处理仍在 server 进程内 `spawn` |
+| 6.5 | 处理期间 `/api/chat` p95 不劣化 | 🟡 **事件循环不再卡顿**(`tools/loop_latency_probe.py`,156 MB GIAB VCF,每 50 ms 打一次 `/api/health`):改前最长卡 **10.0 s**(`_chroms_in` 在事件循环上整文件解压扫描,单测 10.17 s),处理 407 s;改后最长 **144 ms**、无 >300 ms,处理 **44 s**。p95 由空闲 1.6 ms 升到 42 ms(同样的解析压进 1/9 的时间,GIL 争用更密),对秒级的对话响应可忽略但不是「不劣化」;处理仍在 server 进程内(worker 队列要 Redis,未动)。探针第一版把**客户端自己** base64 编码 150 MB 造成的 2 s 当成了服务端卡顿,已改为上传走独立线程 |
 
 ## 7. 汇总与下一步
 

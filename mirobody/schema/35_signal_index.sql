@@ -21,3 +21,7 @@ CREATE TABLE IF NOT EXISTS th_signal_object (
     create_time    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_th_signal_user_modality ON th_signal_object (user_id, modality);
+
+-- 2026-09-23: the storage key of the uploaded zip, so deleting the file erases its index row.
+-- `file_id` cannot carry it: the handler runs before the th_files row exists (it was written as 0).
+ALTER TABLE th_signal_object ADD COLUMN IF NOT EXISTS file_key VARCHAR(255);

@@ -129,11 +129,12 @@ class _RareHandler(BaseFileHandler):
         return self.kind
 
     @staticmethod
-    def _result(temp_file_path: str, **fields) -> dict[str, Any]:
+    async def _result(temp_file_path: str, **fields) -> dict[str, Any]:
         """Every rare handler answers with `content_hash` so th_files carries the bytes' identity
         (the shipped text path computes it; a binary path that does not leaves the dedup key and
-        the roundtrip file check empty)."""
-        return {"original_text": "", "content_hash": content_hash_of(temp_file_path), **fields}
+        the roundtrip file check empty). Hashed in a thread: 0.5 s per 150 MB on the event loop."""
+        import asyncio
+        return {"original_text": "", "content_hash": await asyncio.to_thread(content_hash_of, temp_file_path), **fields}
 
     def _repo(self):
         from .repo import PgRepo
@@ -157,7 +158,7 @@ class VcfHandler(_RareHandler):
             from .dx_refresh import refresh_diagnosis
             log.info("[dx_refresh] after VCF: %s", await refresh_diagnosis(repo, str(ctx.target_user_id)))
         spawn(_job(), name=f"ingest_vcf:{unique_filename}")
-        return self._result(temp_file_path, file_name=ctx.filename,
+        return await self._result(temp_file_path, file_name=ctx.filename,
                             file_abstract="VCF (GRCh38) — variants are being parsed in the background; query_variant lists the filtered calls once the sample is ready")
 
 
@@ -172,10 +173,11 @@ class PedHandler(_RareHandler):
         pg = parse_ped(temp_file_path)
         members = await repo.circle_members(str(ctx.user_id))
         user_ids = map_ped_to_circle(pg, members, uploader_id=str(ctx.target_user_id))
-        pid = await ingest.ingest_ped(repo, temp_file_path, user_ids=user_ids, owner_id=str(ctx.target_user_id))
+        pid = await ingest.ingest_ped(repo, temp_file_path, user_ids=user_ids, owner_id=str(ctx.target_user_id),
+                                      file_key=unique_filename)
         spawn(backfill_family(repo, str(ctx.target_user_id)), name=f"trio_backfill:{unique_filename}")
         unmapped = [m.individual_id for m in pg.members if m.individual_id not in user_ids]
-        return self._result(temp_file_path, file_name=ctx.filename,
+        return await self._result(temp_file_path, file_name=ctx.filename,
                             file_abstract=f"PED pedigree imported (th_pedigree #{pid}); {len(user_ids)} members linked to care-circle accounts"
                                           + (f", unlinked: {', '.join(unmapped)} (no account in your care circle yet)" if unmapped else ""))
 
@@ -184,9 +186,10 @@ class DicomHandler(_RareHandler):
     kind = "dicom"
 
     async def _process_content(self, ctx, temp_file_path, unique_filename, full_url, language) -> dict[str, Any]:
-        row = await ingest.ingest_dicom(self._repo(), str(ctx.target_user_id), temp_file_path, file_id=0)
+        row = await ingest.ingest_dicom(self._repo(), str(ctx.target_user_id), temp_file_path, file_id=0,
+                                        file_key=unique_filename)
         status = row.get("deid_status")
-        return self._result(temp_file_path, file_name=ctx.filename,
+        return await self._result(temp_file_path, file_name=ctx.filename,
                             file_abstract=(f"DICOM series indexed ({row.get('modality')}, de-identified)" if status == "done"
                                            else f"DICOM series stored but hidden: de-identification failed on {row.get('phi_tags')}"))
 

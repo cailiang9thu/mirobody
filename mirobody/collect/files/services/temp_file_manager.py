@@ -6,6 +6,7 @@ Responsible for creating, deleting and other operations on temporary files
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import tempfile
@@ -59,11 +60,12 @@ class TempFileManager:
             # Generate unique temporary filename with UUID and timestamp
             unique_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
 
-            # Create temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{unique_id}{suffix}") as temp_file:
-                # Write content
-                temp_file.write(content)
-                temp_file_path = temp_file.name
+            # Create temporary file (in a thread: a large upload is a long synchronous write)
+            def _write() -> str:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{unique_id}{suffix}") as temp_file:
+                    temp_file.write(content)
+                    return temp_file.name
+            temp_file_path = await asyncio.to_thread(_write)
 
             # Reset file pointer
             await upload_file.seek(0)

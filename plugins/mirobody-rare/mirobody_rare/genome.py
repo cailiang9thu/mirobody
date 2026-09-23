@@ -228,10 +228,12 @@ async def trio_backfill(repo, proband_user_id: str, storage=None) -> dict:
     out = {"updated": 0, "skipped": [], "loci": 0}
     if not fam:
         out["skipped"].append("no_pedigree")
+        out["cleared"] = await repo.clear_inheritance(proband_user_id)
         return out
     me = next((m for m in fam["members"] if str(m.get("user_id")) == str(proband_user_id)), None)
     if not me:
         out["skipped"].append("proband_not_in_pedigree")
+        out["cleared"] = await repo.clear_inheritance(proband_user_id)
         return out
     by_id = {m["individual_id"]: m for m in fam["members"]}
     parents = {"father": by_id.get(me.get("paternal_id") or ""), "mother": by_id.get(me.get("maternal_id") or "")}
@@ -262,6 +264,9 @@ async def trio_backfill(repo, proband_user_id: str, storage=None) -> dict:
         finally:
             os.unlink(tmp)
     if len(gts) < 2:
+        # a parent's sample was deleted (or never came): whatever an earlier trio said no longer
+        # holds, and a stale `de_novo` is worse than `unknown`
+        out["cleared"] = await repo.clear_inheritance(proband_user_id)
         return out
     from .pedigree import trio_inheritance
     for v in variants:
