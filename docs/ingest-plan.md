@@ -279,5 +279,60 @@ UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的�
 21. mirobody-rare 只有本地提交(origin 指向上游 mirobody 仓),未推送。
 22. `th_disease_code` 保留历史行,读者按 `source` 取最新,没有"当前诊断"视图。
 
+## 7. 上传 UI 的改进与评测(2026-09-23,mirobody-rare 服务)
+
+现在能传、能编码、能回读(§3 的 20 例往返真差异 0),但**页面是通用 MiroBody 的上传页**,罕见病一例是
+5–6 个文件、分属不同账号、还有先后顺序,这些 UI 一概不知道。下面每条都来自本轮实测,不是设想。
+
+### 7.1 现状的七个问题(逐条有出处)
+
+| # | 问题 | 出处 |
+|---|---|---|
+| U1 | 传基因组文件只能走 `/upload` 页。对话页 `ChatInput` 提交到 REST `POST /api/v1/data/upload-health-report`,**本后端没有这个路由**(405) | 浏览器抓包;`file_router.py` 只有 `/ws/upload-health-report` |
+| U2 | 不选「share member」不让传,错误文案是裸中文 `请选择受益人`,自己传自己的文件也必须先在下拉里点自己 | `app/upload/page.tsx:837` |
+| U3 | 进度条永远不动:页面连 `wss://…/api/ws/file-progress`,后端无此路由,控制台每次三条报错 | 后端全仓 grep 无 `file-progress`;生产站控制台 |
+| U4 | 没有「一个病例」的概念。PED → 父母 VCF → 先证者 VCF → 病历 → DICOM 的顺序、以及亲属文件必须用亲属账号上传(§18 关爱圈),全靠人记 | `tools/roundtrip_check.py::run_case` 是脚本才做得到的事 |
+| U5 | 后台解析失败只把 `th_sequencing_sample.status` 写成 `failed`,页面上仍是「已完成」,用户看不到一例数据是残缺的 | 本轮 JD-50 母本样本 failed,UI 无任何提示 |
+| U6 | 编码结果不可见。一份病历能产生 11 条表型 + 26 条 review(歧义/弃权/截断),前端**没有任何 review 队列页**,`resolve_phenotype_review` 工具只能在对话里调 | `ls app/` 无相关页面 |
+| U7 | admission 拒绝的原因被吞成通用文案。2 GB/5 GB/10 MB 的分类型上限、fastq/bam/cram 的直接拒收,用户只看到「格式不支持」 | `collect/files/admission.py` 的 reason 未回显 |
+
+### 7.2 改进(按"能不能上线"排序,不是按好看排序)
+
+**P0 · 让人能独立完成一次完整上传**
+1. **病例上传向导**(新 `/upload/case` 页):一次选一例的全部文件,前端按 PED → 父母 VCF → 先证者 VCF → 病历 → DICOM 排序串行发,每步显示「已收到 / 解析中 / 已入库 / 失败」。亲属文件在向导里选「这是父亲的数据」,前端用关爱圈成员身份提交(`query_user_id`),而不是要求用户换账号登录。
+2. **受益人默认选自己**(U2):`/api/beneficiary-users` 返回里带 `is_current_user`,进页面即默认选中;文案走 i18n,不留裸中文。
+3. **真实进度**(U3):后端补 `/ws/file-progress`,或前端改为只用 `/ws/upload-health-report` 已有的 `upload_progress` 事件(它本来就带 30/34/42/64/81 这些阶段),去掉那条不存在的连接。后者零后端改动,优先。
+4. **失败要可见**(U5):上传完成后轮询 `query_variant` / 样本状态,`failed` 的样本在卡片上标红并给「重试解析」按钮(后端已有按分片续解析的幂等入口)。
+
+**P1 · 让结果可核对**
+5. **编码结果面板**:上传后展示本次新增的表型条数、诊断候选、待复核条数,点进去是 review 队列(歧义候选二选一、弃权项确认),调 `resolve_phenotype_review`。这是把现在只能对话里做的事搬到页面上。
+6. **admission 原因回显**(U7):把 `admit_files` 的 reason 透到 `upload_start` 的拒绝响应里,前端原样显示(含该类型的上限数值)。
+
+**P2 · 大文件与稳定性**
+7. 断点续传:分片已在 `SpooledUploadFile` 落盘,补一个「同 content_hash 续传」的协商步骤。
+8. 对话页也能传基因组文件(U1):把 `ChatInput` 的上传改到 WebSocket hook,与 `/upload` 共用一条路径。
+
+### 7.3 评测计划(与 §3 往返同一套口径,不另起炉灶)
+
+**层次**:UI 用 Playwright(`-m web`),链路复用 `roundtrip_check.py` 的十层比对,编码质量继续由 haenv 判据看,三者不重叠。
+
+| # | 验收项 | 怎么测 | 通过线 |
+|---|---|---|---|
+| 7a | 向导把一例 5–6 个文件按序传完,`th_files` 行数与 sha256 全对 | Playwright 走 `/upload/case`,完后调 `compare_case()` 的文件/样本层 | 真差异 0 |
+| 7b | 亲属文件落在亲属账号名下,权限仍按 `health_access` | 同上 + 家系层与权限层 | 与 §3 同:预期拒计设计性 |
+| 7c | 进度条走到 100 且无控制台报错 | Playwright 收集 console error,断言无 `file-progress` 失败 | 0 条报错 |
+| 7d | 样本 `failed` 时页面标红且「重试解析」能把它拉回 `ready` | 注入一次可控失败(断开 DB 或喂坏 VCF)后重试 | 重试后 `ready`,变异行数与金标一致 |
+| 7e | review 队列页能把一条歧义项定下来,写出 `source='clinician'` 的表型行 | Playwright 点选 + 查库 | 行数 +1,`th_phenotype_review.resolved_at` 非空 |
+| 7f | admission 拒绝时页面显示类型与上限 | 传一个 fastq 与一个超限文件 | 文案含类型与数值 |
+| 7g | 20 例全附件经**页面**走一遍(不是脚本) | 半自动:Playwright 批量驱动向导,再跑 §3 十层比对 | 与脚本路径读数一致 |
+
+**基线**:脚本路径已经是 879 条真差异 0(§3,p3 题包);页面路径的目标是**读数与脚本路径一致**,任何差值都算 UI 引入的损耗。
+
+**要先钉住的两件事**:改 `text_hook` / `coding` 这类常驻模块后必须重启 `mirobody-rare-api.service`,否则测的是旧代码(本轮 12 条假缺失就是这么来的);
+跨区 RDS 并发建连会偶发超时,UI 评测的并发要压到 ≤2,或先给 VCF 入库加退避重试。
+
+### 7.4 工作量
+向导页 2 天 · 进度与失败可见 0.5 天 · review 队列页 1.5 天 · admission 回显 0.5 天 · Playwright 七条用例 1 天。P0 合计约 3 天可上线自助上传。
+
 ## 5. 工作量
 主包钩子 + 插件 `text_hook.py` + review 表与工具:1 天;往返比对脚本 `tools/roundtrip_check.py`(账号/圈/顺序/清理/九层比对/分类报告/抽样对照报告):1.5 天;PED 后到回填:2 小时。
