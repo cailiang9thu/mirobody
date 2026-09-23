@@ -189,6 +189,27 @@ HTML 报告:`haenv-rare/reports/rare_coding-p2/20260922-053351/eval-rare_coding-
 
 HTML 报告:`haenv-rare/reports/rare_coding-p3/20260922-095441/eval-rare_coding-p3.html`。
 
+## 往返比对 · 20 例全附件(p3 题包,2026-09-23)
+
+`tools/roundtrip_check.py --cases JD-50..JD-69 --batch results/joint_dx/rare_coding-p3/20260922-095441 --out reports/roundtrip/p3-20260923 --concurrency 2`
+——这一轮上传的是病例**自带的期刊体病历附件**(`derived/<case>/<case>.md`),不再由脚本按证据台账临时渲染;
+表型层的比对口径随之改成按 `narrative.spans` 取原文,否则金标句与实际入库的句子对不上会报假缺失。
+
+| 层 | 条数 | 相同 | 设计性 | 真差异 |
+| --- | --- | --- | --- | --- |
+| 文件 / 样本 / 注释 | 147 / 50 / 138 | 全部 | 0 | 0 |
+| 变异 | 212 | 138 | 74(gnomAD 常见变异库里保留) | 0 |
+| 遗传来源 / 家系 / 影像 / 诊断 | 15 / 20 / 20 / 20 | 全部 | 0 | 0 |
+| 表型 | 222 | 213 | 9(歧义进 review) | 0 |
+| 权限 | 35 | 20 | 15(预期拒) | 0 |
+
+合计 879 条:相同 781 · 设计性 83 · 预期拒 15 · 传输/版本/顺序/编码 **0**。
+
+**第一遍的 16 条真差异,两个原因,都不是新代码的缺陷**:
+1. 12 条「查体无 X。」表型缺失 —— 源机 API 服务 09-22 05:07 启动,而 `split_sections` 的修复是当天 10:01 写的,**服务没重启,跑的是修复前的代码**。重启后全部归位。教训:改了 `text_hook`/`coding` 这类在服务进程里常驻的模块,必须重启 `mirobody-rare-api.service` 才算生效。
+2. JD-50 母本样本 `failed`,级联出 2 条变异缺失与遗传来源 `unknown` —— asyncpg 连接池 `TimeoutError`,20 例并发入库时连跨区 RDS(往返 ≈500 ms)建连超时。重跑未复现。
+   未收紧项:连接池 `max_size=8, timeout=30`,且 VCF 入库失败直接把样本标 `failed`、无重试。
+
 ## 第二套部署:阿里云主机 `mirobody-rare`(<aliyun-host>,2026-09-23)
 
 同一套代码在 `ssh mirobody-rare`(root@<aliyun-host>,Ubuntu 24.04,4C/14G)上再跑一份,与源机互不影响。

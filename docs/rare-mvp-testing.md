@@ -88,6 +88,7 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3c.1 | 归一化 / 设计性过滤不算缺失 / 六类分类 / 截片段 | `test_roundtrip.py` 四例(纯函数) | ✅ |
 | 3c.2 | `summary.html`:米黄底蓝字、viewport、无 `<script>`、无外链、窄屏堆叠、`<details>`、< 200 kB;`samples.md` 三栏 + 计数行 | `test_html_is_nojs_responsive_cream_blue` · `test_samples_md_has_three_columns_and_count_line` | ✅ |
 | 3c.4 | 往返逼出的三处代码缺陷各有红测试:圈成员状态是整数 2 而非字符串(`test_pg.py::test_pg_circle_members_are_accepted_integer_status`)、VCF 与病历谁先到诊断都要用变异重排(`test_dx_refresh.py` 三例)、gnomAD 旧缓存 / HGDP 小队列 popmax(`test_gnomad.py` 两例) | 见左 | ✅ |
+| 3c.5 | p3 全附件 20 例走完(病历用病例自带的期刊体附件,表型按 span 台账比对):十层 879 条,真差异 0 | `reports/roundtrip/p3-20260923/`(2026-09-23) | ✅ |
 | 3c.3 | 真实部署上 N 例走完:账号 → 圈 → PED → 父母 VCF → 先证者 VCF → 病历 → DICOM → 回读九层 | `tools/roundtrip_check.py`;读数见 impl 文档「往返」段 | ✅(2026-09-22 三轮:6 例 / 十层全部相同或设计性差异,真差异 0;`reports/roundtrip/20260922/{samples.md,summary.html}`) |
 
 ## 3d. Web 页面上传 → 对话读回(ingest-plan §3.9,Playwright)

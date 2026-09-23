@@ -191,8 +191,16 @@ async def run_case(s, base: str, batch: Path, cid: str, out_dir: Path) -> dict:
         f = gen["files"][role]
         d = await upload(s, base, accts[role][0], [(f"{role}.vcf.gz", Path(f["path"]), "application/gzip")])
         events["steps"].append((f"vcf:{role}", d.get("status")))
-    md = out_dir / f"{cid}.md"
-    md.write_text(narrative_md(cid, sp), encoding="utf-8")
+    # the record itself when the batch ships one (rare_narrative.py, 期刊体八节), else the
+    # ledger rendered into sentences — a题包 built before 2026-09-22 has no narrative attachment
+    nar = att.get("narrative") or {}
+    if nar.get("path") and Path(nar["path"]).is_file():
+        md = Path(nar["path"])
+        events["narrative_source"] = "attachment"
+    else:
+        md = out_dir / f"{cid}.md"
+        md.write_text(narrative_md(cid, sp), encoding="utf-8")
+        events["narrative_source"] = "rendered_from_ledger"
     d = await upload(s, base, tok_p, [(f"{cid}.md", md, "text/markdown")])
     events["steps"].append(("narrative", d.get("status")))
     img = att.get("imaging") or {}
@@ -304,8 +312,16 @@ async def compare_case(run: dict, min_stars: int = 1) -> tuple[list[dict], list[
     real_ids = case["question"]["injected_manifest"]["real_symptom_evidence_ids"]
     led = {e["evidence_id"]: e for e in sp["evidence_ledger"]}
     ph = await repo.phenotypes(uids["proband"])
+    # What was uploaded decides what the expected sentence is: with a narrative attachment the
+    # coder saw the record's own prose, so the span ledger (`narrative.spans`) is the gold text,
+    # not the ledger's one-liner. Comparing against the wrong one reports false misses.
+    nar_text, spans = "", {}
+    if (att.get("narrative") or {}).get("path") and Path(att["narrative"]["path"]).is_file():
+        nar_text = Path(att["narrative"]["path"]).read_text(encoding="utf-8")
+        spans = {x["idx"]: x for x in att["narrative"].get("spans") or [] if x.get("hpo_id")}
     for g in gold:
-        sent = led[real_ids[g["idx"]]].get("symptom", "")
+        sp_g = spans.get(g["idx"])
+        sent = nar_text[sp_g["start"]:sp_g["end"]] if sp_g else led[real_ids[g["idx"]]].get("symptom", "")
         hit = next((r for r in ph if r.get("source_text") and (r["source_text"] in sent or sent in r["source_text"])), None)
         if hit is None:
             rv = await p.fetchrow("SELECT kind, candidates FROM th_phenotype_review WHERE user_id=$1 AND (source_text = ANY($2::text[]) OR $3 LIKE '%' || source_text || '%') LIMIT 1", uids["proband"], [sent], sent)
@@ -368,7 +384,8 @@ async def build_report(batch: Path, runs: list[dict], items: list[dict], seed: i
     b = json.load(open(batch / "batch.json"))
     env = {"batch": batch.name, "world_sha": b.get("world_sha"), "kernel_sha256": b.get("kernel_sha256"), "clinvar": get_clinvar().version,
            "hpo_bundle": get_adapter().b.meta.get("built_at"), "schema": os.environ.get("MIROBODY_RARE_PG_SCHEMA", "mirobody_rare"),
-           "reference_backend": os.environ.get("MIROBODY_RARE_REFERENCE_BACKEND", "memory"), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "reference_backend": os.environ.get("MIROBODY_RARE_REFERENCE_BACKEND", "memory"),
+           "narrative": "attachment" if any((r["events"] or {}).get("narrative_source") == "attachment" for r in runs) else "rendered_from_ledger", "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     gaps = ["th_disease_code 保留历史:表型排序的候选行不删,变异促升另加一行 source=nlp+variant(JD-77 因而并列 ORPHA:45448 与 ORPHA:70);读者按 source 取最新",
             "th_signal_object.file_id 现为 0(DICOM 处理器拿不到 th_files.id),影像层按 th_files.content_hash 校验字节、按行数与 deid 状态比对",
             "表型层的\"原始\"是 haenv 合成句子,不是真实病历;真实语料读数待 D9 金标",
