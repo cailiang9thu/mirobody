@@ -89,6 +89,10 @@ async def run(params: ChatStreamRequest) -> AsyncGenerator[dict[str, Any], None]
         if not await _may_chat(params):
             yield {"type": ERROR, "message": "No permission to chat for this user"}
             return
+        if not await _may_attach(params):
+            yield {"type": ERROR, "message": "No permission to upload files for this user: "
+                                             "attaching files to their record needs write access in the care circle"}
+            return
 
         # An attachment-only turn asks "read this": say it out loud ONCE,
         # before anything downstream reads `params.question`. Three things key
@@ -131,6 +135,25 @@ async def _may_chat(params: ChatStreamRequest) -> bool:
         await resolve_subject(params.user_id, params.query_user_id)
     except CareCircleDenied as denied:
         logger.error("chat refused: user_id=%s subject_id=%s reason=%s",
+                     params.user_id, params.query_user_id, type(denied).__name__)
+        return False
+    return True
+
+
+async def _may_attach(params: ChatStreamRequest) -> bool:
+    """Whether this turn's attachments may be filed into `query_user_id`'s record.
+
+    Chatting about someone needs view access; filing files INTO their record is a
+    write, and needs what the upload WebSocket already demands
+    (`resolve_subject(..., require_write=True)`). Without this a view-only member
+    could put documents and genomes into a relative's record from the chat box.
+    """
+    if not params.file_list or not params.query_user_id or str(params.query_user_id) == str(params.user_id):
+        return True
+    try:
+        await resolve_subject(params.user_id, params.query_user_id, require_write=True)
+    except CareCircleDenied as denied:
+        logger.error("attachment refused: user_id=%s subject_id=%s reason=%s",
                      params.user_id, params.query_user_id, type(denied).__name__)
         return False
     return True
