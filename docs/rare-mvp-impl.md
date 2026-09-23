@@ -189,6 +189,28 @@ HTML 报告:`haenv-rare/reports/rare_coding-p2/20260922-053351/eval-rare_coding-
 
 HTML 报告:`haenv-rare/reports/rare_coding-p3/20260922-095441/eval-rare_coding-p3.html`。
 
+## 第二套部署:阿里云主机 `mirobody-rare`(<aliyun-host>,2026-09-23)
+
+同一套代码在 `ssh mirobody-rare`(root@<aliyun-host>,Ubuntu 24.04,4C/14G)上再跑一份,与源机互不影响。
+
+| 项 | 值 |
+| --- | --- |
+| 代码 | `/root/caill/{mirobody-rare,mirobody-web,haenv-rare}`;`/data/xfs_recovery/caill/*` 与 `/data/xfs_recovery/data/rare` 在那边是**软链**指回来,因为 job.yaml / config.yaml 里是源机的绝对路径 |
+| 库 | **自带 Postgres 16 + pgvector**,库 `mirobody_test`、schema `mirobody_rare` 由应用自身 bootstrap 建;源机那台 RDS 是私网地址(<rds-private-ip>),远端解析不到 |
+| 服务 | `systemctl --user` 的 `mirobody-rare-api.service`(28085)与 `mirobody-rare-web.service`(28086),root 已开 linger |
+| 环境 | `/root/caill/.mirobody_rare_env` = 源机同一份,只把 DSN 改成 `127.0.0.1:5432`;加密与 JWT 密钥保持一致 |
+| 验证 | 注册登录 → WebSocket 传 JD-55 病历 → `th_files` 2 行、`th_phenotype` 6 行、`th_disease_code` 1 行、review 26 行 → `/api/chat` 调 `query_phenotype` 并按 HPO 号答出表型 |
+
+**踩到的坑**:未装 `postgresql-16-pgvector` 时 `00_prolog.sql` 的 `CREATE EXTENSION vector` 失败,整个事务回滚把同一事务里的 `CREATE SCHEMA mirobody_rare` 一并撤掉,
+于是 43 张表全落进 `public` 且没有 `encrypt_content`。装扩展 + 重建库后 52 张表正常落在 `mirobody_rare`。
+
+**链路只有 50–80 KB/s**(实测 40 MB 用 8 分 47 秒),所以只推代码,公共数据让远端自取(它拉 NCBI 有 12 MB/s):
+ClinVar `clinvar_20260913.vcf.gz` 与 HPO / Orphadata / HGNC 八个文件远端下载后 **md5 与源机逐字节相同**,按源机 mtime `touch` 后 rsync 校验 0 文件待传。
+**没推**:`haenv-rare/derived`(5.6 GB)与 `data/rare` 的 VCF 骨架与 DICOM(11 GB)—— 按此速率要 2.5 天;只推了 JD-50 / JD-55 两例夹具。因此那台**不能出题、不能跑 haenv 批次**,需要时用 `data/rare/download.py` 让它自己下。
+
+**两处远端限制**:gnomAD API 从那台返回 403(机房段封锁,换 UA 无效),频率过滤只能吃推过去的磁盘缓存;
+28085/28086 在主机侧是放开的(ufw 未启用、iptables ACCEPT),但**阿里云安全组**未放行,外网访问要在控制台开端口。
+
 ## 部署:前端 + 后端(2026-09-21)
 
 | 项 | 值 |
