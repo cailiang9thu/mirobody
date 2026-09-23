@@ -1,0 +1,78 @@
+# Chinese assertion cues, consumed by `assertion/context.py` (same schema as en.yaml).
+#
+# Chinese runs in the engine's ANCHORED mode: a negation cue counts at the start of a clause
+# (after the relative, when there is one) or at its end, never mid-clause. That is ConText with
+# a position constraint on each trigger (`anchor`), and it is what the extractor has always done;
+# moved here verbatim from rules.py on 2026-09-23 with its readings unchanged (p0–p3, 2653
+# assertions, diffed before/after). There is no held-out Chinese set yet, so the scope mode the
+# English side uses is NOT switched on for Chinese: a change there could not be measured.
+lang: zh
+boundary: char            # cues match as substrings (no word boundaries in Chinese)
+mode: anchored
+clause_split: "[、，,；;]"
+
+rules:
+  # --- NEGATED_EXISTENCE · FORWARD · anchored at the clause start
+  - {literal: 未见, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 否认, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 查体无, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 查体未见, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 未出现, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 未发现, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 不伴, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 没有, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 无明显, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 无, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 未闻及, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 未触及, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 未及, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 不存在, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 排除, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  - {literal: 已排除, category: NEGATED_EXISTENCE, direction: FORWARD, anchor: start}
+  # --- NEGATED_EXISTENCE · BACKWARD · anchored at the clause end ("A、B、C 均正常")
+  - {literal: 阴性, category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: 未见异常, category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: 正常, category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: "(-)", category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: "（-）", category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: 均正常, category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: 未见, category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  - {literal: 阴性。, category: NEGATED_EXISTENCE, direction: BACKWARD, anchor: end}
+  # --- POSSIBLE_EXISTENCE · anywhere in the clause
+  - {literal: 可疑, category: POSSIBLE_EXISTENCE, direction: BIDIRECTIONAL}
+  - {literal: 疑似, category: POSSIBLE_EXISTENCE, direction: BIDIRECTIONAL}
+  - {literal: 不除外, category: POSSIBLE_EXISTENCE, direction: BIDIRECTIONAL}
+  - {literal: 待排, category: POSSIBLE_EXISTENCE, direction: BIDIRECTIONAL}
+  - {literal: 可能, category: POSSIBLE_EXISTENCE, direction: BIDIRECTIONAL}
+  - {literal: 考虑, category: POSSIBLE_EXISTENCE, direction: BIDIRECTIONAL}
+
+# FAMILY experiencer: the kin word -> subject_role. A kin word is the clause's subject only at the
+# clause start (or after , ; :) followed by `subject_after_start`, or anywhere followed by
+# `subject_after_any` — "脑脊液丙酮酸家族氨基酸" must not become a family history.
+family:
+  roles:
+    father: [父亲, 爸爸, 生父]
+    mother: [母亲, 妈妈, 生母]
+    sibling: [姐姐, 妹妹, 哥哥, 弟弟, 姐妹, 兄弟, 同胞, 胞兄, 胞弟, 胞姐, 胞妹, 双胞胎]
+    other_relative: [舅舅, 外祖父, 外祖母, 祖父, 祖母, 爷爷, 奶奶, 外公, 外婆, 叔叔, 姑姑, 姨妈, 表兄, 表弟, 表姐,
+                     表妹, 堂兄, 堂弟, 堂姐, 堂妹, 儿子, 女儿, 侄子, 侄女, 外甥, 家族史, 家族中, 亲属]
+  clause_start: "[,，;；:：。]"    # a kin word right after one of these is at a clause start
+  subject_after_start: [有, 曾, 也, 亦, 均, 患, 存在, ":", "：", 无, 否认, $]
+  subject_after_any: [有, 曾有, 也出现过, 也有, 亦有, 均有, 患有, 中有]
+  tail_prefix: [有, 曾有, 也出现过, 也有, 亦有, 均有, 患有, 存在, 也曾]
+  tail_suffix: [史, 病史]
+
+# Present-tense scaffolding stripped from the core handed to the coder (haenv + everyday clinic phrasing)
+filler:
+  prefix: [出现, 近期, 自述, 主诉, 患者诉, 表现为, 呈, 有]
+  suffix: [较明显, 明显, 加重, 为主, 表现, 症状]
+  strip_chars: " ,，。.;；:："
+
+patterns:
+  onset: "((?:出生|生后|新生儿期|婴儿期|幼年|儿童期|青春期|成年后|近期|最近|\\d+\\s*(?:岁|个月|月|天|周|年)(?:时|起|龄|左右)?(?:起病|发病)?))"
+  prior_clinician: "(外院|曾被诊断|既往诊断|曾诊断|前医|误诊)"
+  patient: "^(自述|主诉|患者诉|自诉|自觉)"
+  lab_value: "\\d+(?:\\.\\d+)?\\s*(?:mmol/L|μmol/L|umol/L|g/L|mg/dL|U/L|IU/L|ng/mL|pg/mL|%|×10|x10)"
+  imaging: "(?i)(MRI|CT|超声|B超|X线|影像|核磁|PET|脑电图|EEG|肌电图|EMG)"
+  diagnosis: "(诊断为|考虑|疑似|符合)"
+  dx_prefix: "^(?:外院|既往|曾|前医)?(?:被)?(?:诊断为|诊断|考虑为|考虑|疑似|符合)"

@@ -88,6 +88,12 @@ def code_assertions(pairs: list[tuple[str, Assertion]]) -> CodingResult:
         if a.kind in ("lab_value", "treatment"):
             res.abstained.append({"evidence_id": ev, "text": a.text, "reason": f"kind={a.kind}:routed_to_indicator_pipeline"})
             continue
+        if r.resolved and r.hpo_id and "HP:0000118" not in hpo.ancestors(r.hpo_id):
+            # a clinical modifier (Right, Onset, Mode of inheritance…) is not a phenotype: everyday
+            # English is full of "right" / "left" / "onset", and a phenotype row for them is noise
+            res.abstained.append({"evidence_id": ev, "text": a.text, "reason": "not_a_phenotypic_abnormality",
+                                  "candidates": [r.hpo_id]})
+            continue
         if not r.resolved or (r.ambiguous and policy == "abstain"):
             res.abstained.append({"evidence_id": ev, "text": a.text, "reason": "no_hpo_match" if not r.resolved else "ambiguous",
                                   "candidates": [c.hpo_id for c in r.candidates[:3]]})

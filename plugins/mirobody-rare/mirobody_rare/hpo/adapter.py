@@ -144,6 +144,38 @@ class HpoAdapter:
                              ambiguous=amb, method=method, score=round(base * top.score, 4),
                              candidates=tuple(ranked[:5]))
 
+    def _phenotype_index(self) -> dict[str, list[tuple[str, ...]]]:
+        """First token -> the token tuples of every English key that starts with it, longest first.
+        Only keys naming a Phenotypic abnormality term (HP:0000118) are targets: a modifier label
+        (`Right`, `Onset`) must not consume the words of a sentence."""
+        if getattr(self, "_pidx", None) is None:
+            idx: dict[str, set[tuple[str, ...]]] = {}
+            for k in self._keys_en:
+                if any("HP:0000118" in self.b.ancestors(c.hpo_id) for c in self._exact[k]):
+                    toks = tuple(word_tokens(k))
+                    if toks:
+                        idx.setdefault(toks[0], set()).add(toks)
+            self._pidx = {t: sorted(v, key=len, reverse=True) for t, v in idx.items()}
+        return self._pidx
+
+    def find_all(self, text: str) -> list[tuple[int, int]]:
+        """Char spans of the HPO labels / synonyms in English `text`: whole tokens, left to right,
+        the longest key at each position, non-overlapping (dictionary concept recognition). This
+        is what gives a sentence with three findings three targets."""
+        import re
+        idx = self._phenotype_index()
+        toks = [(m.start(), m.end(), m.group().lower()) for m in re.finditer(r"[A-Za-z0-9]+", text)]
+        words = [t for _, _, t in toks]
+        out, i = [], 0
+        while i < len(toks):
+            n = next((len(k) for k in idx.get(words[i], ()) if tuple(words[i:i + len(k)]) == k), 0)
+            if n:
+                out.append((toks[i][0], toks[i + n - 1][1]))
+                i += n
+            else:
+                i += 1
+        return out
+
     def resolve_many(self, terms: list[str]) -> list[HpoResolution]:
         memo: dict[str, HpoResolution] = {}
         out = []

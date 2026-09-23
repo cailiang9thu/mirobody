@@ -78,7 +78,8 @@ def clean_lines(body: str) -> list[str]:
     return lines
 
 
-_SENT = re.compile(r"[。；;！!？?\n]")
+# English: a full stop ends a sentence when the next one starts (". The…"); "36.5" and "e.g. x" do not
+_SENT = re.compile(r"[。；;！!？?\n]|(?<=[A-Za-z)\]])\.(?=\s+[A-Z])")
 
 
 async def _wait_file_id(repo, user_id: str, file_key: str, timeout: float = 10.0) -> int | None:

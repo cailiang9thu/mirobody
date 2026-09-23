@@ -43,7 +43,7 @@ mirobody-rare-load-reference = "mirobody_rare.reference.load:main"
 include = ["mirobody_rare*"]
 
 [tool.setuptools.package-data]
-mirobody_rare = ["config.yaml"]
+mirobody_rare = ["config.yaml", "res/*.tsv", "res/cues/*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

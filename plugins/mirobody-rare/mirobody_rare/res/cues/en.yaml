@@ -1,0 +1,61 @@
+# English assertion cues, consumed by `assertion/context.py`.
+#
+# English runs in the engine's SCOPE mode (ConText, Harkema et al. 2009): a trigger modifies the
+# targets inside its scope — FORWARD to the next terminator, BACKWARD to the previous one — and
+# the targets are the HPO terms found in the sentence (dictionary recognition over HPO labels and
+# synonyms), not the sentence with its cue words cut off.
+#
+# The trigger set is medspaCy's published English ConText rules, vendored verbatim
+# (`en.medspacy.json`, MIT, see README.md). `rules:` below holds ONLY what that set lacks; every
+# entry names the held-out sentence that motivated it (`why`) — the dev half of
+# rare_coding-p5-en-llm, never the deterministic benchmark templates.
+lang: en
+boundary: word            # cues match whole tokens, case-insensitively
+mode: scope
+include: [en.medspacy.json]
+
+rules:
+  # post-negation ("X was not observed"): NegEx has the same kind of BACKWARD trigger ("not seen",
+  # "is not seen", "are not seen"); medspaCy only has "was not" FORWARD, which misses a finding
+  # named before it. why: dev JD-50v2 "ataxia was not observed", JD-53v2 "A strawberry tongue was
+  # not observed", JD-55v2 "tall stature was not observed", JD-56v2 "... was not present".
+  # cost: "X was not observed until age 5" reads absent (NegEx carries the same risk).
+  - literal: was not observed
+    category: NEGATED_EXISTENCE
+    direction: BACKWARD
+    pattern: [{LOWER: {IN: [was, were, is, are, been]}, OP: "?"}, {LOWER: not},
+              {LOWER: {IN: [observed, seen, present, detected, found, identified, noted, evident, appreciated,
+                            elicited, demonstrated]}}]
+  # "His father was reported to have had X": the reporting verb is passive, the father is still the
+  # experiencer — a pseudo-trigger over the reporting verbs that terminate FAMILY below.
+  # why: dev JD-57v2. cost: none seen (it only blocks a terminator).
+  - literal: was reported to
+    category: FAMILY
+    direction: PSEUDO
+    pattern: [{LOWER: {IN: [was, were, is, are]}}, {LOWER: {IN: [reported, noted, found, said, described, known, thought]}},
+              {LOWER: to}]
+
+family:
+  # role of each kin token (medspaCy's FAMILY rule supplies the tokens; this only names the role)
+  roles:
+    father: [father, fathers, dad, dads]
+    mother: [mother, mothers, mom, moms, mum]
+    sibling: [brother, brothers, sister, sisters, sibling, siblings, twin]
+    other_relative: [family, families, fam, aunt, aunts, uncle, uncles, cousin, cousins, grandfather, grandfathers,
+                     grandmother, grandmothers, grandparent, grandparents, grandchild, grandchildren, grandson,
+                     grandsons, granddaughter, granddaughters, child, children, son, sons, daughter, daughters,
+                     nephew, nephews, niece, nieces, relative, relatives, husband, wife, parent, parents]
+  # experiencer terminators: Chapman's ConText experiencer list ([CONJ] of genConText/experiencer_triggers.txt)
+  terminate: [patient, who, his, her, "patient's", presented, presents, presenting, complains, complaining,
+              coming in with, comes in with, was found, states, stated, reports, reported, currently, today,
+              noted, which,
+              # the same class of reporting verbs: the relative is the INFORMANT ("His wife has observed
+              # chorea"), not the experiencer. why: dev JD-56v2 (two sentences). cost: "his mother
+              # noticed she herself had X" would read proband.
+              observed, observes, noticed, notices, describe, describes, described]
+
+patterns:
+  patient: "(?i)\\b(?:reports?|reported|complains?|complained|states?|stated|denies|denied)\\b"
+  lab_value: "\\d+(?:\\.\\d+)?\\s*(?:mmol/L|μmol/L|umol/L|g/L|mg/dL|U/L|IU/L|ng/mL|pg/mL|%|×10|x10)"
+  imaging: "(?i)\\b(MRI|CT|ultrasound|X-ray|radiograph|PET|EEG|EMG|echocardiogra\\w*|imaging)\\b"
+  diagnosis: "(?i)\\b(?:diagnosed\\s+with|diagnosis\\s+of|consistent\\s+with)\\b"
