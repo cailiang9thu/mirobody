@@ -334,5 +334,26 @@ UI 层只多三条:accept 白名单、上传进度 UI 收敛、对话可见的�
 ### 7.4 工作量
 向导页 2 天 · 进度与失败可见 0.5 天 · review 队列页 1.5 天 · admission 回显 0.5 天 · Playwright 七条用例 1 天。P0 合计约 3 天可上线自助上传。
 
+### 7.5 落地(2026-09-23)
+
+| # | 做了什么 | 落点 |
+|---|---|---|
+| P0-1 | `/upload/case` 向导:六个槽位(PED · 父 VCF · 母 VCF · 先证者 VCF · 病历 · DICOM)固定顺序串行上传,父母槽位的「归属」下拉只列对你开了**编辑**权限的关爱圈成员,提交时带 `query_user_id` | web `app/upload/case/page.tsx`、`app/utils/rareUpload.ts`(一文件一连接,等 `upload_start_confirmed` 再发分片,被拒的文件一个字节都不传) |
+| P0-2 | `/upload` 进页默认选中自己(`is_current_user`),「请选择受益人」走 i18n;页头加「罕见病病例向导」入口 | web `app/upload/page.tsx` |
+| P0-3 | 去掉不存在的 `/api/ws/file-progress` 连接;进度只用 `upload_progress` | web `ChatInput.tsx` |
+| P0-4 | 结果面板轮询 `GET /api/rare/status`:每个样本的状态(ready / parsing / failed)、表型 / 否定 / 待复核 / 变异 / 信号条数、诊断候选;`failed` 标红并给「重试解析」→ `POST /api/rare/samples/{id}/retry`,从存储取回原文件、**复用同一 sample 行**续解析,再做家系回填与诊断重排 | 插件 `mirobody_rare/web.py`;主包新增 `mirobody.routers` 入口组挂载插件路由 |
+| P1-5 | `/upload/review` 复核队列:歧义候选点选即写 `source='clinician'` 表型行,「不编码」只关单;亲属的队列需要关爱圈授权。顺带修了一个权限顺序缺陷:`resolve_phenotype_review` 原先**先关单再查权限**,被拒的请求也会把条目关掉 | 插件 `web.py`、`tools.py` |
+| P1-6 | 拒绝原因原样显示:admission 的 `upload_error` 与代传写权限不足的 `error` 两种消息都落到该步骤的错误行 | web `rareUpload.ts`、`useWebSocketFileUpload.ts` |
+| P2-8 | 对话页上传改走 WebSocket(原 REST 路由 405);录音转写仍走 REST,本后端没有音频处理器,不在本轮 | web `ChatInput.tsx` |
+| 稳定性 | VCF 入库对瞬时错误(超时、断连、连接数满)按指数退避重试 3 次(`variant.ingest_attempts`);同一文件(同 sha256)的 `failed` 样本再次上传时续用原 sample 行,不重复建行 | 插件 `ingest.py`、`handlers.py` |
+
+**没做**:P2-7 分片级断点续传(同 content_hash 协商),现在是整文件重传 + 服务端续用失败样本行。
+
+**读数**:单测 `test_upload_robustness.py` 5 条、`test_web_api.py` 7 条、主包 `test_plugin_routers.py` 2 条;
+Playwright `test_web_case_wizard.py`(`-m web`)7a–7f 全过;7g 见下。
+haenv `rare_coding-p3` 复评(插件新代码重启后)与改前逐项相同:`rc_narr_recall` 0.991 · `rc_narr_span_ok` 0.991 · `rc_narr_polarity_ok` 1.000 · `rc_narr_noise_abstain` 1.000 · `rc_hpo_strict` 0.991 · 其余 1.000,`rc_wrong_rate` 0。
+
+**7g(20 例经页面)**:`tools/roundtrip_web.py --cases JD-50..JD-69 --batch results/joint_dx/rare_coding-p3/20260922-095441 --out reports/roundtrip/web-p3-20260923`,一例一个浏览器上下文、顺序跑。十层 879 条:相同 781 · 设计性 83 · 预期拒 15 · 传输/版本/顺序/编码 **0** —— 与脚本路径(`reports/roundtrip/p3-20260923/`)**逐层读数相同**;20 例 154 个上传步骤全部 completed,页面结果面板 50 个样本全部 ready,控制台报错 0;单例 29–87 s(单人 30 s 左右,三人家系 70–80 s),合计约 22 分钟。
+
 ## 5. 工作量
 主包钩子 + 插件 `text_hook.py` + review 表与工具:1 天;往返比对脚本 `tools/roundtrip_check.py`(账号/圈/顺序/清理/九层比对/分类报告/抽样对照报告):1.5 天;PED 后到回填:2 小时。

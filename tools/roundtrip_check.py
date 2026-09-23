@@ -128,14 +128,17 @@ async def purge_orphans(base_dir: str) -> int:
     return n
 
 
-async def make_circle(owner: str, members: dict[str, str]) -> int:
-    """owner's circle with `members` {uid: nickname} accepted at health_access=0 (analysis_only)."""
+async def make_circle(owner: str, members: dict[str, str], member_access: int = 0) -> int:
+    """owner's circle with `members` {uid: nickname} accepted at `member_access`: 0 for the API
+    roundtrip (relatives share nothing), 2 for the page wizard (a relative lets the proband
+    upload on their behalf — the host refuses a proxy upload below edit). Relatives stay
+    `analysis_only` either way: that comes from the PED, not from the grant."""
     p = await pool()
     async with p.acquire() as c:
         cid = await c.fetchval("INSERT INTO care_circles (owner_user_id, name) VALUES ($1, $2) RETURNING id", int(owner), f"roundtrip-{owner}")
         await c.execute("INSERT INTO care_circle_members (care_circle_id, user_id, role, status, health_access) VALUES ($1, $2, 2, 2, 2)", cid, int(owner))
         for uid, nick in members.items():
-            await c.execute("INSERT INTO care_circle_members (care_circle_id, user_id, role, status, health_access, nickname) VALUES ($1, $2, 0, 2, 0, $3)", cid, int(uid), nick)
+            await c.execute("INSERT INTO care_circle_members (care_circle_id, user_id, role, status, health_access, nickname) VALUES ($1, $2, 0, 2, $3, $4)", cid, int(uid), int(member_access), nick)
     return cid
 
 

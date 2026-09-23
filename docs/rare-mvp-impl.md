@@ -210,6 +210,19 @@ HTML 报告:`haenv-rare/reports/rare_coding-p3/20260922-095441/eval-rare_coding-
 2. JD-50 母本样本 `failed`,级联出 2 条变异缺失与遗传来源 `unknown` —— asyncpg 连接池 `TimeoutError`,20 例并发入库时连跨区 RDS(往返 ≈500 ms)建连超时。重跑未复现。
    未收紧项:连接池 `max_size=8, timeout=30`,且 VCF 入库失败直接把样本标 `failed`、无重试。
 
+## 上传 UI:病例向导 + 复核队列(2026-09-23,ingest-plan §7)
+
+罕见病一例 5–6 个文件、分属三个账号、有先后顺序,通用 `/upload` 页一概不知道(§7.1 的 U1–U7)。这一轮把它做成页面:
+
+- **`/upload/case`**(mirobody-web):六个槽位按 PED → 父 → 母 → 先证者 → 病历 → DICOM 串行上传,父母文件以关爱圈成员身份代传(`query_user_id`,要对方开**编辑**权限)。每步显示服务端原话(admission 拒收原因、代传无写权限);传完轮询结果面板,`failed` 样本标红可「重试解析」。
+- **`/upload/review`**:歧义 / 弃权条目点选即写 `source='clinician'` 表型行,不再只能在对话里调工具。
+- **后端路由从插件来**:主包新增 `mirobody.routers` 入口组(`plugin_dirs.plugin_routers`),插件 `mirobody_rare/web.py` 挂 `/api/rare/{case-context,status,samples/{id}/retry,reviews,reviews/{id}/resolve}`。主包不认识罕见病表,这些路由只能在插件里。
+- **入库更稳**:VCF 入库对瞬时数据库错误退避重试 3 次;同 sha256 的 `failed` 样本再次上传或点重试时续用原行。上一轮 JD-50 母本那种「并发建连超时 → 样本 failed → 遗传来源 unknown」现在会自己恢复。
+- **一个权限缺陷**:`resolve_phenotype_review` 原先先关单后查权限,无权者的请求也能把别人的复核条目关掉;现在先读行、鉴权,再关单(`test_upload_robustness.py::test_denied_resolve_does_not_close_the_review`)。
+- 对话页上传从 405 的 REST 改走 WebSocket,并删掉那条不存在的 `/api/ws/file-progress` 连接。
+
+**读数**:p3 20 例全附件经页面上传(`reports/roundtrip/web-p3-20260923/`),十层 879 条真差异 0,与脚本路径逐层相同,控制台报错 0;Playwright 7a–7f 全过;haenv `rare_coding-p3` 复评各 `rc_*` 判据与改前相同(叙述 0.991 / 0.991 / 1.000 / 1.000,`rc_hpo_strict` 0.991,其余 1.000)。
+
 ## 第二套部署:阿里云主机 `mirobody-rare`(<aliyun-host>,2026-09-23)
 
 同一套代码在 `ssh mirobody-rare`(root@<aliyun-host>,Ubuntu 24.04,4C/14G)上再跑一份,与源机互不影响。

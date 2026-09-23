@@ -101,6 +101,14 @@ async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None =
         if prior:
             log.info("[ingest] %s already ingested for %s as sample %s; skip", p.name, user_id, prior["id"])
             return {"sample_id": prior["id"], "shards": 0, "skipped_shards": 0, "raw_calls": 0, "kept": 0, "status": "ready", "duplicate": True}
+        # A FAILED sample with the same bytes is resumed, not duplicated: `written_chroms` makes
+        # the shards already written skip. Only `failed` — a `parsing` one may be in flight in
+        # another task, and resuming it would parse the same shards twice.
+        failed = await repo.failed_sample_by_hash(user_id, sha)
+        if failed:
+            log.info("[ingest] %s resumes failed sample %s for %s", p.name, failed["id"], user_id)
+            sample_id = int(failed["id"])
+    if sample_id is None:
         sample_id = await repo.add_sample({"user_id": user_id, "file_id": file_id, "assay": assay, "reference": "GRCh38",
                                           "sample_label": (hdr["samples"] or [None])[0], "caller": None, "content_sha256": sha,
                                           "file_key": file_key})
@@ -136,6 +144,35 @@ async def ingest_vcf(repo, user_id: str, path: str | Path, file_id: int | None =
     except Exception:
         await repo.set_sample_status(sample_id, "failed")
         raise
+
+
+#: What a retry may help with: the database or the network timing out or dropping. A wrong
+#: reference build, an oversized file or a malformed header raise ValueError and are final.
+def _transient() -> tuple[type[BaseException], ...]:
+    out: list[type[BaseException]] = [TimeoutError, ConnectionError]
+    try:
+        import asyncpg
+        out += [asyncpg.PostgresConnectionError, asyncpg.InterfaceError, asyncpg.TooManyConnectionsError]
+    except (ImportError, AttributeError):
+        pass
+    return tuple(out)
+
+
+async def ingest_vcf_retrying(repo, user_id: str, path: str | Path, attempts: int = 3, base_delay: float = 2.0, **kw) -> dict:
+    """`ingest_vcf` with bounded retries on transient errors (exponential backoff). Each retry
+    resumes the sample the failed attempt left `failed`, so no sample row is duplicated.
+    2026-09-23: one of 20 concurrent roundtrip cases lost its mother's sample to a single
+    asyncpg pool TimeoutError; with no retry the trio inheritance for that case went `unknown`."""
+    from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
+    async for attempt in AsyncRetrying(retry=retry_if_exception_type(_transient()), stop=stop_after_attempt(max(1, attempts)),
+                                       wait=wait_exponential(multiplier=base_delay, max=60) if base_delay else (lambda _s: 0),
+                                       reraise=True):
+        with attempt:
+            n = attempt.retry_state.attempt_number
+            if n > 1:
+                log.warning("[ingest] %s: retry %d/%d after a transient error", Path(path).name, n, attempts)
+            return await ingest_vcf(repo, user_id, path, **kw)
+    raise RuntimeError("unreachable")                     # pragma: no cover
 
 
 async def ingest_ped(repo, path: str | Path, user_ids: dict[str, str] | None = None, owner_id: str | None = None) -> int:

@@ -26,6 +26,9 @@ rare = "mirobody_rare.tools"
 [project.entry-points."mirobody.file_handlers"]
 rare = "mirobody_rare.handlers"
 
+[project.entry-points."mirobody.routers"]
+rare = "mirobody_rare.web"
+
 [project.entry-points."mirobody.text_hooks"]
 rare = "mirobody_rare.text_hook"
 

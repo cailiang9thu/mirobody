@@ -226,13 +226,19 @@ class RareQueryService:
         """
         caller = self._caller(user_info)
         repo = self._r()
-        row = await repo.resolve_review(int(review_id), hpo_id or None, caller)
+        # Read, authorize, THEN write. This used to resolve first and check afterwards, so a
+        # caller who was then refused had still closed someone else's review item (2026-09-23).
+        row = await repo.review(int(review_id))
         if not row:
             return _asdict(_kt.Envelope(_kt.STATUS_ERROR, data=[], error_class="recoverable", error_kind="no_data", assumptions=("no such review item",)))
         if str(row.get("user_id")) != caller:
             d = await _permit(repo, caller, str(row["user_id"]), "phenotype", "individual_return")
             if not d.allowed or (await repo.circle_access(caller, str(row["user_id"])) or 0) < 2:
                 return _denied("resolving another person's review needs care-circle edit access")
+        if row.get("resolved_at"):
+            return _asdict(_kt.Envelope(_kt.STATUS_ERROR, data=[], error_class="recoverable", error_kind="invalid_arguments",
+                                        assumptions=("this review item is already resolved",)))
+        row = await repo.resolve_review(int(review_id), hpo_id or None, caller) or row
         if reject or not hpo_id:
             return _env_dict(_kt.STATUS_OK, [{"id": row["id"], "resolved": "rejected"}], ["closed without a phenotype row"])
         from .hpo import get_adapter

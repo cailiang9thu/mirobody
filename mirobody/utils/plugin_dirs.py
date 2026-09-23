@@ -63,6 +63,8 @@ logger = logging.getLogger(__name__)
 GROUP_PROVIDERS = "mirobody.providers"
 GROUP_TOOLS = "mirobody.tools"
 GROUP_AGENTS = "mirobody.agents"
+#: FastAPI routers a plugin adds to the HTTP surface (module attribute `ROUTERS`).
+GROUP_ROUTERS = "mirobody.routers"
 
 
 def entry_point_modules(group: str) -> list[ModuleType]:
@@ -85,6 +87,24 @@ def entry_point_modules(group: str) -> list[ModuleType]:
             continue
         modules.append(obj)
     return modules
+
+
+def plugin_routers() -> list:
+    """Every `APIRouter` the installed plugins export as `ROUTERS` under `mirobody.routers`.
+
+    The server mounts them after its own routers and before the SPA fallback. Anything in
+    `ROUTERS` that is not an APIRouter is logged by type and skipped, like a module that
+    fails to import: a plugin mistake must not stop the server from starting.
+    """
+    from fastapi import APIRouter
+    out: list = []
+    for module in entry_point_modules(GROUP_ROUTERS):
+        for r in getattr(module, "ROUTERS", ()) or ():
+            if isinstance(r, APIRouter):
+                out.append(r)
+            else:
+                logger.warning("plugin router skipped: module=%s value_kind=%s", module.__name__, type(r).__name__)
+    return out
 
 
 def resolve_plugin_dir(configured: str) -> tuple[str | None, str | None]:

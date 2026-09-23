@@ -112,6 +112,19 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3e.2 | 章节标题判定:句子不得被当成标题(`查体无听力受损。`/`母亲有糖尿病史。`),Markdown 与裸章节名仍能切分 | `test_text_hook.py::test_a_sentence_is_not_a_heading…` / `…markdown_and_bare_section_names_still_split`(改前红:7 条发现丢失) | ✅ |
 | 3e.3 | haenv 侧读数:术语召回 / 位置对位 / 极性 / 噪声弃权 | `rc_narr_recall` 0.991 · `rc_narr_span_ok` 0.991 · `rc_narr_polarity_ok` 1.000 · `rc_narr_noise_abstain` 1.000(20 例 222 条金标句 + 55 条噪声句) | ✅ |
 
+## 3f. 上传 UI:病例向导与复核队列(ingest-plan §7,Playwright)
+
+| # | 验收项 | 测试 | 状态 |
+| --- | --- | --- | --- |
+| 7a | 向导把一例三人家系按 PED → 父 → 母 → 先证者 → 病历 → DICOM 传完,十层比对真差异 0 | `test_web_case_wizard.py::test_7a_7b_7c_trio_case_through_the_wizard_matches_the_script_path` | ✅ |
+| 7b | 父母 VCF 经 `query_user_id` 落在父母自己的账号名下,家系层 / 权限层与脚本路径一致 | 同上 | ✅ |
+| 7c | 无控制台报错;对话页不再连 `/api/ws/file-progress` | 同上 · `test_7c_chat_page_opens_no_dead_progress_socket` | ✅ |
+| 7d | 样本 `failed` 时页面标红,「重试解析」拉回 `ready`,变异行数与失败前相同,sample 行不重复 | `test_7d_a_failed_sample_shows_and_retry_restores_it` | ✅ |
+| 7e | 复核页点选候选:`resolved_at` 非空,`source='clinician'` 表型 +1 | `test_7e_review_page_closes_an_item_with_a_clinician_row` | ✅ |
+| 7f | FASTQ 被 admission 拒、代传时写权限已撤回:两步的错误行各自写明原因,被拒的代传不落任何文件 | `test_7f_refusals_say_why` | ✅ |
+| 7g | p3 20 例全附件经**页面**走一遍,读数与脚本路径(879 条真差异 0)一致 | `tools/roundtrip_web.py` | ✅(879 条,真差异 0,控制台报错 0;`reports/roundtrip/web-p3-20260923/`) |
+| 7h | 后端单测:插件路由 7 条(权限 403 / 无样本 404 / 非 failed 409 / 存储缺失 410)、失败样本续用 + 瞬时错误重试 5 条、主包 `mirobody.routers` 2 条 | `test_web_api.py` · `test_upload_robustness.py` · `mirobody/tests/test_plugin_routers.py` | ✅ |
+
 ## 4. 接口 · D5(§10)
 
 | # | 验收项 | 测试 | 状态 |

@@ -26,6 +26,10 @@ class RareRepo(Protocol):
     async def circle_access(self, caller_id: str, subject_id: str) -> int | None: ...   # None = no shared circle
     async def circle_members(self, user_id: str) -> list[dict]: ...
     async def samples_of(self, user_id: str) -> list[dict]: ...
+    async def sample(self, sample_id: int) -> dict | None: ...
+    async def failed_sample_by_hash(self, user_id: str, sha256: str) -> dict | None: ...
+    async def review(self, review_id: int) -> dict | None: ...
+    async def open_reviews(self, user_id: str, limit: int = 200) -> list[dict]: ...
     async def set_inheritance(self, variant_id: int, inheritance: str, is_de_novo: bool | None, parent_gt: dict) -> None: ...
     # writers (ingest)
     async def add_phenotypes(self, rows: Sequence[Mapping[str, Any]]) -> int: ...
@@ -129,6 +133,20 @@ class MemoryRepo:
 
     async def samples_of(self, user_id):
         return [r for r in self.t["th_sequencing_sample"] if r["user_id"] == user_id]
+
+    async def sample(self, sample_id):
+        return next((r for r in self.t["th_sequencing_sample"] if r["id"] == sample_id), None)
+
+    async def failed_sample_by_hash(self, user_id, sha256):
+        hits = [r for r in self.t["th_sequencing_sample"]
+                if r["user_id"] == user_id and r.get("content_sha256") == sha256 and r.get("status") == "failed"]
+        return hits[-1] if hits else None
+
+    async def review(self, review_id):
+        return next((r for r in self.t["th_phenotype_review"] if r["id"] == review_id), None)
+
+    async def open_reviews(self, user_id, limit=200):
+        return [r for r in self.t["th_phenotype_review"] if r["user_id"] == user_id and not r.get("resolved_at")][:limit]
 
     async def set_inheritance(self, variant_id, inheritance, is_de_novo, parent_gt):
         for v in self.t["th_variant"]:
@@ -372,6 +390,26 @@ class PgRepo:
     async def samples_of(self, user_id):
         return await self._q("SELECT id, user_id, file_id, file_key, assay, reference, sample_label, status, variant_count, content_sha256"
                              " FROM th_sequencing_sample WHERE user_id = :u ORDER BY id DESC", {"u": user_id})
+
+    async def sample(self, sample_id):
+        rows = await self._q("SELECT id, user_id, file_id, file_key, assay, reference, sample_label, status, variant_count, content_sha256"
+                             " FROM th_sequencing_sample WHERE id = :id", {"id": int(sample_id)})
+        return dict(rows[0]) if rows else None
+
+    async def failed_sample_by_hash(self, user_id, sha256):
+        rows = await self._q("SELECT id, status FROM th_sequencing_sample WHERE user_id = :u AND content_sha256 = :h"
+                             " AND status = 'failed' ORDER BY id DESC LIMIT 1", {"u": user_id, "h": sha256})
+        return dict(rows[0]) if rows else None
+
+    async def review(self, review_id):
+        rows = await self._q("SELECT id, user_id, file_id, kind, source_text, candidates, section, subject, negated, resolved_at"
+                             " FROM th_phenotype_review WHERE id = :id", {"id": int(review_id)})
+        return dict(rows[0]) if rows else None
+
+    async def open_reviews(self, user_id, limit=200):
+        return await self._q("SELECT id, user_id, file_id, kind, source_text, candidates, section, subject, negated, create_time"
+                             " FROM th_phenotype_review WHERE user_id = :u AND resolved_at IS NULL ORDER BY id LIMIT :n",
+                             {"u": user_id, "n": int(limit)})
 
     async def set_inheritance(self, variant_id, inheritance, is_de_novo, parent_gt):
         await self._q("UPDATE th_variant SET inheritance = :i, is_de_novo = :d WHERE id = :v RETURNING id",

@@ -1,5 +1,10 @@
 ## Unreleased — 1.5.0
 
+- **Plugins can mount HTTP routes: `mirobody.routers` entry-point group.** A plugin module
+  exposes `ROUTERS = (APIRouter, …)`; `Server.start` includes them after the core routers
+  (`utils/plugin_dirs.plugin_routers`, non-routers are logged and skipped). mirobody-rare uses it
+  for `/api/rare/{case-context,status,samples/{id}/retry,reviews,reviews/{id}/resolve}`, which
+  back the case-upload wizard and review queue pages. Tell: `mirobody/tests/test_plugin_routers.py`.
 - **`gemini-flash` chat entry now rides OpenRouter.** Google's own endpoint answers 400
   FAILED_PRECONDITION ("User location is not supported for the API use.") from some regions,
   which surfaced as `GoogleInvalidRequestError` on every Gemini chat turn. The native-client

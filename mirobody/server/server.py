@@ -417,7 +417,10 @@ class Server:
         # order documents which one the web client depends on.
         app.include_router(records_router)
 
-        for router in fastapi_routers:
+        # Plugin routers (`mirobody.routers` entry points) after the shipped ones, so a
+        # plugin cannot shadow a core path; empty with nothing installed.
+        from mirobody.utils.plugin_dirs import plugin_routers
+        for router in [*fastapi_routers, *plugin_routers()]:
             app.include_router(router)
 
         # Last on purpose: the SPA fallback and the API-prefix 404 guards

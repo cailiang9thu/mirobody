@@ -149,7 +149,10 @@ class VcfHandler(_RareHandler):
         # (the upload manager already ran `resolve_subject(..., require_write=True)`).
         async def _job():
             repo = self._repo()
-            await ingest.ingest_vcf(repo, str(ctx.target_user_id), temp_file_path, file_id=None, file_key=unique_filename)
+            from ._config import load as _cfg
+            retries = int((_cfg().get("variant") or {}).get("ingest_attempts", 3))
+            await ingest.ingest_vcf_retrying(repo, str(ctx.target_user_id), temp_file_path, attempts=retries,
+                                             file_id=None, file_key=unique_filename)
             log.info("[trio] backfill after VCF: %s", await backfill_family(repo, str(ctx.target_user_id)))
             from .dx_refresh import refresh_diagnosis
             log.info("[dx_refresh] after VCF: %s", await refresh_diagnosis(repo, str(ctx.target_user_id)))
