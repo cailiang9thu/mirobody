@@ -269,6 +269,8 @@ ClinVar `clinvar_20260913.vcf.gz` 与 HPO / Orphadata / HGNC 八个文件远端�
 
 **删除级联 + 入库提速上线(2026-09-23)**:同样 bundle + 工作区 rsync,远端 HEAD `11f6339`;重装插件后 `mirobody.delete_hooks` 注册到 `mirobody_rare.erase`,`run_schema()` 给远端库的 `th_signal_object` / `th_pedigree` 加上 `file_key`,重启 API。经域名跑 `tools/delete_cascade_check.py` 五步全过,`test_web_case_wizard.py` 5 passed / 86 s(上一版 115 s)。
 
+**只留一个服务(2026-09-23)**:`mirobody-rare-web.service`(mirobody-web,28086)两台机器都已停止并 disable;界面改用 API 自带的客户端(`frontend/`,服务端挂在 `/`)。远端 nginx 的 `/` 由 28086 改指 18085(与 `/backend/` 同一套流式 / WebSocket / 超时设置),旧配置备份 `/root/test-rare.nginx.bak.20260923-175423`。这个客户端原本在浏览器里拒收 VCF / PED / zip,由 `tools/patch_frontend_rare.py` 放行;同时补上对话页代亲属附文件只需查看权限的漏洞(`turn.py::_may_attach`)。经域名:`test_bundled_ui.py` 3 passed,JD-50 经 Ask 页十层 47 条真差异 0,删除级联五步全过。
+
 **两处远端限制**:gnomAD API 从那台返回 403(机房段封锁,换 UA 无效),频率过滤只能吃推过去的磁盘缓存;
 28085/28086 在主机侧是放开的(ufw 未启用、iptables ACCEPT),但**阿里云安全组**未放行,外网访问要在控制台开端口。
 

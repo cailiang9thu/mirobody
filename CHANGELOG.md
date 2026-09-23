@@ -1,5 +1,10 @@
 ## Unreleased — 1.5.0
 
+- **Attaching files in chat on a relative's record needs edit access.** `agent/chat/turn.py::_may_attach`:
+  a proxy turn (`query_user_id` ≠ caller) that carries `file_list` now runs
+  `resolve_subject(..., require_write=True)`, the rule the upload WebSocket already applied. Before, the
+  view check behind `_may_chat` was the only one, so a view-only care-circle member could file documents
+  into someone else's record from the chat box. Tell: `mirobody/tests/test_chat_attach_write.py`.
 - **Plugins can erase what they derived from a deleted file: `mirobody.delete_hooks` entry-point group.**
   `collect/files/delete_hooks.py`: a module's `HOOKS` are awaited inline in `delete_files_from_message`
   after the soft delete, with the record's owner (the `query_user_id` of a proxy upload), the file key

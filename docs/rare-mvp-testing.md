@@ -139,6 +139,17 @@ cd ../haenv-rare && uv run haenv run inputs/rare_coding-p1.job.yaml --gen determ
 | 3g.8 | 真库 SQL:改指向与删除两条路径 | `test_pg.py::test_pg_erase_file_rows_and_repoint` | ✅ |
 | 3g.9 | 实机:三人家系 + 病历 + DICOM 经 WebSocket 传上,再用 `POST /api/v1/data/delete-files` 逐个删,每删一个查一次库 | `tools/delete_cascade_check.py`:五步全过(父 VCF → 先证者 3 条遗传来源归 unknown;病历 → 11 表型 / 27 复核 / 1 诊断清空;…;最后先证者名下为 0,母亲的不动) | ✅ |
 
+## 3h. 服务自带的 web 客户端(`frontend/`,28085;2026-09-23 起唯一的界面)
+
+mirobody-web(28086)已停用,上面 3d / 3f 的用例测的是它,留作历史。这个客户端只在 Ask 页随提问附件上传(`POST /files/upload` → `/api/chat` 入 th_files 并跑处理器),与分片 WebSocket 是两条链路。
+
+| # | 验收项 | 测试 | 状态 |
+| --- | --- | --- | --- |
+| 3h.1 | VCF / PED / DICOM zip 能进 Ask 框(改前浏览器端弹「只支持 pdf、文本、图片」,一个字节都不发);其他类型仍按原规则拒 | `test_bundled_ui.py::test_b1_…`;补丁 `tools/patch_frontend_rare.py` | ✅ |
+| 3h.2 | 只有查看权限的成员在 Ask 页「Query for」亲属并附文件:整轮拒绝并写明原因,亲属名下不落任何文件 | `test_b2_…` · `mirobody/tests/test_chat_attach_write.py` | ✅(浏览器侧改前红未复现,逻辑由单测钉住) |
+| 3h.3 | 页面只加载改名后的 `*-rare` 资源、无 404(资源 `immutable` 缓存) | `test_b3_…` | ✅ |
+| 3h.4 | 三人家系经 Ask 页三轮(本人 / Query for 父 / 母)上传,十层比对 | `tools/roundtrip_bundled.py`:JD-50 本机与远端域名各一次,47 条真差异 0 | ✅ 单例;20 例待跑完 |
+
 ## 4. 接口 · D5(§10)
 
 | # | 验收项 | 测试 | 状态 |
