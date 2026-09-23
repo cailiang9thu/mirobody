@@ -267,6 +267,8 @@ ClinVar `clinvar_20260913.vcf.gz` 与 HPO / Orphadata / HGNC 八个文件远端�
 
 **§7 上线(2026-09-23)**:工作区 rsync(不带 `.git`,本机 pack 重打过 42 MB)+ `git bundle` 补提交,两边 HEAD 同为 `d59b055` / `d969ea4`;远端 `uv pip install -e plugins/mirobody-rare`(新入口组要重装才注册)→ `npm run build` → 重启两个 user unit。域名侧 `/upload/case` `/upload/review` 200,`/backend/api/rare/*` 带 token 返回 code 0;远端装 pytest-playwright + chromium 后对 `https://test-rare.mirobody.ai` 跑 `test_web_case_wizard.py`(三人家系 JD-50)**5 passed / 115 s**。JD-50 的三个 DICOM zip 远端自取的版本 sha256 与题包不同(zip 元数据),已用 rsync 增量改成源机字节(只传 5 MB),原件留 `*.bak-remote`。
 
+**删除级联 + 入库提速上线(2026-09-23)**:同样 bundle + 工作区 rsync,远端 HEAD `11f6339`;重装插件后 `mirobody.delete_hooks` 注册到 `mirobody_rare.erase`,`run_schema()` 给远端库的 `th_signal_object` / `th_pedigree` 加上 `file_key`,重启 API。经域名跑 `tools/delete_cascade_check.py` 五步全过,`test_web_case_wizard.py` 5 passed / 86 s(上一版 115 s)。
+
 **两处远端限制**:gnomAD API 从那台返回 403(机房段封锁,换 UA 无效),频率过滤只能吃推过去的磁盘缓存;
 28085/28086 在主机侧是放开的(ufw 未启用、iptables ACCEPT),但**阿里云安全组**未放行,外网访问要在控制台开端口。
 
