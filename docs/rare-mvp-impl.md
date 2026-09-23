@@ -208,6 +208,12 @@ HTML 报告:`haenv-rare/reports/rare_coding-p3/20260922-095441/eval-rare_coding-
 ClinVar `clinvar_20260913.vcf.gz` 与 HPO / Orphadata / HGNC 八个文件远端下载后 **md5 与源机逐字节相同**,按源机 mtime `touch` 后 rsync 校验 0 文件待传。
 **没推**:`haenv-rare/derived`(5.6 GB)与 `data/rare` 的 VCF 骨架与 DICOM(11 GB)—— 按此速率要 2.5 天;只推了 JD-50 / JD-55 两例夹具。因此那台**不能出题、不能跑 haenv 批次**,需要时用 `data/rare/download.py` 让它自己下。
 
+**对外入口(2026-09-23)**:`https://test-rare.mirobody.ai` 由那台自己的 nginx 1.24 终止 TLS(证书已在),
+`/backend/` 反代 28085、`/` 反代 28086;前端用 `NEXT_PUBLIC_BASE_URL_* = __SAME_HOST__/backend` 重新构建,
+浏览器只走 443,两个业务端口不必在安全组放行。SSE 关缓冲、读超时 1200 s,`client_max_body_size 2g` 对齐 admission 的 VCF 上限。
+域名侧实测:登录、WebSocket 传病历(completed)、`/api/chat` 流式 400 个事件,真实浏览器里 `query_phenotype` 工具卡正常渲染。
+旧的静态站点配置备份在远端 `/root/test-rare.vhost.bak.*`。
+
 **两处远端限制**:gnomAD API 从那台返回 403(机房段封锁,换 UA 无效),频率过滤只能吃推过去的磁盘缓存;
 28085/28086 在主机侧是放开的(ufw 未启用、iptables ACCEPT),但**阿里云安全组**未放行,外网访问要在控制台开端口。
 
