@@ -124,3 +124,5 @@ mirobody/res/fhir_concept_graph.bin
 mirobody/res/fhir_meta.csv.gz
 mirobody/res/fhir_snomed_ct_bundle.tar.gz
 mirobody/res/*.partial
+# rare specs stay local
+docs/rare-specs.md
